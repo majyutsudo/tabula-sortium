@@ -1,0 +1,604 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover"><title>TABULA SORTIUM v0.6.0</title><style>
+:root{font-family:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;color:#e8ddc5;background:#141a19;font-size:14px}*{box-sizing:border-box}body{margin:0}button,select,input,textarea{font:inherit}button,select{cursor:pointer}button{background:#25352f;color:#ebdfc7;border:1px solid #6b6550;border-radius:5px;padding:9px 12px}button:hover{background:#36483e}button:disabled{opacity:.4;cursor:default}.primary{background:#76623a;border-color:#bc9f66;color:#fff6df}select,input,textarea{background:#202b27;color:#eee1c9;border:1px solid #615f50;border-radius:4px;padding:8px;max-width:100%}input[type=checkbox]{accent-color:#c3a46a}.shell{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh}aside{background:#1d2724;border-right:1px solid #535343;padding:20px;max-height:100vh;overflow-y:auto}h1{font-size:23px;letter-spacing:.18em;font-weight:normal;margin:0}header small,.subtle{color:#a9a28e}.version{font:11px sans-serif;letter-spacing:.15em;color:#baa67f}.section{border-top:1px solid #46483d;margin-top:18px;padding-top:14px}h2{font-size:13px;font-weight:normal;color:#d8c496;letter-spacing:.12em;margin:0 0 12px}.stack{display:grid;gap:8px}.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}.row button{flex:1}.field{display:grid;gap:5px;color:#c8c1ae}.field select{width:100%}.choice{display:flex;gap:7px;align-items:center;font:12px sans-serif;color:#d7cebb}.mini{font:11px/1.5 sans-serif;color:#b8b19e}.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.swatch{padding:0;width:33px;height:28px;border:2px solid #777;box-shadow:inset 0 0 0 1px #222}.swatch.active{outline:2px solid #d7c28b;outline-offset:2px}.main{display:flex;flex-direction:column;min-width:0}.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;background:#1b2421;border-bottom:1px solid #454b3e}.toolbar .status{flex:1;font:12px sans-serif;color:#c8bfa8}.toolbar button{padding:7px 10px}.stage-shell{flex:1;min-height:70vh;position:relative;overflow:hidden;background:#2b211b}.stage{position:absolute;inset:0;overflow:hidden;touch-action:none;background:radial-gradient(ellipse at center,#59483a 0,#271f19 100%)}.cloth{position:absolute;left:5%;top:13%;width:90%;height:80%;border:8px solid rgba(0,0,0,.17);box-shadow:0 15px 34px #0009,inset 0 0 65px #0004;border-radius:3px;background-color:var(--cloth,#171719);background-image:repeating-linear-gradient(90deg,#fff1 0px,transparent 1px,transparent 4px),repeating-linear-gradient(0deg,#0001 0px,transparent 1px,transparent 4px)}.cloth:after{content:'';position:absolute;inset:12px;border:1px solid #ffffff30;pointer-events:none}.altar{position:absolute;inset:0;pointer-events:none}.candle{position:absolute;top:2%;width:24px;height:70px;background:linear-gradient(90deg,#a99c80,#eee0bd 40%,#8a795a);box-shadow:0 6px 15px #0008;border-radius:3px}.candle:before{content:'';position:absolute;width:12px;height:22px;left:6px;top:-24px;background:#f4b54a;border-radius:70% 20% 65% 45%;transform:rotate(8deg);box-shadow:0 0 18px 8px #edab4770;animation:flicker 1.9s ease-in-out infinite alternate}.candle:after{content:'';position:absolute;bottom:-4px;left:-17px;width:58px;height:9px;background:linear-gradient(#ae8650,#59462f);border-radius:50%}.candle.left{left:16%}.candle.right{right:16%}.incense{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:64px;height:25px;border-radius:5px 5px 45% 45%;background:linear-gradient(#ad8d5c,#57442c);box-shadow:0 5px 13px #0009}.incense:before{content:'〰';position:absolute;font-size:43px;color:#d4d1c2a0;bottom:18px;left:17px;animation:smoke 4s linear infinite}@keyframes flicker{from{transform:scale(.9) rotate(-7deg);opacity:.8}to{transform:scale(1.12) rotate(12deg);opacity:1}}@keyframes smoke{from{transform:translateY(0);opacity:0}30%{opacity:.65}to{transform:translateY(-34px);opacity:0}}.table-zone{position:absolute;left:50%;transform:translateX(-50%);top:17%;width:88%;max-width:790px;height:74%;border-radius:4px}.slot{position:absolute;width:var(--cw);height:var(--ch);border:1px dashed #f5e4be89;background:#ffffff10;transform:translate(-50%,-50%) rotate(var(--angle));border-radius:4px;display:flex;justify-content:center;align-items:center;color:#f8e9c7;cursor:pointer}.slot .slot-num{font:14px sans-serif;background:#1d241f9e;border-radius:50%;padding:3px 7px}.card{position:absolute;width:var(--cw);height:var(--ch);transform:translate(-50%,-50%) rotate(var(--rotation));border-radius:4px;cursor:grab;user-select:none;touch-action:none;filter:drop-shadow(2px 5px 3px #000a);transition:left .48s cubic-bezier(.2,.7,.2,1),top .48s cubic-bezier(.2,.7,.2,1),transform .5s ease;z-index:var(--z,2)}.card.dragging{transition:none;cursor:grabbing;z-index:200!important}.card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .56s}.card.faceup .card-inner{transform:rotateY(180deg)}.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:4px;border:2px solid #e1cfaa;overflow:hidden}.back{background:repeating-linear-gradient(45deg,#274740 0,#274740 4px,#19342f 4px,#19342f 8px);display:grid;place-items:center}.back:before{content:'✧';position:absolute;inset:5px;border:1px solid #c0a476;display:grid;place-items:center;font-size:28px;color:#c2a574}.front{transform:rotateY(180deg);background:#eee1c3;color:#342a23;border:3px double #756444;padding:5px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:4px}.front .symbol{font-size:25px}.front .card-name{font-size:clamp(8px,1.1vw,13px);font-weight:bold;line-height:1.3}.front .card-id{font:9px sans-serif;color:#67523d}.front:before{content:'';position:absolute;inset:4px;border:1px solid #897252;pointer-events:none}.zone-label{position:absolute;transform:translateX(-50%);font:11px sans-serif;white-space:nowrap;color:#fff5d6;background:#17241fc9;padding:3px 6px;border-radius:3px;pointer-events:none;z-index:300}.deck{position:absolute;left:3%;top:82%;width:var(--cw);height:var(--ch);border-radius:4px;background:repeating-linear-gradient(45deg,#274740 0,#274740 4px,#19342f 4px,#19342f 8px);border:3px double #d6b980;box-shadow:4px 4px 0 #b1aa98,7px 7px 0 #5e615b,8px 10px 8px #0008;display:grid;place-items:center;cursor:grab;z-index:4;color:#cdb78a}.deck:after{content:'✧';font-size:25px}.deck.empty{opacity:.3;cursor:default}.deck-label{position:absolute;left:2%;top:97%;font:11px sans-serif;color:#eeddb7}.info{min-height:52px;background:#1b2421;border-top:1px solid #4c4e40;padding:12px 18px;font:13px/1.7 sans-serif;color:#ddd2bd}.log{font:11px sans-serif;color:#a7a391}.modal-bg{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:999;padding:16px}.modal-bg.open{display:flex}.modal{width:min(600px,100%);max-height:85vh;overflow:auto;padding:24px;background:#24312b;border:1px solid #a88c60;border-radius:8px;box-shadow:0 20px 60px #0009}.modal h2{font-size:19px}.modal p{line-height:1.7}.close{float:right}.cut-piles{display:flex;gap:12px;justify-content:center;margin:20px 0}.cut-piles button{min-width:100px;min-height:80px;font-size:15px}.note{font:12px sans-serif;color:#cfc3a9}.legend{font:12px sans-serif}.spacer{flex:1}.hidden{display:none!important}@media(max-width:780px){.shell{grid-template-columns:1fr}aside{max-height:none;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}aside header{grid-column:1/-1}aside .section{margin-top:0;padding-top:8px}h1{font-size:19px}.stage-shell{min-height:62vh}.toolbar{padding:8px}.toolbar .status{flex-basis:100%}.zone-label{font-size:9px}.front .symbol{font-size:15px}.front .card-name{font-size:9px}.front .card-id{display:none}.candle{transform:scale(.7);transform-origin:top}.incense{transform:translateX(-50%) scale(.7);transform-origin:top}}@media(max-width:460px){aside{grid-template-columns:1fr}.stage-shell{min-height:58vh}.card{border-radius:2px}.front{padding:2px}.front .symbol{font-size:13px}}
+
+/* v0.2.1: square, centered cloth and stable, cloth-relative card coordinates */
+.stage-shell{min-height:800px;}
+.stage{display:flex;align-items:center;justify-content:center;padding:20px;}
+.table-surface{position:relative;flex:none;aspect-ratio:1/1;width:min(100%,740px);max-height:100%;}
+.cloth{inset:0;width:100%;height:100%;left:0;top:0;border-width:7px;}
+.altar{inset:0;}
+.candle{top:4%;}
+.candle.left{left:14%;}
+.candle.right{right:14%;}
+.incense{top:5%;}
+.table-zone{left:7%;top:11%;width:86%;height:78%;max-width:none;transform:none;}
+.deck{left:3.5%;top:83%;}
+.deck-label{left:3%;top:96%;}
+@media(max-width:780px){.stage-shell{min-height: min(96vw,740px)}.stage{padding:10px}.table-surface{width:min(100%,740px)} }
+@media(max-width:460px){.stage-shell{min-height:98vw}.stage{padding:5px}.cloth{border-width:4px}.cloth:after{inset:7px}.candle{top:5%;}.incense{top:7%;}}
+
+/* v0.2.1 — antique brass / dark forest theme, unified card/table palette */
+:root{background:#201d1a;color:#e9deca;--brass:#b69a65;--panel:#282620;--wood:#30261f}
+aside{background:#242823;border-right-color:#655743}h2{color:#dac398}.toolbar,.info{background:#242823;border-color:#625642}
+button{background:#373a32;border-color:#827357;color:#f3e5cb;line-height:1.3;white-space:nowrap;word-break:keep-all;font-size:12px;padding:10px 7px;min-width:0}
+button:hover{background:#4b4b3d}.primary{background:#78623d;border-color:#c5a46d;color:#fff9e8}
+select,input,textarea{background:#302f29;border-color:#71644c;color:#f3e8d3}
+.row.operation-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row.operation-buttons button{width:100%;font-size:11.5px;letter-spacing:-.035em;white-space:nowrap;padding-inline:3px}
+.stage-shell{background:#221c18}.stage{background:radial-gradient(ellipse at center,#604e3d 0,#30261f 74%,#1c1714 100%)}
+.back,.deck{background:repeating-linear-gradient(45deg,#583d42 0,#583d42 5px,#352a36 5px,#352a36 10px)}.back:before{color:#c9ad79;border-color:#c9ad79}
+.modal{background:#292b25;border-color:#c0a275}.shuffle-layer{position:absolute;inset:0;z-index:700;pointer-events:none;display:none;overflow:hidden;border-radius:6px}.shuffle-layer.active{display:block;background:#1a221abd}.shuffle-card{position:absolute;width:clamp(17px,7%,52px);aspect-ratio:2/3;border:2px solid #d7c19b;border-radius:4px;background:repeating-linear-gradient(45deg,#553944 0 4px,#322b38 4px 8px);box-shadow:2px 4px 8px #0007;will-change:transform}.shuffle-card:after{content:'✧';position:absolute;inset:5px;border:1px solid #c6ab77;display:grid;place-items:center;color:#dbbd85}
+.cut-lengths{display:grid;grid-template-columns:repeat(auto-fit,minmax(68px,1fr));gap:8px;margin-top:8px}.cut-lengths label{display:grid;gap:3px;font:12px sans-serif}.cut-lengths input{width:100%}.cut-piles{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}.cut-piles button.cut-stack{min-width:72px;min-height:94px;display:flex;flex-direction:column;gap:12px;justify-content:center;background:repeating-linear-gradient(45deg,#47353e 0 5px,#2d2934 5px 10px);border:3px double #d1b17a}.cut-piles button.cut-stack small{font-size:11px;color:#e6d9bc}.cut-piles button.cut-stack.picked{border-color:#ebd090;background:#716144}
+@media(max-width:460px){.row.operation-buttons button{font-size:11px}}
+
+/* v0.3.8: mobile document order — header, table, numbered settings. */
+.mobile-start{display:none}
+@media(max-width:780px){
+  .shell{display:flex;flex-direction:column;min-height:100dvh;padding:0}
+  aside,.main{display:contents}
+  aside header{order:0;display:block;padding:16px 14px 12px;background:#1d2724;border-bottom:1px solid #5d5440}
+  aside .section{display:grid;order:5;margin:0;padding:16px 14px;gap:10px;background:#1d2724;border-top:1px solid #46483d;grid-template-columns:minmax(0,1fr)}
+  aside .section:nth-of-type(1){order:5}
+  aside .section:nth-of-type(2){order:6}
+  aside .section:nth-of-type(3){order:7}
+  aside .section:nth-of-type(4){order:8}
+  .toolbar{order:1;display:flex;flex-wrap:wrap;padding:10px 12px;gap:7px;background:#1b2421}
+  .toolbar .status{flex:1 0 100%;font-size:12px}
+  .toolbar button{padding:8px 10px}
+  .mobile-start{display:block!important;flex:1 0 100%;min-height:44px;font-size:14px}
+  #newSession{display:none}
+  .stage-shell{order:2;display:block;width:100%;height:min(100vw,650px);min-height:0;flex:none}
+  .stage{padding:5px}
+  .info{order:3;min-height:48px;padding:10px 13px;font-size:12px}
+  #operations{position:static!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:16px 14px;max-height:none;overflow:visible;box-shadow:none;z-index:auto}
+  #operations h2,#operations .field,#operations>p.mini{grid-column:1/-1}
+  #operations .row{display:contents}
+  #operations button{min-height:44px;white-space:nowrap;font-size:13px;padding:9px 5px}
+  #operations .field select{width:100%;min-height:44px}
+  .front .card-name{font-size:9px}
+}
+@media(max-width:460px){
+ .stage-shell{height:100vw}
+ .cloth{border-width:4px}.cloth:after{inset:7px}
+ .candle{top:5%}.incense{top:7%}
+ #operations button{font-size:12px}
+}
+/* Mobile Safari: do not let relayout/focus anchor the page to the bottom. */
+@media(max-width:780px){html,body,.shell,aside,.main,.stage-shell{overflow-anchor:none}button{touch-action:manipulation}#operations{order:6}aside .section:nth-of-type(1){order:5}aside .section:nth-of-type(2){order:6}aside .section:nth-of-type(3){order:7}aside .section:nth-of-type(4){order:8}}
+@media (prefers-reduced-motion:reduce){.card,.card-inner{transition-duration:.01ms!important}}
+
+/* v0.3.8 — simplified legible text cards and centered backs */
+.back{display:flex!important;align-items:center!important;justify-content:center!important}
+.back:before{content:""!important;position:absolute!important;inset:7px!important;border:1px solid #c9ad79!important;display:block!important}
+.back:after{content:"✦";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(17px,3vw,29px);line-height:1;color:#d8bb83;pointer-events:none}
+.front .card-name{font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN",serif;font-weight:700;font-size:clamp(12px,1.7vw,19px);line-height:1.25;word-break:keep-all;overflow-wrap:anywhere;letter-spacing:-.045em}
+.front .symbol,.front .card-id{display:none!important}
+.recipe-step{display:grid;grid-template-columns:18px minmax(95px,2fr) minmax(55px,1fr) minmax(55px,1fr) 28px;gap:6px;align-items:center;margin:9px 0;padding:8px;border:1px solid #665841;border-radius:6px}
+.recipe-step label{font-size:11px}.recipe-step input,.recipe-step select{width:100%;min-width:0;padding:7px 3px}.recipe-step button{min-width:0;padding:7px 2px}
+@media(max-width:780px){.front .card-name{font-size:clamp(10px,2.6vw,15px)}.recipe-step{grid-template-columns:14px minmax(75px,2fr) minmax(50px,1fr) minmax(50px,1fr) 24px;gap:3px}.recipe-step label{font-size:10px}}
+
+/* v0.3.8 collapsible settings */
+aside .section > h2 {margin:0}
+aside .section > h2 .section-toggle{font-family:inherit;font-size:inherit;line-height:1.4;letter-spacing:inherit;text-align:left;color:#dac398;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;padding:5px 2px;border:0;background:transparent;white-space:normal;cursor:pointer}
+aside .section > h2 .section-toggle:hover{background:transparent;color:#ffe4ab}
+.fold-indicator{font-size:19px;color:#bda577;margin-left:12px;transition:transform .15s ease}
+aside .section.is-collapsed > :not(h2){display:none!important}
+aside .section.is-collapsed .fold-indicator{transform:rotate(-90deg)}
+@media(max-width:780px){aside .section.is-collapsed{display:grid!important;grid-template-columns:1fr!important;padding-block:10px!important}aside .section.is-collapsed h2{grid-column:1/-1}}
+
+/* v0.3.8: controls directly underneath the physical table */
+.table-shortcuts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;padding:10px 9px;background:#1b2421;border-top:1px solid #5b5240;border-bottom:1px solid #4c4e40}
+.table-shortcuts button{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:49px;padding:8px 4px;white-space:nowrap;font:13px/1.2 Georgia,'Yu Mincho',serif;background:#2f3a32;border-color:#857352;color:#f0dfbf}
+.table-shortcuts button:active{background:#655437}
+.table-shortcuts button:disabled{opacity:.42}
+.quick-symbol{font:20px/1 sans-serif;color:#ceb277}
+@media(max-width:780px){.table-shortcuts{order:3;position:static;z-index:auto;padding:9px 9px;gap:5px}.table-shortcuts button{flex-direction:column;min-height:61px;font-size:11px;gap:5px}.quick-symbol{font-size:21px}.info{order:4}}
+@media(max-width:360px){.table-shortcuts button{font-size:10px}}
+
+/* v0.3.8: legible emblem-and-rank cards, including the crossed second card */
+.front{gap:0!important;padding:3px!important;justify-content:space-evenly!important}
+.suit-icon{width:76%;height:63%;display:flex;align-items:center;justify-content:center;flex:none;min-height:0}
+.suit-icon svg{width:100%;height:100%;max-width:60px;display:block}
+.rank-value{font-family:Georgia,serif;font-weight:700;font-size:clamp(18px,2.5vw,31px);line-height:1;color:#35271f}
+.major-rank{font:700 clamp(17px,2.5vw,27px)/1 Georgia,serif;color:#56432b}
+.major-name{font:700 clamp(10px,1.35vw,16px)/1.15 Georgia,'Yu Mincho',serif;word-break:keep-all;overflow-wrap:anywhere}
+@media(max-width:780px){.rank-value{font-size:clamp(13px,4vw,24px)}.major-rank{font-size:clamp(12px,3.5vw,22px)}.major-name{font-size:clamp(8px,2.35vw,13px)}.table-shortcuts button{font-size:10px;min-height:62px;padding:6px 1px}.quick-symbol{font-size:18px}}
+@media(max-width:360px){.table-shortcuts{gap:3px;padding:7px 4px}.table-shortcuts button{font-size:9px}}
+
+/* v0.3.8: record actions adjacent to the table */
+.table-record-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:9px 12px 12px;background:#1b2421;border-bottom:1px solid #514b3a}
+.table-record-actions button{min-width:0;min-height:41px;background:#282f29;border-color:#9c8157;color:#f3e4c9;font-size:13px}
+.record-restore{display:flex;justify-content:flex-end;margin:9px 0 16px}
+.record-restore button{width:100%;max-width:300px}
+@media(max-width:780px){.table-record-actions{order:4}.info{order:5}.table-record-actions button{font-size:12px;min-height:45px}}
+
+/* v0.3.8: start is independent of collapsible group I */
+.standalone-start{padding:14px 0 2px}
+.standalone-start button{width:100%;min-height:44px;font-size:14px}
+/* v0.5.1: all spreads share the same deck anchor. Put its counter beside,
+   rather than underneath, the deck to prevent overlap at small screen sizes. */
+.table-surface .deck{left:3.5%;right:auto;top:83%}
+.table-surface .deck-label{left:calc(3.5% + var(--cw) + 12px);right:2%;top:calc(83% + var(--ch) / 2);transform:translateY(-50%);max-width:none;white-space:normal;line-height:1.4;text-align:left;pointer-events:none}
+@media(max-width:460px){.table-surface .deck-label{left:calc(3.5% + var(--cw) + 7px);font-size:10px}}
+@media(max-width:780px){
+ .standalone-start{order:5;display:block;padding:12px 14px 8px;background:#1d2724;border-top:1px solid #46483d}
+ aside .section:nth-of-type(1){order:6}
+ aside .section:nth-of-type(2){order:7}
+ aside .section:nth-of-type(3){order:8}
+ aside .section:nth-of-type(4){order:9}
+ #operations{order:7}
+}
+
+/* v0.5.1: keep the physical deck completely within the cloth's inner white rule.
+   Anchor from the lower edge; card height changes with viewport / spread. */
+.table-surface .deck{
+  left:6%; right:auto; top:auto; bottom:5.5%;
+}
+.table-surface .deck-label{
+  left:calc(6% + var(--cw) + 13px);
+  right:3%; top:auto;
+  bottom:calc(5.5% + var(--ch) / 2);
+  transform:translateY(50%);
+  max-width:none; white-space:normal;
+  line-height:1.4; text-align:left; pointer-events:none;
+}
+@media(max-width:460px){
+  .table-surface .deck{left:5.7%;bottom:5.2%;}
+  .table-surface .deck-label{
+    left:calc(5.7% + var(--cw) + 8px);
+    bottom:calc(5.2% + var(--ch) / 2);
+    font-size:10px;
+  }
+}
+
+/* v0.5.5 — RITUAL: THE DESCENT. A light enters the TABLE, not merely its cards. */
+body[data-effect-preset="ritual"] .stage.effect-finale::before{
+ content:"";position:absolute;inset:0;z-index:455;pointer-events:none;
+ background:linear-gradient(180deg,rgba(255,243,209,.68) 0%,rgba(255,225,152,.35) 23%,rgba(239,179,82,.08) 68%,transparent 100%);
+ clip-path:polygon(30% 0,70% 0,95% 93%,5% 93%);
+ filter:blur(30px);transform-origin:50% 0;
+ animation:descendBeam 4.7s ease-in-out both;
+}
+body[data-effect-preset="ritual"] .stage.effect-finale::after{
+ background:radial-gradient(ellipse 58% 49% at 50% 54%,rgba(255,246,211,.48),rgba(255,218,151,.20) 48%,transparent 85%);
+ animation:descendAtmosphere 4.7s ease-in-out both;
+}
+body[data-effect-preset="ritual"] .stage.effect-finale .cloth{
+ animation:descendCloth 4.7s ease-in-out both;
+}
+body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup{
+ animation:descendCard 4.7s ease-in-out both;
+}
+body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup .front{
+ animation:none;
+}
+body[data-effect-preset="ritual"] .stage.effect-finale .zone-label{
+ animation:descendLabel 4.7s ease-in-out both;
+}
+@keyframes descendBeam{
+ 0%,12%{opacity:0;transform:translateY(-38%) scaleX(.55)}
+ 34%{opacity:.3;transform:translateY(-9%) scaleX(.78)}
+ 53%{opacity:.9;transform:translateY(0) scaleX(1)}
+ 69%{opacity:.58;transform:translateY(3%) scaleX(1.1)}
+ 100%{opacity:0;transform:translateY(7%) scaleX(1.18)}
+}
+@keyframes descendAtmosphere{
+ 0%,15%{opacity:0}
+ 38%{opacity:.13}
+ 56%{opacity:1}
+ 73%{opacity:.62}
+ 100%{opacity:0}
+}
+@keyframes descendCloth{
+ 0%,14%{filter:brightness(.82) saturate(.9);box-shadow:0 15px 34px #0009,inset 0 0 65px #0004}
+ 40%{filter:brightness(.94) saturate(1)}
+ 57%{filter:brightness(1.3) saturate(1.12);box-shadow:0 15px 38px #0008,inset 0 0 100px #ffdf9048,0 0 38px #f3d18b33}
+ 75%{filter:brightness(1.13) saturate(1.05)}
+ 100%{filter:brightness(1);box-shadow:0 15px 34px #0009,inset 0 0 65px #0004}
+}
+@keyframes descendCard{
+ 0%,18%{filter:brightness(.88) drop-shadow(2px 6px 5px #000d)}
+ 43%{filter:brightness(1) drop-shadow(0 0 8px #e9c99188)}
+ 58%{filter:brightness(1.27) drop-shadow(0 0 13px #fff5cfed) drop-shadow(0 0 24px #efc776a8)}
+ 78%{filter:brightness(1.13) drop-shadow(0 0 12px #ead39e96)}
+ 100%{filter:brightness(1) drop-shadow(1px 4px 3px #000b) drop-shadow(0 0 9px #e7c88b88)}
+}
+@keyframes descendLabel{0%,18%{opacity:.66}55%{opacity:1}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+ body[data-effect-preset="ritual"] .stage.effect-finale::before,
+ body[data-effect-preset="ritual"] .stage.effect-finale::after{animation:none!important;content:none!important}
+ body[data-effect-preset="ritual"] .stage.effect-finale .cloth,
+ body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup,
+ body[data-effect-preset="ritual"] .stage.effect-finale .zone-label{animation:none!important}
+}
+
+</style><style>
+.snapshot-compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.snapshot-board{position:relative;width:100%;aspect-ratio:1;background:repeating-linear-gradient(90deg,#263e34,#263e34 8px,#294237 9px);border:2px solid #8c795b;border-radius:6px;overflow:hidden}.snapshot-card{position:absolute;width:9%;height:15%;min-width:12px;background:#e8dbbb;border:1px solid #705e40;border-radius:2px;display:flex;align-items:center;justify-content:center;color:#392e23;font-size:clamp(7px,1vw,11px);text-align:center;line-height:1.05;overflow:hidden}.snapshot-card span{display:block;word-break:break-all}.snapshot-details{margin:8px 0 16px;max-height:none;overflow:visible;padding-right:16px}.snapshot-row{font-size:12px;padding:5px 0;border-bottom:1px solid #786c5b;display:flex;justify-content:space-between;gap:16px;align-items:baseline;padding-right:8px}.snapshot-row span{flex:0 0 auto;text-align:right}.history-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #786c5b;padding:8px 0}.history-row>div{flex:1;min-width:0}.history-row button{flex:none}.modal{max-width:min(960px,96vw)!important;max-height:85dvh;overflow:auto}@media(max-width:520px){.snapshot-compare{grid-template-columns:1fr}.snapshot-board{max-width:340px;margin:auto}.snapshot-card{font-size:9px}.history-row{flex-wrap:wrap}.history-row>div{flex-basis:100%}}
+
+/* v0.3.8 result viewer: single by default, roomy comparison on demand */
+.modal-bg.records-active{padding:10px}
+.modal-bg.records-active .modal{width:min(1220px,98vw);max-width:none!important;max-height:94dvh;padding:clamp(12px,2vw,26px);resize:horizontal;min-width:min(420px,96vw);overflow:auto}
+.records-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin:12px 0 16px}
+.records-toolbar .choice{font-size:14px}
+.snapshot-compare{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.snapshot-compare.is-comparing{grid-template-columns:repeat(2,minmax(0,1fr))}
+.snapshot-compare:not(.is-comparing) .record-b{display:none}
+.snapshot-compare:not(.is-comparing) .snapshot-board{max-width:570px;margin:0 auto}
+.snapshot-compare:not(.is-comparing) .snapshot-details{max-width:570px;margin:12px auto 20px}
+.snapshot-compare .snapshot-card{font-size:clamp(8px,1.1vw,15px)}
+.snapshot-compare:not(.is-comparing) .snapshot-card{font-size:clamp(10px,1.4vw,16px)}
+@media(max-width:760px){
+ .modal-bg.records-active .modal{width:100%;min-width:0;resize:none}
+ .snapshot-compare.is-comparing{grid-template-columns:repeat(2,minmax(0,1fr));min-width:670px}
+ .record-viewport{overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:8px}
+ .snapshot-compare .snapshot-board{max-width:none}
+ .snapshot-compare .snapshot-card{font-size:10px}
+}
+
+/* v0.3.8: faithful archival preview and full listing */
+.snapshot-details{max-height:none!important;overflow:visible!important;padding-right:10px!important}
+.snapshot-row{padding-right:12px;min-height:29px}
+.snapshot-row span{padding-right:10px;white-space:nowrap}
+.snapshot-board{isolation:isolate;background:var(--record-cloth,#171719)!important;box-shadow:inset 0 0 18px #0005}
+.snapshot-board::after{content:"";position:absolute;inset:2%;border:1px solid #d8c8a556;pointer-events:none}
+.snapshot-card{width:9%!important;height:13.68%!important;min-width:0!important;overflow:visible!important;box-shadow:1px 2px 2px #0007;font-size:clamp(7px,1vw,13px)}
+.snapshot-card span{max-width:100%;max-height:100%;overflow:hidden;word-break:break-all;line-height:1.1}
+.record-altar{position:absolute;inset:0;pointer-events:none}
+.record-candle{position:absolute;top:5%;height:12%;width:3%;background:linear-gradient(90deg,#8b7856,#f8e8bc,#ab9164);border-radius:3px;box-shadow:0 0 14px #ffdc8440}
+.record-candle::before{content:"";position:absolute;bottom:100%;left:34%;width:35%;height:29%;background:#e9a739;border-radius:70% 10% 70% 30%;transform:rotate(20deg)}
+.record-candle.left{left:13%}.record-candle.right{right:13%}
+.record-incense{position:absolute;top:9%;left:47%;width:6%;height:3%;border-radius:4px 4px 50% 50%;background:#a78953}
+.snapshot-compare.is-comparing .snapshot-board{width:100%}
+@media(max-width:520px){.snapshot-row{font-size:12px}.snapshot-row span{white-space:normal;overflow-wrap:anywhere}.snapshot-card{font-size:9px}}
+
+/* v0.5.1: independent visual environment and movement presets */
+body{--ui-bg:#151b18;--ui-aside:#202821;--ui-tool:#20271e;--ui-text:#eee0c8;--ui-accent:#bda477;--table-edge:#2b211b;--table-inner:#59483a;--card-back1:#553944;--card-back2:#322b38}
+body[data-visual-theme="gothic"]{--ui-bg:#1b111a;--ui-aside:#291d27;--ui-tool:#281b24;--ui-text:#f0dfe1;--ui-accent:#c09a79;--table-edge:#28131d;--table-inner:#593341;--card-back1:#632739;--card-back2:#321b31}
+body[data-visual-theme="minimal"]{--ui-bg:#d6d2cb;--ui-aside:#e7e1d6;--ui-tool:#e2dbd0;--ui-text:#3c3934;--ui-accent:#746b60;--table-edge:#aaa396;--table-inner:#d1cabd;--card-back1:#7c8583;--card-back2:#626d6b}
+body[data-visual-theme="lovely"]{--ui-bg:#f0dfe9;--ui-aside:#f8e8f0;--ui-tool:#f1dfeb;--ui-text:#62455d;--ui-accent:#ac759d;--table-edge:#ae839c;--table-inner:#dbb9d2;--card-back1:#bb83ab;--card-back2:#9276ae}
+body[data-visual-theme="psychic"]{--ui-bg:#151021;--ui-aside:#251835;--ui-tool:#27193b;--ui-text:#e6d7f6;--ui-accent:#b38dd9;--table-edge:#170e30;--table-inner:#4b2879;--card-back1:#59258a;--card-back2:#251046}
+body[data-visual-theme="astral"]{--ui-bg:#101b30;--ui-aside:#1b2941;--ui-tool:#19273e;--ui-text:#e1e6f1;--ui-accent:#bdad84;--table-edge:#0a1632;--table-inner:#29436b;--card-back1:#213c70;--card-back2:#101e45}
+body{background:var(--ui-bg)!important;color:var(--ui-text)!important}
+aside{background:var(--ui-aside)!important}
+.toolbar,.info,.table-shortcuts,.table-record-actions{background:var(--ui-tool)!important}
+.section-toggle,h2{color:var(--ui-accent)}
+.stage-shell{background:var(--table-edge)!important}
+.stage{background:radial-gradient(ellipse at center,var(--table-inner),var(--table-edge))!important}
+.back,.deck,.shuffle-card{background:repeating-linear-gradient(45deg,var(--card-back1) 0,var(--card-back1) 4px,var(--card-back2) 4px,var(--card-back2) 8px)!important}
+body[data-visual-theme="minimal"] aside,body[data-visual-theme="lovely"] aside{color:var(--ui-text)}
+body[data-visual-theme="minimal"] aside select,body[data-visual-theme="minimal"] aside input,body[data-visual-theme="minimal"] aside button,body[data-visual-theme="lovely"] aside select,body[data-visual-theme="lovely"] aside input,body[data-visual-theme="lovely"] aside button{background:var(--ui-tool);color:var(--ui-text);border-color:var(--ui-accent)}
+body[data-visual-theme="minimal"] .mini,body[data-visual-theme="lovely"] .mini{color:var(--ui-text)}
+body[data-effect-preset="silent"] .card,body[data-effect-preset="silent"] .card-inner{transition-duration:.20s!important}
+body[data-effect-preset="ritual"] .card-inner{transition-duration:.7s}
+body[data-effect-preset="mystic"] .card.faceup{filter:drop-shadow(0 0 8px #d3c28b77) drop-shadow(2px 5px 3px #000a)}
+body[data-effect-preset="psychic"] .card.faceup{filter:drop-shadow(0 0 12px #ab62eeaa) drop-shadow(0 0 4px #a3ceff80);animation:psychic-glow 2s ease-in-out infinite alternate}
+@keyframes psychic-glow{from{filter:drop-shadow(0 0 5px #a467e688) drop-shadow(2px 5px 3px #0009)}to{filter:drop-shadow(0 0 16px #b67aebcc) drop-shadow(2px 5px 3px #0009)}}
+@media(prefers-reduced-motion:reduce){body[data-effect-preset="psychic"] .card.faceup{animation:none!important}}
+
+/* v0.5.1: responsive labels and readable light themes */
+.zone-label.tower-label{transform:translate(-100%,-50%);text-align:right;max-width:calc(23% - 4px);white-space:normal;font-size:10px;line-height:1.25;z-index:300}
+@media(max-width:780px){.zone-label.tower-label{font-size:8px;padding:2px 3px}}
+body[data-visual-theme="minimal"],body[data-visual-theme="lovely"]{--ui-muted:#5b514c;--ui-border:#a69a8d}
+body[data-visual-theme="minimal"] .toolbar,body[data-visual-theme="lovely"] .toolbar,
+body[data-visual-theme="minimal"] .info,body[data-visual-theme="lovely"] .info,
+body[data-visual-theme="minimal"] .table-shortcuts,body[data-visual-theme="lovely"] .table-shortcuts,
+body[data-visual-theme="minimal"] .table-record-actions,body[data-visual-theme="lovely"] .table-record-actions{color:var(--ui-text);border-color:var(--ui-accent)}
+body[data-visual-theme="minimal"] button,body[data-visual-theme="lovely"] button{color:var(--ui-text);background:var(--ui-tool);border-color:var(--ui-accent)}
+body[data-visual-theme="minimal"] button.primary,body[data-visual-theme="lovely"] button.primary{background:var(--ui-accent);color:#fff;border-color:var(--ui-accent)}
+body[data-visual-theme="minimal"] .status,body[data-visual-theme="lovely"] .status,
+body[data-visual-theme="minimal"] .field,body[data-visual-theme="lovely"] .field,
+body[data-visual-theme="minimal"] .choice,body[data-visual-theme="lovely"] .choice,
+body[data-visual-theme="minimal"] .subtle,body[data-visual-theme="lovely"] .subtle,
+body[data-visual-theme="minimal"] .version,body[data-visual-theme="lovely"] .version,
+body[data-visual-theme="minimal"] header small,body[data-visual-theme="lovely"] header small,
+body[data-visual-theme="minimal"] .section-toggle,body[data-visual-theme="lovely"] .section-toggle,
+body[data-visual-theme="minimal"] h2,body[data-visual-theme="lovely"] h2{color:var(--ui-text)!important}
+body[data-visual-theme="minimal"] .modal,body[data-visual-theme="lovely"] .modal{background:var(--ui-aside);color:var(--ui-text)}
+body[data-visual-theme="minimal"] .modal input,body[data-visual-theme="lovely"] .modal input,
+body[data-visual-theme="minimal"] .modal select,body[data-visual-theme="lovely"] .modal select{background:var(--ui-tool);color:var(--ui-text)}
+body[data-visual-theme="minimal"] .note,body[data-visual-theme="lovely"] .note{color:var(--ui-text)}
+body[data-visual-theme="minimal"] .table-shortcuts button,body[data-visual-theme="lovely"] .table-shortcuts button{background:var(--ui-aside);color:var(--ui-text)}
+.effect-demo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.effect-demo-row button{white-space:nowrap;flex:none}
+.effect-demo-row .mini{flex:1;min-width:130px}
+.stage.effect-demo::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:450;animation:effectPulse .95s ease-out both}
+body[data-effect-preset="silent"] .stage.effect-demo::after{animation:none;content:none}
+body[data-effect-preset="ritual"] .stage.effect-demo::after{background:radial-gradient(ellipse at 50% 55%,#f1d8a53b,transparent 51%)}
+body[data-effect-preset="mystic"] .stage.effect-demo::after{background:radial-gradient(circle at 50% 50%,#b6d7ef75 0,#d9bef45a 19%,transparent 62%);animation-duration:1.5s}
+body[data-effect-preset="psychic"] .stage.effect-demo::after{background:radial-gradient(circle at 50% 50%,#eacfff99 0,#8a37eb80 22%,#4267ff55 37%,transparent 70%);animation:psychicPulse 1.65s ease-in-out both}
+@keyframes effectPulse{0%{opacity:0;transform:scale(.86)}42%{opacity:1}100%{opacity:0;transform:scale(1.05)}}
+@keyframes psychicPulse{0%{opacity:0;transform:scale(.55)}30%{opacity:1;transform:scale(1.06)}58%{opacity:.37;transform:scale(.96)}73%{opacity:.9;transform:scale(1.04)}100%{opacity:0;transform:scale(1.15)}}
+body[data-effect-preset="silent"] .card.faceup{filter:drop-shadow(2px 4px 2px #0008)!important;animation:none!important}
+body[data-effect-preset="ritual"] .card.faceup{filter:drop-shadow(1px 4px 3px #000b) drop-shadow(0 0 3px #d5b77b47)}
+body[data-effect-preset="mystic"] .card.faceup{filter:drop-shadow(0 0 7px #b1e0ffb0) drop-shadow(0 0 11px #d4bbf688)}
+@media(prefers-reduced-motion:reduce){.stage.effect-demo::after{animation:none!important;content:none!important}}
+.stage.effect-finale::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:460}
+body[data-effect-preset="silent"] .stage.effect-finale::after{content:none}
+body[data-effect-preset="ritual"] .stage.effect-finale::after{background:linear-gradient(180deg,#ffe8ba14,#f3d18d08 50%,transparent);animation:ritualAura 2.2s ease-in-out both}
+body[data-effect-preset="mystic"] .stage.effect-finale::after{background:radial-gradient(circle at 50% 50%,#d9f3ffbb 0,#bdd6ff88 18%,#d4b6ff5d 38%,transparent 72%);animation:mysticFinale 2.45s ease-in-out both}
+body[data-effect-preset="psychic"] .stage.effect-finale::after{background:radial-gradient(circle at 50% 50%,#f0d6ffbb 0,#ad67ff95 18%,#4f62ff70 42%,transparent 74%);animation:psychicFinale 2.8s ease-in-out both}
+.stage.spread-complete-ritual{filter:brightness(1.04) saturate(1.03)}
+.stage.spread-complete-mystic{filter:brightness(1.05) saturate(1.08)}
+.stage.spread-complete-psychic{filter:brightness(1.08) saturate(1.18)}
+body[data-effect-preset="ritual"] .card.faceup{filter:drop-shadow(1px 4px 3px #000b) drop-shadow(0 0 9px #e7c88b88)}
+body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup{animation:ritualCardFlash 3.1s ease-in-out both}
+body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup .front{animation:ritualFrontFlash 3.1s ease-in-out both}
+body[data-effect-preset="mystic"] .card.faceup{filter:drop-shadow(0 0 8px #b1e0ffcf) drop-shadow(0 0 14px #d4bbf6b0)}
+@keyframes ritualAura{0%{opacity:0}20%{opacity:.18}44%{opacity:.28}72%{opacity:.1}100%{opacity:0}}
+@keyframes ritualCardFlash{0%{filter:drop-shadow(2px 5px 3px #0009) drop-shadow(0 0 8px #e6bd6d88)}12%{filter:drop-shadow(0 0 10px #ffe6a9aa) drop-shadow(0 0 19px #eab75baa)}25%{filter:drop-shadow(0 0 15px #fffbe9ff) drop-shadow(0 0 32px #ffda74f5) drop-shadow(0 0 48px #d99737cb)}39%{filter:drop-shadow(2px 5px 3px #0009) drop-shadow(0 0 7px #cfa35e88)}52%{filter:drop-shadow(0 0 11px #fff0b5d0) drop-shadow(0 0 22px #e8b44fb0)}66%{filter:drop-shadow(0 0 20px #fffef0ff) drop-shadow(0 0 40px #ffd36cf5) drop-shadow(0 0 58px #e6a449dc)}80%{filter:drop-shadow(0 0 12px #f3d594bc) drop-shadow(0 0 23px #deb567aa)}100%{filter:drop-shadow(2px 5px 3px #0009) drop-shadow(0 0 10px #e7c88b99)}}
+@keyframes ritualFrontFlash{0%{box-shadow:0 0 0 transparent;background:#eee1c3}25%{box-shadow:0 0 22px #fff3c9ee,0 0 34px #ecc165bb;background:#fff4d8}39%{box-shadow:0 0 5px #d2ac5a55;background:#eee1c3}66%{box-shadow:0 0 28px #fff6d9ff,0 0 44px #f1c76adc;background:#fff8e8}85%{box-shadow:0 0 12px #f5d89388;background:#f5e7c9}100%{box-shadow:0 0 0 transparent;background:#eee1c3}}
+@keyframes mysticFinale{0%{opacity:0;transform:scale(.82)}28%{opacity:.86;transform:scale(1.01)}62%{opacity:.52;transform:scale(1.04)}100%{opacity:0;transform:scale(1.1)}}
+@keyframes psychicFinale{0%{opacity:0;transform:scale(.62)}18%{opacity:1;transform:scale(1.02)}40%{opacity:.38;transform:scale(.98)}56%{opacity:.97;transform:scale(1.05)}76%{opacity:.28;transform:scale(1.01)}100%{opacity:0;transform:scale(1.16)}}
+@media(prefers-reduced-motion:reduce){.stage.effect-finale::after{animation:none!important;content:none!important}.stage.spread-complete-ritual,.stage.spread-complete-mystic,.stage.spread-complete-psychic{filter:none!important}}
+
+</style><style>
+/* v0.5.7 — final authoritative RITUAL rules, after all legacy style blocks.
+   MYSTIC animation, gold palette. No old descent/heartbeat overlay. */
+body[data-effect-preset="ritual"] .stage.effect-finale::before,
+body[data-effect-preset="ritual"] .stage.effect-demo::before {content:none!important;animation:none!important}
+body[data-effect-preset="ritual"] .stage.effect-finale::after,
+body[data-effect-preset="ritual"] .stage.effect-demo::after {
+ content:'';position:absolute;inset:0;pointer-events:none;z-index:460;
+ background:radial-gradient(circle at 50% 50%,#fff4d7bb 0,#ffd99b88 18%,#e3a64c5d 38%,transparent 72%);
+ animation:mysticFinale 2.45s ease-in-out both;
+}
+body[data-effect-preset="ritual"] .card.faceup {
+ filter:drop-shadow(0 0 8px #ffdf9acf) drop-shadow(0 0 14px #dfb66cb0);
+}
+body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup,
+body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup .front,
+body[data-effect-preset="ritual"] .stage.effect-finale .cloth,
+body[data-effect-preset="ritual"] .stage.effect-finale .zone-label {animation:none!important}
+.stage.spread-complete-ritual {filter:brightness(1.05) saturate(1.08)}
+@media(prefers-reduced-motion:reduce){body[data-effect-preset="ritual"] .stage.effect-finale::after,body[data-effect-preset="ritual"] .stage.effect-demo::after{content:none!important;animation:none!important}}
+
+/* v0.5.8 — Current results on the table, without resizing the stage */
+.results-toggle-bar{background:var(--ui-tool,#1b2421);padding:8px 12px 3px;border-top:1px solid var(--ui-border,#514b3a)}
+.results-toggle-bar button{width:100%;min-height:36px;background:var(--ui-aside,#24312b);color:var(--ui-text,#f3e4c9);border:1px solid var(--ui-accent,#9c8157);letter-spacing:.10em}
+.live-results{background:var(--ui-tool,#1b2421);color:var(--ui-text,#e8ddc5);padding:14px 18px 16px;border-bottom:1px solid var(--ui-border,#514b3a)}
+.live-results[hidden]{display:none!important}
+.live-results-title{font-size:14px;letter-spacing:.19em;color:var(--ui-text,#e8ddc5);margin-bottom:8px;display:flex;gap:15px;align-items:baseline}
+.live-results-title span{font:11px sans-serif;letter-spacing:0;opacity:.8}
+.live-result-row{display:grid;grid-template-columns:minmax(110px,1fr) minmax(130px,1.2fr);gap:14px;align-items:baseline;padding:7px 4px;border-bottom:1px solid var(--ui-border,#655c4a);font:13px/1.5 sans-serif}
+.live-result-row:last-child{border-bottom:0}
+.live-result-pos{opacity:.86}.live-result-card{text-align:right;font-weight:600}.live-result-card.unrevealed{font-weight:normal;opacity:.66}
+@media(max-width:780px){.results-toggle-bar{order:4}.live-results{order:5}.table-record-actions{order:6}.info{order:7}}
+@media(max-width:430px){.live-result-row{grid-template-columns:minmax(90px,1fr) minmax(110px,1.3fr);gap:7px;font-size:12px}}
+
+/* v0.6.0 — camera/notch safe area and mobile-visible card glow */
+@media (max-width:780px){
+  aside header{
+    padding-top:calc(16px + max(26px, env(safe-area-inset-top, 0px))) !important;
+  }
+  /* On narrow screens, preserve a clear luminous edge independent of CSS filter rendering. */
+  body[data-effect-preset="ritual"] .card.faceup{
+    box-shadow:0 0 8px 2px rgba(255,220,146,.85),
+               0 0 19px 5px rgba(222,165,72,.52);
+  }
+  body[data-effect-preset="mystic"] .card.faceup{
+    box-shadow:0 0 8px 2px rgba(188,226,255,.86),
+               0 0 20px 5px rgba(178,172,255,.52);
+  }
+  body[data-effect-preset="psychic"] .card.faceup{
+    box-shadow:0 0 8px 2px rgba(190,135,255,.82),
+               0 0 18px 5px rgba(127,65,226,.45);
+  }
+  body[data-effect-preset="silent"] .card.faceup{box-shadow:none}
+}
+/* Honor motion-reduction while keeping the static visual treatment. */
+@media (prefers-reduced-motion:reduce){
+  body[data-effect-preset="ritual"] .card.faceup,
+  body[data-effect-preset="mystic"] .card.faceup{animation:none!important}
+}
+
+/* v0.6.0 mobile readability and stable interactions */
+@media(max-width:780px){
+  .stage-shell{min-height:min(108vw,800px)}
+  .zone-label.mobile-num-label{font-size:10px;line-height:1;padding:2px 4px;transform:translateX(-50%);background:#17241fdb;border:1px solid #d2b98670;min-width:16px;text-align:center}
+  body[data-effect-preset="ritual"] .card.faceup,
+  body[data-effect-preset="mystic"] .card.faceup,
+  body[data-effect-preset="psychic"] .card.faceup{
+    box-shadow:1px 3px 5px #0009!important;
+    filter:drop-shadow(1px 3px 3px #0008)!important;
+  }
+  body[data-effect-preset="psychic"] .card.faceup{animation:none!important}
+  /* Keep the finale glow but avoid the constant halo on small cards. */
+  body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup,
+  body[data-effect-preset="mystic"] .stage.effect-finale .card.faceup,
+  body[data-effect-preset="psychic"] .stage.effect-finale .card.faceup{filter:drop-shadow(0 0 9px #dfd5ffb0)!important}
+  .stage,.stage-shell,.table-zone,.live-results{overflow-anchor:none}
+}
+
+/* v0.6.1: keep the document's scroll anchor stable during card interactions */
+@media(max-width:780px){
+ html,body{overflow-anchor:none}
+ .table-zone .card{touch-action:none}
+ .stage-shell{contain:layout style}
+}
+</style></head><body><div class="shell"><aside><header><h1>TABULA SORTIUM</h1><div class="version">v0.6.1 · THE VIRTUAL DIVINATION TABLE</div><p class="mini">占術の設計・実験・実行のための仮想卓</p></header><div class="standalone-start"><button type="button" class="primary" id="newSessionStandalone">新しい占いを始める</button></div><section class="section stack"><h2><button type="button" class="section-toggle" aria-expanded="true"><span>Ⅰ. 使用するカード</span><span class="fold-indicator" aria-hidden="true">▾</span></button></h2><label class="field">カード群<select id="pool"><option value="all">タロット全78枚</option><option value="major">大アルカナ22枚</option><option value="minor">小アルカナ56枚</option><option value="court">コートカード16枚</option><option value="cups">杯 14枚</option><option value="swords">剣 14枚</option><option value="wands">杖 14枚</option><option value="pentacles">金貨 14枚</option><option value="custom">任意に選択…</option></select></label><label class="field">展開法<select id="spread"><option value="one">1枚引き</option><option value="three">3枚引き</option><option value="celtic">ケルト十字（10枚）</option><option value="free">フリースプレッド（自由配置）</option></select></label><label class="choice"><input type="checkbox" id="reversals" checked>正逆位置を使用（ランダム）</label></section><section class="section stack" id="operations"><h2><button type="button" class="section-toggle" aria-expanded="true"><span>Ⅱ. カード操作</span><span class="fold-indicator" aria-hidden="true">▾</span></button></h2><label class="field">シャッフル手順<select id="shuffleRecipe"></select></label><div class="row"><button type="button" id="editRecipe">手順を編集・登録</button><button type="button" id="deleteRecipe">登録手順を削除</button></div><label class="field">単独シャッフル方式<select id="shuffleMethod"><option value="hindu">ヒンズー</option><option value="overhand">オーバーハンド</option><option value="riffle">リフル</option><option value="pile">パイル（山分け）</option></select></label><div class="row operation-buttons"><button type="button" id="shuffle">自動シャッフル</button><button type="button" id="manualShuffle">手動で混ぜる</button></div><div class="row"><button type="button" id="cut">カット</button><button type="button" id="deal">ディール</button></div><div class="row"><button type="button" id="draw">1枚引く</button><button type="button" id="revealAll">すべて開く</button></div><div class="row"><button type="button" id="faceDown">すべて伏せる</button><button type="button" id="resetLayout">ディールを戻す</button></div><p class="mini">山札をドラッグして手動で配札。カードをクリックして開閉、ドラッグで移動。自由配置では好きな位置に置けます。</p></section><section class="section stack"><h2><button type="button" class="section-toggle" aria-expanded="true"><span>Ⅲ. タロットクロス</span><span class="fold-indicator" aria-hidden="true">▾</span></button></h2><label class="field">ビジュアルテーマ<select id="visualTheme"><option value="classic">CLASSIC RITUAL — 古典儀式</option><option value="gothic">GOTHIC ORACLE — ゴシック</option><option value="minimal">MODERN MINIMAL — モダン</option><option value="lovely">LOVELY ROOM — ラブリー</option><option value="psychic">PSYCHIC VISION — 霊感</option><option value="astral">ASTRAL NIGHT — 天球の夜</option></select></label><label class="field">演出プリセット<select id="effectPreset"><option value="silent">SILENT — 静謐</option><option value="ritual">RITUAL — 儀式</option><option value="mystic">MYSTIC — 神秘</option><option value="psychic">PSYCHIC — 霊感</option></select></label><div class="effect-demo-row"><button type="button" id="previewEffect">演出を試す</button><span class="mini" id="effectDescription" aria-live="polite">カードを開く際の演出を確認できます。</span></div><p class="mini">テーマと演出は独立して選択できます。クロスの12色もそのまま変更できます。</p><div class="swatches" id="swatches"></div><div id="clothName" class="mini">ブラック</div><label class="choice"><input type="checkbox" id="altarToggle">キャンドル・香炉を表示</label><label class="choice"><input type="checkbox" id="labelsToggle" checked>ポジション名称を表示</label><label class="choice"><input type="checkbox" id="soundToggle">操作音を使用</label></section><section class="section stack"><h2><button type="button" class="section-toggle" aria-expanded="true"><span>Ⅳ. 保存・管理</span><span class="fold-indicator" aria-hidden="true">▾</span></button></h2><button type="button" class="primary" id="snapshotSave">現在の結果を保存</button><button type="button" id="snapshotAgain">結果を保存してもう一度</button><button type="button" id="snapshotList">記録一覧・比較</button><button type="button" id="save">作業状態を保存</button><button type="button" id="restore">作業状態を復元</button><button type="button" id="resetSettings">設定を初期化</button><button type="button" id="resetEverything">すべて初期化</button><button type="button" id="help">操作方法・仕様</button><p class="mini">データはこのブラウザー内に保存します。結果の記録は自動保存とは別に保持します。ブラウザーのデータ消去では失われるため、外部バックアップは今後追加予定です。</p></section></aside><main class="main"><div class="toolbar"><span class="status" id="status">開始する占いを選んでください。</span><button type="button" id="zoomOut" title="縮小">−</button><button type="button" id="zoomReset">表示リセット</button><button type="button" id="zoomIn" title="拡大">＋</button></div><div class="stage-shell"><div class="stage" id="stage"><div class="table-surface" id="surface"><div class="cloth" id="cloth"></div><div class="altar" id="altar"><div class="candle left"></div><div class="candle right"></div><div class="incense"></div></div><div class="table-zone" id="zone"></div><div class="shuffle-layer" id="shuffleLayer" aria-hidden="true"></div><div class="deck" id="deck" title="ドラッグで配札、クリックで1枚引く"></div><div class="deck-label" id="deckCount">山札 78枚</div></div></div></div><nav class="table-shortcuts" aria-label="卓上の基本操作">
+<button type="button" id="quickWash" title="ウォッシュを1回実行"><span class="quick-symbol">〰</span><span>ウォッシュ</span></button>
+ <button type="button" id="quickShuffle" title="選択中のシャッフル手順を実行"><span class="quick-symbol">⤨</span><span>シャッフル</span></button>
+<button type="button" id="quickCut" title="山札を分割して積み直す"><span class="quick-symbol">▤</span><span>カット</span></button>
+<button type="button" id="quickDeal" title="スプレッドへディール"><span class="quick-symbol">▧</span><span>ディール</span></button>
+<button type="button" id="quickOpen" title="配札したカードをすべて開く"><span class="quick-symbol">◉</span><span>オープン</span></button>
+</nav><div class="results-toggle-bar"><button type="button" id="toggleResults" aria-expanded="false" aria-controls="liveResults">RESULTSを表示 ▾</button></div><section class="live-results" id="liveResults" hidden aria-label="現在のカード結果"><div class="live-results-title">RESULTS <span id="liveResultsCount"></span></div><div id="liveResultsRows"></div></section><div class="table-record-actions"><button type="button" id="quickSnapshotSave">結果を保存</button><button type="button" id="quickSnapshotList">記録一覧・比較</button></div><div class="info"><div id="infoText">カードを選ぶと、その位置の意味をここに表示します。</div><div class="log" id="log"></div></div></main></div><div class="modal-bg" id="modalBg"><div class="modal"><button type="button" class="close" id="modalClose">×</button><div id="modalContent"></div></div></div>
+<script>
+(()=>{'use strict';const $=id=>document.getElementById(id);const majors=['愚者','魔術師','女教皇','女帝','皇帝','教皇','恋人','戦車','力','隠者','運命の輪','正義','吊るされた男','死神','節制','悪魔','塔','星','月','太陽','審判','世界'];const suitDefs=[['wands','杖','♧'],['cups','杯','♜'],['swords','剣','⚔'],['pentacles','金貨','✺']];const ranks=['A','2','3','4','5','6','7','8','9','10','ペイジ','ナイト','クイーン','キング'];const cards=[...majors.map((name,i)=>({id:`major_${String(i).padStart(2,'0')}`,name,group:'major',suit:null,symbol:'✦',number:i})),...suitDefs.flatMap(([suit,name,symbol])=>ranks.map((r,i)=>({id:`${suit}_${String(i+1).padStart(2,'0')}`,name:`${name}の${r}`,group:i>9?'court':'minor',suit,symbol,number:i+1})))];const presets={one:[{x:50,y:48,angle:0,name:'問いへの答え',detail:'現在の問いに対応する1枚。'}],three:[{x:25,y:48,angle:0,name:'過去',detail:'過去からの影響。'},{x:50,y:48,angle:0,name:'現在',detail:'現在の状況。'},{x:75,y:48,angle:0,name:'未来',detail:'今後の可能性。'}],celtic:[{x:43,y:50,angle:0,name:'現在',detail:'問題の中心にある状況。'},{x:43,y:50,angle:90,name:'交差する影響',detail:'障害や交差する影響。'},{x:43,y:18,angle:0,name:'顕在意識',detail:'意識的に認識している事柄。'},{x:43,y:82,angle:0,name:'根底',detail:'潜在的な要因、基盤。'},{x:19,y:50,angle:0,name:'過去',detail:'過去の作用。'},{x:67,y:50,angle:0,name:'近い未来',detail:'近い未来の展開。'},{x:88,y:83,angle:0,name:'本人',detail:'相談者の姿勢。'},{x:88,y:62,angle:0,name:'環境',detail:'周囲の状況と影響。'},{x:88,y:41,angle:0,name:'希望と恐れ',detail:'期待や不安。'},{x:88,y:20,angle:0,name:'結末',detail:'状況の帰結。'}],free:[]};const colors=[['ブラック','#171719'],['ホワイト','#f1ede4'],['ブライトレッド','#d51f2a'],['ダークレッド','#751e2a'],['グリーン','#237044'],['イエロー','#e8c638'],['ダークブルー','#193a72'],['ライトブルー','#83bfe3'],['パープル','#68358b'],['ラベンダー','#b3a0d8'],['ゴールド','#c6a253'],['シルバー','#b7bcc3']];const KEY='tabula_sortium_v01';let settings={cutCount:3,shuffleMethod:'hindu',pool:'all',spread:'three',color:0,altar:false,labels:true,sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual'};let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false};let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'hindu',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;}function applyShuffleMethod(a,method,manual){if(method==='wash')return randomize(a);if(method==='overhand'||method==='hindu')return overhandSequence(a,manual);if(method==='riffle')return riffleSequence(a,manual);return pileSequence(a)}function recipeEditor(){const recipe=selectedRecipe();let steps=recipe.steps.map(x=>({...x}));let h='<h2>シャッフル手順の登録</h2><p class="note">操作順に方式と回数を指定します。ここでの「回数」は山札全体を処理する巡回数です。取り分け7回×3巡などの指定は今後対応予定です。長い手順でもアニメーションは各工程を代表表示します。</p><label class="field">名前<input id="recipeName" maxlength="70" value="'+escapeHTML(recipe.id==='single'?'新しい手順':recipe.name)+'"></label><div id="recipeSteps"></div><div class="row"><button id="addRecipeStep" type="button">工程を追加</button><button id="saveRecipe" class="primary" type="button">名前を付けて保存</button></div>';modal(h);function draw(){const root=$('recipeSteps');root.innerHTML=steps.map((st,i)=>'<div class="recipe-step"><b>'+(i+1)+'.</b><select class="recipe-method" data-i="'+i+'">'+Object.entries(methods).map(([v,n])=>'<option value="'+v+'" '+(st.method===v?'selected':'')+'>'+n+'</option>').join('')+'</select><label>回数<input type="number" class="recipe-reps" data-i="'+i+'" min="1" max="100" value="'+st.reps+'"></label><label>組数<input type="number" class="recipe-groups" data-i="'+i+'" min="1" max="30" value="'+st.groups+'"></label><button type="button" class="recipe-remove" data-i="'+i+'">×</button></div>').join('');root.querySelectorAll('.recipe-remove').forEach(b=>b.onclick=()=>{if(steps.length<=1)return;steps.splice(+b.dataset.i,1);draw()});root.querySelectorAll('.recipe-method').forEach(el=>el.onchange=()=>steps[+el.dataset.i].method=el.value);root.querySelectorAll('.recipe-reps').forEach(el=>el.onchange=()=>steps[+el.dataset.i].reps=Math.min(100,Math.max(1,Number(el.value)||1)));root.querySelectorAll('.recipe-groups').forEach(el=>el.onchange=()=>steps[+el.dataset.i].groups=Math.min(30,Math.max(1,Number(el.value)||1)))}$('addRecipeStep').onclick=()=>{steps.push({method:'overhand',reps:1,groups:1});draw()};$('saveRecipe').onclick=()=>{document.querySelectorAll('.recipe-reps').forEach(el=>steps[+el.dataset.i].reps=Math.min(100,Math.max(1,Number(el.value)||1)));document.querySelectorAll('.recipe-groups').forEach(el=>steps[+el.dataset.i].groups=Math.min(30,Math.max(1,Number(el.value)||1)));let name=$('recipeName').value.trim()||'新しい手順';if(steps.reduce((n,x)=>n+x.reps*x.groups,0)>1000){alert('合計1000回以下にしてください。');return}const id='recipe_'+Date.now();recipes.push({id,name,steps});recipeId=id;syncRecipes();saveLocal();closeModal();setStatus('シャッフル手順「'+name+'」を登録しました。')};draw()}function escapeHTML(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}function runRecipe(manual=false){if(shuffleBusy)return;if(state.deck.length<2){setStatus('シャッフルには2枚以上必要です。');return}const recipe=selectedRecipe();shuffleBusy=true;$('shuffle').disabled=true;$('manualShuffle').disabled=true;let i=0;const next=()=>{if(i>=recipe.steps.length){shuffleBusy=false;$('shuffle').disabled=false;$('manualShuffle').disabled=false;render();saveLocal();play('shuffle');setStatus('「'+recipe.name+'」の手順を完了しました。');return}const st=recipe.steps[i++];const reps=Math.max(1,Number(st.reps)||1),groups=Math.max(1,Number(st.groups)||1);setStatus('工程 '+i+'/'+recipe.steps.length+'：'+methods[st.method]+' '+reps+'回×'+groups+'組');animateShuffle(st.method,()=>{for(let g=0;g<groups;g++)for(let n=0;n<reps;n++){state.deck=applyShuffleMethod(state.deck.slice(),st.method,manual);if(settings.reversals&&st.method==='wash')state.deck.forEach(c=>{if(Math.random()<.45)c.reversed=Math.random()<.5})}next()},manual)};next()}let customIds=cards.map(c=>c.id);let audioCtx=null,zoom=window.innerWidth<=780?1.45:1,drag=null,dragMoved=false;const rnd=n=>Math.floor(Math.random()*n);function randomize(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}function selectedCards(){return cards.filter(c=>settings.pool==='all'||settings.pool==='custom'&&customIds.includes(c.id)||settings.pool==='major'&&c.group==='major'||settings.pool==='minor'&&c.group!=='major'||settings.pool==='court'&&c.group==='court'||settings.pool===c.suit)}function setStatus(t){$('status').textContent=t}function play(type){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(type==='flip'?360:160,t);osc.frequency.exponentialRampToValueAtTime(type==='flip'?180:90,t+.06);g.gain.setValueAtTime(.035,t);g.gain.exponentialRampToValueAtTime(.001,t+.075);osc.connect(g);g.connect(audioCtx.destination);osc.start(t);osc.stop(t+.085)}catch(e){}}function initialize(){state={deck:randomize(selectedCards().map(c=>({id:c.id,reversed:settings.reversals?Math.random()<.5:false}))),placed:[],cutStage:null,selected:null,completionShown:false};render();setStatus(`新しい占い：${state.deck.length}枚のカードを用意しました。`);saveLocal()}function getSlots(){return presets[settings.spread]}function metrics(){const z=$('zone').getBoundingClientRect();const scale=zoom;const pc=window.innerWidth>780;let w=Math.min(z.width*(pc?.129:.12),z.height*(pc?.268:.25),pc?92:85)*scale;if(settings.spread==='celtic')w=Math.min(z.width*(pc?.096:.09),z.height*(pc?.202:.19),pc?75:70)*scale;return{w,h:w*1.52,z}}function shortName(c){if(c.group==='major')return c.name;const nm={wands:'ワンド',cups:'カップ',swords:'ソード',pentacles:'ペンタクル'}[c.suit]||'';const rank=c.number<=10?(c.number===1?'A':String(c.number)):['ペイジ','ナイト','クイーン','キング'][c.number-11];return nm+(c.number<=10?rank:'の'+rank)}function cardMark(c){
+ if(c.group==='major')return `<div class="major-rank">${c.number===0?'0':c.number}</div><div class="major-name">${escapeHTML(c.name)}</div>`;
+ const rank=c.number<=10?String(c.number):['P','N','Q','K'][c.number-11];
+ const symbols={
+ wands:'<svg viewBox="0 0 48 70" aria-hidden="true"><path d="M10 63 L37 7" stroke="#54361f" stroke-width="7" stroke-linecap="round"/><path d="M10 63 L37 7" stroke="#ad8550" stroke-width="3" stroke-linecap="round"/><path d="M27 28 Q12 11 14 10 Q27 13 30 24 M24 34 Q38 30 42 21 Q30 22 24 34" fill="#608052" stroke="#35533d" stroke-width="1.5"/></svg>',
+ cups:'<svg viewBox="0 0 48 70" aria-hidden="true"><path d="M7 11 Q4 42 24 44 Q44 42 41 11 Z M24 44 V59 M13 61 H35" fill="#c6a158" stroke="#72552b" stroke-width="3" stroke-linejoin="round"/><path d="M12 17 H36" stroke="#f2d792" stroke-width="3"/></svg>',
+ swords:'<svg viewBox="0 0 48 70" aria-hidden="true"><path d="M24 4 L29 49 L24 57 L19 49Z" fill="#b9c2c1" stroke="#45575b" stroke-width="2"/><path d="M24 6 V50" stroke="#eef4ed" stroke-width="2"/><path d="M9 51 H39 M24 52 V65" stroke="#927446" stroke-width="5" stroke-linecap="round"/><circle cx="24" cy="65" r="3" fill="#b89553"/></svg>',
+ pentacles:'<svg viewBox="0 0 70 70" aria-hidden="true"><circle cx="35" cy="35" r="28" fill="#c4a05b" stroke="#6a4f30" stroke-width="3"/><circle cx="35" cy="35" r="23" fill="none" stroke="#ead49e" stroke-width="2"/><path d="M35 12 L48.5 53 L13.5 27 H56.5 L21.5 53 Z" fill="none" stroke="#5a442d" stroke-width="3" stroke-linejoin="round"/></svg>'};
+ return `<div class="suit-icon">${symbols[c.suit]}</div><div class="rank-value">${rank}</div>`;
+}
+function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'');node.dataset.index=index;const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp;
+ const move=crossOpen?38*(metrics().w/70):0;
+ node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
+ node.style.setProperty('--rotation',((crossOpen?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0)return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y,rect};dragMoved=false;node.setPointerCapture(e.pointerId);node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){item.x=Math.max(0,Math.min(100,drag.origX+dx));item.y=Math.max(0,Math.min(100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%'}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');drag=null;if(!dragMoved){item.faceUp=!item.faceUp;play('flip')}state.selected=index;
+// Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
+// makes mobile Safari jump to alternating scroll anchors.
+node.classList.toggle('faceup',item.faceUp);
+const openedCross=settings.spread==='celtic'&&item.slot===1&&item.faceUp;
+const moveCross=openedCross?38*(metrics().w/70):0;
+node.style.top=`calc(${item.y}% + ${moveCross}px)`;
+node.style.setProperty('--rotation',((openedCross?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');
+if(settings.spread==='celtic'&&item.slot===1&&settings.labels&&window.innerWidth>780){
+  const labels=$('zone').querySelectorAll('.zone-label');
+  const first=labels[0],second=labels[1];
+  if(first)first.style.left=(item.faceUp?getSlots()[0].x-10:getSlots()[0].x)+'%';
+  if(second)second.style.top=`calc(${getSlots()[1].y}% + ${metrics().h*.52+8+(item.faceUp?38*(metrics().w/70)+metrics().w*.22:0)}px)`;
+}
+const cardData=cards.find(c=>c.id===item.id),position=item.slot!=null?getSlots()[item.slot]:null;
+$('infoText').textContent=`${cardData.name}（${item.reversed?'逆位置':'正位置'}）${position?` — ${item.slot+1}. ${position.name}：${position.detail}`:' — 自由配置'}`;
+updateLiveResults();maybeTriggerCompletionEffect();saveLocal()});node.addEventListener('contextmenu',e=>{e.preventDefault();item.angle=(item.angle+90)%360;render();saveLocal()});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
+function syncResultsVisibility(){const panel=$('liveResults'),button=$('toggleResults');if(!panel||!button)return;panel.hidden=!resultsVisible;button.textContent=resultsVisible?'RESULTSを閉じる ▴':'RESULTSを表示 ▾';button.setAttribute('aria-expanded',String(resultsVisible))}
+function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${snapshotFace(item)}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${all.filter(p=>p.faceUp).length} / ${all.length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
+$('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
+function render(){updateLiveResults();const m=metrics(),zone=$('zone');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set(state.placed.map(p=>p.slot).filter(s=>s!==null));getSlots().forEach((p,i)=>{if(assigned.has(i))return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>zone.append(cardHTML(p,i)));if(settings.labels){getSlots().forEach((p,i)=>{const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;const crossing=settings.spread==='celtic'&&i===1;const crossCard=state.placed.find(q=>q.slot===1);const openCross=crossing&&crossCard?.faceUp; if(settings.spread==='celtic'&&i>=6&&window.innerWidth>780){t.classList.add('tower-label');t.style.left=`calc(${p.x}% - ${m.w/2+9}px)`;t.style.top=p.y+'%';}else if(window.innerWidth<=780){t.classList.add('mobile-num-label');t.style.left=p.x+'%';t.style.top=`calc(${p.y}% - ${m.h*.52+5}px)`;}else{t.style.left=(settings.spread==='celtic'&&i===0&&crossCard?.faceUp?p.x-10:p.x)+'%';t.style.top=`calc(${p.y}% + ${m.h*.52+8+(openCross?38*(m.w/70)+m.w*.22:0)}px)`;}if(openCross)t.style.zIndex='310';zone.append(t)})}const deck=$('deck');deck.classList.toggle('empty',state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.length}枚`;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=cards.find(c=>c.id===p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function drawAt(slot=null,x=null,y=null){if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=slots.findIndex((_,i)=>!state.placed.some(p=>p.slot===i));if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&state.placed.some(p=>p.slot===slot)){setStatus('その位置にはすでにカードがあります。');return}const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,faceUp:false});play('deal');render();setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);saveLocal()}function dealAuto(){if(!state.deck.length)return;if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}const slots=getSlots();const unfilled=slots.map((_,i)=>i).filter(i=>!state.placed.some(p=>p.slot===i));if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}unfilled.forEach((s,i)=>setTimeout(()=>drawAt(s),i*340))}let shuffleBusy=false;
+function riffleSequence(arr,manual=false){let split=manual?Math.max(1,Math.min(arr.length-1,Math.round(arr.length*(.4+Math.random()*.2)))):Math.floor(arr.length/2);let left=arr.slice(0,split),right=arr.slice(split),out=[];while(left.length||right.length){let chooseLeft=!right.length||(left.length&&Math.random()<(manual?.57:.5));let part=chooseLeft?left:right;let take=manual?1:Math.min(part.length,1+rnd(3));out.push(...part.splice(0,take))}return out}
+function overhandSequence(arr,manual=false){const remaining=arr.slice(),out=[];while(remaining.length){let n=Math.min(remaining.length,1+rnd(manual?6:9));out.unshift(...remaining.splice(0,n))}return out}
+function pileSequence(arr){let count=4+rnd(2),piles=Array.from({length:count},()=>[]);arr.forEach((card,i)=>piles[i%count].push(card));randomize(piles);return piles.flat()}
+function animateShuffle(method,done,manual=false){let layer=$('shuffleLayer');layer.innerHTML='';layer.classList.add('active');const n=Math.min(state.deck.length,method==='wash'?44:32);const w=layer.clientWidth||500,h=layer.clientHeight||500;const originX=w*.5,originY=h*.52;const sprites=[];for(let i=0;i<n;i++){let c=document.createElement('div');c.className='shuffle-card';c.style.zIndex=i;c.style.left=originX+'px';c.style.top=originY+'px';layer.append(c);sprites.push(c)}const seq=method==='wash'?3:method==='overhand'||method==='hindu'?3:method==='riffle'?3:2;let animations=[];sprites.forEach((c,i)=>{let spreadX,spreadY,rot;if(method==='wash'){const theta=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*Math.min(w,h)*.35;spreadX=Math.cos(theta)*rad;spreadY=Math.sin(theta)*rad;rot=(Math.random()-.5)*340;}else if(method==='riffle'){spreadX=(i%2===0?-w*.19:w*.19)+((i%6)-3)*1.4;spreadY=(i%4)*1.4;rot=i%2===0?-7:7;}else if(method==='pile'){spreadX=((i%4)-1.5)*w*.13;spreadY=((i%3)-1)*3;rot=0;}else if(method==='hindu'){spreadX=0;spreadY=h*.14*(i%3-1)+(i%9-4)*2;rot=i%2?3:-3;}else{spreadX=w*.14*(i%3-1);spreadY=-h*.14+(i%9)*4;rot=i%2?6:-6;}const frames=[{transform:'translate(-50%,-50%) translate(0px,0px) rotate(0deg)'},{transform:`translate(-50%,-50%) translate(${spreadX}px,${spreadY}px) rotate(${rot}deg)`,offset:.27},{transform:`translate(-50%,-50%) translate(${method==='wash'?spreadX*.65+Math.sin(i*2)*w*.16:spreadX*.6}px,${method==='wash'?spreadY*.7+Math.cos(i*1.7)*h*.13:spreadY*.65}px) rotate(${method==='wash'?rot+110:rot*1.4}deg)`,offset:.7},{transform:'translate(-50%,-50%) translate(0px,0px) rotate(0deg)'}];const anim=c.animate(frames,{duration:manual?1750:2100,delay:i*9,easing:'ease-in-out',fill:'forwards'});animations.push(anim)});Promise.all(animations.map(a=>a.finished.catch(()=>{}))).then(()=>{layer.innerHTML='';layer.classList.remove('active');done()})}
+function runWashQuick(){
+ if(shuffleBusy)return;
+ if(state.deck.length<2){setStatus('ウォッシュには2枚以上必要です。');return}
+ shuffleBusy=true;
+ for(const id of ['quickWash','quickShuffle','shuffle','manualShuffle'])$(id).disabled=true;
+ setStatus('ウォッシュ中…');
+ animateShuffle('wash',()=>{
+   state.deck=randomize(state.deck.slice());
+   if(settings.reversals)state.deck.forEach(c=>{if(Math.random()<.45)c.reversed=Math.random()<.5});
+   shuffleBusy=false;
+   for(const id of ['quickWash','quickShuffle','shuffle','manualShuffle'])$(id).disabled=false;
+   play('shuffle');render();saveLocal();setStatus('ウォッシュを1回実行しました。');
+ });
+}
+function shuffleDeck(manual=false){if(shuffleBusy)return;if(!state.deck.length){setStatus('山札は空です。新しい占いを始めてください。');return}const method=settings.shuffleMethod||'hindu';if(state.deck.length<2){setStatus('シャッフルには2枚以上必要です。');return}shuffleBusy=true;$('shuffle').disabled=true;$('manualShuffle').disabled=true;setStatus(`${({wash:'ウォッシュ',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'})[method]}シャッフル中…`);animateShuffle(method,()=>{let a=state.deck.slice();if(method==='wash')randomize(a);else if(method==='overhand'||method==='hindu')a=overhandSequence(a,manual);else if(method==='riffle')a=riffleSequence(a,manual);else a=pileSequence(a);state.deck=a;if(settings.reversals&&method==='wash'){state.deck.forEach(c=>{if(Math.random()<.45)c.reversed=Math.random()<.5})}else if(settings.reversals&&manual&&Math.random()<.25){const portion=Math.max(1,Math.floor(state.deck.length/4)),start=rnd(Math.max(1,state.deck.length-portion+1));for(let i=start;i<start+portion;i++)state.deck[i].reversed=!state.deck[i].reversed}shuffleBusy=false;$('shuffle').disabled=false;$('manualShuffle').disabled=false;play('shuffle');render();saveLocal();setStatus(`${({wash:'ウォッシュ',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'})[method]}シャッフルを行いました。${manual?'手動の簡易操作モード。':''}`)},manual)}
+const HISTORY_KEY='tabula_sortium_history_v034';
+let snapshots=[];
+function loadSnapshots(){try{let a=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');snapshots=Array.isArray(a)?a.filter(v=>v&&Array.isArray(v.placed)):[]}catch(e){snapshots=[]}}
+function storeSnapshots(){try{localStorage.setItem(HISTORY_KEY,JSON.stringify(snapshots));return true}catch(e){setStatus('結果を保存できません。ブラウザーの保存容量を確認してください。');return false}}
+function freshName(){let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function captureSnapshot(name){if(!state.placed.length){setStatus('結果がありません。まずカードを配ってください。');return false}let obj={id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:name||freshName(),time:new Date().toISOString(),settings:{...settings},placed:JSON.parse(JSON.stringify(state.placed)),slots:JSON.parse(JSON.stringify(getSlots())),deckRemaining:state.deck.length,deck:JSON.parse(JSON.stringify(state.deck)),customIds:[...customIds],recipeId,cardPool:settings.pool,spread:settings.spread};snapshots.unshift(obj);if(!storeSnapshots()){snapshots.shift();return false}setStatus('占い結果を記録しました。記録一覧から比較できます。');return true}
+function saveSnapshotModal(){if(!state.placed.length){setStatus('保存する結果がありません。');return}modal('<h2>占い結果を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">結果を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
+function saveAndAgain(){if(captureSnapshot('')){initialize();setStatus('結果を保存し、同じ設定で新しい占いを開始しました。')}}
+function snapshotSummary(v){return `${v.placed.length}枚 ／ ${v.spread==='celtic'?'ケルト十字':v.spread==='three'?'3枚引き':v.spread==='one'?'1枚引き':'自由配置'}`}
+function snapshotFace(p){const c=cards.find(v=>v.id===p.id);if(!c)return '不明';const rank=c.number<=10?String(c.number):['P','N','Q','K'][c.number-11];return c.group==='major'?`${c.number} ${c.name}`:`${c.suit==='wands'?'杖':c.suit==='cups'?'杯':c.suit==='swords'?'剣':'金貨'} ${rank}`}
+function snapshotPanel(v){
+ if(!v)return '<p class="note">記録を選択してください。</p>';
+ const ordered=v.placed.map((p,i)=>({...p,originalIndex:i}));
+ const cloth=colors[Number.isInteger(v.settings?.color)?v.settings.color:0]?.[1]||'#171719';
+ const altar=v.settings?.altar!==false?'<div class="record-altar"><div class="record-candle left"></div><div class="record-candle right"></div><div class="record-incense"></div></div>':'';
+ const pieces=ordered.map((p,i)=>{
+  const face=snapshotFace(p),cross=v.spread==='celtic'&&p.slot===1&&p.faceUp;
+  const angle=(cross?80:Number(p.angle||0))+(p.reversed&&p.faceUp?180:0);
+  const y=Number(p.y||0)+(cross?38/70*9:0);
+  return `<div class="snapshot-card" title="${escapeHTML(face)}" style="left:${p.x}%;top:${y}%;transform:translate(-50%,-50%) rotate(${angle}deg);z-index:${i+5}"><span style="transform:rotate(${p.reversed&&p.faceUp?180:0}deg)">${p.faceUp?escapeHTML(face):'✦'}</span></div>`
+ }).join('');
+ const rows=ordered.map((p,i)=>{let pos=p.slot!=null?v.slots?.[p.slot]:null;return `<div class="snapshot-row"><b>${pos?`${p.slot+1}. ${escapeHTML(pos.name)}`:`補助 ${i+1}`}</b><span>${p.faceUp?escapeHTML(snapshotFace(p)):'裏向き'}${p.reversed?'（逆）':''}</span></div>`}).join('');
+ return `<div class="snapshot-board" style="--record-cloth:${cloth}">${altar}${pieces}</div><div class="snapshot-details">${rows}</div>`;
+}
+function restoreSnapshot(v){
+ if(!v)return;
+ if(!confirm('記録「'+v.name+'」をメインの卓に復元しますか？ 現在の未保存の作業状態は置き換わります。'))return;
+ settings={...settings,...v.settings};
+ if(v.spread)settings.spread=v.spread;
+ if(Array.isArray(v.customIds))customIds=[...v.customIds];
+ const placed=JSON.parse(JSON.stringify(v.placed));
+ let deck;
+ if(Array.isArray(v.deck))deck=JSON.parse(JSON.stringify(v.deck));
+ else{
+  const seen=new Set(placed.map(p=>p.id));
+  deck=selectedCards().filter(c=>!seen.has(c.id)).map(c=>({id:c.id,reversed:false}));
+ }
+ state={deck,placed,cutStage:null,selected:null,completionShown:false};
+ if(v.recipeId&&recipes.some(r=>r.id===v.recipeId))recipeId=v.recipeId;
+ sync();render();saveLocal();closeModal();
+ setStatus('保存記録「'+v.name+'」を復元しました。補助カードも追加できます。'+(!Array.isArray(v.deck)?'※旧記録につき山札の順序は再現できません。':''));
+ window.scrollTo({top:0,behavior:'instant'});
+}
+
+function compareModal(){
+ if(!snapshots.length){modal('<h2>記録一覧</h2><p>保存した占い結果はまだありません。</p>');return}
+ let rows=snapshots.map(v=>`<div class="history-row"><div><b>${escapeHTML(v.name)}</b><div class="mini">${escapeHTML(snapshotSummary(v))} · ${new Date(v.time).toLocaleString('ja-JP')}</div></div><button type="button" data-rename="${v.id}">名称変更</button><button type="button" data-delete="${v.id}">削除</button></div>`).join('');
+ let options=snapshots.map(v=>`<option value="${v.id}">${escapeHTML(v.name)}</option>`).join('');
+ modal(`<h2>占い結果の記録</h2><p class="note">まず1件を大きく表示します。比較を有効にすると2件を横に並べます。</p><div class="records-toolbar"><label class="choice"><input type="checkbox" id="compareEnabled"> 2件を比較する</label><span class="mini" id="compareHint">保存した記録を単独表示中</span></div><div class="record-viewport"><div class="snapshot-compare" id="snapshotCompare"><div class="record-a"><label class="field">表示する記録<select id="compareA">${options}</select></label><div id="snapViewA"></div><div class="record-restore"><button type="button" class="primary" id="restoreA">左の結果を卓に復元</button></div></div><div class="record-b"><label class="field">比較する記録<select id="compareB">${options}</select></label><div id="snapViewB"></div><div class="record-restore"><button type="button" class="primary" id="restoreB">右の結果を卓に復元</button></div></div></div></div><h3>保存済みの記録（${snapshots.length}件）</h3><div>${rows}</div>`);
+ $('modalBg').classList.add('records-active');
+ $('compareB').selectedIndex=Math.min(1,snapshots.length-1);
+ const repaint=()=>{
+  let a=snapshots.find(s=>s.id===$('compareA').value),b=snapshots.find(s=>s.id===$('compareB').value);
+  let comparing=$('compareEnabled').checked;
+  $('snapshotCompare').classList.toggle('is-comparing',comparing);
+  $('compareHint').textContent=comparing?'左・右の復元ボタンで対象を選べます':'保存した記録を単独表示中';$('restoreA').textContent=comparing?'左の結果を卓に復元':'この結果を卓に復元';
+  $('snapViewA').innerHTML=snapshotPanel(a);
+  $('snapViewB').innerHTML=comparing?snapshotPanel(b):'';
+ };
+ $('restoreA').onclick=()=>restoreSnapshot(snapshots.find(v=>v.id===$('compareA').value));$('restoreB').onclick=()=>restoreSnapshot(snapshots.find(v=>v.id===$('compareB').value));$('compareA').onchange=repaint;$('compareB').onchange=repaint;$('compareEnabled').onchange=repaint;repaint();
+ document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{if(!confirm('この結果を削除しますか？'))return;snapshots=snapshots.filter(x=>x.id!==b.dataset.delete);storeSnapshots();compareModal()});
+ document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
+}
+function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings={cutCount:3,shuffleMethod:'hindu',pool:'all',spread:'three',color:0,altar:false,labels:true,sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual'};recipeId='single';sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
+function resetEverythingAction(){if(!confirm('現在の卓、保存結果、登録したシャッフル手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'hindu',reps:1,groups:1}]}];recipeId='single';settings={cutCount:3,shuffleMethod:'hindu',pool:'all',spread:'three',color:0,altar:false,labels:true,sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual'};customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false};sync();initialize();setStatus('全データを初期化しました。')}
+function modal(html){$('modalBg').classList.remove('records-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false){
+ if(state.deck.length<2){setStatus('カットには2枚以上必要です。');return}
+ const limit=Math.min(8,state.deck.length);
+ let count=Math.max(2,Math.min(Number(settings.cutCount)||3,limit));
+ let lengths=[],sequence=[];
+ function chooseLengths(){
+  lengths=Array(count).fill(1);
+  let rest=state.deck.length-count;
+  while(rest--)lengths[rnd(count)]++;
+  sequence=[];
+  paint();
+ }
+ function paint(){
+  let h='<h2>山札をカット</h2>';
+  if(!quick){
+   h+='<label class="field">分割数<select id="modalCutCount">';
+   for(let n=2;n<=limit;n++)h+=`<option value="${n}" ${n===count?'selected':''}>${n}分割</option>`;
+   h+='</select></label><p class="note">束を選んだ順に積み直します。最初に選んだ束が完成後の山札の上になります。</p>';
+  }
+  h+='<div class="cut-piles">';
+  lengths.forEach((len,i)=>h+=`<button type="button" class="cut-stack" data-pile="${i}"><span>束 ${String.fromCharCode(65+i)}</span><small>${len}枚</small></button>`);
+  h+='</div><p class="note">順序：<strong id="cutSequence">未選択</strong></p>';
+  h+='<div class="row"><button type="button" id="cutUndo">1つ戻す</button><button type="button" id="cutClear">やり直す</button></div>';
+  h+='<div class="row"><button type="button" class="primary" id="cutConfirm" disabled>積み直す</button><button type="button" id="cutCancel">キャンセル</button></div>';
+  modal(h);
+  if(!quick){$('modalCutCount').onchange=e=>{count=Number(e.target.value);settings.cutCount=count;saveLocal();chooseLengths()};}
+  document.querySelectorAll('.cut-stack').forEach(btn=>btn.onclick=()=>{
+   const i=Number(btn.dataset.pile);if(sequence.includes(i))return;
+   sequence.push(i);updatePick();
+  });
+  $('cutUndo').onclick=()=>{sequence.pop();updatePick()};
+  $('cutClear').onclick=()=>{sequence=[];updatePick()};
+  $('cutCancel').onclick=closeModal;
+  $('cutConfirm').onclick=()=>{
+   const piles=[];let start=0;
+   for(const len of lengths){piles.push(state.deck.slice(start,start+len));start+=len}
+   state.deck=sequence.flatMap(i=>piles[i]);
+   closeModal();render();saveLocal();play('shuffle');
+   setStatus(`${count}分割カット：${sequence.map(i=>String.fromCharCode(65+i)).join(' → ')} の順に積み直しました。`);
+  };
+  updatePick();
+ }
+ function updatePick(){
+  document.querySelectorAll('.cut-stack').forEach((b,i)=>{
+   const n=sequence.indexOf(i);b.classList.toggle('picked',n>=0);b.disabled=n>=0;
+   b.querySelector('span').textContent=n>=0?`${n+1}番：束 ${String.fromCharCode(65+i)}`:`束 ${String.fromCharCode(65+i)}`;
+  });
+  $('cutSequence').textContent=sequence.length?sequence.map(i=>String.fromCharCode(65+i)).join(' → '):'未選択';
+  $('cutConfirm').disabled=sequence.length!==count;
+ }
+ chooseLengths();
+}
+function closeModal(){$('modalBg').classList.remove('open','records-active')}function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify({settings,state,customIds,recipes,recipeId}))}catch(e){setStatus('この環境ではブラウザー保存を利用できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);settings={...settings,...data.settings};state={completionShown:false,...(data.state||{})};customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){const saved=data.recipes.filter(r=>r.id!=='seven3'&&r.id!=='washover');recipes=[recipes[0],...saved.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=saved.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus('保存データの復元に失敗しました。')}}function sync(){$('pool').value=settings.pool;$('spread').value=settings.spread;$('reversals').checked=settings.reversals;$('altarToggle').checked=settings.altar;$('labelsToggle').checked=settings.labels;$('soundToggle').checked=settings.sound;$('shuffleMethod').value=settings.shuffleMethod||'hindu';$('visualTheme').value=settings.visualTheme||'classic';$('effectPreset').value=settings.effectPreset||'ritual';applyVisuals();syncRecipes()}function applyVisuals(){document.body.dataset.visualTheme=settings.visualTheme||'classic';document.body.dataset.effectPreset=settings.effectPreset||'ritual';const desc={silent:'静かな反転。完成時の追加演出なし。',ritual:'MYSTICと同じ光の演出を、暖かな黄金色で。発光は完成後も続きます。',mystic:'青白い光輪。完成後も神秘的な発光を維持。',psychic:'紫の霊光。完成後もカードが明滅し続ける。'};if($('effectDescription'))$('effectDescription').textContent=desc[settings.effectPreset]||desc.ritual;updateCompletionAura()}let __effectTimer=null;function previewVisualEffect(finale=false){const stage=$('stage');stage.classList.remove('effect-demo','effect-finale');void stage.offsetWidth;stage.classList.add(finale?'effect-finale':'effect-demo');clearTimeout(__effectTimer);__effectTimer=setTimeout(()=>stage.classList.remove('effect-demo','effect-finale'),finale?3800:1900)}function coreTargetCount(){if(settings.spread==='free')return state.placed.length;return getSlots().length}function coreFaceUpCount(){if(settings.spread==='free')return state.placed.filter(p=>p.faceUp).length;return state.placed.filter(p=>p.slot!=null&&p.faceUp).length}function isCoreSpreadOpen(){const target=coreTargetCount();return target>0&&coreFaceUpCount()>=target}function updateCompletionAura(){const stage=$('stage');if(!stage)return;stage.classList.remove('spread-complete-ritual','spread-complete-mystic','spread-complete-psychic');if(!isCoreSpreadOpen())return;const preset=settings.effectPreset;if(preset==='ritual')stage.classList.add('spread-complete-ritual');else if(preset==='mystic')stage.classList.add('spread-complete-mystic');else if(preset==='psychic')stage.classList.add('spread-complete-psychic')}function maybeTriggerCompletionEffect(force=false){if(isCoreSpreadOpen()){updateCompletionAura();if(force||!state.completionShown){state.completionShown=true;if(settings.effectPreset!=='silent')previewVisualEffect(true)}}else{state.completionShown=false;updateCompletionAura()}}
+function customModal(){const groups=[['major','大アルカナ'],...suitDefs.map(s=>[s[0],s[1]])];let h='<h2>使用カードを個別に選択</h2><p class="note">チェックしたカードだけを山札として使用します。</p><div class="row"><button type="button" id="allCards">すべて選択</button><button type="button" id="noCards">すべて解除</button></div>';groups.forEach(([id,name])=>{h+=`<h3>${name}</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px">`;cards.filter(c=>id==='major'?c.group==='major':c.suit===id).forEach(c=>{h+=`<label class="choice"><input type="checkbox" class="pick-card" value="${c.id}" ${customIds.includes(c.id)?'checked':''}>${c.name}</label>`});h+='</div>'});h+='<p><button type="button" class="primary" id="confirmCards">このカード群を使用</button></p>';modal(h);$('allCards').onclick=()=>document.querySelectorAll('.pick-card').forEach(e=>e.checked=true);$('noCards').onclick=()=>document.querySelectorAll('.pick-card').forEach(e=>e.checked=false);$('confirmCards').onclick=()=>{const ids=[...document.querySelectorAll('.pick-card:checked')].map(el=>el.value);if(!ids.length){alert('カードを1枚以上選択してください。');return}customIds=ids;settings.pool='custom';$('pool').value='custom';closeModal();initialize()}}function help(){modal(`<h2>TABULA SORTIUM v0.6.0 操作方法</h2><p>まずカード群と展開法を選び、「新しい占いを始める」を押します。シャッフルとカットは任意です。</p><p><b>自動配札：</b>スプレッドの空いている位置に順番に置きます。<br><b>手動配札：</b>山札をドラッグして卓上へ動かすか、空いている位置をクリックします。<br><b>オープン：</b>カードをクリック・タップすると表裏が切り替わります。<br><b>カード移動：</b>配ったカードをドラッグできます。<br><b>自由配置：</b>フリースプレッドを選択すると、枚数や場所を決めずに配れます。ケルト十字などの配札終了後も、残りの山札を卓へドラッグして補助カードを自由に追加できます。<br><b>回転：</b>PCではカードを右クリックすると90°回転します。</p><p><b>正逆位置：</b>シャッフル時にランダムに決定され、カードを開くと配置角度に対して180°回転した姿で表示されます。</p><p><b>保存：</b>ブラウザー内保存は同じブラウザー・端末での利用を想定しています。プライベートモードやブラウザーデータ削除では失われる場合があります。</p><p class="note">v0.1は最初の操作試作です。手動シャッフルは簡易方式、メニューのカットで2～8分割を設定、卓下のカットは順序のみ選択、自作スプレッド編集、画像表示、結果解釈、外部バックアップは今後の機能です。</p>`)}
+$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewVisualEffect(true)};$('previewEffect').onclick=()=>previewVisualEffect(true);colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(e.target.value==='custom'){customModal();return}settings.pool=e.target.value;initialize()};$('spread').onchange=e=>{settings.spread=e.target.value;initialize()};$('reversals').onchange=e=>{settings.reversals=e.target.checked;initialize()};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('labelsToggle').onchange=e=>{settings.labels=e.target.checked;render();saveLocal()};$('soundToggle').onchange=e=>{settings.sound=e.target.checked;saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
+function openSequentially(){if(openingBusy)return;const closed=state.placed.filter(p=>!p.faceUp).sort((a,b)=>(a.slot??999)-(b.slot??999));if(!closed.length){setStatus('開ける伏せ札がありません。カードをタップすると個別に表裏を切り替えられます。');return}openingBusy=true;$('quickOpen').disabled=true;const pace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;let index=0;function step(){if(index>=closed.length){openingBusy=false;$('quickOpen').disabled=false;render();maybeTriggerCompletionEffect();saveLocal();setStatus(closed.length+'枚を順番に開きました。');return}closed[index].faceUp=true;index++;play('flip');render();saveLocal();setStatus(`オープン中：${index} / ${closed.length}枚`);setTimeout(step,pace)}step()}
+$('quickOpen').onclick=openSequentially;$('shuffle').onclick=()=>runRecipe(false);$('manualShuffle').onclick=()=>runRecipe(true);$('shuffleRecipe').onchange=e=>{recipeId=e.target.value;saveLocal();setStatus('シャッフル手順を切り替えました。')};$('editRecipe').onclick=recipeEditor;$('deleteRecipe').onclick=()=>{if(recipeId==='single'){setStatus('標準手順は削除できません。');return}recipes=recipes.filter(r=>r.id!==recipeId);recipeId='single';syncRecipes();saveLocal();setStatus('登録した手順を削除しました。')};$('cut').onclick=()=>cutModal(false);$('deal').onclick=dealAuto;$('draw').onclick=()=>drawAt();$('revealAll').onclick=()=>{state.placed.forEach(p=>p.faceUp=true);play('flip');render();maybeTriggerCompletionEffect();saveLocal()};$('faceDown').onclick=()=>{state.placed.forEach(p=>p.faceUp=false);state.completionShown=false;render();saveLocal()};$('resetLayout').onclick=()=>{if(!state.placed.length){setStatus('戻すカードがありません。');return}modal('<h2>配札を戻す</h2><p class="note">卓上のカードを山札へ戻しますか？</p><div class="row"><button type="button" id="returnCancel">キャンセル</button><button type="button" class="primary" id="returnConfirm">山札に戻す</button></div>');$('returnCancel').onclick=closeModal;$('returnConfirm').onclick=()=>{state.deck=[...state.placed.map(({id,reversed})=>({id,reversed})),...state.deck];state.placed=[];state.selected=null;closeModal();render();saveLocal();setStatus('配札を山札に戻しました。')}};$('snapshotSave').onclick=saveSnapshotModal;$('quickSnapshotSave').onclick=saveSnapshotModal;$('quickSnapshotList').onclick=compareModal;$('snapshotAgain').onclick=saveAndAgain;$('snapshotList').onclick=compareModal;$('resetSettings').onclick=resetSettingsAction;$('resetEverything').onclick=resetEverythingAction;$('save').onclick=()=>{saveLocal();setStatus('現在の卓をブラウザー内に保存しました。')};$('restore').onclick=restoreLocal;$('help').onclick=help;$('modalClose').onclick=closeModal;$('modalBg').onclick=e=>{if(e.target===$('modalBg'))closeModal()};$('zoomIn').onclick=()=>{zoom=Math.min(1.6,zoom+.1);render()};$('zoomOut').onclick=()=>{zoom=Math.max(.6,zoom-.1);render()};$('zoomReset').onclick=()=>{zoom=window.innerWidth<=780?1.45:1;render()};const deck=$('deck');deck.addEventListener('pointerdown',e=>{if(e.button!==0||!state.deck.length)return;drag={type:'deck',startX:e.clientX,startY:e.clientY};dragMoved=false;deck.setPointerCapture(e.pointerId)});deck.addEventListener('pointermove',e=>{if(drag?.type==='deck'&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>8)dragMoved=true});deck.addEventListener('pointerup',e=>{if(drag?.type!=='deck')return;drag=null;if(!dragMoved){drawAt();return}const r=$('zone').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;if(x<0||x>100||y<0||y>100)return;if(settings.spread==='free'||getSlots().every((_,i)=>state.placed.some(p=>p.slot===i)))drawAt(null,Math.max(7,Math.min(93,x)),Math.max(10,Math.min(90,y)));else{const slots=getSlots(),available=slots.map((s,i)=>({...s,i})).filter(s=>!state.placed.some(p=>p.slot===s.i));const nearest=available.sort((a,b)=>(a.x-x)**2+(a.y-y)**2-(b.x-x)**2-(b.y-y)**2)[0];if(nearest)drawAt(nearest.i)}});window.addEventListener('resize',render);
+// Independent disclosure state; no navigation or form submission on toggle.
+document.querySelectorAll('aside .section').forEach((section,i)=>{const btn=section.querySelector('.section-toggle');const key='tabula_sortium_section_'+i;let closed=false;try{closed=localStorage.getItem(key)==='closed'}catch(e){}section.classList.toggle('is-collapsed',closed);btn.setAttribute('aria-expanded',String(!closed));btn.addEventListener('click',()=>{const next=!section.classList.contains('is-collapsed');section.classList.toggle('is-collapsed',next);btn.setAttribute('aria-expanded',String(!next));try{localStorage.setItem(key,next?'closed':'open')}catch(e){}})});
+loadSnapshots();syncRecipes();applyVisuals();const initial=localStorage.getItem(KEY);if(initial){restoreLocal()}else{sync();initialize()} })();
+</script>
+</body></html>
