@@ -1,0 +1,591 @@
+{
+  "deck": "tabula-tarot",
+  "source_version": "0.9.66",
+  "images": [
+    {
+      "path": "images/ui/icon-00.png",
+      "bytes": 40772,
+      "sha256": "4cfba09b07df8164dc2f4e031ad222a9123f5410fe581bc08473c0c00df17d55"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_00.webp",
+      "bytes": 74534,
+      "sha256": "e044420d937f4d4516428c9855b314266480023781c7a6d68c6ae9b09554f534"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_01.webp",
+      "bytes": 74428,
+      "sha256": "a581e68d96b0b9eaecf9331c331fb9c2bae51f6adcd3517eecbd78b1921a4398"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_02.webp",
+      "bytes": 74138,
+      "sha256": "540c526f289fd5313d0e22269e40c39435bf0f218ac8e44d2d58e623b04bea8c"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_03.webp",
+      "bytes": 81810,
+      "sha256": "c220ea8a53bb9e35c124e10bf9a34e9bfbbb449b9aa3c0ede3830bef122f49e0"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_04.webp",
+      "bytes": 69868,
+      "sha256": "0b9dc2fac5ed25b632473ff3c538394018b47e5c437508aecaf3f4c44948787b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_05.webp",
+      "bytes": 67378,
+      "sha256": "c5f4e7cfcdf20f8cecc0637ed4e184112b3b2d6c9ec82be5d2aa3e24c2c3032b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_06.webp",
+      "bytes": 73582,
+      "sha256": "c5b018e4518d97a279653826874603966c66a420c6302154089ea70e323f2a54"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_07.webp",
+      "bytes": 73612,
+      "sha256": "06f3d4ef1a513d821e4de7aa605222142f11cf6fd274a3de5bb04e4c9ba5331e"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_08.webp",
+      "bytes": 74016,
+      "sha256": "36e26c12000b9eb5b19836cd9e265f6c9069f1fb990a1b7fa1a5feef2681bd0a"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_09.webp",
+      "bytes": 69156,
+      "sha256": "5a49049adebb613c4285e3d2ee9ccf34060112a5a0a819ebeae0aedf84c466d5"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_10.webp",
+      "bytes": 72218,
+      "sha256": "a8c13711198008501cfe96d56fc26d040c52b0924c3adf5181e4fd856377caeb"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_11.webp",
+      "bytes": 69616,
+      "sha256": "7fc17165e15a3714feea2987debaa3d11ee346a42bcc17f815b441b254d3e825"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_12.webp",
+      "bytes": 63694,
+      "sha256": "92ba24d19341bd6d04127b745d69c564c95b0ffa186b53f5b4ad52bfe0bb2fea"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_13.webp",
+      "bytes": 72524,
+      "sha256": "7dc94c969de117c1ad2450c76150486a92873ad3ead5c2def9f16f6977cbccfb"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_14.webp",
+      "bytes": 75312,
+      "sha256": "9b4505d319f5645d64d6a7af025f5deba0cb0dc9dc12f3843b32fe9bfae8f431"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_15.webp",
+      "bytes": 584376,
+      "sha256": "89e365eb7f23beecbc948bc249656cff34561eccc962c8639536d1976067acdc"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_16.webp",
+      "bytes": 582006,
+      "sha256": "ab82d32b1186b3e7375d78eee5557789176974d7d744e56c26c95d5d78986f10"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_17.webp",
+      "bytes": 60586,
+      "sha256": "ec8f4751996fbc7dd76aa8a5a888494c500444a0a09333e455bfa63d62af3d33"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_18.webp",
+      "bytes": 589532,
+      "sha256": "3f2af4a99d670a49435f2dec58b355050a0a51953d519ea4726c710615e31935"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_19.webp",
+      "bytes": 574680,
+      "sha256": "624dd173d64768ea84e67f6f357749621873c8ba717180c9dbfd9d89133f28a5"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_20.webp",
+      "bytes": 74164,
+      "sha256": "5222da7cf8f2a9e20753264a31a486537cc7471fe8ee62cb2ff4c52be10751dd"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/major_21.webp",
+      "bytes": 589380,
+      "sha256": "e740c32a193741c25f42a6de4612fb82ed022e71fbce50a4887fc7094f3b2fab"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_14.webp",
+      "bytes": 71850,
+      "sha256": "eccc9d145b78f4817cfef37f09c2d1de82ca54889931ad77fea04ce430f2551e"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_13.webp",
+      "bytes": 74532,
+      "sha256": "d9e86f241d0dd71bb4183fd7fb05002d83f39f3020608d2e301e2306db1f5768"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_12.webp",
+      "bytes": 72180,
+      "sha256": "99a732cd0bc8e06ff6f2c185f350255ffab9d9f442faf316e659e4afd3fcd329"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_11.webp",
+      "bytes": 72448,
+      "sha256": "d91073d08660ab4b3f196a356f7d29e519690ae244315f5c39b911a123a8f9ff"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_14.webp",
+      "bytes": 73796,
+      "sha256": "3f169949884b95045465725beaccc5faafb6a2fe14cc4813ce0216cbd5e4a94d"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_13.webp",
+      "bytes": 74044,
+      "sha256": "a75a561cdca22a3fc43e1cc5429dfbb3d4fa696deb096d2a05b524519d2d4098"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_12.webp",
+      "bytes": 74402,
+      "sha256": "c50bd89848cbb0f6d82d72c73787ebc01572871c470e3789d4edd70132fa951b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_11.webp",
+      "bytes": 72844,
+      "sha256": "c8bb75ca60e5a5fb1917f8a04b332a1d84540fd9a03ecdb1fc34b6f6f0c8dcbd"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_14.webp",
+      "bytes": 58942,
+      "sha256": "5975b9288e0ba86993c2d6bc044b9b8a82c12a486dca7a9e0fcbf6b3aa152943"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_13.webp",
+      "bytes": 64558,
+      "sha256": "be943a65975887bd159c2b4d722c52fb7a7873a023cd353faad6a89de94182b3"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_12.webp",
+      "bytes": 63406,
+      "sha256": "476f308e751b0a4ad30db2af3a8e2f7051d370ad33084f781ee8bc643db1e4ff"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_11.webp",
+      "bytes": 60806,
+      "sha256": "c13d97d6f58f0505685e15890f2f656fe14679c84da0179956ff52acd31ad1da"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_14.webp",
+      "bytes": 80792,
+      "sha256": "ec15131102fc752284f3ead81b96dfce4b5692d5f966fc4d9ef2e43fdd158d08"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_13.webp",
+      "bytes": 82392,
+      "sha256": "5a997982062df58406d404c5e7131c6f262bec7f410fa41680300e654e48496b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_12.webp",
+      "bytes": 76856,
+      "sha256": "4be49ff542afc73baacd616c02992c78814f892fc1f210a1e7018fd50d3bb9be"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_11.webp",
+      "bytes": 77178,
+      "sha256": "b98a9a51dd4636c12b0529d923dafa640ee9c89ae7a93a9ee0fd9728a3a96cd7"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_01.webp",
+      "bytes": 4606,
+      "sha256": "a132a8d8808e9d219ba34585e88a11f55a4d66fa663be3a6ad2694936f0f24f2"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_02.webp",
+      "bytes": 2950,
+      "sha256": "94dd4c7df95a50cd7f92a6c45dab6224e2e1212f69861b63a75bed946c30b26b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_03.webp",
+      "bytes": 3434,
+      "sha256": "149537bd4bb45182806a873add69b04233e076da3483088123b31a8d39de518f"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_04.webp",
+      "bytes": 3806,
+      "sha256": "4c580cb284ac894ac2983fa2fb222374dfe51711c81a225f5086385661510876"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_05.webp",
+      "bytes": 4230,
+      "sha256": "1a5fb3d151fa5969b259ee0bb0c9bc11a98a69d3e7b030dee3bc9f3c5361b085"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_06.webp",
+      "bytes": 4688,
+      "sha256": "9dd8dc9ac204292eccc20f14da032fd4308e8b8928b7ebcc18e01da0174f1530"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_07.webp",
+      "bytes": 4924,
+      "sha256": "6b7c1aadf5b597d579a6464e19662dc88de7395954ba5eded3b40e2522102fff"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_08.webp",
+      "bytes": 5690,
+      "sha256": "e6ae1bab684c31bf10ed35b91e23aacdeef259c4cebf4bb78b5770dba8c8c9cc"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_09.webp",
+      "bytes": 5800,
+      "sha256": "913d69c0dde21efb33a5892153bccb1474add22090ed7be7c6988ada508a999d"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/wands_10.webp",
+      "bytes": 6466,
+      "sha256": "03cc8e3d3019508deabfbeac7cfda6f2a5ff0def1e6725d07d331218893fe36c"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_01.webp",
+      "bytes": 4120,
+      "sha256": "7dadad82ff6d135365e724624c8f94fbeda49ea3683bc4c874d4c4b80c32f004"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_02.webp",
+      "bytes": 3362,
+      "sha256": "08ce19ca9541f9e50092e92b7b509d3aa01e928f48f57a79a0aed09820aade05"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_03.webp",
+      "bytes": 4062,
+      "sha256": "967519a8074e926d4d8786c6d347c2dbd3826d16d0dc8ba892a647d227e77eb5"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_04.webp",
+      "bytes": 4608,
+      "sha256": "dff926ca362cd1f67723e10ab9f3979fba8402e9ddab03a8461f824778de5725"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_05.webp",
+      "bytes": 5344,
+      "sha256": "72a78704b71093758aec50dd21f6480e6932bdec151ca443b90e91596ef8941e"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_06.webp",
+      "bytes": 5964,
+      "sha256": "8e32b8f037c3e0206683fec870bf96ff5e8575476f34bc732409cbdcd3193c2f"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_07.webp",
+      "bytes": 6504,
+      "sha256": "a1729f8365dd4a3343d26bf2988de1a16ac7de476050e7e27720734417ced6a5"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_08.webp",
+      "bytes": 7216,
+      "sha256": "b528de46586032c9a067f5ac3277dfb768c4e5f9c2355f5fad83491cf2ec6c6b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_09.webp",
+      "bytes": 7514,
+      "sha256": "b27af43b2e8124bfdf5eb34d39f9cff50aae39ad3c4423b5c7b85305caf7f9aa"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/cups_10.webp",
+      "bytes": 7932,
+      "sha256": "0d91e0d705acb5351434278faa14a50a0ecb3045c6dfb9db25de42af7ec36c3b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_01.webp",
+      "bytes": 3774,
+      "sha256": "60130f07f71f0e598ea0db72e6ab8fffe59f702cfe1fb6e21bc69195500210a4"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_02.webp",
+      "bytes": 2632,
+      "sha256": "224365c168382010643b50618c51bf3ec1d3eb48ae6250667dbb65fc33481f42"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_03.webp",
+      "bytes": 3066,
+      "sha256": "661a2c3ee608252db32c4d5e25bbb9b2a8b07a0ddfceef4eabbf655c46b2b856"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_04.webp",
+      "bytes": 3100,
+      "sha256": "20f04d30dbdf2e7286749e0cc79cf30a4c36ea6e10b95802dae516985428f6be"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_05.webp",
+      "bytes": 3764,
+      "sha256": "60555feab834a62f1d23c9af3080352c7b61b1996e8292b20e0e5e3574d36048"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_06.webp",
+      "bytes": 3880,
+      "sha256": "be97b5c8da0d0292fbdbe46383ba38a9dbe0931fd7bedcbda02542b5ce860784"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_07.webp",
+      "bytes": 4328,
+      "sha256": "a3c06cf770845259c045120edebb9100daa93ac8e14d8cbf323a29b146a1c8ce"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_08.webp",
+      "bytes": 4340,
+      "sha256": "1effb8700d039a5d38396acd7dff5563fa1ce8a07389a6c0174322881790a592"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_09.webp",
+      "bytes": 4840,
+      "sha256": "3337d51d9942bd6ea9363357cee110fae7a9972c69376ff895625754718b1ebe"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/swords_10.webp",
+      "bytes": 5416,
+      "sha256": "07b05ca758449109b4280e0a8ed17d7c7fd3b36066b046a2d1c0a557a5642dd0"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_01.webp",
+      "bytes": 4468,
+      "sha256": "09361f4d055848bda537da0797b869bf10f17abf1c47ddb9ab2c1fc334bb1dad"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_02.webp",
+      "bytes": 3744,
+      "sha256": "ea09ed837a2fc90858d9f603d98d89b8749444dfaa1146539de940fa7a121915"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_03.webp",
+      "bytes": 4442,
+      "sha256": "18e1cb258ad8440e8c1aba02a579c9578ed56ef54dab3d33740fed45ddb65287"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_04.webp",
+      "bytes": 5096,
+      "sha256": "ff053edc09c3c67a2fde25d809c9d74f890aba8b55660e025cb3ae4a195d1e28"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_05.webp",
+      "bytes": 5732,
+      "sha256": "268567f2a57b9ff5825e9a6fd4fb6d9465dabd6f37091e14b2da971fd592e686"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_06.webp",
+      "bytes": 6270,
+      "sha256": "6af3f8ff4d2790ccf2411876b83814b97d5434b494e4a534ae632c829a6b59de"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_07.webp",
+      "bytes": 6960,
+      "sha256": "ac5497c44f00bdc0bdf4ae9b1df53954d56857ff13fea01a4318463a6c17c5ae"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_08.webp",
+      "bytes": 7636,
+      "sha256": "b03b0375fdd03c2a3e710fa66b9ea4cbde6466da71a6db4a6bb8b6c6ec3b18dc"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_09.webp",
+      "bytes": 8244,
+      "sha256": "cc62f45b5c4cbb9c8ae3508cd7073da48dce026b4933499ed1ee8f8ad03b7004"
+    },
+    {
+      "path": "images/decks/tabula-tarot/base/pentacles_10.webp",
+      "bytes": 9178,
+      "sha256": "e295db90d0441270e2046764423f0dfeeff3c2a5e7b6662482b7bcc648397fde"
+    },
+    {
+      "path": "images/decks/tabula-tarot/suit-sheet.png",
+      "bytes": 1332877,
+      "sha256": "fc399e0c551a4a3f002a0b9b231efcb82d0b0c2d9947fd50de025af837f807c3"
+    },
+    {
+      "path": "images/decks/tabula-tarot/detail/wands.webp",
+      "bytes": 44470,
+      "sha256": "33728c99883ad133ea41bca1d2c33ee7519ec3cbd84a3c7b2241d0fdf872ff28"
+    },
+    {
+      "path": "images/decks/tabula-tarot/detail/cups.webp",
+      "bytes": 171028,
+      "sha256": "ff94ff79dd0d9c3dfade0361f0448b34c6c9190003b1af3ed406b28f53eec164"
+    },
+    {
+      "path": "images/decks/tabula-tarot/detail/swords.webp",
+      "bytes": 46576,
+      "sha256": "375318673aaf0fb8d931606d4dd80b61ac757ad6d29d331fdbc0450d875241e2"
+    },
+    {
+      "path": "images/decks/tabula-tarot/detail/pentacles.webp",
+      "bytes": 229378,
+      "sha256": "541b29eafd3b9adaa4e8a80ea3bc9d29334bc8f271b02d015e36429f2a019ce7"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_09.webp",
+      "bytes": 716112,
+      "sha256": "725e6c5cf205cdfe96273dc7e7fa37be35141189466a835db31728a3b97faf8e"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_14.webp",
+      "bytes": 913016,
+      "sha256": "8c6e1c22adbf90d71aec6e66ffc1f834ea9f5bace59cc4909da48cf15e5f8865"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/pentacles_12.webp",
+      "bytes": 882410,
+      "sha256": "7719551571a0a8567d717fe59166396aaec2a221e0455ae042f81416cddab15b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_00.webp",
+      "bytes": 910924,
+      "sha256": "3be10d0285f5227634c281ef8331592c5c4dec6ab8baf6036fc6245d9f6c70bb"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_08.webp",
+      "bytes": 880240,
+      "sha256": "f0eaf0c5317ad90ab32692d531028884be61f42b82ca18092438bab95e321031"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_12.webp",
+      "bytes": 856030,
+      "sha256": "5e2283a16f8468d4d6a913698ee2988e2f3e05959307429e86b2a156a46e4aa9"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_04.webp",
+      "bytes": 740440,
+      "sha256": "dc06938b1bca33ad1c401421a9cf3b68e737981bc19bdaf449e83230bef708d3"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/cups_14.webp",
+      "bytes": 855278,
+      "sha256": "16e2bd00edc7e0fb5cbe7b764bd59898b82859d667bb152426996454be069d90"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_05.webp",
+      "bytes": 861000,
+      "sha256": "11cee57cc813e4e4a9a0e08cefc3afde3ac93dec66dd73f5d5d92483701b94f6"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_10.webp",
+      "bytes": 642692,
+      "sha256": "0093dc187bf560869598bed3afb66ce4686f3f83b1674dad8bd880e7ce0c8836"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/pentacles_13.webp",
+      "bytes": 875850,
+      "sha256": "ac2bc6b9d715879e43f0b5cf8f548570e6e7535a01d99961cd8411d577878981"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/cups_11.webp",
+      "bytes": 884494,
+      "sha256": "64ba04db022c9a8b37b308454a14910a48c757d98be6c14b5a89ca07feaa6bb9"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_07.webp",
+      "bytes": 846598,
+      "sha256": "fbd18b7752bf247cadc3a50f8b9695dc67f44e0347e9fc5b1950a2ab9cb34884"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/cups_12.webp",
+      "bytes": 890902,
+      "sha256": "ea34332308248820cb69476ac58379893f0cfbf64615e7e061633a3883aa8351"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/wands_11.webp",
+      "bytes": 895024,
+      "sha256": "65a75f205942813c211248cb36cd2701e6b251a6b73ffd9613ab26bcae7810b4"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_11.webp",
+      "bytes": 873350,
+      "sha256": "b2fc1e27d2e1d101e99f8b51b05660f968ddaf751b3abc2a35d0fe2a4e37266b"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_13.webp",
+      "bytes": 682658,
+      "sha256": "014a3d3fa898df1eeadbe5196bf2b9f865c84e758f85effd5f970a1b6ec608ce"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/wands_13.webp",
+      "bytes": 899400,
+      "sha256": "7067d1d7ba5ecc56c3d8700169684add0a5897f97a01d2bf5bc912328493a763"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/wands_14.webp",
+      "bytes": 905236,
+      "sha256": "92ea1cd2166e8a73ba3b1ce012aa6f6e2f80ae51681f39f9b534b3fa4b9bed2c"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/pentacles_14.webp",
+      "bytes": 876608,
+      "sha256": "4f1fc33e9187be4638d0ac97ad269b6692eb7e359f0df8170c80a21876ff0d3d"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/cups_13.webp",
+      "bytes": 854682,
+      "sha256": "afc16f0434dcb5344014a9cebe268da8ec2fdd1542f261d3dfdd5eb576e2264f"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/swords_13.webp",
+      "bytes": 723484,
+      "sha256": "87daafe5310217e6500c7e7dcfda85490ae03ffe33822bce0677411b16493a19"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_17.webp",
+      "bytes": 733586,
+      "sha256": "78cefb65a0d6c3b005f7b2d89f679dc9d0686db8d138b062f80f778c3dcd31a1"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_20.webp",
+      "bytes": 900372,
+      "sha256": "8f2cdc486e3817f30d7f3def2204e6353c439dfe64ac0b4249a64ce3877e706e"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/wands_12.webp",
+      "bytes": 880142,
+      "sha256": "1bb139cb6e68047cb13705aa75fb1e094a27f078a470a6d5822ca3f2131d86a9"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_01.webp",
+      "bytes": 888344,
+      "sha256": "60e018d46da5d6b413a296191b4c4ba90d37c7fc814f1c724759bd485e75fbe5"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/swords_14.webp",
+      "bytes": 725904,
+      "sha256": "133ef991d2a270db7ce16137fc6676c07813312841a9442bae55b6820b4c7385"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/pentacles_11.webp",
+      "bytes": 890040,
+      "sha256": "2425577be0b912e160a82e0efb3cede8664defa40358a8489f75b9a7afb18244"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_06.webp",
+      "bytes": 868020,
+      "sha256": "b45a8f6080c6de9a718a8f4f013fea4c69891e0df218549c17ae1187b5254cf3"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_03.webp",
+      "bytes": 919222,
+      "sha256": "989770968e2cf51dacc3bc21a739a5eeca16e6d23a85b9525eac94ae99f31b45"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/swords_12.webp",
+      "bytes": 734584,
+      "sha256": "a61ebf1b118254a21a70cbef885c2308f438d11e7b9ccaa1cc4c81996ff5d094"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/major_02.webp",
+      "bytes": 853294,
+      "sha256": "e54148b1668012b9536a7fd3539fbbefe57d406b41fed1b17e290a0c22d1fc07"
+    },
+    {
+      "path": "images/decks/tabula-tarot/restored/swords_11.webp",
+      "bytes": 725126,
+      "sha256": "9f846e01ba6b648bee59c8cee4a404128e4aed2fccc0794d70e4eb86cd3a6987"
+    }
+  ]
+}
