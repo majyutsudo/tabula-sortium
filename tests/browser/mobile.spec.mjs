@@ -26,3 +26,30 @@ test('mobile card size adjustment persists through reload', async ({ page }) => 
   const restored = await page.evaluate(k => JSON.parse(localStorage.getItem(k)).settings.cardSize, key);
   expect(restored).toBe(after);
 });
+
+test('new menu is collapsed with readable hints, can be opened and remembers its state', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  const sections=page.locator('aside .section');
+  await expect(sections).toHaveCount(4);
+  const expected=[
+    ['Ⅰ. 使用するカード','カードの種類・展開法・詳細設定'],
+    ['Ⅱ. カード操作','シャッフル・カット・配札の設定'],
+    ['Ⅲ. アルター設定','テーブルの色彩・演出・装飾の設定'],
+    ['Ⅳ. 保存・管理','データの保存・読み込み・初期化']
+  ];
+  for(let i=0;i<4;i++){
+    await expect(sections.nth(i)).toHaveClass(/is-collapsed/);
+    await expect(sections.nth(i).locator('.section-title')).toHaveText(expected[i][0]);
+    await expect(sections.nth(i).locator('.section-hint')).toHaveText(expected[i][1]);
+    await expect(sections.nth(i).locator('.section-toggle')).toHaveAttribute('aria-expanded','false');
+  }
+  await expect(page.locator('#openAbout')).toHaveText('About');
+  await sections.first().locator('.section-toggle').click();
+  await expect(sections.first()).not.toHaveClass(/is-collapsed/);
+  await expect(page.locator('#pool')).toBeVisible();
+  await page.reload();
+  await expect(sections.first()).not.toHaveClass(/is-collapsed/);
+  await expect(sections.nth(1)).toHaveClass(/is-collapsed/);
+});
