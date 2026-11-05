@@ -130,7 +130,11 @@ test('invalid JSON does not replace the current workspace', async ({ page }) => 
 });
 
 test('settings reset preserves the current reading', async ({ page }) => {
-  await page.locator('#tableLabelMode').selectOption('number');
+  await page.locator('.label-cycle-settings summary').click();
+  await page.locator('.label-cycle-options input[value="number"]').check();
+  await page.locator('#toolbarLabelToggle').click();
+  await page.locator('#toolbarLabelToggle').click();
+  await expect(page.locator('#toolbarLabelToggle')).toHaveText('番号のみ');
   await page.locator('#quickDeal').click();
   await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(10);
   const before = await saved(page, WORKSPACE);
@@ -145,7 +149,11 @@ test('settings reset preserves the current reading', async ({ page }) => {
 });
 
 test('all-data reset discards readings and returns card size to its default', async ({ page }) => {
-  await page.locator('#tableLabelMode').selectOption('number');
+  await page.locator('.label-cycle-settings summary').click();
+  await page.locator('.label-cycle-options input[value="number"]').check();
+  await page.locator('#toolbarLabelToggle').click();
+  await page.locator('#toolbarLabelToggle').click();
+  await expect(page.locator('#toolbarLabelToggle')).toHaveText('番号のみ');
   await page.locator('#quickDeal').click();
   await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(10);
   const originalSize = await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).settings.cardSize);

@@ -124,7 +124,7 @@ test('About opens from settings, credits and legal details navigate correctly',a
   await expect(about.locator('h2')).toHaveText('TABULA SORTIUM');
   await expect(about.locator('.about-subtitle')).toHaveText('THE VIRTUAL DIVINATION TABLE');
   await expect(about.locator('.about-credits')).toContainText('Created by Majyutsudo');
-  await expect(about.locator('.about-meta').first()).toHaveText('Version 0.9.95');
+  await expect(about.locator('.about-meta').first()).toHaveText('Version 0.9.96');
   await expect(about.locator('.about-icon')).toHaveJSProperty('complete',true);
   await page.locator('#aboutLegal').click();
   await expect(page.locator('.about-legal')).toContainText('License & Disclaimer');
@@ -132,4 +132,18 @@ test('About opens from settings, credits and legal details navigate correctly',a
   await expect(about).toBeVisible();
   await page.locator('#modalClose').click();
   await expect(page.locator('#modalBg')).not.toHaveClass(/open/);
+});
+
+test('all cards open at once without changing identities or reversals', async ({page})=>{
+  await page.locator('#quickDeal').click();
+  await expect.poll(async()=> (await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+  const original=await saved(page,WORKSPACE);
+  await page.locator('#quickFaceDown').click();
+  await expect.poll(async()=> (await saved(page,WORKSPACE)).state.placed.every(p=>!p.faceUp)).toBe(true);
+  await page.locator('#quickRevealAll').click();
+  const opened=await saved(page,WORKSPACE);
+  expect(opened.state.placed).toHaveLength(10);
+  expect(opened.state.placed.every(p=>p.faceUp)).toBe(true);
+  expect(opened.state.placed.map(p=>[p.id,p.reversed])).toEqual(original.state.placed.map(p=>[p.id,p.reversed]));
+  await expect(page.locator('#status')).toContainText('10枚を一度に開きました。');
 });

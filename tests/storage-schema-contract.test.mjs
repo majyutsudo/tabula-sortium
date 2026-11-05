@@ -150,12 +150,12 @@ test('simplified card settings retain illustrated pips and ten help sections', (
 });
 
 test('About screen retains the general divination subtitle and credits', () => {
-  assert.match(html, /v0\.9\.95 · THE VIRTUAL DIVINATION TABLE/);
+  assert.match(html, /THE VIRTUAL DIVINATION TABLE<br>v0\.9\.96/);
   assert.match(html, /id="openAbout"/);
   assert.match(code, /THE VIRTUAL DIVINATION TABLE/);
   assert.match(code, /Created by/);
   assert.match(code, /© 2026 Majyutsudo/);
-  assert.match(code, /Version 0\.9\.95/);
+  assert.match(code, /Version 0\.9\.96/);
   assert.match(code, /License &amp; Disclaimer/);
 });
 

@@ -54,3 +54,83 @@ test('new menu is collapsed with readable hints, can be opened and remembers its
   await expect(sections.first()).not.toHaveClass(/is-collapsed/);
   await expect(sections.nth(1)).toHaveClass(/is-collapsed/);
 });
+
+test('deck move handle repositions the pile without drawing and survives reload', async ({ page }) => {
+  await page.goto('/');
+  const handle=page.locator('.deck-move-handle');
+  await expect(handle).toBeVisible();
+  const before=await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).state.placed.length);
+  const box=await handle.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+  await page.mouse.down();
+  await page.mouse.move(box.x+box.width/2+45,box.y+box.height/2-45,{steps:6});
+  await page.mouse.up();
+  const result=await page.evaluate(() => {
+    const v=JSON.parse(localStorage.getItem('tabula_sortium_v01'));
+    return {position:v.settings.deckPosition,placed:v.state.placed.length};
+  });
+  expect(result.position.x).toBeGreaterThan(0);
+  expect(result.position.y).toBeGreaterThanOrEqual(0);
+  expect(result.placed).toBe(before);
+  const moved=await page.locator('#deck').boundingBox();
+  await page.reload();
+  const restored=await page.locator('#deck').boundingBox();
+  expect(Math.abs(moved.x-restored.x)).toBeLessThan(3);
+  expect(Math.abs(moved.y-restored.y)).toBeLessThan(3);
+  await page.locator('#deck').click({position:{x:12,y:35}});
+  const placed=await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).state.placed.length);
+  expect(placed).toBe(before+1);
+});
+
+test('toolbar label cycle respects selected modes and deck handle is print-hidden', async ({page}) => {
+  await page.goto('/');
+  const toggle=page.locator('#toolbarLabelToggle');
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveText('カード名');
+  await toggle.click();
+  await expect(toggle).toHaveText('ポジション名');
+  await toggle.click();
+  await expect(toggle).toHaveText('非表示');
+  await expect(page.locator('#zone .unified-label')).toHaveCount(0);
+  await page.reload();
+  await expect(toggle).toHaveText('非表示');
+  await toggle.click();
+  await expect(toggle).toHaveText('カード名');
+  await page.locator('.label-cycle-settings summary').click();
+  const options=page.locator('.label-cycle-options input');
+  await expect(options).toHaveCount(4);
+  await options.nth(0).uncheck(); // Exclude card name.
+  await expect(toggle).toHaveText('ポジション名');
+  await options.nth(2).check(); // Enable number-only in the fixed cycle.
+  await toggle.click();
+  await expect(toggle).toHaveText('番号のみ');
+  await toggle.click();
+  await expect(toggle).toHaveText('非表示');
+  await page.reload();
+  await expect(toggle).toHaveText('非表示');
+  await toggle.click();
+  await expect(toggle).toHaveText('ポジション名');
+  await page.emulateMedia({media:'print'});
+  await expect(page.locator('.deck-move-handle')).toBeHidden();
+});
+
+test('label settings disclosure matches the neighboring utility button', async ({page}) => {
+  await page.goto('/');
+  const summary=page.locator('.table-utility-actions .label-cycle-settings > summary');
+  const neighbor=page.locator('#quickPositions');
+  await expect(summary).toBeVisible();
+  const style=await page.evaluate(() => {
+    const summary=document.querySelector('.table-utility-actions .label-cycle-settings > summary');
+    const neighbor=document.querySelector('#quickPositions');
+    const a=getComputedStyle(summary),b=getComputedStyle(neighbor);
+    return {backgroundA:a.backgroundColor,backgroundB:b.backgroundColor,borderA:a.borderTopColor,borderB:b.borderTopColor,rectA:summary.getBoundingClientRect().toJSON(),rectB:neighbor.getBoundingClientRect().toJSON()};
+  });
+  expect(style.backgroundA).toBe(style.backgroundB);
+  expect(style.borderA).toBe(style.borderB);
+  expect(Math.abs(style.rectA.height-style.rectB.height)).toBeLessThan(2);
+  expect(Math.abs(style.rectA.y-style.rectB.y)).toBeLessThan(2);
+  await summary.click();
+  await expect(page.locator('.label-cycle-settings')).toHaveAttribute('open','');
+  await expect(page.locator('.label-cycle-options input')).toHaveCount(4);
+});
