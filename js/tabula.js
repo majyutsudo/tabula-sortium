@@ -487,8 +487,8 @@ function revealAllAtOnce(){
  const closed=state.placed.filter(p=>!p.faceUp);
  if(!closed.length){setStatus('開ける伏せ札がありません。');return}
  closed.forEach(p=>{p.faceUp=true});
- // Instant reveal: play one flip sound, without completion visual effects.
- play('flip');render();saveLocal();
+ // Instant reveal matches "all face down": no sound or completion effects.
+ render();saveLocal();
  setStatus(closed.length+'枚を一度に開きました。');
 }
 $('quickRevealAll').onclick=revealAllAtOnce;
