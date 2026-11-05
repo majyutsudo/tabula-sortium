@@ -7,7 +7,7 @@ import { Script } from 'node:vm';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.match(html, /<link rel="stylesheet" href="css\/tabula\.css">/);
-assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="js\/tabula\.js"><\/script>/);
+assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="js\/catalog\.js"><\/script><script src="js\/tabula\.js"><\/script>/);
 const css = readFileSync(new URL('../css/tabula.css', import.meta.url), 'utf8');
 const code = readFileSync(new URL('../js/tabula.js', import.meta.url), 'utf8');
 const storageCode = readFileSync(new URL('../js/storage-format.js', import.meta.url), 'utf8');
