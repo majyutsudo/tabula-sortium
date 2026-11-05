@@ -83,22 +83,34 @@ test('deck move handle repositions the pile without drawing and survives reload'
   expect(placed).toBe(before+1);
 });
 
-test('toolbar label switch hides and restores labels and the deck handle is print-hidden', async ({page}) => {
+test('toolbar label cycle respects selected modes and deck handle is print-hidden', async ({page}) => {
   await page.goto('/');
   const toggle=page.locator('#toolbarLabelToggle');
   await expect(toggle).toBeVisible();
-  await expect(toggle).toHaveAttribute('aria-pressed','true');
+  await expect(toggle).toHaveText('カード名');
   await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed','false');
-  await expect(page.locator('#tableLabelMode')).toHaveValue('off');
+  await expect(toggle).toHaveText('ポジション名');
+  await toggle.click();
+  await expect(toggle).toHaveText('非表示');
   await expect(page.locator('#zone .unified-label')).toHaveCount(0);
+  await page.reload();
+  await expect(toggle).toHaveText('非表示');
   await toggle.click();
-  await expect(page.locator('#tableLabelMode')).toHaveValue('card');
-  await expect(toggle).toHaveAttribute('aria-pressed','true');
-  await page.locator('#tableLabelMode').selectOption('position');
+  await expect(toggle).toHaveText('カード名');
+  await page.locator('.label-cycle-settings summary').click();
+  const options=page.locator('.label-cycle-options input');
+  await expect(options).toHaveCount(4);
+  await options.nth(0).uncheck(); // Exclude card name.
+  await expect(toggle).toHaveText('ポジション名');
+  await options.nth(2).check(); // Enable number-only in the fixed cycle.
   await toggle.click();
+  await expect(toggle).toHaveText('番号のみ');
   await toggle.click();
-  await expect(page.locator('#tableLabelMode')).toHaveValue('position');
+  await expect(toggle).toHaveText('非表示');
+  await page.reload();
+  await expect(toggle).toHaveText('非表示');
+  await toggle.click();
+  await expect(toggle).toHaveText('ポジション名');
   await page.emulateMedia({media:'print'});
   await expect(page.locator('.deck-move-handle')).toBeHidden();
 });
