@@ -11,10 +11,12 @@ assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="
 const css = readFileSync(new URL('../css/tabula.css', import.meta.url), 'utf8');
 const code = readFileSync(new URL('../js/tabula.js', import.meta.url), 'utf8');
 const storageCode = readFileSync(new URL('../js/storage-format.js', import.meta.url), 'utf8');
+const catalogCode = readFileSync(new URL('../js/catalog.js', import.meta.url), 'utf8');
 
 test('application script remains syntactically valid', () => {
   assert.doesNotThrow(() => new Script(code));
   assert.doesNotThrow(() => new Script(storageCode));
+  assert.doesNotThrow(() => new Script(catalogCode));
 });
 
 test('workspace has a declared v1 schema and both storage write paths include it', () => {
@@ -61,4 +63,13 @@ test('storage rules are loaded before the main script', () => {
   assert.match(code, /const validateReading=v=>TabulaStorage\.validateReading\(v,cards\)/);
   assert.match(code, /const fileNamePart=TabulaStorage\.fileNamePart/);
   assert.match(code, /const validCardSize=TabulaStorage\.validCardSize/);
+});
+
+test('card and spread catalogue is loaded before app', () => {
+  const catalogueIndex=html.indexOf('src="js/catalog.js"');
+  const appIndex=html.indexOf('src="js/tabula.js"');
+  assert.ok(catalogueIndex>=0&&appIndex>catalogueIndex);
+  assert.match(code, /const \{majors,suitDefs,ranks,cards\}=TabulaCatalog/);
+  assert.match(code, /const \{presets,colors\}=TabulaCatalog/);
+  assert.match(code, /const \{builtinSpreadCardSizes\}=TabulaCatalog/);
 });
