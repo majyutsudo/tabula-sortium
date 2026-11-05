@@ -11,7 +11,7 @@ const makeDeck=n=>Array.from({length:n},(_,i)=>({id:'card_'+i,reversed:i%2===0})
 function assertPermutation(before,after){
   assert.equal(after.length,before.length,'card count changed');
   assert.equal(new Set(after.map(c=>c.id)).size,before.length,'duplicate or lost cards');
-  assert.deepEqual(after.map(c=>c.id).sort(),before.map(c=>c.id).sort(),'card identities changed');
+  assert.deepEqual(Array.from(after,c=>c.id).sort(),Array.from(before,c=>c.id).sort(),'card identities changed');
   for(const c of after){
     const original=before.find(x=>x.id===c.id);
     assert.equal(c,original,'card object changed');
