@@ -118,3 +118,21 @@ test('settings reset preserves the current reading', async ({ page }) => {
   const after = await saved(page, WORKSPACE);
   expect(after.state.placed).toEqual(before.state.placed);
 });
+
+test('all-data reset discards readings and returns card size to its default', async ({ page }) => {
+  await page.locator('#quickDeal').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBeGreaterThan(0);
+  const originalSize = await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).settings.cardSize);
+  await page.locator('#zoomIn').click();
+  const changedSize = await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).settings.cardSize);
+  expect(changedSize).toBeGreaterThan(originalSize);
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#resetEverything').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(0);
+  const fresh = await saved(page, WORKSPACE);
+  expect(fresh.schemaVersion).toBe(1);
+  expect(fresh.settings.cardSize).toBe(originalSize);
+  expect(await saved(page, HISTORY)).toBeNull();
+  expect(await saved(page, SPREADS)).toBeNull();
+  expect(Number(await page.evaluate(() => localStorage.getItem('tabula_card_size_v2')))).toBe(originalSize);
+});
