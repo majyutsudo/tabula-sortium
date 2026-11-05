@@ -14,6 +14,8 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.locator('#quickDeal')).toBeVisible();
+  // Open the settings required by legacy acceptance cases; fresh-start folding has its own test.
+  for (const button of await page.locator('aside .section > h2 .section-toggle').all()) await button.click();
 });
 
 test('fresh default configuration uses Celtic cross, overhand and card labels', async ({ page }) => {
