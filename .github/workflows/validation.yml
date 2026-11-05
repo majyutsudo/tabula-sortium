@@ -1,12 +1,8 @@
 name: TABULA validation
 
+# Development is validated on demand to avoid duplicate runs and email floods.
+# Run it via Actions > TABULA validation > Run workflow.
 on:
-  push:
-    branches:
-      - cleanup/schema-v1
-      - develop
-      - main
-  pull_request:
   workflow_dispatch:
 
 permissions:
