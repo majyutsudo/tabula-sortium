@@ -75,6 +75,11 @@ select,input,textarea{background:#302f29;border-color:#71644c;color:#f3e8d3}
 aside .section > h2 {margin:0}
 aside .section > h2 .section-toggle{font-family:inherit;font-size:inherit;line-height:1.4;letter-spacing:inherit;text-align:left;color:#dac398;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;padding:5px 2px;border:0;background:transparent;white-space:normal;cursor:pointer}
 aside .section > h2 .section-toggle:hover{background:transparent;color:#ffe4ab}
+aside .section > h2 .section-toggle .section-heading{display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:3px}
+aside .section > h2 .section-toggle .section-title{display:block}
+aside .section > h2 .section-toggle .section-hint{display:block;font:11px/1.45 sans-serif;letter-spacing:normal;color:#a9a28e;white-space:normal}
+aside .section > h2 .section-toggle:hover .section-hint{color:#c9beaa}
+
 .fold-indicator{font-size:19px;color:#bda577;margin-left:12px;transition:transform .15s ease}
 aside .section.is-collapsed > :not(h2){display:none!important}
 /* Higher specificity than the mobile #operations .row display override. */
