@@ -43,6 +43,7 @@ test('new menu is collapsed with readable hints, can be opened and remembers its
     await expect(sections.nth(i)).toHaveClass(/is-collapsed/);
     await expect(sections.nth(i).locator('.section-title')).toHaveText(expected[i][0]);
     await expect(sections.nth(i).locator('.section-hint')).toHaveText(expected[i][1]);
+    await expect(sections.nth(i).locator('.section-hint')).toBeVisible();
     await expect(sections.nth(i).locator('.section-toggle')).toHaveAttribute('aria-expanded','false');
   }
   await expect(page.locator('#openAbout')).toHaveText('About');
