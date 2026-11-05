@@ -130,3 +130,21 @@ test('in-app help matches the published version and distinguishes reading import
   assert.match(code, /単独の占例JSONは記録一覧に追加され/);
   assert.match(code, /全データのバックアップJSONは/);
 });
+
+test('simplified card settings retain illustrated pips and ten help sections', () => {
+  assert.doesNotMatch(html, /id="numberCardStyle"/);
+  assert.doesNotMatch(code, /settings\.numberCardStyle/);
+  assert.match(code, /const landscape=c\.number>=2&&c\.number<=10/);
+  assert.match(code, /if\(pip&&c\.number===1\)/);
+  const pools = html.match(/<select id="pool">([\s\S]*?)<\/select>/)?.[1];
+  assert.ok(pools, 'pool dropdown exists');
+  for (const suit of ['cups','swords','wands','pentacles']) {
+    assert.doesNotMatch(pools, new RegExp('<option value="'+suit+'">'));
+  }
+  assert.match(code, /let labelMode='card'/);
+  assert.match(code, /spread:'celtic'/);
+  assert.match(code, /shuffleMethod:'overhand'/);
+  assert.match(code, /<h3>10\. 卓の拡大・移動（PC・スマホ）<\/h3>/);
+  assert.match(code, /折り畳み・展開でき/);
+  assert.doesNotMatch(code, /<h3>卓の拡大・移動（スマホ）<\/h3>/);
+});
