@@ -122,3 +122,11 @@ test('presentation formatting delegates to the UI helper', () => {
   assert.match(code, /TabulaUiFormat\.snapshotFace\(p,cards\)/);
   assert.match(code, /TabulaUiFormat\.cardDisplayRotation\(item,settings\.spread\)/);
 });
+
+test('in-app help matches the published version and distinguishes reading import from backup', () => {
+  const version = html.match(/<title>TABULA SORTIUM (v[0-9.]+)/)?.[1];
+  assert.ok(version, 'page title contains version');
+  assert.ok(code.includes('TABULA SORTIUM ' + version + ' —'), 'help version differs from page title');
+  assert.match(code, /単独の占例JSONは記録一覧に追加され/);
+  assert.match(code, /全データのバックアップJSONは/);
+});
