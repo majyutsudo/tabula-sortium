@@ -826,3 +826,9 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 /* Movable pile: handle-only dragging preserves normal drag-to-deal gestures. */
 .table-surface .deck .deck-move-handle{position:absolute;top:-13px;right:-13px;z-index:8;width:29px;height:29px;min-width:29px;min-height:29px;border:1px solid #c9ab75;border-radius:50%;background:#26382f;color:#e4c98e;font:19px/1 Georgia,serif;display:grid;place-items:center;cursor:move;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 2px 7px #0009;padding:0;opacity:.92}
 .table-surface .deck .deck-move-handle:hover,.table-surface .deck .deck-move-handle:focus-visible{background:#3d5647;outline:2px solid #d6b980;outline-offset:2px}
+
+/* Quick label visibility in the card-size toolbar; the detailed label selector stays available. */
+.toolbar-card-size #toolbarLabelToggle{min-width:51px;white-space:nowrap;font:11px/1.2 Arial,sans-serif;padding:5px 6px;border-color:#7d704f;color:#e8d2a1}
+.toolbar-card-size #toolbarLabelToggle[aria-pressed="false"]{color:#a9a59a;border-color:#50534c;background:#262b27}
+@media(max-width:780px){.toolbar-card-size #toolbarLabelToggle{min-width:47px;padding:4px!important;font-size:10px}.toolbar-card-size{gap:4px}.toolbar-card-size .toolbar-size-label{font-size:11px}}
+@media print{.table-surface .deck .deck-move-handle{display:none!important}}
