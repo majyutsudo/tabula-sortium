@@ -158,3 +158,15 @@ test('About screen retains the general divination subtitle and credits', () => {
   assert.match(code, /Version 0\.9\.95/);
   assert.match(code, /License &amp; Disclaimer/);
 });
+
+test('collapsed category captions remain accessible and menu defaults stay closed', () => {
+  assert.match(html, /Ⅲ\. アルター設定/);
+  assert.match(html, /テーブルの色彩・演出・装飾の設定/);
+  assert.match(html, /カードの種類・展開法・詳細設定/);
+  assert.match(html, /シャッフル・カット・配札の設定/);
+  assert.match(html, /データの保存・読み込み・初期化/);
+  assert.match(html, /id="openAbout"[^>]*>About<\/button>/);
+  assert.match(code, /let closed=true/);
+  assert.match(code, /localStorage\.getItem\(key\)!=='open'/);
+  assert.match(css, /\.section-hint/);
+});
