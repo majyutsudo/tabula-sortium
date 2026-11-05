@@ -113,3 +113,21 @@ test('standalone JSON reading import adds history without replacing the current 
   expect(stored.placed).toEqual(original.placed);
   expect((await saved(page,WORKSPACE)).state.placed).toEqual(current.state.placed);
 });
+
+test('About opens from settings, credits and legal details navigate correctly',async ({page})=>{
+  await expect(page.locator('.version')).toContainText('THE VIRTUAL DIVINATION TABLE');
+  await page.locator('#openAbout').click();
+  const about=page.locator('.about-panel');
+  await expect(about).toBeVisible();
+  await expect(about.locator('h2')).toHaveText('TABULA SORTIUM');
+  await expect(about.locator('.about-subtitle')).toHaveText('THE VIRTUAL DIVINATION TABLE');
+  await expect(about.locator('.about-credits')).toContainText('Created by Majyutsudo');
+  await expect(about.locator('.about-meta').first()).toHaveText('Version 0.9.95');
+  await expect(about.locator('.about-icon')).toHaveJSProperty('complete',true);
+  await page.locator('#aboutLegal').click();
+  await expect(page.locator('.about-legal')).toContainText('License & Disclaimer');
+  await page.locator('#aboutBack').click();
+  await expect(about).toBeVisible();
+  await page.locator('#modalClose').click();
+  await expect(page.locator('#modalBg')).not.toHaveClass(/open/);
+});
