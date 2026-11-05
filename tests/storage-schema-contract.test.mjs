@@ -7,13 +7,14 @@ import { Script } from 'node:vm';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.match(html, /<link rel="stylesheet" href="css\/tabula\.css">/);
-assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="js\/catalog\.js"><\/script><script src="js\/spread-store\.js"><\/script><script src="js\/spread-geometry\.js"><\/script><script src="js\/tabula\.js"><\/script>/);
+assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="js\/catalog\.js"><\/script><script src="js\/spread-store\.js"><\/script><script src="js\/spread-geometry\.js"><\/script><script src="js\/card-rules\.js"><\/script><script src="js\/tabula\.js"><\/script>/);
 const css = readFileSync(new URL('../css/tabula.css', import.meta.url), 'utf8');
 const code = readFileSync(new URL('../js/tabula.js', import.meta.url), 'utf8');
 const storageCode = readFileSync(new URL('../js/storage-format.js', import.meta.url), 'utf8');
 const catalogCode = readFileSync(new URL('../js/catalog.js', import.meta.url), 'utf8');
 const spreadCode = readFileSync(new URL('../js/spread-store.js', import.meta.url), 'utf8');
 const geometryCode = readFileSync(new URL('../js/spread-geometry.js', import.meta.url), 'utf8');
+const cardRulesCode = readFileSync(new URL('../js/card-rules.js', import.meta.url), 'utf8');
 
 test('application script remains syntactically valid', () => {
   assert.doesNotThrow(() => new Script(code));
@@ -21,6 +22,7 @@ test('application script remains syntactically valid', () => {
   assert.doesNotThrow(() => new Script(catalogCode));
   assert.doesNotThrow(() => new Script(spreadCode));
   assert.doesNotThrow(() => new Script(geometryCode));
+  assert.doesNotThrow(() => new Script(cardRulesCode));
 });
 
 test('workspace has a declared v1 schema and both storage write paths include it', () => {
@@ -86,4 +88,11 @@ test('custom spread storage reads and writes through extracted helper', () => {
 test('spread editor delegates geometry calculations', () => {
   assert.match(code, /TabulaSpreadGeometry\.placeOnCircle\(/);
   assert.match(code, /TabulaSpreadGeometry\.alignPositions\(/);
+});
+
+test('card operations call dedicated rule helpers', () => {
+  assert.match(code, /TabulaCardRules\.selectCards\(/);
+  assert.match(code, /TabulaCardRules\.getDealOrder\(/);
+  assert.match(code, /TabulaCardRules\.parseDealOrderInput\(/);
+  assert.match(code, /TabulaCardRules\.rotateAngle\(/);
 });
