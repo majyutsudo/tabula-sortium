@@ -136,3 +136,33 @@ test('all-data reset discards readings and returns card size to its default', as
   expect(await saved(page, SPREADS)).toBeNull();
   expect(Number(await page.evaluate(() => localStorage.getItem('tabula_card_size_v2')))).toBe(originalSize);
 });
+
+test('saved readings can be reopened and restored after page reload', async ({ page }) => {
+  await page.locator('#spreadQuickSelect').selectOption('three');
+  await page.locator('#quickDeal').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(3);
+  const before = await saved(page, WORKSPACE);
+
+  await page.locator('#quickSnapshotSave').click();
+  await page.locator('#snapshotName').fill('自動テストの占例');
+  await page.locator('#snapConfirm').click();
+  await expect.poll(async () => (await saved(page, HISTORY))?.length ?? 0).toBe(1);
+  const stored = (await saved(page, HISTORY))[0];
+  expect(stored.name).toBe('自動テストの占例');
+  expect(stored.placed).toEqual(before.state.placed);
+  expect(stored.deck).toEqual(before.state.deck);
+
+  await page.reload();
+  await page.locator('#newSessionStandalone').click();
+  expect((await saved(page, WORKSPACE)).state.placed).toHaveLength(0);
+  await page.locator('#quickSnapshotList').click();
+  await expect(page.locator('#compareA')).toHaveValue(stored.id);
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#restoreA').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(3);
+  const after = await saved(page, WORKSPACE);
+  expect(after.state.placed).toEqual(before.state.placed);
+  expect(after.state.deck).toEqual(before.state.deck);
+  await page.reload();
+  expect((await saved(page, WORKSPACE)).state.placed).toEqual(before.state.placed);
+});
