@@ -550,7 +550,7 @@ function showAboutLegal(){
 }
 $('openAbout').addEventListener('click',openAbout);
 
-document.querySelectorAll('aside .section').forEach((section,i)=>{const btn=section.querySelector('.section-toggle');const key='tabula_sortium_section_'+i;let closed=false;try{closed=localStorage.getItem(key)==='closed'}catch(e){}section.classList.toggle('is-collapsed',closed);btn.setAttribute('aria-expanded',String(!closed));btn.addEventListener('click',()=>{const next=!section.classList.contains('is-collapsed');section.classList.toggle('is-collapsed',next);btn.setAttribute('aria-expanded',String(!next));try{localStorage.setItem(key,next?'closed':'open')}catch(e){}})});
+document.querySelectorAll('aside .section').forEach((section,i)=>{const btn=section.querySelector('.section-toggle');const key='tabula_sortium_section_'+i;let closed=true;try{closed=localStorage.getItem(key)!=='open'}catch(e){}section.classList.toggle('is-collapsed',closed);btn.setAttribute('aria-expanded',String(!closed));btn.addEventListener('click',()=>{const next=!section.classList.contains('is-collapsed');section.classList.toggle('is-collapsed',next);btn.setAttribute('aria-expanded',String(!next));try{localStorage.setItem(key,next?'closed':'open')}catch(e){}})});
 // TABULA TAROT image gallery; only the existing in-memory images are used.
 
 // Render SVG as page content so its external image references remain loadable.
