@@ -6,9 +6,10 @@ import { readFileSync } from 'node:fs';
 import { Script } from 'node:vm';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const match = html.match(/<script>([\s\S]*?)<\/script>/);
-assert.ok(match, 'inline application script exists');
-const code = match[1];
+assert.match(html, /<link rel="stylesheet" href="css\/tabula\.css">/);
+assert.match(html, /<script src="js\/tabula\.js"><\/script>/);
+const css = readFileSync(new URL('../css/tabula.css', import.meta.url), 'utf8');
+const code = readFileSync(new URL('../js/tabula.js', import.meta.url), 'utf8');
 
 test('application script remains syntactically valid', () => {
   assert.doesNotThrow(() => new Script(code));
@@ -42,4 +43,10 @@ test('active local storage keys remain stable', () => {
     'tabula_sortium_spread_library_v1','tabula_card_size_v2']) {
     assert.ok(code.includes(key), `active key was renamed: ${key}`);
   }
+});
+
+test('separate stylesheet preserves mobile cockpit selectors', () => {
+  assert.match(css, /\.mobile-cockpit-actions/);
+  assert.match(css, /#desktopTableViews/);
+  assert.match(css, /#spreadNotebook/);
 });
