@@ -7,16 +7,18 @@ import { Script } from 'node:vm';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.match(html, /<link rel="stylesheet" href="css\/tabula\.css">/);
-assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="js\/catalog\.js"><\/script><script src="js\/tabula\.js"><\/script>/);
+assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="js\/catalog\.js"><\/script><script src="js\/spread-store\.js"><\/script><script src="js\/tabula\.js"><\/script>/);
 const css = readFileSync(new URL('../css/tabula.css', import.meta.url), 'utf8');
 const code = readFileSync(new URL('../js/tabula.js', import.meta.url), 'utf8');
 const storageCode = readFileSync(new URL('../js/storage-format.js', import.meta.url), 'utf8');
 const catalogCode = readFileSync(new URL('../js/catalog.js', import.meta.url), 'utf8');
+const spreadCode = readFileSync(new URL('../js/spread-store.js', import.meta.url), 'utf8');
 
 test('application script remains syntactically valid', () => {
   assert.doesNotThrow(() => new Script(code));
   assert.doesNotThrow(() => new Script(storageCode));
   assert.doesNotThrow(() => new Script(catalogCode));
+  assert.doesNotThrow(() => new Script(spreadCode));
 });
 
 test('workspace has a declared v1 schema and both storage write paths include it', () => {
@@ -72,4 +74,9 @@ test('card and spread catalogue is loaded before app', () => {
   assert.match(code, /const \{majors,suitDefs,ranks,cards\}=TabulaCatalog/);
   assert.match(code, /const \{presets,colors\}=TabulaCatalog/);
   assert.match(code, /const \{builtinSpreadCardSizes\}=TabulaCatalog/);
+});
+
+test('custom spread storage reads and writes through extracted helper', () => {
+  assert.match(code, /TabulaSpreadStore\.read\(localStorage,SPREAD_LIBRARY_KEY\)/);
+  assert.match(code, /TabulaSpreadStore\.write\(localStorage,SPREAD_LIBRARY_KEY,spreadLibrary\)/);
 });
