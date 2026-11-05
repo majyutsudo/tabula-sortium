@@ -127,6 +127,7 @@ test('invalid JSON does not replace the current workspace', async ({ page }) => 
 });
 
 test('settings reset preserves the current reading', async ({ page }) => {
+  await page.locator('#tableLabelMode').selectOption('number');
   await page.locator('#quickDeal').click();
   await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBeGreaterThan(0);
   const before = await saved(page, WORKSPACE);
@@ -135,9 +136,13 @@ test('settings reset preserves the current reading', async ({ page }) => {
   await confirm;
   const after = await saved(page, WORKSPACE);
   expect(after.state.placed).toEqual(before.state.placed);
+  expect(after.settings.spread).toBe('celtic');
+  expect(after.settings.shuffleMethod).toBe('overhand');
+  await expect(page.locator('#tableLabelMode')).toHaveValue('card');
 });
 
 test('all-data reset discards readings and returns card size to its default', async ({ page }) => {
+  await page.locator('#tableLabelMode').selectOption('number');
   await page.locator('#quickDeal').click();
   await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBeGreaterThan(0);
   const originalSize = await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).settings.cardSize);
@@ -153,6 +158,9 @@ test('all-data reset discards readings and returns card size to its default', as
   expect(await saved(page, HISTORY)).toBeNull();
   expect(await saved(page, SPREADS)).toBeNull();
   expect(Number(await page.evaluate(() => localStorage.getItem('tabula_card_size_v2')))).toBe(originalSize);
+  await expect(page.locator('#tableLabelMode')).toHaveValue('card');
+  expect(fresh.settings.spread).toBe('celtic');
+  expect(fresh.settings.shuffleMethod).toBe('overhand');
 });
 
 test('saved readings can be reopened and restored after page reload', async ({ page }) => {
