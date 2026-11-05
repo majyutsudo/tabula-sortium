@@ -16,6 +16,22 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('#quickDeal')).toBeVisible();
 });
 
+test('fresh default configuration uses Celtic cross, overhand and card labels', async ({ page }) => {
+  const workspace = await saved(page, WORKSPACE);
+  expect(workspace.settings.spread).toBe('celtic');
+  expect(workspace.settings.shuffleMethod).toBe('overhand');
+  await expect(page.locator('#spread')).toHaveValue('celtic');
+  await expect(page.locator('#shuffleMethod')).toHaveValue('overhand');
+  await expect(page.locator('#tableLabelMode')).toHaveValue('card');
+  await expect(page.locator('#numberCardStyle')).toHaveCount(0);
+  const pools = await page.locator('#pool option').evaluateAll(options => options.map(x => x.value));
+  expect(pools).toEqual(['all', 'major', 'minor', 'court', 'custom']);
+  await page.locator('#quickDeal').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(10);
+  await page.reload();
+  await expect(page.locator('#tableLabelMode')).toHaveValue('card');
+});
+
 test('new session is saved in schema v1 and restores its deck across reload', async ({ page }) => {
   const before = await saved(page, WORKSPACE);
   expect(before.schemaVersion).toBe(1);
