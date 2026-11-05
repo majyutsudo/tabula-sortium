@@ -29,10 +29,16 @@ A backup must preserve deck order, drawn/removed cards, card IDs and reversal fl
 
 A standalone reading export is imported into the reading history; it does not replace the current table. A full backup import replaces the workspace after confirmation.
 
-## Verification still required
+## Verification and release gate
 
-Static syntax and source-contract checks are not a substitute for browser-level tests. Before merging into `main`, test with isolated browser profiles: local save/reload, backup export/import, reading import, custom spread/card size, invalid JSON, out-of-capacity storage, and reset actions. Check that the existing live `main` site is unaffected.
+Automated Node tests now cover schema contracts, catalog, card and shuffle rules, spread storage/geometry, reading-history deep copies and formatting. Playwright browser tests cover desktop/mobile basic operations, save/reload, JSON backup export/import, invalid JSON, reset, and reading-history save/restore. The full suite must be run against the latest development commit before merging.
 
-## Scope of this change
+Remaining manual checks before release: actual mouse/touch interactions for the spread editor, all shuffle/cut controls, card gallery and magnifier; custom spread creation/edit/cancel; independent reading JSON import; unavailable/limited localStorage; multiple browsers and screen sizes; and an export/import using a copy of a real existing user backup. Compare screenshots with the current production page and verify every image URL is valid.
 
-The development branch removes **compatibility-only conversion paths**; it does not split the monolithic app into modules, redesign reset behavior, or change reading validation. Those should be separate reviewed changes.
+Run the on-demand GitHub Actions workflow by labeling draft PR #1 `run-validation` (remove and re-add the label to run again). Workflow dispatch may require the workflow to exist on the default branch; on the working branch use the PR label. Review all failures before merging. `main` remains unchanged until the release is explicitly approved.
+
+## Scope of this development branch
+
+The branch removes **compatibility-only conversion paths**, extracts the existing CSS into `css/tabula.css`, and divides independent JavaScript functionality among `js/catalog.js`, `js/storage-format.js`, `js/spread-store.js`, `js/spread-geometry.js`, `js/card-rules.js`, `js/shuffle.js`, `js/reading-history.js` and `js/ui-format.js`. `js/tabula.js` still contains the tightly coupled user-interface, animation, and main application control flow. The `resetEverything` action now resets the remembered card size as well. An independent formatting module does not imply that all rendering has been modularized.
+
+Do not rename active storage keys during release preparation. The application name/version and the schema version follow different version histories.
