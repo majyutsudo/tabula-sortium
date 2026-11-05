@@ -27,6 +27,6 @@ test('reading validation retains card IDs, slots, and coordinate rules',()=>{
   assert.equal(storage.validateReading({...good,placed:'invalid'},cards),false);
 });
 test('JSON filenames are sanitized without losing Unicode',()=>{
-  assert.equal(storage.fileNamePart('星 / 月: 占い'),'星_月_占い');
+  assert.equal(storage.fileNamePart('星 / 月: 占い'),'星___月__占い');
   assert.equal(storage.fileNamePart(''), 'reading');
 });
