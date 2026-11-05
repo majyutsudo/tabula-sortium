@@ -66,3 +66,49 @@ test('registered spread can be opened in workbench, aligned, then cancelled with
   expect(after.state.placed).toEqual(before.state.placed);
   expect((await saved(page,SPREADS))[0]).toEqual(fixture);
 });
+
+test('new custom spread is created from a free table and is selectable after reload',async ({page})=>{
+  await page.locator('#spreadQuickSelect').selectOption('free');
+  await page.locator('#quickDeal').click();
+  await page.locator('#quickDeal').click();
+  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(2);
+  await page.locator('#spreadNotebook').click();
+  await page.locator('#archiveCapture').click();
+  await expect(page.locator('#spreadWorkbench')).toBeVisible();
+  await page.locator('#spreadWorkbenchFields input').first().fill('実操作のスプレッド');
+  await page.locator('#zone .card').first().click();
+  await page.locator('#zone .card').nth(1).click();
+  await expect(page.locator('#spreadWorkbenchHint')).toContainText('番号付け完了');
+  await page.locator('#spreadSave').click();
+  await expect.poll(async()=> (await saved(page,SPREADS))?.length ?? 0).toBe(1);
+  const created=(await saved(page,SPREADS))[0];
+  expect(created.name).toBe('実操作のスプレッド');
+  expect(created.slots).toHaveLength(2);
+  expect(created.cardSize).toBeGreaterThanOrEqual(.8);
+  await page.reload();
+  await page.locator('#spreadQuickSelect').selectOption(created.id);
+  expect((await saved(page,WORKSPACE)).settings.spread).toBe(created.id);
+});
+
+test('standalone JSON reading import adds history without replacing the current table',async ({page})=>{
+  await page.locator('#quickDeal').click();
+  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBeGreaterThan(0);
+  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#exportCurrent').click()]);
+  const stream=await download.createReadStream();
+  let raw='';
+  for await(const chunk of stream)raw+=chunk.toString();
+  const exported=JSON.parse(raw);
+  expect(exported.kind).toBe('reading');
+  const original=exported.reading;
+  await page.locator('#newSessionStandalone').click();
+  const current=await saved(page,WORKSPACE);
+  expect(current.state.placed).toHaveLength(0);
+  page.on('dialog',dialog=>dialog.accept());
+  await page.locator('#externalFile').setInputFiles({
+    name:'reading.json',mimeType:'application/json',buffer:Buffer.from(raw,'utf8')
+  });
+  await expect.poll(async()=> (await saved(page,'tabula_sortium_history_v034'))?.length ?? 0).toBe(1);
+  const stored=(await saved(page,'tabula_sortium_history_v034'))[0];
+  expect(stored.placed).toEqual(original.placed);
+  expect((await saved(page,WORKSPACE)).state.placed).toEqual(current.state.placed);
+});
