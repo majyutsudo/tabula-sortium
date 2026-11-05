@@ -82,3 +82,23 @@ test('deck move handle repositions the pile without drawing and survives reload'
   const placed=await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).state.placed.length);
   expect(placed).toBe(before+1);
 });
+
+test('toolbar label switch hides and restores labels and the deck handle is print-hidden', async ({page}) => {
+  await page.goto('/');
+  const toggle=page.locator('#toolbarLabelToggle');
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-pressed','true');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed','false');
+  await expect(page.locator('#tableLabelMode')).toHaveValue('off');
+  await expect(page.locator('#zone .unified-label')).toHaveCount(0);
+  await toggle.click();
+  await expect(page.locator('#tableLabelMode')).toHaveValue('card');
+  await expect(toggle).toHaveAttribute('aria-pressed','true');
+  await page.locator('#tableLabelMode').selectOption('position');
+  await toggle.click();
+  await toggle.click();
+  await expect(page.locator('#tableLabelMode')).toHaveValue('position');
+  await page.emulateMedia({media:'print'});
+  await expect(page.locator('.deck-move-handle')).toBeHidden();
+});
