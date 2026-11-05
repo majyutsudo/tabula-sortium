@@ -76,6 +76,7 @@ test('custom spreads retain positions, labels, and saved card size', async ({ pa
 });
 
 test('full JSON backup keeps schema, readings and custom spreads', async ({ page }) => {
+  await page.locator('#spreadQuickSelect').selectOption('three');
   await page.locator('#quickDeal').click();
   // A three-card deal is staggered: wait for all cards before making the backup.
   await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(3);
