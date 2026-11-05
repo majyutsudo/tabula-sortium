@@ -114,3 +114,23 @@ test('toolbar label cycle respects selected modes and deck handle is print-hidde
   await page.emulateMedia({media:'print'});
   await expect(page.locator('.deck-move-handle')).toBeHidden();
 });
+
+test('label settings disclosure matches the neighboring utility button', async ({page}) => {
+  await page.goto('/');
+  const summary=page.locator('.table-utility-actions .label-cycle-settings > summary');
+  const neighbor=page.locator('#quickPositions');
+  await expect(summary).toBeVisible();
+  const style=await page.evaluate(() => {
+    const summary=document.querySelector('.table-utility-actions .label-cycle-settings > summary');
+    const neighbor=document.querySelector('#quickPositions');
+    const a=getComputedStyle(summary),b=getComputedStyle(neighbor);
+    return {backgroundA:a.backgroundColor,backgroundB:b.backgroundColor,borderA:a.borderTopColor,borderB:b.borderTopColor,rectA:summary.getBoundingClientRect().toJSON(),rectB:neighbor.getBoundingClientRect().toJSON()};
+  });
+  expect(style.backgroundA).toBe(style.backgroundB);
+  expect(style.borderA).toBe(style.borderB);
+  expect(Math.abs(style.rectA.height-style.rectB.height)).toBeLessThan(2);
+  expect(Math.abs(style.rectA.y-style.rectB.y)).toBeLessThan(2);
+  await summary.click();
+  await expect(page.locator('.label-cycle-settings')).toHaveAttribute('open','');
+  await expect(page.locator('.label-cycle-options input')).toHaveCount(4);
+});
