@@ -1,0 +1,14 @@
+{
+  "name": "tabula-sortium",
+  "private": true,
+  "version": "0.9.95",
+  "description": "Development checks for TABULA SORTIUM",
+  "scripts": {
+    "test:static": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test",
+    "test": "npm run test:static && npm run test:browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
