@@ -91,8 +91,9 @@ test('new custom spread is created from a free table and is selectable after rel
 });
 
 test('standalone JSON reading import adds history without replacing the current table',async ({page})=>{
+  await page.locator('#spreadQuickSelect').selectOption('three');
   await page.locator('#quickDeal').click();
-  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBeGreaterThan(0);
+  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(3);
   const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#exportCurrent').click()]);
   const stream=await download.createReadStream();
   let raw='';
