@@ -148,3 +148,13 @@ test('simplified card settings retain illustrated pips and ten help sections', (
   assert.match(code, /折り畳み・展開でき/);
   assert.doesNotMatch(code, /<h3>卓の拡大・移動（スマホ）<\/h3>/);
 });
+
+test('About screen retains the general divination subtitle and credits', () => {
+  assert.match(html, /v0\.9\.95 · THE VIRTUAL DIVINATION TABLE/);
+  assert.match(html, /id="openAbout"/);
+  assert.match(code, /THE VIRTUAL DIVINATION TABLE/);
+  assert.match(code, /Created by/);
+  assert.match(code, /© 2026 Majyutsudo/);
+  assert.match(code, /Version 0\.9\.95/);
+  assert.match(code, /License &amp; Disclaimer/);
+});
