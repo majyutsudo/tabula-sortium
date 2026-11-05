@@ -1,7 +1,7 @@
 {
   "name": "tabula-sortium",
   "private": true,
-  "version": "0.9.95",
+  "version": "0.9.96",
   "description": "Development checks for TABULA SORTIUM",
   "scripts": {
     "test:static": "node --test tests/*.test.mjs",
