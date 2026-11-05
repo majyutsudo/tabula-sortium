@@ -832,3 +832,17 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 .toolbar-card-size #toolbarLabelToggle[aria-pressed="false"]{color:#a9a59a;border-color:#50534c;background:#262b27}
 @media(max-width:780px){.toolbar-card-size #toolbarLabelToggle{min-width:47px;padding:4px!important;font-size:10px}.toolbar-card-size{gap:4px}.toolbar-card-size .toolbar-size-label{font-size:11px}}
 @media print{.table-surface .deck .deck-move-handle{display:none!important}}
+
+/* User-configurable label cycle: one compact tabletop action and a settings drawer. */
+.label-cycle-settings{flex:1 1 100%;min-width:0;border:1px solid #69614d;border-radius:5px;padding:6px 9px;color:var(--ui-text,#eadfc9)}
+.label-cycle-settings summary{cursor:pointer;font-size:13px;color:var(--ui-accent,#d6c29d);user-select:none}
+.label-cycle-settings .mini{margin:8px 0 6px}
+.label-cycle-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;padding:4px 0 7px}
+.label-cycle-options label{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:12px;cursor:pointer}
+.label-cycle-options input{accent-color:#b59b6b}
+.label-cycle-placement{display:flex;align-items:center;gap:9px;font-size:12px;margin-top:5px}
+.label-cycle-placement select{min-width:100px}
+#tableLabelMode[hidden]{display:none!important}
+.toolbar-card-size #toolbarLabelToggle{min-width:66px;max-width:94px;font-size:11px;color:#e8d2a1}
+.toolbar-card-size #toolbarLabelToggle[data-label-mode="off"]{color:#a9a59a}
+@media(max-width:780px){.toolbar-card-size #toolbarLabelToggle{min-width:57px;max-width:82px;font-size:10px;padding-inline:4px!important}}
