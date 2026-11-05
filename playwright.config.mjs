@@ -11,8 +11,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'
   },
-  projects: [{ name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chromium', use: { ...devices['iPhone 13'], browserName: 'chromium' } }],
+  projects: [{ name: 'desktop-chromium', testMatch: /storage\.spec\.mjs$/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile-chromium', testMatch: /mobile\.spec\.mjs$/, use: { ...devices['iPhone 13'], browserName: 'chromium' } }],
   webServer: {
     command: 'python3 -m http.server 4173 --bind 127.0.0.1',
     url: 'http://127.0.0.1:4173',
