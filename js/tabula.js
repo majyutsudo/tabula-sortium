@@ -1,10 +1,10 @@
 
 (()=>{'use strict';let inspectMode=false,tableDetailFocus=null;const $=id=>document.getElementById(id);const {majors,suitDefs,ranks,cards}=TabulaCatalog;const SPREAD_LIBRARY_KEY='tabula_sortium_spread_library_v1';let spreadLibrary=[];
-function loadSpreadLibrary(){try{const a=JSON.parse(localStorage.getItem(SPREAD_LIBRARY_KEY)||'[]');spreadLibrary=Array.isArray(a)?a.filter(v=>v&&typeof v.id==='string'&&Array.isArray(v.slots)&&v.slots.length<=52&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle))).slice(0,100):[]}catch(e){spreadLibrary=[]}refreshCustomPresets()}
+function loadSpreadLibrary(){spreadLibrary=TabulaSpreadStore.read(localStorage,SPREAD_LIBRARY_KEY);refreshCustomPresets()}
 function syncSpreadShortcut(){const shortcut=$('spreadQuickSelect'),source=$('spread');if(!shortcut||!source)return;shortcut.replaceChildren(...Array.from(source.options,option=>option.cloneNode(true)));shortcut.value=settings.spread;}
 function syncNumberCardStyleVisibility(){$('numberCardStyleField').hidden=settings.cardDesign!=='standard';}
 function refreshCustomPresets(){Object.keys(presets).filter(k=>k.startsWith('custom_')).forEach(k=>delete presets[k]);spreadLibrary.forEach(v=>presets[v.id]=v.slots.map(p=>({...p})));const select=document.getElementById('spread');if(!select)return;select.querySelectorAll('option[data-custom="1"]').forEach(el=>el.remove());spreadLibrary.forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.name;o.dataset.custom='1';select.append(o)});syncSpreadShortcut()}
-function storeSpreadLibrary(){localStorage.setItem(SPREAD_LIBRARY_KEY,JSON.stringify(spreadLibrary));refreshCustomPresets();if($('spreadArchive')&&!$('spreadArchive').hidden)renderSpreadArchive()}
+function storeSpreadLibrary(){TabulaSpreadStore.write(localStorage,SPREAD_LIBRARY_KEY,spreadLibrary);refreshCustomPresets();if($('spreadArchive')&&!$('spreadArchive').hidden)renderSpreadArchive()}
 let spreadWorkbench=null;let spreadSnap=true;
 function closeSpreadArchive(){$('spreadArchive').hidden=true;document.body.classList.remove('spread-archive-open');setNotebookButtonState(false);applyDesktopTableView();applyTableCamera();render()}
 function openSpreadArchive(){renderSpreadArchive();$('archiveCapture').hidden=settings.spread!=='free';$('spreadArchive').hidden=false;document.body.classList.add('spread-archive-open');setNotebookButtonState(true);$('spreadArchive').scrollIntoView({block:'nearest',behavior:'smooth'})}
