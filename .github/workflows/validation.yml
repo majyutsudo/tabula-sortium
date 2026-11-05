@@ -1,8 +1,10 @@
 name: TABULA validation
 
-# Development is validated on demand to avoid duplicate runs and email floods.
-# Run it via Actions > TABULA validation > Run workflow.
+# Opt-in only: adding the run-validation label to PR #1 runs checks once.
+# Commits do not trigger duplicate workflows or notification floods.
 on:
+  pull_request:
+    types: [labeled]
   workflow_dispatch:
 
 permissions:
@@ -10,6 +12,7 @@ permissions:
 
 jobs:
   test:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-validation'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
