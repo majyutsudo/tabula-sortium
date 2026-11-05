@@ -22,6 +22,7 @@ test('fresh default configuration uses Celtic cross, overhand and card labels', 
   const workspace = await saved(page, WORKSPACE);
   expect(workspace.settings.spread).toBe('celtic');
   expect(workspace.settings.shuffleMethod).toBe('overhand');
+  expect(workspace.settings.cardSize).toBe(1.0); // Celtic-cross desktop preset
   await expect(page.locator('#spread')).toHaveValue('celtic');
   await expect(page.locator('#shuffleMethod')).toHaveValue('overhand');
   await expect(page.locator('#tableLabelMode')).toHaveValue('card');
@@ -157,6 +158,16 @@ test('all-data reset discards readings and returns card size to its default', as
   const fresh = await saved(page, WORKSPACE);
   expect(fresh.schemaVersion).toBe(1);
   expect(fresh.settings.cardSize).toBe(originalSize);
+  expect(fresh.settings.cardSize).toBe(1.0);
+  // The Celtic cross uses a tighter preset; slots 7–10 must not overlap after reset.
+  const rightColumn = await page.locator('#zone .slot').evaluateAll(nodes => nodes.slice(6, 10).map(node => {
+    const r = node.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom };
+  }).sort((a, b) => a.top - b.top));
+  expect(rightColumn).toHaveLength(4);
+  for (let i = 1; i < rightColumn.length; i++)
+    expect(rightColumn[i - 1].bottom).toBeLessThanOrEqual(rightColumn[i].top + 1);
+
   expect(await saved(page, HISTORY)).toBeNull();
   expect(await saved(page, SPREADS)).toBeNull();
   expect(Number(await page.evaluate(() => localStorage.getItem('tabula_card_size_v2')))).toBe(originalSize);
