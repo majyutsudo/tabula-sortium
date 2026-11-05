@@ -821,7 +821,7 @@ for(const [id,name] of labelChoices){
 }
 labelSettings.append(labelSummary,labelHint,labelOptions);
 const placementSelect=document.createElement('select');placementSelect.id='labelPlacement';placementSelect.setAttribute('aria-label','ラベルの位置');placementSelect.innerHTML='<option value="below">カードの下</option><option value="above">カードの上</option>';placementSelect.value=labelPlacement;placementSelect.onchange=()=>{labelPlacement=placementSelect.value;localStorage.setItem('tabula_label_placement',labelPlacement);refreshTableLabels()};
-const placementLabel=document.createElement('label');placementLabel.className='label-cycle-placement';placementLabel.append(document.createTextNode('ラベル位置 '),placementSelect);
+const placementLabel=document.createElement('label');placementLabel.className='label-cycle-placement';placementLabel.append(document.createTextNode('位置 '),placementSelect);
 labelSettings.append(placementLabel,labelSelect);
 $('quickLabels').replaceWith(labelSettings);
 // Retain legacy lookup used by existing settings sync without a second visible control.
