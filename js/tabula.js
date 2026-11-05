@@ -418,8 +418,8 @@ function compareModal(){
  document.querySelectorAll('[data-export]').forEach(b=>b.onclick=()=>exportOne(snapshots.find(x=>x.id===b.dataset.export)));document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{if(!confirm('この結果を削除しますか？'))return;snapshots=snapshots.filter(x=>x.id!==b.dataset.delete);storeSnapshots();compareModal()});
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
-function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1};recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
-function resetEverythingAction(){if(!confirm('現在の卓、保存結果、登録したシャッフル手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:''};customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
+function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1};recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';syncToolbarLabelCycle();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
+function resetEverythingAction(){if(!confirm('現在の卓、保存結果、登録したシャッフル手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:''};customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';syncToolbarLabelCycle();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false){
  if(Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
  if(state.deck.length<2){setStatus('カットには2枚以上必要です。');return}
@@ -792,13 +792,53 @@ let labelMode='card',galleryHideIdentifiers=true,labelPlacement='below';
 try{labelPlacement=localStorage.getItem('tabula_label_placement')||'below'}catch(e){}
 try{galleryHideIdentifiers=localStorage.getItem('tabula_detail_symbols')!=='show'}catch(e){}
 try{labelMode=localStorage.getItem('tabula_label_mode')||'card'}catch(e){}
-const labelChoices=[['number','番号のみ'],['position','ポジション名'],['card','カード名'],['off','非表示']];
-const labelSelect=document.createElement('select');labelSelect.id='tableLabelMode';labelSelect.setAttribute('aria-label','卓上ラベル');
+const labelChoices=[['card','カード名'],['position','ポジション名'],['number','番号のみ'],['off','非表示']];
+const labelCycleKey='tabula_label_cycle_v1';
+let labelCycleModes=['card','position','off'];
+try{const saved=JSON.parse(localStorage.getItem(labelCycleKey)||'null');if(Array.isArray(saved)){const valid=labelChoices.map(x=>x[0]).filter(id=>saved.includes(id));if(valid.length)labelCycleModes=valid;}}catch(e){}
+if(!labelChoices.some(c=>c[0]===labelMode))labelMode='card';
+// Preserve older saved display modes even when they were not in the default cycle.
+if(!labelCycleModes.includes(labelMode))labelCycleModes=labelChoices.map(x=>x[0]).filter(id=>labelCycleModes.includes(id)||id===labelMode);
+const labelSelect=document.createElement('select');labelSelect.id='tableLabelMode';labelSelect.setAttribute('aria-label','現在の卓上ラベル');labelSelect.hidden=true;
 for(const [value,name] of labelChoices){const o=document.createElement('option');o.value=value;o.textContent=name;labelSelect.append(o)}
-labelSelect.value=labelMode;$('quickLabels').replaceWith(labelSelect);
-const placementSelect=document.createElement('select');placementSelect.id='labelPlacement';placementSelect.setAttribute('aria-label','ラベルの位置');placementSelect.innerHTML='<option value="below">カードの下</option><option value="above">カードの上</option>';placementSelect.value=labelPlacement;labelSelect.after(placementSelect);placementSelect.onchange=()=>{labelPlacement=placementSelect.value;localStorage.setItem('tabula_label_placement',labelPlacement);refreshTableLabels()};
-// Keep legacy synchronization calls safe while the visible selector owns labels.
-const legacyLabels=document.createElement('button');legacyLabels.id='quickLabels';legacyLabels.hidden=true;labelSelect.after(legacyLabels);
+labelSelect.value=labelMode;
+const labelSettings=document.createElement('details');labelSettings.className='label-cycle-settings';
+const labelSummary=document.createElement('summary');labelSummary.textContent='ラベル表示';
+const labelHint=document.createElement('p');labelHint.className='mini';labelHint.textContent='卓上ボタンで切り替える項目（1つ以上選択）';
+const labelOptions=document.createElement('div');labelOptions.className='label-cycle-options';
+const labelInputs=new Map();
+for(const [id,name] of labelChoices){
+ const label=document.createElement('label');const input=document.createElement('input');input.type='checkbox';input.value=id;input.checked=labelCycleModes.includes(id);input.setAttribute('aria-label',name);
+ label.append(input,document.createTextNode(name));labelOptions.append(label);labelInputs.set(id,input);
+ input.addEventListener('change',()=>{
+  const next=labelChoices.map(x=>x[0]).filter(v=>labelInputs.get(v).checked);
+  if(!next.length){input.checked=true;return}
+  labelCycleModes=next;
+  try{localStorage.setItem(labelCycleKey,JSON.stringify(next))}catch(e){}
+  if(!next.includes(labelMode))setTableLabelMode(next[0]);
+  syncToolbarLabelCycle();
+ });
+}
+labelSettings.append(labelSummary,labelHint,labelOptions);
+const placementSelect=document.createElement('select');placementSelect.id='labelPlacement';placementSelect.setAttribute('aria-label','ラベルの位置');placementSelect.innerHTML='<option value="below">カードの下</option><option value="above">カードの上</option>';placementSelect.value=labelPlacement;placementSelect.onchange=()=>{labelPlacement=placementSelect.value;localStorage.setItem('tabula_label_placement',labelPlacement);refreshTableLabels()};
+const placementLabel=document.createElement('label');placementLabel.className='label-cycle-placement';placementLabel.append(document.createTextNode('ラベル位置 '),placementSelect);
+labelSettings.append(placementLabel,labelSelect);
+$('quickLabels').replaceWith(labelSettings);
+// Retain legacy lookup used by existing settings sync without a second visible control.
+const legacyLabels=document.createElement('button');legacyLabels.id='quickLabels';legacyLabels.hidden=true;labelSettings.after(legacyLabels);
+function syncToolbarLabelCycle(){
+ const button=$('toolbarLabelToggle');if(!button)return;
+ button.textContent=labelChoices.find(([id])=>id===labelMode)?.[1]||'カード名';
+ button.title='ラベル表示を切り替える（'+labelCycleModes.map(id=>labelChoices.find(x=>x[0]===id)?.[1]).join(' → ')+'）';
+ button.setAttribute('aria-label',button.title);
+ button.setAttribute('data-label-mode',labelMode);
+}
+function setTableLabelMode(mode){
+ if(!labelChoices.some(([id])=>id===mode))return;
+ labelMode=mode;labelSelect.value=mode;
+ try{localStorage.setItem('tabula_label_mode',mode)}catch(e){}
+ refreshTableLabels();syncToolbarLabelCycle();
+}
 function refreshTableLabels(){
  const zone=$('zone');zone.querySelectorAll('.slot-num').forEach(e=>e.hidden=!spreadWorkbench);zone.querySelectorAll('.zone-label').forEach(e=>e.remove());if(labelMode==='off'||spreadWorkbench)return;
  const slots=getSlots(),m=metrics();
@@ -826,7 +866,7 @@ function refreshTableLabels(){
 }
 function refreshDraggedSlotLabel(){refreshTableLabels()}
 const baseRender=render;render=function(){baseRender();refreshTableLabels()};
-labelSelect.addEventListener('change',()=>{labelMode=labelSelect.value;localStorage.setItem('tabula_label_mode',labelMode);refreshTableLabels()});
+labelSelect.addEventListener('change',()=>{setTableLabelMode(labelSelect.value)});
 const galleryBody=document.createElement('div');galleryBody.className='detail-body';const galleryImage=$('cardGalleryLarge');galleryImage.before(galleryBody);galleryBody.append(galleryImage);const galleryCopy=document.createElement('aside');galleryCopy.id='galleryCardText';galleryCopy.className='detail-copy';galleryCopy.hidden=true;galleryBody.append(galleryCopy);
 const textToggle=document.createElement('button');textToggle.type='button';textToggle.textContent='文章：表示';textToggle.onclick=()=>{detailTextVisible=!detailTextVisible;textToggle.textContent=detailTextVisible?'文章：表示':'文章：非表示';galleryShowLarge(GALLERY.index)};
 const textEdit=document.createElement('button');textEdit.type='button';textEdit.textContent='文章を編集';textEdit.onclick=()=>editCardText(GALLERY.listed[GALLERY.index]);document.querySelector('.gallery-lightbox-bar').append(textToggle,textEdit);
@@ -897,12 +937,9 @@ function installTableToolLayout(){
  $('newSessionStandalone').textContent='新しい占い';
  const quickSpread=document.createElement('label');quickSpread.className='toolbar-spread-shortcut';quickSpread.title='展開法を選択';quickSpread.innerHTML='<span>展開法</span><select id="spreadQuickSelect" aria-label="展開法を選択"></select>';toolbar.append($('desktopTableViews'),fit,$('tableZoomLabel'),quickSpread,inspect,notebook,$('newSessionStandalone'));syncSpreadShortcut();$('spreadQuickSelect').addEventListener('change',e=>{const source=$('spread');source.value=e.target.value;source.dispatchEvent(new Event('change',{bubbles:true}));syncSpreadShortcut();});
  const gallery=$('cardGalleryOpen');gallery.innerHTML='<svg viewBox="0 0 24 24" width="19" height="21" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="13" height="18" rx="2" transform="rotate(-9 10 12)"/><rect x="7" y="2" width="13" height="18" rx="2"/><path d="m13.5 6 3 4-3 4-3-4z"/></svg><span>カード図鑑</span>';gallery.setAttribute('aria-label','カード図鑑を開く');$('cardDesign').closest('label').after(gallery);
- const slider=$('cardSizeScale');const field=slider.closest('label');field.hidden=true;field.style.display='none';const sizeControls=document.createElement('div');sizeControls.className='toolbar-card-size';sizeControls.title='カードそのものの大きさを調整';const buttons={};for(const [id,label,title] of [['zoomOut','−','カードサイズを小さくする'],['zoomReset','標準','この展開法の標準サイズに戻す'],['zoomIn','＋','カードサイズを大きくする']]){const b=$(id);b.textContent=label;b.title=title;b.setAttribute('aria-label',title);buttons[id]=b;}const sizeValue=document.createElement('output');sizeValue.id='cardSizeQuickValue';sizeValue.title='カードサイズ倍率';sizeValue.setAttribute('aria-label','カードサイズ倍率');const sizeLabel=document.createElement('span');sizeLabel.className='toolbar-size-label';sizeLabel.textContent='札';const labelToggle=document.createElement('button');labelToggle.type='button';labelToggle.id='toolbarLabelToggle';labelToggle.title='卓上ラベルの表示・非表示';labelToggle.setAttribute('aria-label','カード・ポジションのラベルを切り替える');
- let rememberedLabelMode=labelMode==='off'?'card':labelMode;
- function syncLabelToggle(){const on=labelMode!=='off';labelToggle.textContent=on?'名 ON':'名 OFF';labelToggle.setAttribute('aria-pressed',String(on));}
- labelToggle.onclick=()=>{if(labelMode==='off'){labelMode=rememberedLabelMode;}else{rememberedLabelMode=labelMode;labelMode='off';}labelSelect.value=labelMode;try{localStorage.setItem('tabula_label_mode',labelMode)}catch(e){}refreshTableLabels();syncLabelToggle();};
- labelSelect.addEventListener('change',()=>{if(labelMode!=='off')rememberedLabelMode=labelMode;syncLabelToggle();});
- syncLabelToggle();sizeControls.append(sizeLabel,labelToggle,buttons.zoomOut,sizeValue,buttons.zoomIn,buttons.zoomReset);quickSpread.before(sizeControls);const mobileActions=document.createElement('div');mobileActions.className='mobile-cockpit-actions';mobileActions.append(quickSpread,inspect,notebook,$('newSessionStandalone'));toolbar.append(mobileActions);updateCardSizeQuickValue();
+ const slider=$('cardSizeScale');const field=slider.closest('label');field.hidden=true;field.style.display='none';const sizeControls=document.createElement('div');sizeControls.className='toolbar-card-size';sizeControls.title='カードそのものの大きさを調整';const buttons={};for(const [id,label,title] of [['zoomOut','−','カードサイズを小さくする'],['zoomReset','標準','この展開法の標準サイズに戻す'],['zoomIn','＋','カードサイズを大きくする']]){const b=$(id);b.textContent=label;b.title=title;b.setAttribute('aria-label',title);buttons[id]=b;}const sizeValue=document.createElement('output');sizeValue.id='cardSizeQuickValue';sizeValue.title='カードサイズ倍率';sizeValue.setAttribute('aria-label','カードサイズ倍率');const sizeLabel=document.createElement('span');sizeLabel.className='toolbar-size-label';sizeLabel.textContent='札';const labelToggle=document.createElement('button');labelToggle.type='button';labelToggle.id='toolbarLabelToggle';
+ labelToggle.onclick=()=>{const index=labelCycleModes.indexOf(labelMode);setTableLabelMode(labelCycleModes[(index+1)%labelCycleModes.length]);};
+ syncToolbarLabelCycle();sizeControls.append(sizeLabel,labelToggle,buttons.zoomOut,sizeValue,buttons.zoomIn,buttons.zoomReset);quickSpread.before(sizeControls);const mobileActions=document.createElement('div');mobileActions.className='mobile-cockpit-actions';mobileActions.append(quickSpread,inspect,notebook,$('newSessionStandalone'));toolbar.append(mobileActions);updateCardSizeQuickValue();
  const onResize=()=>{fit.hidden=!mobileCameraEnabled();};window.addEventListener('resize',onResize);onResize();
  applyTableCamera();
 }
