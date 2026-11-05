@@ -129,7 +129,7 @@ test('invalid JSON does not replace the current workspace', async ({ page }) => 
 test('settings reset preserves the current reading', async ({ page }) => {
   await page.locator('#tableLabelMode').selectOption('number');
   await page.locator('#quickDeal').click();
-  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBeGreaterThan(0);
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(10);
   const before = await saved(page, WORKSPACE);
   const confirm = page.waitForEvent('dialog').then(d => d.accept());
   await page.locator('#resetSettings').click();
@@ -144,7 +144,7 @@ test('settings reset preserves the current reading', async ({ page }) => {
 test('all-data reset discards readings and returns card size to its default', async ({ page }) => {
   await page.locator('#tableLabelMode').selectOption('number');
   await page.locator('#quickDeal').click();
-  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBeGreaterThan(0);
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(10);
   const originalSize = await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).settings.cardSize);
   await page.locator('#zoomIn').click();
   const changedSize = await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).settings.cardSize);
