@@ -7,7 +7,7 @@ import { Script } from 'node:vm';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.match(html, /<link rel="stylesheet" href="css\/tabula\.css">/);
-assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="js\/catalog\.js"><\/script><script src="js\/spread-store\.js"><\/script><script src="js\/spread-geometry\.js"><\/script><script src="js\/card-rules\.js"><\/script><script src="js\/shuffle\.js"><\/script><script src="js\/reading-history\.js"><\/script><script src="js\/ui-format\.js"><\/script><script src="js\/tabula\.js"><\/script>/);
+assert.match(html, /<script src="js\/storage-format\.js"><\/script><script src="js\/catalog\.js"><\/script><script src="js\/spread-store\.js"><\/script><script src="js\/spread-geometry\.js"><\/script><script src="js\/deck-store\.js"><\/script><script src="js\/card-rules\.js"><\/script><script src="js\/shuffle\.js"><\/script><script src="js\/reading-history\.js"><\/script><script src="js\/ui-format\.js"><\/script><script src="js\/tabula\.js"><\/script>/);
 const css = readFileSync(new URL('../css/tabula.css', import.meta.url), 'utf8');
 const code = readFileSync(new URL('../js/tabula.js', import.meta.url), 'utf8');
 const storageCode = readFileSync(new URL('../js/storage-format.js', import.meta.url), 'utf8');
@@ -16,6 +16,7 @@ const spreadCode = readFileSync(new URL('../js/spread-store.js', import.meta.url
 const geometryCode = readFileSync(new URL('../js/spread-geometry.js', import.meta.url), 'utf8');
 const cardRulesCode = readFileSync(new URL('../js/card-rules.js', import.meta.url), 'utf8');
 const shuffleCode = readFileSync(new URL('../js/shuffle.js', import.meta.url), 'utf8');
+const deckStoreCode = readFileSync(new URL('../js/deck-store.js', import.meta.url), 'utf8');
 const historyCode = readFileSync(new URL('../js/reading-history.js', import.meta.url), 'utf8');
 const uiFormatCode = readFileSync(new URL('../js/ui-format.js', import.meta.url), 'utf8');
 
@@ -27,6 +28,7 @@ test('application script remains syntactically valid', () => {
   assert.doesNotThrow(() => new Script(geometryCode));
   assert.doesNotThrow(() => new Script(cardRulesCode));
   assert.doesNotThrow(() => new Script(shuffleCode));
+  assert.doesNotThrow(() => new Script(deckStoreCode));
   assert.doesNotThrow(() => new Script(historyCode));
   assert.doesNotThrow(() => new Script(uiFormatCode));
 });
@@ -134,7 +136,7 @@ test('in-app help matches the published version and distinguishes reading import
 test('simplified card settings retain illustrated pips and ten help sections', () => {
   assert.doesNotMatch(html, /id="numberCardStyle"/);
   assert.doesNotMatch(code, /settings\.numberCardStyle/);
-  assert.match(code, /const landscape=c\.number>=2&&c\.number<=10/);
+  assert.match(code, /const landscape=!pipPlain&&c\.number>=2&&c\.number<=10/);
   assert.match(code, /if\(pip&&c\.number===1\)/);
   const pools = html.match(/<select id="pool">([\s\S]*?)<\/select>/)?.[1];
   assert.ok(pools, 'pool dropdown exists');
