@@ -147,7 +147,7 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  await page.locator('#visualTheme').selectOption('gothic');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','crimson');
  await page.reload();
- await page.locator('aside .section > h2 .section-toggle').first().click();
+ if(!await page.locator('#cardDesign').isVisible())await page.locator('aside .section > h2 .section-toggle').first().click();
  await expect(page.locator('#cardBackColor')).toHaveValue('crimson');
  await page.locator('#cardDesign').selectOption('simple');
  await expect(page.locator('#cardBackColorField')).toBeHidden();
