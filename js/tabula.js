@@ -515,12 +515,14 @@ function openDeckEditor(createCopy=false){
  if(!existing){
   draft.id='deck_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
   draft.name=source?source.name+'（複製）':'新しいデッキ';
+  if(!source){draft.language=effectiveCardLanguage();draft.pipBackground=effectivePipBackground();draft.backColor=settings.cardBackColor||'sepia'}
  }
  const colorNames={sepia:'Sepia',green:'Green',burgundy:'Burgundy',navy:'Navy',purple:'Purple',black:'Black',ivory:'Ivory'};
  const groups=[['major','大アルカナ'],...suitDefs.map(([id,name])=>[id,name])];
  let html='<h2>デッキの編集</h2><p class="note">原版のカード画像はそのままに、番号・名称・背景・収録カードを編集します。番号の変更は相手のカードと自動交換されます。</p>';
  html+='<label class="field">デッキ名<input id="deckEditorName" maxlength="80" value="'+escapeHTML(draft.name)+'"></label>';
- html+='<div class="row"><button type="button" id="deckEditorFrench">全カード名をフランス語に</button><button type="button" id="deckEditorSwap">力 VIII ↔ 正義 XI</button></div>';
+ html+='<label class="field">カード名の言語<select id="deckEditorLanguage">'+TabulaDeckStore.LANGUAGES.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('')+'</select></label>';
+ html+='<div class="row"><button type="button" id="deckEditorSwap">力 VIII ↔ 正義 XI</button><button type="button" id="deckEditorUnnumbered">愚者を番号なしに</button></div>';
  html+='<label class="field">小アルカナ数札の図像<select id="deckEditorPip"><option value="landscape">背景あり（風景とスート）</option><option value="none">背景なし（スートを全面に大きく配置）</option></select></label>';
  html+='<label class="field">裏面色<select id="deckEditorBack">'+TabulaDeckStore.COLORS.map(color=>'<option value="'+color+'">'+colorNames[color]+'</option>').join('')+'</select></label>';
  html+='<p class="note">使用するカードをチェックし、必要な番号と名前を変更してください。</p>';
@@ -529,19 +531,20 @@ function openDeckEditor(createCopy=false){
   html+='<details class="deck-editor-group" '+(group==='major'?'open':'')+'><summary>'+label+'（'+items.length+'枚）</summary><div class="deck-editor-rows">';
   for(const c of items){
    const rank=c.group==='major'?(Object.hasOwn(draft.majorNumbers,c.id)?draft.majorNumbers[c.id]:c.number):c.number;
-   const number=c.group==='major'?'<select class="deck-major-number" data-major="'+c.id+'" aria-label="'+escapeHTML(c.name)+'の番号">'+Array.from({length:22},(_,n)=>'<option value="'+n+'" '+(n===rank?'selected':'')+'>'+n+'</option>').join('')+'</select>':'<span class="deck-editor-rank">'+(c.number<=10?c.number:['P','N','Q','K'][c.number-11])+'</span>';
-   html+='<div class="deck-editor-row"><label title="採用する"><input type="checkbox" class="deck-editor-include" value="'+c.id+'" '+(draft.included.includes(c.id)?'checked':'')+'></label>'+number+'<input class="deck-editor-card-name" data-name="'+c.id+'" maxlength="90" aria-label="'+escapeHTML(c.name)+'の表示名" value="'+escapeHTML(draft.names[c.id]||c.name)+'"></div>';
+   const number=c.group==='major'?'<select class="deck-major-number" data-major="'+c.id+'" aria-label="'+escapeHTML(c.name)+'の番号">'+'<option value="none" '+(rank===null?'selected':'')+'>番号なし</option>'+Array.from({length:22},(_,n)=>'<option value="'+n+'" '+(n===rank?'selected':'')+'>'+n+'</option>').join('')+'</select>':'<span class="deck-editor-rank">'+(c.number<=10?c.number:['P','N','Q','K'][c.number-11])+'</span>';
+   html+='<div class="deck-editor-row"><label title="採用する"><input type="checkbox" class="deck-editor-include" value="'+c.id+'" '+(draft.included.includes(c.id)?'checked':'')+'></label>'+number+'<input class="deck-editor-card-name" data-name="'+c.id+'" maxlength="90" aria-label="'+escapeHTML(c.name)+'の表示名" value="'+escapeHTML(draft.names[c.id]||TabulaDeckStore.translatedName(c,draft.language||'original'))+'"></div>';
   }
   html+='</div></details>';
  }
  html+='<div class="row deck-editor-footer"><button type="button" id="deckEditorCancel">キャンセル</button>'+(existing?'<button type="button" id="deckEditorDelete">このデッキを削除</button>':'')+'<button type="button" class="primary" id="deckEditorSave">デッキを保存</button></div>';
  modal(html);
+ $('deckEditorLanguage').value=draft.language||'original';
  $('deckEditorPip').value=draft.pipBackground;
  $('deckEditorBack').value=draft.backColor;
  $('deckEditorCancel').onclick=closeModal;
- function refreshNumbers(){document.querySelectorAll('.deck-major-number').forEach(el=>{const card=cards.find(c=>c.id===el.dataset.major);el.value=String(Object.hasOwn(draft.majorNumbers,card.id)?draft.majorNumbers[card.id]:card.number)})}
+ function refreshNumbers(){document.querySelectorAll('.deck-major-number').forEach(el=>{const card=cards.find(c=>c.id===el.dataset.major);el.value=String((Object.hasOwn(draft.majorNumbers,card.id)?draft.majorNumbers[card.id]:card.number)??'none')})}
  document.querySelectorAll('.deck-major-number').forEach(el=>{el.onchange=()=>{
-  if(!TabulaDeckStore.swapNumber(draft,cards,el.dataset.major,Number(el.value)))return;
+  if(!TabulaDeckStore.swapNumber(draft,cards,el.dataset.major,el.value==='none'?null:Number(el.value)))return;
   refreshNumbers();
  }});
  $('deckEditorSwap').onclick=()=>{
@@ -549,19 +552,25 @@ function openDeckEditor(createCopy=false){
   const value=Object.hasOwn(draft.majorNumbers,force.id)?draft.majorNumbers[force.id]:force.number;
   TabulaDeckStore.swapNumber(draft,cards,force.id,value===8?11:8);refreshNumbers();
  };
- $('deckEditorFrench').onclick=()=>{
-  const names=TabulaDeckStore.frenchNames(cards);
-  document.querySelectorAll('.deck-editor-card-name').forEach(el=>{el.value=names[el.dataset.name]});
+ $('deckEditorUnnumbered').onclick=()=>{TabulaDeckStore.swapNumber(draft,cards,'major_00',null);refreshNumbers()};
+ $('deckEditorLanguage').onchange=e=>{
+  const previous=draft.language||'original',next=e.target.value;
+  document.querySelectorAll('.deck-editor-card-name').forEach(el=>{
+   const c=cards.find(c=>c.id===el.dataset.name),prev=TabulaDeckStore.translatedName(c,previous);
+   if(el.value===prev||el.value===draft.names[c.id])el.value=TabulaDeckStore.translatedName(c,next);
+  });
+  draft.language=next;
  };
  $('deckEditorSave').onclick=()=>{
   draft.name=$('deckEditorName').value.trim();
+  draft.language=$('deckEditorLanguage').value;
   draft.pipBackground=$('deckEditorPip').value;
   draft.backColor=$('deckEditorBack').value;
   draft.included=[...document.querySelectorAll('.deck-editor-include:checked')].map(el=>el.value);
   draft.names={};
   document.querySelectorAll('.deck-editor-card-name').forEach(el=>{
    const value=el.value.trim(),original=cards.find(c=>c.id===el.dataset.name);
-   if(value&&value!==original.name)draft.names[el.dataset.name]=value;
+   if(value&&value!==TabulaDeckStore.translatedName(original,draft.language))draft.names[el.dataset.name]=value;
   });
   if(!TabulaDeckStore.validate(draft,cards)){alert('デッキの設定が不正です。名前・番号・採用カードを確認してください。');return}
   if((state.placed.length||(state.removed||[]).length)&&!confirm('デッキを保存して使い始めると、現在の配札は片付けられます。続けますか？'))return;
