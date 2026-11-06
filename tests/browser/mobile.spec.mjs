@@ -193,3 +193,23 @@ test('mobile Use Deck lists built-in Simple and restores its selection',async({p
  await page.locator('#deckLibrarySelect').selectOption('builtin');
  await expect(page.locator('#cardDesign')).toHaveValue('standard');
 });
+
+test('mobile toolbar finishes initialization with visible, non-overlapping controls and a full deck',async({page})=>{
+ const errors=[];
+ page.on('pageerror',error=>errors.push(error.message));
+ await page.goto('/');
+ await expect(page.locator('.mobile-cockpit-actions')).toBeVisible();
+ await expect(page.locator('#spreadQuickSelect')).toBeVisible();
+ await expect(page.locator('#inspectCards')).toBeVisible();
+ await expect(page.locator('#toolbarLabelToggle')).toBeVisible();
+ await expect(page.locator('#deck')).toBeVisible();
+ const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('tabula_sortium_v01')));
+ expect(state.state.deck).toHaveLength(78);
+ expect(errors).toEqual([]);
+ const ids=['spreadQuickSelect','inspectCards','spreadNotebook','newSessionStandalone'];
+ const boxes=await Promise.all(ids.map(id=>page.locator('#'+id).boundingBox()));
+ for(let i=0;i<boxes.length-1;i++){
+  expect(boxes[i].x+boxes[i].width).toBeLessThanOrEqual(boxes[i+1].x+1);
+  expect(Math.abs(boxes[i].y-boxes[i+1].y)).toBeLessThanOrEqual(2);
+ }
+});
