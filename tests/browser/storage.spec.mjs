@@ -213,3 +213,60 @@ test('saved readings can be reopened and restored after page reload', async ({ p
   await page.reload();
   expect((await saved(page, WORKSPACE)).state.placed).toEqual(before.state.placed);
 });
+
+test('custom Marseille-style deck saves French names, swaps VIII/XI, and restores full-area plain pips', async ({ page }) => {
+ await page.locator('#deckEditNew').click();
+ await expect(page.locator('#deckEditorName')).toBeVisible();
+ await page.locator('#deckEditorName').fill('Tarot de Marseille — étude');
+ await page.locator('#deckEditorFrench').click();
+ await page.locator('#deckEditorSwap').click();
+ await page.locator('#deckEditorPip').selectOption('none');
+ await page.locator('#deckEditorBack').selectOption('navy');
+ await expect(page.locator('.deck-major-number[data-major="major_08"]')).toHaveValue('11');
+ await expect(page.locator('.deck-major-number[data-major="major_11"]')).toHaveValue('8');
+ await expect(page.locator('.deck-editor-card-name[data-name="major_11"]')).toHaveValue('La Justice');
+ await page.locator('#deckEditorSave').click();
+ const decks=await saved(page,'tabula_sortium_deck_library_v1');
+ expect(decks).toHaveLength(1);
+ expect(decks[0].name).toBe('Tarot de Marseille — étude');
+ expect(decks[0].majorNumbers.major_08).toBe(11);
+ expect(decks[0].majorNumbers.major_11).toBe(8);
+ expect(decks[0].names.major_08).toBe('La Force');
+ expect(decks[0].names.major_11).toBe('La Justice');
+ expect(decks[0].pipBackground).toBe('none');
+ expect(decks[0].backColor).toBe('navy');
+ expect((await saved(page,WORKSPACE)).settings.deckId).toBe(decks[0].id);
+ await expect(page.locator('#deckLibrarySelect')).toHaveValue(decks[0].id);
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(8)).toContainText('La Force');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(11)).toContainText('La Justice');
+ await page.locator('#cardGalleryFilter').selectOption('pip');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').first().locator('.ace-background')).toHaveCount(0);
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(0);
+ await page.locator('#cardGalleryClose').click();
+ await page.reload();
+ expect((await saved(page,'tabula_sortium_deck_library_v1'))[0].pipBackground).toBe('none');
+ await expect(page.locator('#deckLibrarySelect')).toHaveValue(decks[0].id);
+ await expect(page.locator('#cardBackColor')).toHaveValue('navy');
+ await page.locator('#deckLibrarySelect').selectOption('builtin');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('pip');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(1);
+});
+
+test('deck definitions validate unique major numbers and one or more included cards', async ({ page }) => {
+ const result=await page.evaluate(()=>{
+  const store=TabulaDeckStore,all=TabulaCatalog.cards;
+  const deck=store.fresh(all,'deck_test','Test');
+  const before=store.validate(deck,all);
+  store.swapNumber(deck,all,'major_08',11);
+  const switched=store.validate(deck,all)&&deck.majorNumbers.major_08===11&&deck.majorNumbers.major_11===8;
+  deck.majorNumbers.major_11=11;
+  const duplicate=store.validate(deck,all);
+  deck.majorNumbers.major_11=8;deck.included=[];
+  const empty=store.validate(deck,all);
+  return {before,switched,duplicate,empty}
+ });
+ expect(result).toEqual({before:true,switched:true,duplicate:false,empty:false});
+});
