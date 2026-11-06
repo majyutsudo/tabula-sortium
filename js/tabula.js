@@ -223,7 +223,7 @@ let deckLibrary=TabulaDeckStore.read(localStorage,cards);
 function activeDeck(){return deckLibrary.find(d=>d.id===settings.deckId)||null}
 function effectiveCardLanguage(){return activeDeck()?.language||settings.cardLanguage||'original'}
 function effectivePipBackground(){return activeDeck()?.pipBackground||settings.pipBackground||'landscape'}
-function displayCard(c){const d=activeDeck();return {...c,name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,effectiveCardLanguage()),number:c.group==='major'&&d&&Object.hasOwn(d.majorNumbers,c.id)?d.majorNumbers[c.id]:c.number}}
+function displayCard(c){const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
 function refreshDeckPicker(){const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));picker.value=activeDeck()?.id||'builtin'}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
