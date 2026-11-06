@@ -27,3 +27,21 @@ body[data-tabula-back="on"][data-tabula-back-tone="ivory"] .table-surface .deck:
 body[data-tabula-back="on"][data-tabula-back-tone="ivory"] .removed-pile-card::before,
 body[data-tabula-back="on"][data-tabula-back-tone="ivory"] .shuffle-card::after{background:#76552d!important}
 #cardBackColorField[hidden]{display:none!important}
+
+/* Full-resolution textured assets. Existing minimal ornament stays visible until the
+   corresponding file has loaded successfully; no missing-image flash. */
+body[data-tabula-back="on"][data-tabula-back-image="ready"] .face.back,
+body[data-tabula-back="on"][data-tabula-back-image="ready"] .table-surface .deck,
+body[data-tabula-back="on"][data-tabula-back-image="ready"] .removed-pile-card,
+body[data-tabula-back="on"][data-tabula-back-image="ready"] .shuffle-card{
+ background-image:var(--tabula-back-image)!important;
+ background-size:100% 100%!important;
+ background-repeat:no-repeat!important;
+ background-position:center!important;
+}
+body[data-tabula-back="on"][data-tabula-back-image="ready"] .face.back::before,
+body[data-tabula-back="on"][data-tabula-back-image="ready"] .table-surface .deck::before,
+body[data-tabula-back="on"][data-tabula-back-image="ready"] .removed-pile-card::before,
+body[data-tabula-back="on"][data-tabula-back-image="ready"] .shuffle-card::after{
+ display:none!important;
+}
