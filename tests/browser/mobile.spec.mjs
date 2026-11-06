@@ -149,12 +149,15 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  await page.locator('#visualTheme').selectOption('gothic');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','burgundy');
  await page.reload();
- if(!await page.locator('#cardDesign').isVisible())await page.locator('aside .section > h2 .section-toggle').first().click();
+ if(!await page.locator('#deckLibrarySelect').isVisible())await page.locator('aside .section > h2 .section-toggle').first().click();
  await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
- await page.locator('#cardDesign').selectOption('simple');
+ expect(await page.locator('#deckLibrarySelect option').allTextContents()).toContain('シンプル');
+ await page.locator('#deckLibrarySelect').selectOption('simple');
  await expect(page.locator('#cardBackColorField')).toBeHidden();
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back','off');
- await page.locator('#cardDesign').selectOption('standard');
+ await expect(page.locator('#cardDesign')).toHaveValue('simple');
+ await page.locator('#deckLibrarySelect').selectOption('builtin');
+ await expect(page.locator('#cardDesign')).toHaveValue('standard');
  await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back','on');
  const deckBackground=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
@@ -174,4 +177,19 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  }
  const deckAfter=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
  expect(deckAfter).toContain('/backs/ivory.webp');
+});
+
+test('mobile Use Deck lists built-in Simple and restores its selection',async({page})=>{
+ await page.goto('/');
+ const first=page.locator('aside .section > h2 .section-toggle').first();
+ if(!await page.locator('#deckLibrarySelect').isVisible())await first.click();
+ await expect(page.locator('#deckLibrarySelect option[value="simple"]')).toHaveText('シンプル');
+ await page.locator('#deckLibrarySelect').selectOption('simple');
+ await expect(page.locator('#cardDesign')).toHaveValue('simple');
+ await expect(page.locator('#deckLibrarySelect')).toHaveValue('simple');
+ await page.reload();
+ if(!await page.locator('#deckLibrarySelect').isVisible())await first.click();
+ await expect(page.locator('#deckLibrarySelect')).toHaveValue('simple');
+ await page.locator('#deckLibrarySelect').selectOption('builtin');
+ await expect(page.locator('#cardDesign')).toHaveValue('standard');
 });
