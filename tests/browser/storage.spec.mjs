@@ -329,3 +329,41 @@ test('fresh and dealt cards are unique by physical ID',async ({page})=>{
   await page.locator('#newSessionStandalone').click();
  }
 });
+
+test('duplicate IDs in persisted workspace are blocked before dealing',async ({page})=>{
+ await page.evaluate(key=>{
+  const w=JSON.parse(localStorage.getItem(key));
+  w.state.deck[1].id=w.state.deck[0].id;
+  localStorage.setItem(key,JSON.stringify(w));
+ },WORKSPACE);
+ await page.reload();
+ const initial=await saved(page,WORKSPACE);
+ await page.locator('#quickDeal').click();
+ await expect(page.locator('#status')).toContainText('重複しています');
+ const after=await saved(page,WORKSPACE);
+ expect(after.state.placed).toHaveLength(0);
+ expect(after.state.deck).toEqual(initial.state.deck);
+});
+
+test('language selection supersedes one-off preset names but keeps unique custom names',async ({page})=>{
+ await page.evaluate(()=>{
+  const all=TabulaCatalog.cards,s=TabulaDeckStore;
+  const d=s.fresh(all,'deck_test_language','Old French names');
+  d.names=s.frenchNames(all);
+  d.names.major_00='Le Mat — édition privée';
+  localStorage.setItem(s.KEY,JSON.stringify([d]));
+  const w=JSON.parse(localStorage.getItem('tabula_sortium_v01'));
+  w.settings.deckId=d.id;
+  localStorage.setItem('tabula_sortium_v01',JSON.stringify(w));
+ });
+ await page.reload();
+ await page.locator('#cardLanguage').selectOption('de');
+ const d=(await saved(page,'tabula_sortium_deck_library_v1'))[0];
+ expect(d.language).toBe('de');
+ expect(d.names.major_01).toBeUndefined();
+ expect(d.names.major_00).toBe('Le Mat — édition privée');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1)).toContainText('Der Magier');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').first()).toContainText('Le Mat — édition privée');
+});
