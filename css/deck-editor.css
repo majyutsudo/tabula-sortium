@@ -13,3 +13,13 @@
 .deck-editor-footer{position:sticky;bottom:-24px;background:#24312b;border-top:1px solid #6c6655;padding:12px 0 2px;margin-top:15px}
 .deck-editor-footer button{font-size:12px;padding:9px 6px}
 @media(max-width:470px){.deck-editor-row{grid-template-columns:24px 55px minmax(0,1fr);gap:5px}.deck-editor-rows{padding:6px}.deck-editor-row input{font-size:12px}}
+
+/* Deck selector before card presentation settings: two distinct levels. */
+.deck-setting-group{display:grid;gap:8px;margin:4px 0 13px}
+.deck-setting-heading{font:600 11px/1.4 sans-serif;letter-spacing:.08em;color:#ceb788;border-bottom:1px solid #82725166;padding:2px 0 7px}
+.deck-setting-subheading{margin:8px 0 0}
+.deck-setting-group>.field{margin:0}
+.deck-setting-group>.deck-edit-actions{margin:0}
+.deck-editor-shortcuts{margin:13px 0 17px;gap:8px}
+.deck-editor-shortcuts button{min-height:38px;flex:1;white-space:normal;line-height:1.4}
+@media(max-width:470px){.deck-editor-shortcuts{gap:6px}.deck-editor-shortcuts button{font-size:11px}}
