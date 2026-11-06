@@ -367,3 +367,50 @@ test('language selection supersedes one-off preset names but keeps unique custom
  await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1)).toContainText('Der Magier');
  await expect(page.locator('#cardGalleryGrid .gallery-tile').first()).toContainText('Le Mat — édition privée');
 });
+
+test('deck editor Fool shortcut toggles unnumbered and zero and survives save',async ({page})=>{
+ await page.locator('#deckEditNew').click();
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を番号なしに');
+ await page.locator('#deckEditorUnnumbered').click();
+ await expect(page.locator('.deck-major-number[data-major="major_00"]')).toHaveValue('none');
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を0番に');
+ await page.locator('#deckEditorUnnumbered').click();
+ await expect(page.locator('.deck-major-number[data-major="major_00"]')).toHaveValue('0');
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を番号なしに');
+ await page.locator('.deck-major-number[data-major="major_00"]').selectOption('none');
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を0番に');
+ await page.locator('#deckEditorSave').click();
+ expect((await saved(page,'tabula_sortium_deck_library_v1'))[0].majorNumbers.major_00).toBeNull();
+ await page.locator('#deckEditCurrent').click();
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を0番に');
+ await page.locator('#deckEditorUnnumbered').click();
+ await page.locator('#deckEditorSave').click();
+ expect((await saved(page,'tabula_sortium_deck_library_v1'))[0].majorNumbers.major_00).toBe(0);
+});
+
+test('standard pip label is concise while deck editor preserves descriptive labels',async ({page})=>{
+ await expect(page.locator('#pipBackground option[value="none"]')).toHaveText('シンプル');
+ await page.locator('#deckEditNew').click();
+ await expect(page.locator('#deckEditorPip option[value="none"]')).toContainText('スートを全面に大きく配置');
+ await expect(page.locator('#deckEditorSwap')).toHaveText('力 VIII ↔ 正義 XI');
+});
+
+test('full artwork subtitles complement multilingual titles rather than duplicating them',async ({page})=>{
+ await page.locator('#cardLanguage').selectOption('fr');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await page.locator('#cardGalleryGrid .gallery-tile').nth(8).click();
+ const french=await page.locator('#cardGalleryLarge').evaluate(el=>decodeURIComponent(el.outerHTML));
+ expect(french).toContain('La Force');
+ expect(french).toContain('STRENGTH');
+ await page.locator('#cardGalleryBack').click();
+ await page.locator('#cardGalleryClose').click();
+ await page.locator('#cardLanguage').selectOption('en');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await page.locator('#cardGalleryGrid .gallery-tile').nth(8).click();
+ const english=await page.locator('#cardGalleryLarge').evaluate(el=>decodeURIComponent(el.outerHTML));
+ expect(english).toContain('Strength');
+ expect(english).toContain('MAJOR ARCANA');
+ await expect(page.locator('.deck-setting-heading').first()).toHaveText('デッキの選択');
+});
