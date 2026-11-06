@@ -492,6 +492,94 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
 }
 function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){try{settings.cardSize=zoom;localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state,customIds,recipes,recipeId}))}catch(e){setStatus('この環境ではブラウザー保存を利用できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};state={completionShown:false,...(data.state||{})};customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom);syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus('保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
 function updateStandaloneAvailability(){const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash;w.title=noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}if(c){c.disabled=noCut;c.title=noCut?'カットは「なし」に設定されています':'山札をカット'}}function sync(){refreshDeckPicker();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';$('pool').value=settings.pool;$('spread').value=settings.spread;syncSpreadShortcut();syncDealOrderField();$('initialOrder').value=settings.initialOrder||'random';$('quickWashDirection').value=settings.quickWashDirection||'random';$('quickWashRounds').value=settings.quickWashRounds||1;updateStandaloneAvailability();$('dealSkipFirst').value=Number(settings.dealSkipFirst)||0;$('dealSkipSchedule').value=settings.dealSkipSchedule||'';$('cutCountSetting').value=String(settings.cutCount??3);$('reversals').checked=settings.reversals;$('altarToggle').checked=settings.altar;$('quickLabels').textContent=settings.labels?'ポジション名 ON':'ポジション名 OFF';$('quickLabels').setAttribute('aria-pressed',String(settings.labels));$('crossLabelLayer').value=settings.crossLabelLayer==='front'?'front':'behind';$('soundToggle').checked=settings.sound;$('shuffleMethod').value=settings.shuffleMethod||'overhand';$('visualTheme').value=settings.visualTheme||'classic';$('effectPreset').value=settings.effectPreset||'ritual';applyVisuals();syncRecipes();updateDealRuleSummary();updateStandaloneAvailability()}function applyVisuals(){document.body.dataset.visualTheme=settings.visualTheme||'classic';document.body.dataset.effectPreset=settings.effectPreset||'ritual';const desc={silent:'静かな反転。完成時の追加演出なし。',ritual:'暖かな金色の光。カードが厳かに反転される。',mystic:'青白い光輪。完成後も神秘的な発光を維持。',psychic:'紫の霊光。完成後もカードが明滅し続ける。'};if($('effectDescription'))$('effectDescription').textContent=desc[settings.effectPreset]||desc.ritual;updateCompletionAura()}let __effectTimer=null;function previewVisualEffect(finale=false){const stage=$('stage');stage.classList.remove('effect-demo','effect-finale');void stage.offsetWidth;stage.classList.add(finale?'effect-finale':'effect-demo');clearTimeout(__effectTimer);__effectTimer=setTimeout(()=>stage.classList.remove('effect-demo','effect-finale'),finale?3800:1900)}function coreTargetCount(){if(settings.spread==='free')return state.placed.length;return getSlots().length}function coreFaceUpCount(){if(settings.spread==='free')return state.placed.filter(p=>p.faceUp).length;return state.placed.filter(p=>p.slot!=null&&p.faceUp).length}function isCoreSpreadOpen(){const target=coreTargetCount();return target>0&&coreFaceUpCount()>=target}function updateCompletionAura(){const stage=$('stage');if(!stage)return;stage.classList.remove('spread-complete-ritual','spread-complete-mystic','spread-complete-psychic');if(!isCoreSpreadOpen())return;const preset=settings.effectPreset;if(preset==='ritual')stage.classList.add('spread-complete-ritual');else if(preset==='mystic')stage.classList.add('spread-complete-mystic');else if(preset==='psychic')stage.classList.add('spread-complete-psychic')}function maybeTriggerCompletionEffect(force=false){if(isCoreSpreadOpen()){updateCompletionAura();if(force||!state.completionShown){state.completionShown=true;if(settings.effectPreset!=='silent')previewVisualEffect(true)}}else{state.completionShown=false;updateCompletionAura()}}
+
+function activateDeck(id,ask=true){
+ const deck=deckLibrary.find(d=>d.id===id)||null;
+ if(ask&&(state.placed.length||(state.removed||[]).length)&&!confirm('デッキを変更すると、現在の配札を片付けて新しい山札を作ります。続けますか？')){refreshDeckPicker();return false}
+ settings.deckId=deck?.id||'builtin';
+ settings.pool='all';
+ customIds=cards.map(c=>c.id);
+ settings.cardDesign='standard';
+ if(deck)settings.cardBackColor=deck.backColor;
+ finishedCache.clear();
+ sync();initialize();
+ setStatus((deck?.name||'TABULA TAROT（標準）')+' を読み込みました。');
+ return true;
+}
+function openDeckEditor(createCopy=false){
+ const existing=createCopy?null:activeDeck();
+ const source=activeDeck();
+ const draft=existing?structuredClone(existing):source?structuredClone(source):TabulaDeckStore.fresh(cards,'deck_temp','新しいデッキ');
+ if(!existing){
+  draft.id='deck_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  draft.name=source?source.name+'（複製）':'新しいデッキ';
+ }
+ const colorNames={sepia:'Sepia',green:'Green',burgundy:'Burgundy',navy:'Navy',purple:'Purple',black:'Black',ivory:'Ivory'};
+ const groups=[['major','大アルカナ'],...suitDefs.map(([id,name])=>[id,name])];
+ let html='<h2>デッキの編集</h2><p class="note">原版のカード画像はそのままに、番号・名称・背景・収録カードを編集します。番号の変更は相手のカードと自動交換されます。</p>';
+ html+='<label class="field">デッキ名<input id="deckEditorName" maxlength="80" value="'+escapeHTML(draft.name)+'"></label>';
+ html+='<div class="row"><button type="button" id="deckEditorFrench">全カード名をフランス語に</button><button type="button" id="deckEditorSwap">力 VIII ↔ 正義 XI</button></div>';
+ html+='<label class="field">小アルカナ数札の図像<select id="deckEditorPip"><option value="landscape">背景あり（風景とスート）</option><option value="none">背景なし（スートを全面に大きく配置）</option></select></label>';
+ html+='<label class="field">裏面色<select id="deckEditorBack">'+TabulaDeckStore.COLORS.map(color=>'<option value="'+color+'">'+colorNames[color]+'</option>').join('')+'</select></label>';
+ html+='<p class="note">使用するカードをチェックし、必要な番号と名前を変更してください。</p>';
+ for(const [group,label] of groups){
+  const items=cards.filter(c=>group==='major'?c.group==='major':c.suit===group);
+  html+='<details class="deck-editor-group" '+(group==='major'?'open':'')+'><summary>'+label+'（'+items.length+'枚）</summary><div class="deck-editor-rows">';
+  for(const c of items){
+   const rank=c.group==='major'?(Object.hasOwn(draft.majorNumbers,c.id)?draft.majorNumbers[c.id]:c.number):c.number;
+   const number=c.group==='major'?'<select class="deck-major-number" data-major="'+c.id+'" aria-label="'+escapeHTML(c.name)+'の番号">'+Array.from({length:22},(_,n)=>'<option value="'+n+'" '+(n===rank?'selected':'')+'>'+n+'</option>').join('')+'</select>':'<span class="deck-editor-rank">'+(c.number<=10?c.number:['P','N','Q','K'][c.number-11])+'</span>';
+   html+='<div class="deck-editor-row"><label title="採用する"><input type="checkbox" class="deck-editor-include" value="'+c.id+'" '+(draft.included.includes(c.id)?'checked':'')+'></label>'+number+'<input class="deck-editor-card-name" data-name="'+c.id+'" maxlength="90" aria-label="'+escapeHTML(c.name)+'の表示名" value="'+escapeHTML(draft.names[c.id]||c.name)+'"></div>';
+  }
+  html+='</div></details>';
+ }
+ html+='<div class="row deck-editor-footer"><button type="button" id="deckEditorCancel">キャンセル</button>'+(existing?'<button type="button" id="deckEditorDelete">このデッキを削除</button>':'')+'<button type="button" class="primary" id="deckEditorSave">デッキを保存</button></div>';
+ modal(html);
+ $('deckEditorPip').value=draft.pipBackground;
+ $('deckEditorBack').value=draft.backColor;
+ $('deckEditorCancel').onclick=closeModal;
+ function refreshNumbers(){document.querySelectorAll('.deck-major-number').forEach(el=>{const card=cards.find(c=>c.id===el.dataset.major);el.value=String(Object.hasOwn(draft.majorNumbers,card.id)?draft.majorNumbers[card.id]:card.number)})}
+ document.querySelectorAll('.deck-major-number').forEach(el=>{el.onchange=()=>{
+  if(!TabulaDeckStore.swapNumber(draft,cards,el.dataset.major,Number(el.value)))return;
+  refreshNumbers();
+ }});
+ $('deckEditorSwap').onclick=()=>{
+  const force=cards.find(c=>c.id==='major_08');
+  const value=Object.hasOwn(draft.majorNumbers,force.id)?draft.majorNumbers[force.id]:force.number;
+  TabulaDeckStore.swapNumber(draft,cards,force.id,value===8?11:8);refreshNumbers();
+ };
+ $('deckEditorFrench').onclick=()=>{
+  const names=TabulaDeckStore.frenchNames(cards);
+  document.querySelectorAll('.deck-editor-card-name').forEach(el=>{el.value=names[el.dataset.name]});
+ };
+ $('deckEditorSave').onclick=()=>{
+  draft.name=$('deckEditorName').value.trim();
+  draft.pipBackground=$('deckEditorPip').value;
+  draft.backColor=$('deckEditorBack').value;
+  draft.included=[...document.querySelectorAll('.deck-editor-include:checked')].map(el=>el.value);
+  draft.names={};
+  document.querySelectorAll('.deck-editor-card-name').forEach(el=>{
+   const value=el.value.trim(),original=cards.find(c=>c.id===el.dataset.name);
+   if(value&&value!==original.name)draft.names[el.dataset.name]=value;
+  });
+  if(!TabulaDeckStore.validate(draft,cards)){alert('デッキの設定が不正です。名前・番号・採用カードを確認してください。');return}
+  if((state.placed.length||(state.removed||[]).length)&&!confirm('デッキを保存して使い始めると、現在の配札は片付けられます。続けますか？'))return;
+  const updated=deckLibrary.map(d=>d.id===draft.id?structuredClone(draft):d);
+  if(!updated.some(d=>d.id===draft.id))updated.push(structuredClone(draft));
+  if(updated.length>50){alert('保存できるデッキは50件までです。');return}
+  const previous=deckLibrary;deckLibrary=updated;
+  if(!storeDeckLibrary()){deckLibrary=previous;return}
+  closeModal();activateDeck(draft.id,false);setStatus('デッキ「'+draft.name+'」を保存しました。');
+ };
+ if(existing)$('deckEditorDelete').onclick=()=>{
+  if(!confirm('デッキ「'+existing.name+'」を削除しますか？'))return;
+  const next=deckLibrary.filter(d=>d.id!==existing.id),old=deckLibrary;deckLibrary=next;
+  if(!storeDeckLibrary()){deckLibrary=old;return}
+  closeModal();activateDeck('builtin',false);setStatus('保存デッキを削除しました。');
+ };
+}
+$('deckLibrarySelect').addEventListener('change',e=>activateDeck(e.target.value));
+$('deckEditNew').addEventListener('click',()=>openDeckEditor(true));
+$('deckEditCurrent').addEventListener('click',()=>openDeckEditor(false));
 function customModal(){const groups=[['major','大アルカナ'],...suitDefs.map(s=>[s[0],s[1]])];let h='<h2>使用カードを個別に選択</h2><p class="note">チェックしたカードだけを山札として使用します。</p><div class="row"><button type="button" id="allCards">すべて選択</button><button type="button" id="noCards">すべて解除</button></div>';groups.forEach(([id,name])=>{h+=`<h3>${name}</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px">`;cards.filter(c=>id==='major'?c.group==='major':c.suit===id).forEach(c=>{h+=`<label class="choice"><input type="checkbox" class="pick-card" value="${c.id}" ${customIds.includes(c.id)?'checked':''}>${c.name}</label>`});h+='</div>'});h+='<p><button type="button" class="primary" id="confirmCards">このカード群を使用</button></p>';modal(h);$('allCards').onclick=()=>document.querySelectorAll('.pick-card').forEach(e=>e.checked=true);$('noCards').onclick=()=>document.querySelectorAll('.pick-card').forEach(e=>e.checked=false);$('confirmCards').onclick=()=>{const ids=[...document.querySelectorAll('.pick-card:checked')].map(el=>el.value);if(!ids.length){alert('カードを1枚以上選択してください。');return}customIds=ids;settings.pool='custom';$('pool').value='custom';closeModal();initialize()}}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewVisualEffect(true)};$('previewEffect').onclick=()=>previewVisualEffect(true);colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(e.target.value==='custom'){customModal();return}settings.pool=e.target.value;initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{const newSpread=e.target.value;if(newSpread===settings.spread){syncSpreadShortcut();return;}if(state.placed.length||(state.removed||[]).length)restoreDealWithoutPrompt();settings.spread=newSpread;syncSpreadShortcut();applySpreadCardSize(newSpread);syncDealOrderField();render();saveLocal();setStatus('展開法を切り替えました。山札の配列は維持しています。')};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
 $('resetSpreadDealOrder').onclick=()=>{settings.spreadDealOrders={...(settings.spreadDealOrders||{})};delete settings.spreadDealOrders[settings.spread];syncDealOrderField();saveLocal();setStatus('このスプレッドの配札順を番号順に戻しました。')};
 $('reversals').onchange=e=>{settings.reversals=e.target.checked;initialize()};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('次に新しい占いを始める際のデッキ初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('soundToggle').onchange=e=>{settings.sound=e.target.checked;saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
