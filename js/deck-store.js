@@ -50,13 +50,13 @@ function translatedName(c,language){
 function namesForLanguage(cards,language){return Object.fromEntries(cards.map(c=>[c.id,translatedName(c,language)]))}
 function frenchNames(cards){return namesForLanguage(cards,'fr')}
 function fresh(cards,id,name){
- return {id,name,names:{},majorNumbers:{},included:cards.map(c=>c.id),pipBackground:'landscape',backColor:'sepia',language:'original'};
+ return {id,name,names:{},majorNumbers:{},included:cards.map(c=>c.id),pipBackground:'landscape',backColor:'sepia',language:'original',faceStyle:'standard'};
 }
 function validate(deck,cards){
  if(!deck||typeof deck!=='object'||typeof deck.id!=='string'||!/^deck_[a-z0-9_-]{1,80}$/.test(deck.id))return false;
  if(typeof deck.name!=='string'||!deck.name.trim()||deck.name.length>80)return false;
  if(!deck.names||typeof deck.names!=='object'||Array.isArray(deck.names)||!deck.majorNumbers||typeof deck.majorNumbers!=='object'||Array.isArray(deck.majorNumbers))return false;
- if(!['landscape','none'].includes(deck.pipBackground)||!COLORS.includes(deck.backColor)||!LANGUAGES.some(([id])=>id===(deck.language||'original')))return false;
+ if(!['landscape','none'].includes(deck.pipBackground)||!COLORS.includes(deck.backColor)||!LANGUAGES.some(([id])=>id===(deck.language||'original'))||!['standard','simple'].includes(deck.faceStyle||'standard'))return false;
  const ids=new Set(cards.map(c=>c.id)),majors=cards.filter(c=>c.group==='major');
  if(!Array.isArray(deck.included)||deck.included.length===0||deck.included.length>cards.length||new Set(deck.included).size!==deck.included.length||deck.included.some(id=>!ids.has(id)))return false;
  if(Object.entries(deck.names).some(([id,name])=>!ids.has(id)||typeof name!=='string'||name.length>90))return false;
@@ -66,7 +66,7 @@ function validate(deck,cards){
 }
 function sanitize(deck,cards){
  if(!validate(deck,cards))return null;
- return {id:deck.id,name:deck.name.trim(),names:Object.fromEntries(Object.entries(deck.names).filter(([,v])=>v.trim()).map(([k,v])=>[k,v.trim()])),majorNumbers:{...deck.majorNumbers},included:[...deck.included],pipBackground:deck.pipBackground,backColor:deck.backColor,language:deck.language||'original'};
+ return {id:deck.id,name:deck.name.trim(),names:Object.fromEntries(Object.entries(deck.names).filter(([,v])=>v.trim()).map(([k,v])=>[k,v.trim()])),majorNumbers:{...deck.majorNumbers},included:[...deck.included],pipBackground:deck.pipBackground,backColor:deck.backColor,language:deck.language||'original',faceStyle:deck.faceStyle||'standard'};
 }
 function read(storage,cards){try{const saved=JSON.parse(storage.getItem(KEY)||'[]');return Array.isArray(saved)?saved.map(d=>sanitize(d,cards)).filter(Boolean).slice(0,50):[]}catch{return []}}
 function write(storage,decks,cards){
