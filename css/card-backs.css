@@ -1,47 +1,38 @@
-/* TABULA TAROT — symmetrical custom backs. Design art is palette-independent. */
-:root{--tabula-back-mask:url("data:image/png;base64,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")}
-body[data-tabula-back="on"] .face.back,
-body[data-tabula-back="on"] .table-surface .deck,
-body[data-tabula-back="on"] .removed-pile-card,
-body[data-tabula-back="on"] .shuffle-card{
- background:var(--tabula-back-base,#0d3428)!important;
- border-color:#cda96f!important;
-}
-body[data-tabula-back="on"] .face.back::before,
-body[data-tabula-back="on"] .table-surface .deck::before,
-body[data-tabula-back="on"] .removed-pile-card::before,
-body[data-tabula-back="on"] .shuffle-card::after{
- content:""!important;position:absolute!important;inset:0!important;
- border:0!important;display:block!important;
- background:#d7b574!important;pointer-events:none!important;
- -webkit-mask-image:var(--tabula-back-mask)!important;
- mask-image:var(--tabula-back-mask)!important;
- -webkit-mask-size:100% 100%!important;mask-size:100% 100%!important;
- -webkit-mask-repeat:no-repeat!important;mask-repeat:no-repeat!important;
-}
-body[data-tabula-back="on"] .face.back::after,
-body[data-tabula-back="on"] .table-surface .deck::after,
-body[data-tabula-back="on"] .removed-pile-card::after{display:none!important}
-body[data-tabula-back="on"][data-tabula-back-tone="ivory"] .face.back::before,
-body[data-tabula-back="on"][data-tabula-back-tone="ivory"] .table-surface .deck::before,
-body[data-tabula-back="on"][data-tabula-back-tone="ivory"] .removed-pile-card::before,
-body[data-tabula-back="on"][data-tabula-back-tone="ivory"] .shuffle-card::after{background:#76552d!important}
-#cardBackColorField[hidden]{display:none!important}
-
-/* Full-resolution textured assets. Existing minimal ornament stays visible until the
-   corresponding file has loaded successfully; no missing-image flash. */
-body[data-tabula-back="on"][data-tabula-back-image="ready"] .face.back,
-body[data-tabula-back="on"][data-tabula-back-image="ready"] .table-surface .deck,
-body[data-tabula-back="on"][data-tabula-back-image="ready"] .removed-pile-card,
-body[data-tabula-back="on"][data-tabula-back-image="ready"] .shuffle-card{
- background-image:var(--tabula-back-image)!important;
+/* TABULA TAROT: one textured, 180-degree-symmetric image for each back color.
+   These selectors intentionally override all visual-theme backgrounds. */
+body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-color:var(--tabula-back-base,#55331d)!important;
+ background-position:center!important;
  background-size:100% 100%!important;
  background-repeat:no-repeat!important;
- background-position:center!important;
+ border-color:#cda96f!important;
 }
-body[data-tabula-back="on"][data-tabula-back-image="ready"] .face.back::before,
-body[data-tabula-back="on"][data-tabula-back-image="ready"] .table-surface .deck::before,
-body[data-tabula-back="on"][data-tabula-back-image="ready"] .removed-pile-card::before,
-body[data-tabula-back="on"][data-tabula-back-image="ready"] .shuffle-card::after{
+body[data-tabula-back="on"][data-tabula-back-tone="sepia"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/sepia.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="green"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/green.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="burgundy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="navy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/navy.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="purple"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/purple.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="black"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="ivory"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;
+}
+/* Remove the old star-and-linework overlays, so they cannot cover the artwork. */
+body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card)::before,
+body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card)::after,
+body[data-tabula-back="on"] .shuffle-card::after{
+ content:none!important;
  display:none!important;
 }
+#cardBackColorField[hidden]{display:none!important}
