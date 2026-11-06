@@ -157,6 +157,21 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  await page.locator('#cardDesign').selectOption('standard');
  await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back','on');
- const mask=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck'),'::before').maskImage);
- expect(mask).toContain('data:image/png;base64');
+ const deckBackground=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
+ expect(deckBackground).toContain('/backs/burgundy.webp');
+ for(const tone of ['sepia','green','burgundy','navy','purple','black','ivory']){
+  await page.locator('#cardBackColor').selectOption(tone);
+  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone',tone);
+  const background=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
+  expect(background).toContain('/backs/'+tone+'.webp');
+  const image=await page.evaluate(async color=>{
+   const img=new Image();
+   img.src='images/decks/tabula-tarot/backs/'+color+'.webp';
+   try{await img.decode();return {width:img.naturalWidth,height:img.naturalHeight}}catch{return null}
+  },tone);
+  expect(image).not.toBeNull();
+  expect(image.width).toBeGreaterThanOrEqual(512);
+ }
+ const deckAfter=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
+ expect(deckAfter).toContain('/backs/ivory.webp');
 });
