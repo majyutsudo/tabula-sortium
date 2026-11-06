@@ -289,7 +289,7 @@ function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syn
 $('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
 const TABULA_BACK_PALETTE={green:'#0d3428',crimson:'#651622',navy:'#11234b',purple:'#3b2458',black:'#18191a',sepia:'#55331d',ivory:'#e6d6b1'};
 function syncTabulaBack(){
- const tone=Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'green';
+ const tone=Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'sepia';
  settings.cardBackColor=tone;
  const field=$('cardBackColorField'),input=$('cardBackColor');
  if(field)field.hidden=settings.cardDesign!=='standard';
