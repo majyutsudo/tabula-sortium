@@ -218,7 +218,7 @@ test('custom Marseille-style deck saves French names, swaps VIII/XI, and restore
  await page.locator('#deckEditNew').click();
  await expect(page.locator('#deckEditorName')).toBeVisible();
  await page.locator('#deckEditorName').fill('Tarot de Marseille — étude');
- await page.locator('#deckEditorFrench').click();
+ await page.locator('#deckEditorLanguage').selectOption('fr');
  await page.locator('#deckEditorSwap').click();
  await page.locator('#deckEditorPip').selectOption('none');
  await page.locator('#deckEditorBack').selectOption('navy');
@@ -231,8 +231,9 @@ test('custom Marseille-style deck saves French names, swaps VIII/XI, and restore
  expect(decks[0].name).toBe('Tarot de Marseille — étude');
  expect(decks[0].majorNumbers.major_08).toBe(11);
  expect(decks[0].majorNumbers.major_11).toBe(8);
- expect(decks[0].names.major_08).toBe('La Force');
- expect(decks[0].names.major_11).toBe('La Justice');
+ expect(decks[0].language).toBe('fr');
+ expect(decks[0].names.major_08).toBeUndefined();
+ expect(decks[0].names.major_11).toBeUndefined();
  expect(decks[0].pipBackground).toBe('none');
  expect(decks[0].backColor).toBe('navy');
  expect((await saved(page,WORKSPACE)).settings.deckId).toBe(decks[0].id);
@@ -269,4 +270,62 @@ test('deck definitions validate unique major numbers and one or more included ca
   return {before,switched,duplicate,empty}
  });
  expect(result).toEqual({before:true,switched:true,duplicate:false,empty:false});
+});
+
+test('numberless Fool, major numbering and independent language preset persist',async ({page})=>{
+ await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditorName').fill('Le Mat sans numéro');
+ await page.locator('#deckEditorLanguage').selectOption('fr');
+ await page.locator('.deck-major-number[data-major="major_00"]').selectOption('none');
+ await page.locator('#deckEditorPip').selectOption('none');
+ await page.locator('#deckEditorSave').click();
+ const deck=(await saved(page,'tabula_sortium_deck_library_v1'))[0];
+ expect(deck.majorNumbers.major_00).toBeNull();
+ expect(deck.language).toBe('fr');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await page.locator('#cardGalleryGrid .gallery-tile').first().click();
+ await expect(page.locator('#cardGalleryLabel')).toContainText('Le Mat');
+ const code=await page.locator('#cardGalleryLarge').evaluate(el=>el.outerHTML);
+ expect(code).not.toMatch(/>0<\/text>/);
+ await page.locator('#cardGalleryBack').click();
+ await page.locator('#cardGalleryClose').click();
+ await page.reload();
+ expect((await saved(page,'tabula_sortium_deck_library_v1'))[0].majorNumbers.major_00).toBeNull();
+ await expect(page.locator('#cardLanguage')).toHaveValue('fr');
+ await expect(page.locator('#pipBackground')).toHaveValue('none');
+});
+
+test('built-in deck language and traditional pip option can change without cloning', async ({page})=>{
+ await page.locator('#cardLanguage').selectOption('de');
+ await page.locator('#pipBackground').selectOption('none');
+ await expect(page.locator('#cardLanguage')).toHaveValue('de');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').first()).toContainText('Der Narr');
+ await page.locator('#cardGalleryFilter').selectOption('pip');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(0);
+ await page.locator('#cardGalleryClose').click();
+ await page.reload();
+ await expect(page.locator('#cardLanguage')).toHaveValue('de');
+ await expect(page.locator('#pipBackground')).toHaveValue('none');
+ await page.locator('#pipBackground').selectOption('landscape');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('pip');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(1);
+});
+
+test('fresh and dealt cards are unique by physical ID',async ({page})=>{
+ const getIds=async()=>{const w=await saved(page,WORKSPACE);return [...w.state.deck,...w.state.placed,...(w.state.removed||[])].map(c=>c.id)};
+ for(let k=0;k<4;k++){
+  let ids=await getIds();
+  expect(ids).toHaveLength(78);
+  expect(new Set(ids).size).toBe(78);
+  await page.locator('#quickDeal').click();
+  await expect.poll(async()=> (await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+  ids=await getIds();expect(new Set(ids).size).toBe(78);
+  await page.locator('#quickCollect').click({force:true});
+  await page.reload();
+  await page.locator('#newSessionStandalone').click();
+ }
 });
