@@ -414,3 +414,20 @@ test('full artwork subtitles complement multilingual titles rather than duplicat
  expect(english).toContain('MAJOR ARCANA');
  await expect(page.locator('.deck-setting-heading').first()).toHaveText('デッキの選択');
 });
+
+test('tabletop label language can follow card names or use an independent language',async ({page})=>{
+ await page.locator('#cardLanguage').selectOption('fr');
+ await expect(page.locator('#tableCardLanguage')).toHaveValue('linked');
+ await page.locator('#quickDeal').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+ await page.locator('#quickRevealAll').click();
+ await expect(page.locator('#zone .zone-label').first()).toBeVisible();
+ const linked=await page.locator('#zone .zone-label').allTextContents();
+ expect(linked.some(s=>s.includes('La ')||s.includes(' de '))).toBeTruthy();
+ await page.locator('#tableCardLanguage').selectOption('ja');
+ const japanese=await page.locator('#zone .zone-label').allTextContents();
+ expect(japanese.some(s=>s.includes('の')||s.includes('力')||s.includes('世界')||s.includes('愚者'))).toBeTruthy();
+ await expect(page.locator('#cardLanguage')).toHaveValue('fr');
+ await page.reload();
+ await expect(page.locator('#tableCardLanguage')).toHaveValue('ja');
+});
