@@ -138,7 +138,7 @@ test('label settings disclosure matches the neighboring utility button', async (
 test('TABULA TAROT back color is theme-independent, persistent, and limited to its own deck',async ({page})=>{
  await page.goto('/');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','sepia');
- expect(await page.locator('#cardBackColor option').allTextContents()).toEqual(['Sepia','Green','Crimson','Navy','Purple','Black','Ivory']);
+ expect(await page.locator('#cardBackColor option').allTextContents()).toEqual(['Sepia','Green','Burgundy','Navy','Purple','Black','Ivory']);
  await page.locator('aside .section > h2 .section-toggle').first().click();
  await expect(page.locator('#cardBackColorField')).toBeVisible();
  await page.locator('#cardBackColor').selectOption('crimson');
