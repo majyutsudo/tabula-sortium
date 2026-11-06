@@ -147,3 +147,26 @@ test('all cards open at once without changing identities or reversals', async ({
   expect(opened.state.placed.map(p=>[p.id,p.reversed])).toEqual(original.state.placed.map(p=>[p.id,p.reversed]));
   await expect(page.locator('#status')).toContainText('10枚を一度に開きました。');
 });
+
+test('spread-edit preview never persists duplicate virtual cards to a real reading',async ({page})=>{
+ const spread={
+  id:'custom_preview_safe',name:'プレビュー保存検証',cardSize:1.45,
+  slots:[{x:27,y:40,angle:0,name:'左'},{x:55,y:40,angle:0,name:'中央'},{x:77,y:60,angle:0,name:'右'}]
+ };
+ await page.goto('/');
+ await page.evaluate(({key,fixture})=>localStorage.setItem(key,JSON.stringify([fixture])),{key:SPREADS,fixture:spread});
+ await page.reload();
+ const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('tabula_sortium_v01')).state);
+ await page.locator('#spreadNotebook').click();
+ await page.locator('#archiveItems').getByRole('button',{name:'編集'}).click();
+ await expect(page.locator('#spreadWorkbench')).toBeVisible();
+ // Editing preview displays stand-in cards, but the serialized physical session stays intact.
+ const during=await page.evaluate(()=>JSON.parse(localStorage.getItem('tabula_sortium_v01')).state);
+ expect(during.deck).toEqual(before.deck);
+ expect(during.placed).toEqual(before.placed);
+ await page.reload();
+ const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('tabula_sortium_v01')).state);
+ expect(after.deck).toEqual(before.deck);
+ expect(after.placed).toEqual(before.placed);
+ expect(new Set([...after.deck,...after.placed,...after.removed].map(c=>c.id)).size).toBe(78);
+});

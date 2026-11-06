@@ -1,0 +1,38 @@
+/* TABULA TAROT: one textured, 180-degree-symmetric image for each back color.
+   These selectors intentionally override all visual-theme backgrounds. */
+body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-color:var(--tabula-back-base,#55331d)!important;
+ background-position:center!important;
+ background-size:100% 100%!important;
+ background-repeat:no-repeat!important;
+ border-color:#cda96f!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="sepia"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/sepia.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="green"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/green.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="burgundy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="navy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/navy.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="purple"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/purple.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="black"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;
+}
+body[data-tabula-back="on"][data-tabula-back-tone="ivory"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+ background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;
+}
+/* Remove the old star-and-linework overlays, so they cannot cover the artwork. */
+body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card)::before,
+body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card)::after,
+body[data-tabula-back="on"] .shuffle-card::after{
+ content:none!important;
+ display:none!important;
+}
+#cardBackColorField[hidden]{display:none!important}

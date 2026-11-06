@@ -134,3 +134,44 @@ test('label settings disclosure matches the neighboring utility button', async (
   await expect(page.locator('.label-cycle-settings')).toHaveAttribute('open','');
   await expect(page.locator('.label-cycle-options input')).toHaveCount(4);
 });
+
+test('TABULA TAROT back color is theme-independent, persistent, and limited to its own deck',async ({page})=>{
+ await page.goto('/');
+ await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','sepia');
+ expect(await page.locator('#cardBackColor option').allTextContents()).toEqual(['Sepia','Green','Burgundy','Navy','Purple','Black','Ivory']);
+ await page.locator('aside .section > h2 .section-toggle').first().click();
+ await expect(page.locator('#cardBackColorField')).toBeVisible();
+ await page.locator('#cardBackColor').selectOption('burgundy');
+ await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','burgundy');
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('tabula_sortium_v01')));
+ expect(saved.settings.cardBackColor).toBe('burgundy');
+ await page.locator('aside .section > h2 .section-toggle').nth(2).click();
+ await page.locator('#visualTheme').selectOption('gothic');
+ await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','burgundy');
+ await page.reload();
+ if(!await page.locator('#cardDesign').isVisible())await page.locator('aside .section > h2 .section-toggle').first().click();
+ await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
+ await page.locator('#cardDesign').selectOption('simple');
+ await expect(page.locator('#cardBackColorField')).toBeHidden();
+ await expect(page.locator('body')).toHaveAttribute('data-tabula-back','off');
+ await page.locator('#cardDesign').selectOption('standard');
+ await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
+ await expect(page.locator('body')).toHaveAttribute('data-tabula-back','on');
+ const deckBackground=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
+ expect(deckBackground).toContain('/backs/burgundy.webp');
+ for(const tone of ['sepia','green','burgundy','navy','purple','black','ivory']){
+  await page.locator('#cardBackColor').selectOption(tone);
+  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone',tone);
+  const background=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
+  expect(background).toContain('/backs/'+tone+'.webp');
+  const image=await page.evaluate(async color=>{
+   const img=new Image();
+   img.src='images/decks/tabula-tarot/backs/'+color+'.webp';
+   try{await img.decode();return {width:img.naturalWidth,height:img.naturalHeight}}catch{return null}
+  },tone);
+  expect(image).not.toBeNull();
+  expect(image.width).toBeGreaterThanOrEqual(512);
+ }
+ const deckAfter=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
+ expect(deckAfter).toContain('/backs/ivory.webp');
+});

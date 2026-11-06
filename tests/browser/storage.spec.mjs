@@ -213,3 +213,221 @@ test('saved readings can be reopened and restored after page reload', async ({ p
   await page.reload();
   expect((await saved(page, WORKSPACE)).state.placed).toEqual(before.state.placed);
 });
+
+test('custom Marseille-style deck saves French names, swaps VIII/XI, and restores full-area plain pips', async ({ page }) => {
+ await page.locator('#deckEditNew').click();
+ await expect(page.locator('#deckEditorName')).toBeVisible();
+ await page.locator('#deckEditorName').fill('Tarot de Marseille — étude');
+ await page.locator('#deckEditorLanguage').selectOption('fr');
+ await page.locator('#deckEditorSwap').click();
+ await page.locator('#deckEditorPip').selectOption('none');
+ await page.locator('#deckEditorBack').selectOption('navy');
+ await expect(page.locator('.deck-major-number[data-major="major_08"]')).toHaveValue('11');
+ await expect(page.locator('.deck-major-number[data-major="major_11"]')).toHaveValue('8');
+ await expect(page.locator('.deck-editor-card-name[data-name="major_11"]')).toHaveValue('La Justice');
+ await page.locator('#deckEditorSave').click();
+ const decks=await saved(page,'tabula_sortium_deck_library_v1');
+ expect(decks).toHaveLength(1);
+ expect(decks[0].name).toBe('Tarot de Marseille — étude');
+ expect(decks[0].majorNumbers.major_08).toBe(11);
+ expect(decks[0].majorNumbers.major_11).toBe(8);
+ expect(decks[0].language).toBe('fr');
+ expect(decks[0].names.major_08).toBeUndefined();
+ expect(decks[0].names.major_11).toBeUndefined();
+ expect(decks[0].pipBackground).toBe('none');
+ expect(decks[0].backColor).toBe('navy');
+ expect((await saved(page,WORKSPACE)).settings.deckId).toBe(decks[0].id);
+ await expect(page.locator('#deckLibrarySelect')).toHaveValue(decks[0].id);
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(8)).toContainText('La Force');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(11)).toContainText('La Justice');
+ await page.locator('#cardGalleryFilter').selectOption('pip');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').first().locator('.ace-background')).toHaveCount(0);
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(0);
+ await page.locator('#cardGalleryClose').click();
+ await page.reload();
+ expect((await saved(page,'tabula_sortium_deck_library_v1'))[0].pipBackground).toBe('none');
+ await expect(page.locator('#deckLibrarySelect')).toHaveValue(decks[0].id);
+ await expect(page.locator('#cardBackColor')).toHaveValue('navy');
+ await page.locator('#deckLibrarySelect').selectOption('builtin');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('pip');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(1);
+});
+
+test('deck definitions validate unique major numbers and one or more included cards', async ({ page }) => {
+ const result=await page.evaluate(()=>{
+  const store=TabulaDeckStore,all=TabulaCatalog.cards;
+  const deck=store.fresh(all,'deck_test','Test');
+  const before=store.validate(deck,all);
+  store.swapNumber(deck,all,'major_08',11);
+  const switched=store.validate(deck,all)&&deck.majorNumbers.major_08===11&&deck.majorNumbers.major_11===8;
+  deck.majorNumbers.major_11=11;
+  const duplicate=store.validate(deck,all);
+  deck.majorNumbers.major_11=8;deck.included=[];
+  const empty=store.validate(deck,all);
+  return {before,switched,duplicate,empty}
+ });
+ expect(result).toEqual({before:true,switched:true,duplicate:false,empty:false});
+});
+
+test('numberless Fool, major numbering and independent language preset persist',async ({page})=>{
+ await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditorName').fill('Le Mat sans numéro');
+ await page.locator('#deckEditorLanguage').selectOption('fr');
+ await page.locator('.deck-major-number[data-major="major_00"]').selectOption('none');
+ await page.locator('#deckEditorPip').selectOption('none');
+ await page.locator('#deckEditorSave').click();
+ const deck=(await saved(page,'tabula_sortium_deck_library_v1'))[0];
+ expect(deck.majorNumbers.major_00).toBeNull();
+ expect(deck.language).toBe('fr');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await page.locator('#cardGalleryGrid .gallery-tile').first().click();
+ await expect(page.locator('#cardGalleryLabel')).toContainText('Le Mat');
+ const code=await page.locator('#cardGalleryLarge').evaluate(el=>el.outerHTML);
+ expect(code).not.toMatch(/>0<\/text>/);
+ await page.locator('#cardGalleryBack').click();
+ await page.locator('#cardGalleryClose').click();
+ await page.reload();
+ expect((await saved(page,'tabula_sortium_deck_library_v1'))[0].majorNumbers.major_00).toBeNull();
+ await expect(page.locator('#cardLanguage')).toHaveValue('fr');
+ await expect(page.locator('#pipBackground')).toHaveValue('none');
+});
+
+test('built-in deck language and traditional pip option can change without cloning', async ({page})=>{
+ await page.locator('#cardLanguage').selectOption('de');
+ await page.locator('#pipBackground').selectOption('none');
+ await expect(page.locator('#cardLanguage')).toHaveValue('de');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').first()).toContainText('Der Narr');
+ await page.locator('#cardGalleryFilter').selectOption('pip');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(0);
+ await page.locator('#cardGalleryClose').click();
+ await page.reload();
+ await expect(page.locator('#cardLanguage')).toHaveValue('de');
+ await expect(page.locator('#pipBackground')).toHaveValue('none');
+ await page.locator('#pipBackground').selectOption('landscape');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('pip');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(1);
+});
+
+test('fresh and dealt cards are unique by physical ID',async ({page})=>{
+ const getIds=async()=>{const w=await saved(page,WORKSPACE);return [...w.state.deck,...w.state.placed,...(w.state.removed||[])].map(c=>c.id)};
+ for(let k=0;k<4;k++){
+  let ids=await getIds();
+  expect(ids).toHaveLength(78);
+  expect(new Set(ids).size).toBe(78);
+  await page.locator('#quickDeal').click();
+  await expect.poll(async()=> (await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+  ids=await getIds();expect(new Set(ids).size).toBe(78);
+  await page.locator('#quickCollect').click({force:true});
+  await page.reload();
+  await page.locator('#newSessionStandalone').click();
+ }
+});
+
+test('duplicate IDs in persisted workspace are blocked before dealing',async ({page})=>{
+ await page.evaluate(key=>{
+  const w=JSON.parse(localStorage.getItem(key));
+  w.state.deck[1].id=w.state.deck[0].id;
+  localStorage.setItem(key,JSON.stringify(w));
+ },WORKSPACE);
+ await page.reload();
+ const initial=await saved(page,WORKSPACE);
+ await page.locator('#quickDeal').click();
+ await expect(page.locator('#status')).toContainText('重複しています');
+ const after=await saved(page,WORKSPACE);
+ expect(after.state.placed).toHaveLength(0);
+ expect(after.state.deck).toEqual(initial.state.deck);
+});
+
+test('language selection supersedes one-off preset names but keeps unique custom names',async ({page})=>{
+ await page.evaluate(()=>{
+  const all=TabulaCatalog.cards,s=TabulaDeckStore;
+  const d=s.fresh(all,'deck_test_language','Old French names');
+  d.names=s.frenchNames(all);
+  d.names.major_00='Le Mat — édition privée';
+  localStorage.setItem(s.KEY,JSON.stringify([d]));
+  const w=JSON.parse(localStorage.getItem('tabula_sortium_v01'));
+  w.settings.deckId=d.id;
+  localStorage.setItem('tabula_sortium_v01',JSON.stringify(w));
+ });
+ await page.reload();
+ await page.locator('#cardLanguage').selectOption('de');
+ const d=(await saved(page,'tabula_sortium_deck_library_v1'))[0];
+ expect(d.language).toBe('de');
+ expect(d.names.major_01).toBeUndefined();
+ expect(d.names.major_00).toBe('Le Mat — édition privée');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1)).toContainText('Der Magier');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').first()).toContainText('Le Mat — édition privée');
+});
+
+test('deck editor Fool shortcut toggles unnumbered and zero and survives save',async ({page})=>{
+ await page.locator('#deckEditNew').click();
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を番号なしに');
+ await page.locator('#deckEditorUnnumbered').click();
+ await expect(page.locator('.deck-major-number[data-major="major_00"]')).toHaveValue('none');
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を0番に');
+ await page.locator('#deckEditorUnnumbered').click();
+ await expect(page.locator('.deck-major-number[data-major="major_00"]')).toHaveValue('0');
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を番号なしに');
+ await page.locator('.deck-major-number[data-major="major_00"]').selectOption('none');
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を0番に');
+ await page.locator('#deckEditorSave').click();
+ expect((await saved(page,'tabula_sortium_deck_library_v1'))[0].majorNumbers.major_00).toBeNull();
+ await page.locator('#deckEditCurrent').click();
+ await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を0番に');
+ await page.locator('#deckEditorUnnumbered').click();
+ await page.locator('#deckEditorSave').click();
+ expect((await saved(page,'tabula_sortium_deck_library_v1'))[0].majorNumbers.major_00).toBe(0);
+});
+
+test('standard pip label is concise while deck editor preserves descriptive labels',async ({page})=>{
+ await expect(page.locator('#pipBackground option[value="none"]')).toHaveText('シンプル');
+ await page.locator('#deckEditNew').click();
+ await expect(page.locator('#deckEditorPip option[value="none"]')).toContainText('スートを全面に大きく配置');
+ await expect(page.locator('#deckEditorSwap')).toHaveText('力 VIII ↔ 正義 XI');
+});
+
+test('full artwork subtitles complement multilingual titles rather than duplicating them',async ({page})=>{
+ await page.locator('#cardLanguage').selectOption('fr');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await page.locator('#cardGalleryGrid .gallery-tile').nth(8).click();
+ const french=await page.locator('#cardGalleryLarge').evaluate(el=>decodeURIComponent(el.outerHTML));
+ expect(french).toContain('La Force');
+ expect(french).toContain('STRENGTH');
+ await page.locator('#cardGalleryBack').click();
+ await page.locator('#cardGalleryClose').click();
+ await page.locator('#cardLanguage').selectOption('en');
+ await page.locator('#cardGalleryOpen').click();
+ await page.locator('#cardGalleryFilter').selectOption('major');
+ await page.locator('#cardGalleryGrid .gallery-tile').nth(8).click();
+ const english=await page.locator('#cardGalleryLarge').evaluate(el=>decodeURIComponent(el.outerHTML));
+ expect(english).toContain('Strength');
+ expect(english).toContain('MAJOR ARCANA');
+ await expect(page.locator('.deck-setting-heading').first()).toHaveText('デッキの選択');
+});
+
+test('tabletop label language can follow card names or use an independent language',async ({page})=>{
+ await page.locator('#cardLanguage').selectOption('fr');
+ await expect(page.locator('#tableCardLanguage')).toHaveValue('linked');
+ await page.locator('#quickDeal').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+ await page.locator('#quickRevealAll').click();
+ await expect(page.locator('#zone .zone-label').first()).toBeVisible();
+ const linked=await page.locator('#zone .zone-label').allTextContents();
+ expect(linked.some(s=>s.includes('La ')||s.includes(' de '))).toBeTruthy();
+ await page.locator('#tableCardLanguage').selectOption('ja');
+ const japanese=await page.locator('#zone .zone-label').allTextContents();
+ expect(japanese.some(s=>s.includes('の')||s.includes('力')||s.includes('世界')||s.includes('愚者'))).toBeTruthy();
+ await expect(page.locator('#cardLanguage')).toHaveValue('fr');
+ await page.reload();
+ await expect(page.locator('#tableCardLanguage')).toHaveValue('ja');
+});
