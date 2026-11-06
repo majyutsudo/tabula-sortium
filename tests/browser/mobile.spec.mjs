@@ -137,14 +137,17 @@ test('label settings disclosure matches the neighboring utility button', async (
 
 test('TABULA TAROT back color is theme-independent, persistent, and limited to its own deck',async ({page})=>{
  await page.goto('/');
+ await page.locator('aside .section > h2 .section-toggle').first().click();
  await expect(page.locator('#cardBackColorField')).toBeVisible();
  await page.locator('#cardBackColor').selectOption('crimson');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','crimson');
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('tabula_sortium_v01')));
  expect(saved.settings.cardBackColor).toBe('crimson');
+ await page.locator('aside .section > h2 .section-toggle').nth(2).click();
  await page.locator('#visualTheme').selectOption('gothic');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','crimson');
  await page.reload();
+ await page.locator('aside .section > h2 .section-toggle').first().click();
  await expect(page.locator('#cardBackColor')).toHaveValue('crimson');
  await page.locator('#cardDesign').selectOption('simple');
  await expect(page.locator('#cardBackColorField')).toBeHidden();
@@ -152,4 +155,6 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  await page.locator('#cardDesign').selectOption('standard');
  await expect(page.locator('#cardBackColor')).toHaveValue('crimson');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back','on');
+ const mask=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck'),'::before').maskImage);
+ expect(mask).toContain('data:image/png;base64');
 });
