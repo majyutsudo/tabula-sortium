@@ -594,8 +594,15 @@ function openDeckEditor(createCopy=false){
 }
 $('cardLanguage').addEventListener('change',e=>{
  const language=e.target.value,d=activeDeck();
- if(d){d.language=language;if(!storeDeckLibrary())return}
- else settings.cardLanguage=language;
+ if(d){
+  // Old one-off language conversions are ordinary name overrides: discard only
+  // values that exactly match a preset, retaining genuinely custom names.
+  for(const [id,name] of Object.entries(d.names||{})){
+   const original=cards.find(c=>c.id===id);
+   if(original&&TabulaDeckStore.LANGUAGES.some(([code])=>TabulaDeckStore.translatedName(original,code)===name))delete d.names[id];
+  }
+  d.language=language;if(!storeDeckLibrary())return
+ }else settings.cardLanguage=language;
  finishedCache.clear();render();if(GALLERY.visible)galleryRender();saveLocal();
  setStatus('カード名の言語を変更しました。');
 });
