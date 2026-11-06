@@ -149,12 +149,15 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  await page.locator('#visualTheme').selectOption('gothic');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','burgundy');
  await page.reload();
- if(!await page.locator('#cardDesign').isVisible())await page.locator('aside .section > h2 .section-toggle').first().click();
+ if(!await page.locator('#deckLibrarySelect').isVisible())await page.locator('aside .section > h2 .section-toggle').first().click();
  await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
- await page.locator('#cardDesign').selectOption('simple');
+ expect(await page.locator('#deckLibrarySelect option').allTextContents()).toContain('シンプル');
+ await page.locator('#deckLibrarySelect').selectOption('simple');
  await expect(page.locator('#cardBackColorField')).toBeHidden();
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back','off');
- await page.locator('#cardDesign').selectOption('standard');
+ await expect(page.locator('#cardDesign')).toHaveValue('simple');
+ await page.locator('#deckLibrarySelect').selectOption('builtin');
+ await expect(page.locator('#cardDesign')).toHaveValue('standard');
  await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back','on');
  const deckBackground=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
@@ -174,4 +177,39 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  }
  const deckAfter=await page.evaluate(()=>getComputedStyle(document.querySelector('#deck')).backgroundImage);
  expect(deckAfter).toContain('/backs/ivory.webp');
+});
+
+test('mobile Use Deck lists built-in Simple and restores its selection',async({page})=>{
+ await page.goto('/');
+ const first=page.locator('aside .section > h2 .section-toggle').first();
+ if(!await page.locator('#deckLibrarySelect').isVisible())await first.click();
+ await expect(page.locator('#deckLibrarySelect option[value="simple"]')).toHaveText('シンプル');
+ await page.locator('#deckLibrarySelect').selectOption('simple');
+ await expect(page.locator('#cardDesign')).toHaveValue('simple');
+ await expect(page.locator('#deckLibrarySelect')).toHaveValue('simple');
+ await page.reload();
+ if(!await page.locator('#deckLibrarySelect').isVisible())await first.click();
+ await expect(page.locator('#deckLibrarySelect')).toHaveValue('simple');
+ await page.locator('#deckLibrarySelect').selectOption('builtin');
+ await expect(page.locator('#cardDesign')).toHaveValue('standard');
+});
+
+test('mobile toolbar finishes initialization with visible, non-overlapping controls and a full deck',async({page})=>{
+ const errors=[];
+ page.on('pageerror',error=>errors.push(error.message));
+ await page.goto('/');
+ await expect(page.locator('.mobile-cockpit-actions')).toBeVisible();
+ await expect(page.locator('#spreadQuickSelect')).toBeVisible();
+ await expect(page.locator('#inspectCards')).toBeVisible();
+ await expect(page.locator('#toolbarLabelToggle')).toBeVisible();
+ await expect(page.locator('#deck')).toBeVisible();
+ const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('tabula_sortium_v01')));
+ expect(state.state.deck).toHaveLength(78);
+ expect(errors).toEqual([]);
+ const ids=['spreadQuickSelect','inspectCards','spreadNotebook','newSessionStandalone'];
+ const boxes=await Promise.all(ids.map(id=>page.locator('#'+id).boundingBox()));
+ for(let i=0;i<boxes.length-1;i++){
+  expect(boxes[i].x+boxes[i].width).toBeLessThanOrEqual(boxes[i+1].x+1);
+  expect(Math.abs(boxes[i].y-boxes[i+1].y)).toBeLessThanOrEqual(2);
+ }
 });
