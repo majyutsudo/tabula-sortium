@@ -213,7 +213,7 @@ test('custom spread author/source/explanation are saved, searchable and rendered
  await page.locator('[data-spread-guide-field="overview"]').fill('星々を結ぶ三枚の展開。');
  await page.locator('[data-spread-guide-field="method"]').fill('左から順に読む。');
  await page.locator('#spreadGuideEditSave').click();
- await expect(page.locator('.spread-guide-prose')).toContainText('星々を結ぶ三枚の展開。');
+ await expect(page.locator('.spread-guide-prose').first()).toContainText('星々を結ぶ三枚の展開。');
  expect((await saved(page,SPREADS))[0]).toMatchObject({author:'試作者',source:'個人の手稿',overview:'星々を結ぶ三枚の展開。',method:'左から順に読む。'});
  await page.reload();
  await page.locator('#spreadAtlasMenu').click();
