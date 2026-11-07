@@ -886,3 +886,26 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 .table-action-settings #tableWashRounds{max-width:65px}
 .table-action-settings #quickShuffleChoice,.table-action-settings #quickDealChoice{display:block;position:static;appearance:auto;-webkit-appearance:menulist;font-size:12px;color:#f0dfbf;max-width:100%;height:auto;min-width:0;cursor:pointer}
 @media(max-width:780px){.table-action-settings{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:8px 6px}.table-action-settings>label{font-size:11px}.table-action-settings select{font-size:11px}}
+
+/* v0.120: visually separate primary card actions, settings, table utilities and records. */
+.table-action-settings{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:5px 10px 12px;background:var(--ui-tool,#1b2421);border-bottom:0}
+.table-action-settings>label,.table-action-settings>.table-open-placeholder{min-width:0;width:100%;box-sizing:border-box;display:flex;align-items:center;height:30px}
+.table-action-settings>label{gap:0}
+.table-action-settings select{height:30px;min-height:30px;padding:4px 19px 4px 7px;background:#202a25;border-color:#485849;color:#bfc7b8;font-size:11px}
+.table-action-settings .table-wash-controls{width:100%;gap:4px}
+.table-action-settings #tableWashRounds{width:58px;flex:0 0 58px}
+.table-action-settings #quickShuffleChoice,.table-action-settings #quickDealChoice{height:30px;min-height:30px;font-size:11px;background:#202a25;border-color:#485849;color:#bfc7b8}
+.table-action-settings .table-open-placeholder{border:1px solid #303d33;border-radius:4px;background:transparent;opacity:.45}
+.table-utility-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:13px 10px 7px;border-top:1px solid #4d594c;background:var(--ui-tool,#1b2421)}
+.table-utility-actions button{width:100%;min-width:0;min-height:36px;box-sizing:border-box;flex:none;padding:6px 4px;font-size:11px;background:#29332c;border-color:#53614f;color:#c7cdbd;white-space:nowrap}
+.results-toggle-bar{padding:12px 10px 4px;border-top:1px solid #4d594c}
+.results-toggle-bar button{min-height:32px;font-size:11px}
+.table-record-actions{gap:7px;padding:6px 10px 12px}
+.table-record-actions button{min-height:36px;font-size:11px;background:#262e28;border-color:#786e55}
+@media(max-width:780px){
+.table-action-settings{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px 8px 10px}
+.table-action-settings .table-open-placeholder{display:none}
+.table-utility-actions{grid-template-columns:repeat(3,minmax(0,1fr));padding:12px 8px 7px}
+.table-utility-actions button,.table-utility-actions button:first-child{grid-column:auto;min-height:38px}
+.table-record-actions button{min-height:42px}
+}
