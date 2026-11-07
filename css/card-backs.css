@@ -1,31 +1,31 @@
 /* TABULA TAROT: one textured, 180-degree-symmetric image for each back color.
    These selectors intentionally override all visual-theme backgrounds. */
-body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-color:var(--tabula-back-base,#55331d)!important;
  background-position:center!important;
  background-size:100% 100%!important;
  background-repeat:no-repeat!important;
  border-color:#cda96f!important;
 }
-body[data-tabula-back="on"][data-tabula-back-tone="sepia"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+body[data-tabula-back="on"][data-tabula-back-tone="sepia"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-image:url("../images/decks/tabula-tarot/backs/sepia.webp")!important;
 }
-body[data-tabula-back="on"][data-tabula-back-tone="green"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+body[data-tabula-back="on"][data-tabula-back-tone="green"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-image:url("../images/decks/tabula-tarot/backs/green.webp")!important;
 }
-body[data-tabula-back="on"][data-tabula-back-tone="burgundy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+body[data-tabula-back="on"][data-tabula-back-tone="burgundy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp")!important;
 }
-body[data-tabula-back="on"][data-tabula-back-tone="navy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+body[data-tabula-back="on"][data-tabula-back-tone="navy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-image:url("../images/decks/tabula-tarot/backs/navy.webp")!important;
 }
-body[data-tabula-back="on"][data-tabula-back-tone="purple"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+body[data-tabula-back="on"][data-tabula-back-tone="purple"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-image:url("../images/decks/tabula-tarot/backs/purple.webp")!important;
 }
-body[data-tabula-back="on"][data-tabula-back-tone="black"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+body[data-tabula-back="on"][data-tabula-back-tone="black"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;
 }
-body[data-tabula-back="on"][data-tabula-back-tone="ivory"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card){
+body[data-tabula-back="on"][data-tabula-back-tone="ivory"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;
 }
 /* Remove the old star-and-linework overlays, so they cannot cover the artwork. */
@@ -36,3 +36,8 @@ body[data-tabula-back="on"] .shuffle-card::after{
  display:none!important;
 }
 #cardBackColorField[hidden]{display:none!important}
+
+/* Cut piles use the same back artwork and selected color as the deck. */
+body[data-tabula-back="on"] .cut-piles .cut-stack{background-size:cover!important;position:relative;text-shadow:0 1px 3px #000,0 0 5px #000;color:#fff1d1;box-shadow:inset 0 0 0 2px #392819,0 3px 8px #0008}
+body[data-tabula-back="on"] .cut-piles .cut-stack.picked{border-color:#f2d48d!important;box-shadow:0 0 0 2px #f2d48d,inset 0 0 0 2px #392819,0 3px 8px #0008}
+body[data-tabula-back="on"] .cut-piles .cut-stack :is(span,small){background:#211b16b8;padding:2px 5px;border-radius:3px;color:#fff1d1}
