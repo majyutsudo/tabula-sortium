@@ -593,31 +593,35 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
  let busy=false;
  async function choose(i){
   if(busy||sequence.includes(i))return;
+  const el=piles[i];
+  sequence.push(i);
+  // Selection is silent and stationary: only the chosen pile becomes subdued.
+  el.disabled=true;
+  el.style.pointerEvents='none';
+  el.style.filter='brightness(.38) saturate(.55)';
+  el.style.transition='filter 200ms ease';
+  note.textContent=sequence.map(n=>String.fromCharCode(65+n)).join(' → ');
+  if(sequence.length!==count)return;
   busy=true;
-  const el=piles[i],from=positions[i];
-  const layer=sequence.length;
-  // Each later pile settles a few pixels below and to the right of the first pile.
-  // The first pile remains visually uppermost throughout the entire movement.
-  const dx=center.x-from.x+layer*3,dy=center.y-from.y+layer*7;
-  el.style.zIndex=String(100+count-layer);
-  const entryX=dx+(from.x<center.x?-cardW*.28:cardW*.28);
-  const animation=el.animate([
-   {transform:'translate(0,0) scale(1)',opacity:1},
-   {offset:.38,transform:'translate('+(entryX*.65)+'px,'+(dy*.65)+'px) scale(.98)',opacity:1},
-   {offset:.78,transform:'translate('+entryX+'px,'+(dy-2)+'px) scale(.98)',opacity:1},
-   {transform:'translate('+dx+'px,'+dy+'px) scale(1)',opacity:1}
-  ],{duration:520,easing:'cubic-bezier(.3,.65,.25,1)',fill:'forwards'});
-  await animation.finished.catch(()=>{});
-  el.style.transform='translate('+dx+'px,'+dy+'px)';
-  animation.cancel();el.disabled=true;el.style.pointerEvents='none';
-  sequence.push(i);note.textContent=sequence.map(n=>String.fromCharCode(65+n)).join(' → ');
-  if(sequence.length===count){
-   await new Promise(resolve=>setTimeout(resolve,400));
-   state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
-   overlay.remove();render();saveLocal();play('shuffle');
-   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
-  }
-  busy=false;
+  note.textContent='カットを完成しています…';
+  await new Promise(resolve=>setTimeout(resolve,280));
+  // All piles converge together. Their final stacking depth follows the chosen order:
+  // the first selected pile is uppermost, the last selected pile is lowest.
+  const animations=sequence.map((pileIndex,order)=>{
+   const node=piles[pileIndex],from=positions[pileIndex];
+   const dx=center.x-from.x+order*2,dy=center.y-from.y+order*4;
+   node.style.zIndex=String(100+count-order);
+   return node.animate([
+    {transform:'translate(0px,0px) scale(1)',filter:'brightness(.38) saturate(.55)'},
+    {offset:.24,transform:'translate(0px,-9px) scale(1.015)',filter:'brightness(.72) saturate(.85)'},
+    {transform:'translate('+dx+'px,'+dy+'px) scale(1)',filter:'brightness(1) saturate(1)'}
+   ],{duration:720,delay:order*55,easing:'cubic-bezier(.24,.65,.25,1)',fill:'forwards'}).finished.catch(()=>{});
+  });
+  await Promise.all(animations);
+  await new Promise(resolve=>setTimeout(resolve,240));
+  state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
+  overlay.remove();render();saveLocal();play('shuffle');
+  setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
  }
 }
 function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}))}catch(e){setStatus('この環境ではブラウザー保存を利用できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};settings.dealSkipFirst=0;settings.dealSkipSchedule='';settings.spreadDealOrders={};state={completionShown:false,...(data.state||{})};customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus('保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
