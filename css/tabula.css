@@ -905,6 +905,12 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 @media(max-width:780px){
 .table-action-settings{order:3;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px 8px 10px}
 .table-action-settings .table-open-placeholder{display:none}
+.table-action-settings>label{height:auto;display:flex;flex-direction:column;align-items:stretch;gap:5px}
+.table-action-settings>label::before{font:11px/1.3 Arial,'Hiragino Kaku Gothic ProN',sans-serif;color:var(--ui-text,#d6c9a6);opacity:.85}
+.table-action-settings>label:nth-child(1)::before{content:'ウォッシュ'}
+.table-action-settings>label:nth-child(2)::before{content:'シャッフル'}
+.table-action-settings>label:nth-child(3)::before{content:'カット'}
+.table-action-settings>label:nth-child(4)::before{content:'ディール'}
 .table-utility-actions{grid-template-columns:repeat(3,minmax(0,1fr));padding:12px 8px 7px}
 .table-utility-actions button,.table-utility-actions button:first-child{grid-column:auto;min-height:38px}
 .table-record-actions button{min-height:42px}
