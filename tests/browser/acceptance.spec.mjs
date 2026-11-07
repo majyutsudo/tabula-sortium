@@ -170,3 +170,72 @@ test('spread-edit preview never persists duplicate virtual cards to a real readi
  expect(after.placed).toEqual(before.placed);
  expect(new Set([...after.deck,...after.placed,...after.removed].map(c=>c.id)).size).toBe(78);
 });
+
+test('current spread opens reference page without changing the current reading',async({page})=>{
+ const before=await saved(page,WORKSPACE);
+ await page.locator('#spreadInfoButton').click();
+ await expect(page.locator('.spread-guide h2')).toHaveText('ケルト十字');
+ await expect(page.locator('#spreadGuideDiagram .spread-diagram-slot')).toHaveCount(10);
+ await expect(page.locator('.spread-guide-position')).toHaveCount(10);
+ await page.locator('.spread-diagram-slot[data-spread-slot="8"]').click();
+ await expect(page.locator('#spreadGuidePositionDetail')).toContainText('希望と恐れ');
+ await expect(page.locator('#spreadGuideAtlas')).toBeVisible();
+ expect((await saved(page,WORKSPACE)).state).toEqual(before.state);
+ await page.locator('#spreadGuideAtlas').click();
+ await expect(page.locator('.spread-atlas-item')).toHaveCount(4);
+ await page.locator('#spreadAtlasSearch').fill('3枚');
+ await expect(page.locator('.spread-atlas-item')).toHaveCount(1);
+ await page.locator('.spread-atlas-item').click();
+ await expect(page.locator('.spread-guide h2')).toHaveText('3枚引き');
+ expect((await saved(page,WORKSPACE)).settings.spread).toBe('celtic');
+ await page.locator('#spreadGuideUse').click();
+ await expect(page.locator('#spread')).toHaveValue('three');
+ await expect(page.locator('#spreadQuickSelect')).toHaveValue('three');
+});
+test('custom spread author/source/explanation are saved, searchable and rendered with diagram',async({page})=>{
+ const original={id:'custom_atlas_fixture',name:'七星の配置',slots:[
+  {x:23,y:30,angle:0,name:'星の入口',detail:'最初の兆し'},
+  {x:50,y:50,angle:90,name:'交点',detail:'中心となる影響'},
+  {x:78,y:70,angle:0,name:'出口',detail:''}
+ ],cardSize:1.2};
+ await page.evaluate(({key,value})=>localStorage.setItem(key,JSON.stringify([value])),{key:SPREADS,value:original});
+ await page.reload();
+ await page.locator('#spreadAtlasMenu').click();
+ await page.locator('#spreadAtlasSearch').fill('七星');
+ await expect(page.locator('.spread-atlas-item')).toHaveCount(1);
+ await page.locator('.spread-atlas-item').click();
+ await expect(page.locator('.spread-guide h2')).toHaveText('七星の配置');
+ await expect(page.locator('.spread-guide-prose')).toHaveCount(0);
+ await expect(page.locator('#spreadGuideDiagram .spread-diagram-slot')).toHaveCount(3);
+ await page.locator('#spreadGuideEdit').click();
+ await page.locator('[data-spread-guide-field="author"]').fill('試作者');
+ await page.locator('[data-spread-guide-field="source"]').fill('個人の手稿');
+ await page.locator('[data-spread-guide-field="overview"]').fill('星々を結ぶ三枚の展開。');
+ await page.locator('[data-spread-guide-field="method"]').fill('左から順に読む。');
+ await page.locator('#spreadGuideEditSave').click();
+ await expect(page.locator('.spread-guide-prose')).toContainText('星々を結ぶ三枚の展開。');
+ expect((await saved(page,SPREADS))[0]).toMatchObject({author:'試作者',source:'個人の手稿',overview:'星々を結ぶ三枚の展開。',method:'左から順に読む。'});
+ await page.reload();
+ await page.locator('#spreadAtlasMenu').click();
+ await page.locator('#spreadAtlasSearch').fill('手稿');
+ await expect(page.locator('.spread-atlas-item')).toHaveCount(1);
+ await page.locator('.spread-atlas-item').click();
+ await expect(page.locator('.spread-guide')).toContainText('個人の手稿');
+ await page.locator('.spread-guide-position[data-spread-position="1"]').click();
+ await expect(page.locator('#spreadGuidePositionDetail')).toContainText('中心となる影響');
+});
+test('reference lookup does not alter active dealt cards and using a new spread asks first',async({page})=>{
+ await page.locator('#quickDeal').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+ const before=await saved(page,WORKSPACE);
+ await page.locator('#spreadInfoButton').click();
+ await page.locator('#spreadGuideAtlas').click();
+ await page.locator('.spread-atlas-item').filter({hasText:'3枚引き'}).click();
+ const cancel=page.waitForEvent('dialog').then(d=>d.dismiss());
+ await page.locator('#spreadGuideUse').click();await cancel;
+ expect((await saved(page,WORKSPACE)).state).toEqual(before.state);
+ await expect(page.locator('.spread-guide h2')).toHaveText('3枚引き');
+ const accept=page.waitForEvent('dialog').then(d=>d.accept());
+ await page.locator('#spreadGuideUse').click();await accept;
+ await expect(page.locator('#spread')).toHaveValue('three');
+});
