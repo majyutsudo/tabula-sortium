@@ -12,6 +12,102 @@ function renderSpreadArchive(){const root=$('archiveItems');root.replaceChildren
 function setNotebookButtonState(open){const b=$('spreadNotebook');b.setAttribute('aria-pressed',String(open));b.setAttribute('aria-expanded',String(open));b.setAttribute('aria-label',open?'手帖を閉じる':'手帖を開く');b.title=open?'手帖を閉じる':'手帖を開く';b.dataset.toolLabel=open?'手帖を閉じる':'手帖';}
 $('spreadNotebook').setAttribute('aria-controls','spreadArchive');setNotebookButtonState(false);$('spreadNotebook').onclick=()=>{$('spreadArchive').hidden?openSpreadArchive():closeSpreadArchive()};$('archiveClose').onclick=closeSpreadArchive;$('archiveCapture').onclick=()=>{if(!state.placed.length){alert('まずフリースプレッドでカードを並べてください。');return}spreadCapture()};
 
+
+/* One encyclopedia entry per spread definition: no duplicate diagrams or libraries. */
+const SpreadGuide=TabulaSpreadEncyclopedia;
+function spreadGuideEntry(id){return SpreadGuide.entry(id,presets,spreadLibrary)}
+function spreadGuideText(t){return escapeHTML(t||'')}
+function openSpreadGuide(id){
+ const spread=spreadGuideEntry(id);
+ if(!spread){setStatus('スプレッドが見つかりません。');return}
+ const related=spread.slots||[];
+ let html='<div class="spread-guide"><div class="spread-guide-kicker">TABULA SORTIUM / SPREAD ENCYCLOPEDIA</div><h2>'+spreadGuideText(spread.name)+'</h2>';
+ html+='<p class="spread-guide-meta">'+related.length+'枚'+(spread.alternate?' · '+spreadGuideText(spread.alternate):'')+'</p>';
+ if(spread.author)html+='<p class="spread-guide-meta"><strong>考案者</strong> '+spreadGuideText(spread.author)+'</p>';
+ if(spread.source)html+='<p class="spread-guide-meta"><strong>出典</strong> '+spreadGuideText(spread.source)+'</p>';
+ html+='<div id="spreadGuideDiagram" class="spread-guide-diagram-wrap">'+SpreadGuide.diagram(related,{interactive:true})+'</div>';
+ if(spread.overview)html+='<section class="spread-guide-prose"><h3>概要</h3><p>'+spreadGuideText(spread.overview)+'</p></section>';
+ if(spread.method)html+='<section class="spread-guide-prose"><h3>使用方法</h3><p>'+spreadGuideText(spread.method)+'</p></section>';
+ if(related.length){
+  html+='<section class="spread-guide-positions"><h3>位置の意味</h3><div class="spread-guide-positions-list">';
+  related.forEach((slot,i)=>{html+='<button type="button" class="spread-guide-position" data-spread-position="'+i+'"><b>'+(i+1)+'</b><span>'+spreadGuideText(slot.name||'位置'+(i+1))+'</span></button>'});
+  html+='</div><p id="spreadGuidePositionDetail" class="spread-guide-slot-detail"></p></section>';
+ }
+ if(spread.notes)html+='<section class="spread-guide-prose"><h3>備考</h3><p>'+spreadGuideText(spread.notes)+'</p></section>';
+ html+='<div class="row spread-guide-actions"><button type="button" id="spreadGuideAtlas">スプレッド図鑑</button>';
+ if(!spread.builtin)html+='<button type="button" id="spreadGuideEdit">解説を編集</button>';
+ html+='<button type="button" id="spreadGuideUse" class="primary">この展開法を使う</button></div></div>';
+ modal(html);
+ const showPosition=i=>{
+  const slot=related[i];if(!slot)return;
+  document.querySelectorAll('.spread-guide-position').forEach(el=>el.classList.toggle('is-selected',Number(el.dataset.spreadPosition)===i));
+  document.querySelectorAll('.spread-diagram-slot').forEach(el=>el.classList.toggle('is-selected',Number(el.dataset.spreadSlot)===i));
+  const detail=$('spreadGuidePositionDetail');detail.replaceChildren();
+  const strong=document.createElement('strong');strong.textContent=(i+1)+'. '+(slot.name||'位置'+(i+1));detail.append(strong);
+  if(slot.detail){const p=document.createElement('span');p.textContent=slot.detail;detail.append(p)}
+ };
+ document.querySelectorAll('.spread-guide-position').forEach(el=>el.onclick=()=>showPosition(Number(el.dataset.spreadPosition)));
+ document.querySelectorAll('.spread-diagram-slot').forEach(el=>{
+  const open=()=>showPosition(Number(el.dataset.spreadSlot));
+  el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+ });
+ if(related.length)showPosition(0);
+ $('spreadGuideAtlas').onclick=()=>openSpreadAtlas();
+ if(!spread.builtin)$('spreadGuideEdit').onclick=()=>openSpreadGuideEditor(spread.id);
+ $('spreadGuideUse').onclick=()=>{
+  if(spread.id===settings.spread){closeModal();setStatus('この展開法を使用中です。');return}
+  if((state.placed.length||(state.removed||[]).length)&&!confirm('現在の配札を片付けて展開法を切り替えますか？'))return;
+  closeModal();
+  $('spread').value=spread.id;
+  $('spread').dispatchEvent(new Event('change',{bubbles:true}));
+  setStatus('展開法「'+spread.name+'」を選択しました。');
+ };
+}
+function openSpreadAtlas(){
+ const list=SpreadGuide.entries(presets,spreadLibrary);
+ modal('<div class="spread-atlas"><div class="spread-guide-kicker">TABULA SORTIUM / SPREAD ENCYCLOPEDIA</div><h2>スプレッド図鑑</h2><label class="field">スプレッドを検索<input id="spreadAtlasSearch" type="search" placeholder="名前・考案者・出典・枚数" autocomplete="off"></label><div class="spread-atlas-filters"><button type="button" data-spread-filter="all" class="is-selected">すべて</button><button type="button" data-spread-filter="builtin">プリセット</button><button type="button" data-spread-filter="custom">自作</button></div><p id="spreadAtlasCount" class="spread-guide-meta"></p><div id="spreadAtlasList" class="spread-atlas-list"></div></div>');
+ let filter='all';
+ const paint=()=>{
+  const query=$('spreadAtlasSearch').value.trim().toLocaleLowerCase();
+  const matches=list.filter(v=>(filter==='all'||(filter==='builtin')===v.builtin)&&(!query||[v.name,v.alternate,v.author,v.source,v.overview,String(v.slots.length)].join(' ').toLocaleLowerCase().includes(query)));
+  $('spreadAtlasCount').textContent=matches.length+' 件';
+  const area=$('spreadAtlasList');area.replaceChildren();
+  if(!matches.length){const empty=document.createElement('p');empty.textContent='該当するスプレッドはありません。';area.append(empty);return}
+  for(const spread of matches){
+   const btn=document.createElement('button');btn.type='button';btn.className='spread-atlas-item';
+   const diagram=document.createElement('div');diagram.className='spread-atlas-thumb';diagram.innerHTML=SpreadGuide.diagram(spread.slots);
+   const label=document.createElement('span');label.className='spread-atlas-item-text';
+   const title=document.createElement('strong');title.textContent=spread.name;
+   const detail=document.createElement('small');detail.textContent=spread.slots.length+'枚'+(spread.author?' · '+spread.author:'')+(spread.alternate?' · '+spread.alternate:'');
+   label.append(title,detail);btn.append(diagram,label);btn.onclick=()=>openSpreadGuide(spread.id);area.append(btn);
+  }
+ };
+ $('spreadAtlasSearch').oninput=paint;
+ document.querySelectorAll('[data-spread-filter]').forEach(el=>el.onclick=()=>{filter=el.dataset.spreadFilter;document.querySelectorAll('[data-spread-filter]').forEach(btn=>btn.classList.toggle('is-selected',btn===el));paint()});
+ paint();
+}
+function openSpreadGuideEditor(id){
+ const original=spreadLibrary.find(v=>v.id===id);
+ if(!original){setStatus('登録スプレッドが見つかりません。');return}
+ const fields=[['alternate','別名・外国語名','text'],['author','考案者','text'],['source','出典・文献','text'],['overview','概要','textarea'],['method','使用方法','textarea'],['notes','備考','textarea']];
+ let html='<div class="spread-guide-editor"><h2>スプレッド解説の編集</h2><p class="spread-guide-meta">'+spreadGuideText(original.name)+' · '+original.slots.length+'枚</p><p>入力した内容はスプレッドの登録データと一緒に保存します。位置の意味は配置編集で変更できます。</p>';
+ for(const [key,label,type] of fields){
+  const value=spreadGuideText(original[key]||'');
+  html+='<label class="field">'+label+(type==='textarea'?'<textarea data-spread-guide-field="'+key+'" rows="4" maxlength="4000">'+value+'</textarea>':'<input data-spread-guide-field="'+key+'" maxlength="'+(key==='source'?500:120)+'" value="'+value+'">')+'</label>';
+ }
+ html+='<div class="row"><button type="button" id="spreadGuideEditCancel">キャンセル</button><button type="button" class="primary" id="spreadGuideEditSave">解説を保存</button></div></div>';
+ modal(html);
+ $('spreadGuideEditCancel').onclick=()=>openSpreadGuide(id);
+ $('spreadGuideEditSave').onclick=()=>{
+  const values={};document.querySelectorAll('[data-spread-guide-field]').forEach(field=>{values[field.dataset.spreadGuideField]=field.value.trim()});
+  const idx=spreadLibrary.findIndex(v=>v.id===id);if(idx<0)return;
+  const backup=spreadLibrary[idx];
+  spreadLibrary[idx]={...backup,...SpreadGuide.details(values)};
+  try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=backup;alert('解説を保存できませんでした。');return}
+  openSpreadGuide(id);setStatus('「'+backup.name+'」の解説を保存しました。');
+ };
+}
+
 function spreadCapture(){closeSpreadArchive();if(!state.placed.length){alert('フリースプレッドでカードを並べてから実行してください。');return}if(state.placed.length>52){alert('スプレッドに登録できるのは52位置までです。');return}if(spreadWorkbench)return;spreadWorkbench={previousCardSize:zoom,original:JSON.parse(JSON.stringify(state.placed)),chosen:[],names:{},title:'新しいスプレッド',circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};$('spreadSave').textContent='スプレッドを登録';document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;spreadSnap=true;$('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');$('zone').style.setProperty('--workgrid',($('spreadGridSize').value||24)+'px');refreshWorkbench();render();$('spreadWorkbench').scrollIntoView({block:'nearest',behavior:'smooth'});}
 function openStoredSpreadWorkbench(source){
  if(spreadWorkbench)return;
