@@ -4,6 +4,8 @@ const BUILTIN={
  one:{name:'1枚引き',alternate:'One-card spread',overview:'一つの問いに一枚のカードで応じる、簡潔な展開法。'},
  three:{name:'3枚引き',alternate:'Three-card spread',overview:'過去・現在・未来の三つの位置を用いて、状況の推移を読む展開法。'},
  celtic:{name:'ケルト十字',alternate:'Celtic Cross',overview:'現在の問題、影響、過去、未来、周囲の状況などを十枚のカードで多角的に読む展開法。位置の意味には異なる伝承・流儀があります。'},
+ fiveCross:{name:'五枚十字（5枚）',alternate:'Five-card cross',overview:'過去・未来・意識・根底の四方を配置し、最後の中央札で核心を読む五枚の十字形展開法。位置と順序はTABULAの標準案です。'},
+ pentagram:{name:'ペンタグラム（5枚）',alternate:'Pentagram spread',overview:'地・水・風・火の四元素を経て、頂点の霊・統合へ進む五芒星形の展開法。元素と配札順はTABULA用の構成です。'},
  horoscope:{name:'ホロスコープ（13枚）',alternate:'Horoscope spread',overview:'十二の占星術的ハウスに一枚ずつを配し、中央の第13札を総合として読む展開法。第1ハウスは左、第10ハウスは上に配置します。'},
  horseshoe:{name:'ホースシュー（7枚）',alternate:'Horseshoe spread',overview:'七枚を馬蹄形に配し、過去から現状、隠れた影響、障害、周囲、助言、結末へと読む展開法。位置の意味には異なる流儀があります。'},
  free:{name:'フリースプレッド',alternate:'Free spread',overview:'カードを卓上へ自由に配置する方式。配置の意味や形は使用者が決めます。'}
