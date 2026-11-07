@@ -1304,7 +1304,21 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
       setStatus('独自ディール '+cursor+' / '+timeline.length+'：'+frame.label+'（配札 '+frame.dealt.length+'枚・除外 '+frame.removed.length+'枚）');
       if(frame.type==='dealt'||frame.type==='removed'||frame.type==='take')play('deal');
       cursor++;
-      if(cursor<sequence.length)setTimeout(nextStage,frame.type==='shuffle-recipe'?650:frame.type==='split'||frame.type==='collect'?430:300);
+      if(cursor<sequence.length){
+        if(frame.type==='shuffle-recipe'){
+          const recipe=recipes.find(r=>r.id===frame.recipeId);
+          const rounds=(recipe?.steps||[]).flatMap(raw=>{const step=normStep(raw);return Array.from({length:step.reps},(_,i)=>({step,i}))});
+          let round=0;
+          function animateRound(){
+            if(round>=rounds.length){play('shuffle');setTimeout(nextStage,180);return}
+            const {step,i}=rounds[round++];
+            const direction=step.washDirection==='alternate'?(i%2===0?'cw':'ccw'):step.washDirection;
+            setStatus('独自ディール・シャッフル：'+methods[step.method]+' '+round+'/'+rounds.length);
+            animateShuffle(step.method,animateRound,false,{direction,piles:step.groups});
+          }
+          if(rounds.length)animateRound();else setTimeout(nextStage,300);
+        }else setTimeout(nextStage,frame.type==='split'||frame.type==='collect'?430:300);
+      }
       else{
         state.deck=cards.map(c=>({...c}));
         state.placed=[...placeRemoved(tableCards),...placed];
