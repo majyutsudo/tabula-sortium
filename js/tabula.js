@@ -595,10 +595,18 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   if(busy||sequence.includes(i))return;
   busy=true;
   const el=piles[i],from=positions[i];
-  const dx=center.x-from.x,dy=center.y-from.y+sequence.length*1.6;
-  // The first selected pile stays on top; subsequent piles slide underneath it.
-  el.style.zIndex=String(100+count-sequence.length);
-  const animation=el.animate([{transform:'translate(0,0) scale(1)'},{offset:.28,transform:'translate('+(dx*.25)+'px,'+(dy*.25-12)+'px) scale(1.025)'},{transform:'translate('+dx+'px,'+dy+'px) scale(1)'}],{duration:430,easing:'cubic-bezier(.25,.65,.3,1)',fill:'forwards'});
+  const layer=sequence.length;
+  // Each later pile settles a few pixels below and to the right of the first pile.
+  // The first pile remains visually uppermost throughout the entire movement.
+  const dx=center.x-from.x+layer*3,dy=center.y-from.y+layer*7;
+  el.style.zIndex=String(100+count-layer);
+  const entryX=dx+(from.x<center.x?-cardW*.28:cardW*.28);
+  const animation=el.animate([
+   {transform:'translate(0,0) scale(1)',opacity:1},
+   {offset:.38,transform:'translate('+(entryX*.65)+'px,'+(dy*.65)+'px) scale(.98)',opacity:1},
+   {offset:.78,transform:'translate('+entryX+'px,'+(dy-2)+'px) scale(.98)',opacity:1},
+   {transform:'translate('+dx+'px,'+dy+'px) scale(1)',opacity:1}
+  ],{duration:520,easing:'cubic-bezier(.3,.65,.25,1)',fill:'forwards'});
   await animation.finished.catch(()=>{});
   el.style.transform='translate('+dx+'px,'+dy+'px)';
   animation.cancel();el.disabled=true;el.style.pointerEvents='none';
