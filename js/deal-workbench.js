@@ -2,8 +2,10 @@
 (function(root){'use strict';
 function install(api){
  const host=document.getElementById('cutCountSetting');if(!host||!root.TabulaDealWorkflow)return;
- const trigger=document.createElement('button');trigger.type='button';trigger.textContent='ディール・アクション';trigger.title='配札手順を記録・編集・保存・実行';
- host.closest('label')?.after(trigger);
+ const field=document.createElement('div');field.className='field';
+ const heading=document.createElement('span');heading.textContent='ディール手順';
+ const trigger=document.createElement('button');trigger.type='button';trigger.textContent='番号順';trigger.title='ディール手順の選択・編集';trigger.style.width='100%';
+ field.append(heading,trigger);host.closest('label')?.after(field);
  const STORE='tabula-deal-actions-v1';
  let dialog=null;
  function open(){
