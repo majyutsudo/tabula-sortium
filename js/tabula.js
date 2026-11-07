@@ -388,8 +388,8 @@ function updateNaturalTiltButton(){
  if(!panel){
   panel=document.createElement('div');panel.id='placementTools';
   panel.style.cssText='position:absolute;right:12px;bottom:12px;z-index:550;display:flex;flex-direction:column;align-items:flex-end;gap:5px;pointer-events:auto;';
-  const trigger=document.createElement('button');trigger.type='button';trigger.textContent='⚙ 配置';
-  trigger.style.cssText='padding:5px 9px;border:1px solid #9d8862;border-radius:5px;background:#182621ed;color:#d6c6a5;font-size:11px;cursor:pointer;';
+  const trigger=document.createElement('button');trigger.type='button';trigger.textContent='·';trigger.setAttribute('aria-label','配置設定を開く');trigger.title='配置設定';
+  trigger.style.cssText='width:20px;height:20px;padding:0;border:1px solid #9d8862;border-radius:50%;background:#182621ed;color:#d6c6a5;font-size:15px;line-height:16px;cursor:pointer;opacity:.65;';
   const content=document.createElement('div');content.id='placementToolsContent';content.hidden=true;
   content.style.cssText='padding:8px;border:1px solid #9d8862;border-radius:6px;background:#182621f5;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 16px #0008;';
   trigger.onclick=()=>{content.hidden=!content.hidden;content.style.display=content.hidden?'none':'flex';};
