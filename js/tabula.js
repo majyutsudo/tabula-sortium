@@ -896,7 +896,7 @@ deck.addEventListener('pointerup',e=>{
   const r=$('zone').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
   if(x<0||x>100||y<0||y>100)return;
   if(settings.spread==='free'||getSlots().every((_,i)=>state.placed.some(p=>p.slot===i)))
-    drawAt(null,Math.max(7,Math.min(93,x)),Math.max(10,Math.min(90,y)),false);
+    drawAt(null,x,y,false);
   else{
     const slots=getSlots(),available=slots.map((s,i)=>({...s,i})).filter(s=>!state.placed.some(p=>p.slot===s.i));
     const nearest=available.sort((a,b)=>(a.x-x)**2+(a.y-y)**2-(b.x-x)**2-(b.y-y)**2)[0];
