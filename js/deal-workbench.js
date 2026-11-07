@@ -111,9 +111,9 @@ function install(api){
    btn('削除',()=>{if(!chooser.value)return;const remaining=items.filter(x=>x.name!==chooser.value);if(persist(remaining)){if(editingName===chooser.value)editingName=null;refreshPicker();message='保存済みアクションを削除しました。';paint()}},store);
    const footer=el('div');footer.style.cssText='border-top:1px solid #6b756b;padding-top:10px;margin-top:10px';
    btn('▶ 卓上に実行',()=>{if(!steps.length&&!autoDeal)return;if(!api.canStart()){message='卓上の状態が変わりました。';paint();return}try{const final=finalRun();customOrder=orderField.value;if(final.selected.length)throw Error('保留カードが残っています');api.commit(final.stock,final.dealt,final.removed,{mode:orderMode,order:customOrder,tableRemovedIds:final.removed.map(c=>c.id)});close()}catch(e){message=e.message;paint()}},footer,!steps.length&&!autoDeal);
-   btn('キャンセル',close,footer);
+   btn('閉じる',close,footer);
   }
-  // Keep the editor open on outside clicks; only explicit Cancel or Escape closes it.
+  // Keep the editor open on outside clicks; only explicit Close or Escape closes it.
   shade.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
   paint();
  }
