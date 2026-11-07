@@ -618,7 +618,13 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
    ],{duration:720,delay:order*55,easing:'cubic-bezier(.24,.65,.25,1)',fill:'forwards'}).finished.catch(()=>{});
   });
   await Promise.all(animations);
-  await new Promise(resolve=>setTimeout(resolve,240));
+  // Clear the persistent dimming on the actual pile elements, not just on
+  // the animation keyframes, so the finished stack visibly brightens.
+  piles.forEach(el=>{
+   el.style.filter='brightness(1) saturate(1)';
+   el.style.transition='filter 180ms ease';
+  });
+  await new Promise(resolve=>setTimeout(resolve,420));
   state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
   overlay.remove();render();saveLocal();play('shuffle');
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
