@@ -396,6 +396,13 @@ function updateNaturalTiltButton(){
   content.style.display='none';
   panel.append(content,trigger);$('surface').append(panel);
  }
+ let pickButton=document.getElementById('physicalCardPickButton');
+ if(!pickButton){
+  pickButton=document.createElement('button');pickButton.id='physicalCardPickButton';pickButton.type='button';pickButton.textContent='カードを指定して置く';
+  pickButton.style.cssText='padding:6px 9px;background:#29392e;color:#e5d9bf;border:1px solid #9d8862;border-radius:4px;cursor:pointer;font-size:12px;';
+  pickButton.onclick=()=>window.openPhysicalCardPicker?.();
+  document.getElementById('placementToolsContent').append(pickButton);
+ }
  let button=document.getElementById('naturalTiltButton');
  if(!button){
   button=document.createElement('button');button.id='naturalTiltButton';button.type='button';
@@ -543,6 +550,66 @@ function animateCardFromDeck(index,sourceRect){
  const dx=sourceRect.left+sourceRect.width/2-(end.left+end.width/2),dy=sourceRect.top+sourceRect.height/2-(end.top+end.height/2);
  const animation=ghost.animate([{transform:'translate('+dx+'px,'+dy+'px) scale(.96)',filter:'brightness(1.08)'},{offset:.16,transform:'translate('+(dx*.85)+'px,'+(dy*.85-7)+'px) rotate(-3deg) scale(1.025)'},{transform:'translate(0px,0px) rotate(0deg) scale(1)',filter:'brightness(1)'}],{duration:320,easing:'cubic-bezier(.22,.72,.25,1)'});
  animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility=''});
+}
+// Select a physical card from the current deck and place it at an exact table point.
+let chosenPhysicalCardId=null;
+function installPhysicalCardPicker(){
+ const panel=document.createElement('div');panel.id='physicalCardPicker';
+ panel.style.cssText='position:fixed;inset:0;z-index:12000;background:#07110ed9;display:none;align-items:center;justify-content:center;padding:16px;';
+ const dialog=document.createElement('div');dialog.style.cssText='width:min(580px,94vw);max-height:82vh;overflow:auto;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;padding:18px;box-shadow:0 14px 48px #000a;';
+ const head=document.createElement('div');head.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;';
+ const title=document.createElement('strong');title.textContent='山札からカードを選ぶ';
+ const close=document.createElement('button');close.type='button';close.textContent='閉じる';close.onclick=()=>panel.style.display='none';
+ head.append(title,close);
+ const filter=document.createElement('input');filter.type='search';filter.placeholder='カード名を検索';filter.setAttribute('aria-label','カード名を検索');filter.style.cssText='width:100%;box-sizing:border-box;padding:9px;background:#101a16;color:#eee;border:1px solid #7e7053;border-radius:4px;margin-bottom:12px;';
+ const list=document.createElement('div');list.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;';
+ const note=document.createElement('p');note.style.cssText='font-size:12px;opacity:.75;margin:0 0 12px';note.textContent='カードを選んだあと、卓上の置きたい位置をクリックしてください。選んだカードは山札から抜かれます。';
+ const returnTitle=document.createElement('p');returnTitle.style.cssText='margin:16px 0 8px;font-size:13px';returnTitle.textContent='指定して置いたカードを山札へ戻す';
+ const returns=document.createElement('div');returns.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
+ dialog.append(head,note,filter,list,returnTitle,returns);panel.append(dialog);document.body.append(panel);
+ panel.addEventListener('pointerdown',e=>{if(e.target===panel)panel.style.display='none'});
+ const buttonStyle='padding:8px 6px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;cursor:pointer;text-align:left;font-size:12px;';
+ function populate(){
+  list.replaceChildren();returns.replaceChildren();
+  const q=filter.value.trim().toLocaleLowerCase();
+  for(const entry of state.deck){
+   const card=cards.find(c=>c.id===entry.id);if(!card)continue;
+   const name=displayCard(card).name;
+   if(q&&!name.toLocaleLowerCase().includes(q)&&!entry.id.toLocaleLowerCase().includes(q))continue;
+   const b=document.createElement('button');b.type='button';b.textContent=name;b.style.cssText=buttonStyle;
+   b.onclick=()=>{chosenPhysicalCardId=entry.id;panel.style.display='none';setStatus('「'+name+'」を選択中。卓上の置きたい位置をクリックしてください。Escで解除できます。');};
+   list.append(b)
+  }
+  if(!list.childElementCount){const empty=document.createElement('span');empty.textContent='該当するカードは山札にありません。';list.append(empty)}
+  for(const item of state.placed.filter(c=>c.physicalSelection)){
+   const card=cards.find(c=>c.id===item.id);const b=document.createElement('button');b.type='button';
+   b.textContent=(card?displayCard(card).name:item.id)+' ↩';b.style.cssText=buttonStyle;
+   b.onclick=()=>{
+    const idx=state.placed.findIndex(c=>c.id===item.id&&c.physicalSelection);
+    if(idx<0)return;
+    const [removed]=state.placed.splice(idx,1);
+    state.deck.unshift({id:removed.id,reversed:!!removed.reversed});
+    render();saveLocal();populate();setStatus('カードを山札へ戻しました。');
+   };returns.append(b)
+  }
+  returnTitle.style.display=returns.childElementCount?'block':'none';
+ }
+ filter.addEventListener('input',populate);
+ window.openPhysicalCardPicker=()=>{chosenPhysicalCardId=null;filter.value='';populate();panel.style.display='flex';filter.focus()};
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&chosenPhysicalCardId){chosenPhysicalCardId=null;setStatus('指定カードの配置を解除しました。')}});
+ $('zone').addEventListener('click',e=>{
+  if(!chosenPhysicalCardId||panel.style.display==='flex')return;
+  e.preventDefault();e.stopImmediatePropagation();
+  const idx=state.deck.findIndex(c=>c.id===chosenPhysicalCardId);
+  if(idx<0){chosenPhysicalCardId=null;setStatus('選択したカードは山札にありません。');return}
+  const rect=$('zone').getBoundingClientRect();
+  const x=(e.clientX-rect.left)/rect.width*100,y=(e.clientY-rect.top)/rect.height*100;
+  if(x<0||x>100||y<0||y>100)return;
+  const [entry]=state.deck.splice(idx,1);
+  state.placed.push({...entry,slot:null,x,y,angle:0,origin:{x,y,angle:0},faceUp:true,physicalSelection:true});
+  chosenPhysicalCardId=null;play('deal');render();saveLocal();
+  setStatus('指定カードを山札から抜いて配置しました。');
+ },true);
 }
 function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&state.placed.some(p=>p.slot===slot)){setStatus('その位置にはすでにカードがあります。');return}const physical=[...state.deck,...state.placed,...(state.removed||[])];
  const seen=new Set(),duplicate=physical.find(c=>{if(seen.has(c.id))return true;seen.add(c.id);return false});
@@ -1509,5 +1576,6 @@ function installTableActionSettings(){
  update();
 }
 installTableActionSettings();
+installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
 const initial=localStorage.getItem(KEY);if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()} })();
