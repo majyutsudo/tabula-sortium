@@ -923,3 +923,6 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 
 /* Keep the default deck fully inside the cloth after card-size increases. */
 .deck{top:calc(100% - var(--ch) - 25px)}
+
+/* Default deck: use one vertical anchor, safely inside the cloth. */
+.deck{top:auto;bottom:25px}
