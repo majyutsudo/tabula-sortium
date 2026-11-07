@@ -7,8 +7,8 @@ function copy(cards){if(!Array.isArray(cards))fail('cards must be an array');ret
 function index(value,max,label){if(!Number.isInteger(value)||value<0||value>=max)fail('invalid '+label);return value}
 function run(deck,steps){
  if(!Array.isArray(steps)||steps.length>100)fail('invalid steps');
- const initial=copy(deck),state={stock:initial,piles:[],selected:[],dealt:[],log:[]};
- const count=()=>state.stock.length+state.piles.reduce((n,p)=>n+p.length,0)+state.selected.length+state.dealt.length;
+ const initial=copy(deck),state={stock:initial,piles:[],selected:[],dealt:[],removed:[],log:[]};
+ const count=()=>state.stock.length+state.piles.reduce((n,p)=>n+p.length,0)+state.selected.length+state.dealt.length+state.removed.length;
  for(const step of steps){
   if(!step||typeof step.type!=='string')fail('invalid step');
   const before=count();
@@ -33,6 +33,7 @@ function run(deck,steps){
     if(source.length<n)fail('not enough cards');
     const cards=source.splice(0,n);
     if(step.to==='dealt')state.dealt.push(...cards);
+    else if(step.to==='removed')state.removed.push(...cards);
     else if(step.to==='selected')state.selected.push(...cards);
     else fail('invalid destination');
     break;
@@ -49,7 +50,7 @@ function run(deck,steps){
    default:fail('unsupported operation '+step.type);
   }
   if(count()!==before)fail('card conservation violated');
-  state.log.push({type:step.type,stock:state.stock.length,piles:state.piles.map(p=>p.length),selected:state.selected.length,dealt:state.dealt.length});
+  state.log.push({type:step.type,stock:state.stock.length,piles:state.piles.map(p=>p.length),selected:state.selected.length,dealt:state.dealt.length,removed:state.removed.length});
  }
  return state;
 }
