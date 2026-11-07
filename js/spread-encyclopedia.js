@@ -17,7 +17,7 @@ function entry(id,presets,library){
 }
 function entries(presets,library){return [...Object.keys(BUILTIN).map(id=>entry(id,presets,library)),...(library||[]).filter(v=>!Object.hasOwn(BUILTIN,v.id)).map(v=>entry(v.id,presets,library))].filter(Boolean)}
 function diagram(slots,{interactive=false}={}){
- if(!Array.isArray(slots)||!slots.length)return '<div class="spread-diagram-empty">自由配置：位置の登録なし</div>';
+ if(!Array.isArray(slots)||!slots.length)return '<svg class="spread-diagram spread-diagram-unassigned" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 340" role="img" aria-label="自由配置・固定された配置図なし"><rect width="440" height="340" rx="12" fill="#192523"/><rect x="12" y="12" width="416" height="316" fill="none" stroke="#6c6855" stroke-width="1"/><rect x="171" y="105" width="98" height="130" rx="6" stroke="#9d906b" stroke-dasharray="8 8" stroke-width="2" fill="none" opacity=".65"/><path d="M220 153v34 M203 170h34" stroke="#baa275" stroke-width="2" opacity=".75"/></svg>';
  const w=440,h=340,centerX=220,centerY=170;
  const cards=slots.map((p,i)=>{
   const x=30+Math.max(0,Math.min(100,Number(p.x)||0))*3.8;
