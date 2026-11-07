@@ -561,70 +561,55 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
  if(Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
  if(state.deck.length<2){setStatus('カットには2枚以上必要です。');return}
  if(document.getElementById('physicalCutOverlay'))return;
- const limit=Math.min(8,state.deck.length);
- let count=Math.max(2,Math.min(Number(settings.cutCount)||3,limit));
- let lengths=TabulaShuffle.cutLengths(state.deck.length,count),sequence=[],busy=false;
+ const count=Math.max(2,Math.min(Number(settings.cutCount)||3,8,state.deck.length));
+ const lengths=TabulaShuffle.cutLengths(state.deck.length,count),sequence=[];
  const surface=$('surface'),overlay=document.createElement('div');
  overlay.id='physicalCutOverlay';
- overlay.style.cssText='position:absolute;inset:0;z-index:850;background:#0c1717e8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px;box-sizing:border-box;color:#ead6aa;touch-action:manipulation;';
- const header=document.createElement('div');
- header.style.cssText='display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;text-align:center;font-size:13px;';
- const title=document.createElement('strong');title.textContent='卓上カット：束を積み直す順に選択';
- header.append(title);
- if(!quick){
-  const select=document.createElement('select');select.setAttribute('aria-label','分割数');
-  for(let n=2;n<=limit;n++){const option=document.createElement('option');option.value=n;option.textContent=n+'分割';select.append(option)}
-  select.value=count;
-  select.onchange=()=>{if(busy)return;count=Number(select.value);settings.cutCount=count;lengths=TabulaShuffle.cutLengths(state.deck.length,count);sequence=[];saveLocal();paint()};
-  header.append(select);
+ overlay.style.cssText='position:absolute;inset:0;z-index:850;pointer-events:none;overflow:hidden;';
+ surface.append(overlay);
+ const m=metrics(),width=surface.clientWidth,height=surface.clientHeight;
+ const cardW=Math.min(m.w,Math.max(30,(width-28)/(count+1.4))),cardH=cardW*1.52;
+ const center={x:width*.5-cardW*.5,y:height*.55-cardH*.5};
+ const span=Math.min(width*.77,cardW*(count-1)*1.32);
+ const positions=lengths.map((_,i)=>({x:width*.5-cardW*.5+(i-(count-1)/2)*(span/Math.max(1,count-1)),y:height*.36-cardH*.5}));
+ const piles=[];
+ function makeStack(i){
+  const el=document.createElement('button');el.type='button';el.setAttribute('aria-label','束 '+String.fromCharCode(65+i)+'、'+lengths[i]+'枚');
+  el.style.cssText='position:absolute;pointer-events:auto;cursor:pointer;border:0;background:transparent;padding:0;width:'+cardW+'px;height:'+(cardH+12)+'px;left:'+positions[i].x+'px;top:'+positions[i].y+'px;touch-action:manipulation;';
+  for(let j=0;j<Math.min(5,lengths[i]);j++){
+   const card=document.createElement('span');card.className='face back';
+   card.style.cssText='position:absolute;display:block;box-sizing:border-box;width:'+cardW+'px;height:'+cardH+'px;left:0;top:'+(8-j*2)+'px;border-radius:4px;box-shadow:1px 2px 3px #0009;';
+   el.append(card);
+  }
+  const label=document.createElement('span');label.textContent=String.fromCharCode(65+i);
+  label.style.cssText='position:absolute;left:0;right:0;top:'+(cardH+14)+'px;color:#ead6aa;text-align:center;font:12px sans-serif;text-shadow:0 1px 3px #000;';
+  el.append(label);overlay.append(el);piles.push(el);
+  el.onclick=()=>choose(i);
  }
- const piles=document.createElement('div');
- piles.style.cssText='display:flex;align-items:center;justify-content:center;gap:clamp(5px,2vw,22px);width:100%;max-width:100%;flex-wrap:wrap;min-height:145px;';
- const info=document.createElement('div');info.style.cssText='font-size:12px;text-align:center;min-height:20px;';
- const controls=document.createElement('div');controls.style.cssText='display:flex;justify-content:center;gap:10px;flex-wrap:wrap;';
- const undo=document.createElement('button');undo.type='button';undo.textContent='1つ戻す';
- const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';
- for(const button of [undo,cancel])button.style.cssText='padding:7px 14px;background:#263c36;color:#ead6aa;border:1px solid #a68a61;border-radius:5px;cursor:pointer;';
- undo.onclick=()=>{if(busy)return;sequence.pop();paint()};
- cancel.onclick=()=>{if(busy)return;overlay.remove();setStatus('カットをキャンセルしました。')};
- controls.append(undo,cancel);overlay.append(header,piles,info,controls);surface.append(overlay);
- function paint(){
-  piles.replaceChildren();
-  const m=metrics(),cardW=Math.max(25,Math.min(m.w,(surface.clientWidth-32)/Math.max(count*1.4,3))),cardH=cardW*1.52;
-  lengths.forEach((len,i)=>{
-   const button=document.createElement('button');button.type='button';button.dataset.pile=i;
-   button.style.cssText='position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;color:#ead6aa;cursor:pointer;padding:5px;transition:opacity .18s;';
-   const stack=document.createElement('span');stack.style.cssText='display:block;position:relative;width:'+cardW+'px;height:'+(cardH+8)+'px;';
-   for(let j=0;j<Math.min(4,len);j++){
-    const card=document.createElement('span');card.style.cssText='position:absolute;left:0;top:'+(6-j*2)+'px;width:'+cardW+'px;height:'+cardH+'px;box-sizing:border-box;border:2px solid #cbb28a;border-radius:4px;background:repeating-linear-gradient(45deg,#553944 0 4px,#322b38 4px 8px);box-shadow:2px 3px 5px #0008;';
-    stack.append(card);
-   }
-   const label=document.createElement('span');label.style.fontSize='12px';label.textContent='束 '+String.fromCharCode(65+i)+' · '+len+'枚';
-   const order=sequence.indexOf(i);
-   if(order>=0){button.style.opacity='.35';button.disabled=true;label.textContent=(order+1)+'番に選択済み'}
-   button.append(stack,label);button.onclick=()=>choose(i);piles.append(button);
-  });
-  info.textContent=sequence.length?('積み直し順（上から）：'+sequence.map(i=>String.fromCharCode(65+i)).join(' → ')):'束をクリックしてください。最初に選ぶ束が山札の一番上になります。';
-  undo.disabled=!sequence.length;
- }
+ lengths.forEach((_,i)=>makeStack(i));
+ const note=document.createElement('div');note.textContent='積み直す順に束を選ぶ';
+ note.style.cssText='position:absolute;left:0;right:0;top:12%;text-align:center;color:#ead6aa;font:13px sans-serif;text-shadow:0 1px 4px #000;pointer-events:none;';
+ overlay.append(note);
+ let busy=false;
  async function choose(i){
   if(busy||sequence.includes(i))return;
-  sequence.push(i);
-  const chosen=piles.querySelector('[data-pile="'+i+'"]');
-  const target=piles.getBoundingClientRect(),from=chosen.getBoundingClientRect();
-  const dx=target.left+target.width/2-(from.left+from.width/2);
-  const dy=target.top+target.height/2-(from.top+from.height/2);
   busy=true;
-  const animation=chosen.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+dx+'px,'+dy+'px) scale(1.04)',opacity:.95}],{duration:340,easing:'ease-in-out'});
+  const el=piles[i],from=positions[i];
+  const dx=center.x-from.x,dy=center.y-from.y+sequence.length*1.6;
+  el.style.zIndex=String(100+sequence.length);
+  const animation=el.animate([{transform:'translate(0,0) scale(1)'},{offset:.28,transform:'translate('+(dx*.25)+'px,'+(dy*.25-12)+'px) scale(1.025)'},{transform:'translate('+dx+'px,'+dy+'px) scale(1)'}],{duration:430,easing:'cubic-bezier(.25,.65,.3,1)',fill:'forwards'});
   await animation.finished.catch(()=>{});
-  busy=false;
+  el.style.transform='translate('+dx+'px,'+dy+'px)';
+  animation.cancel();el.disabled=true;el.style.pointerEvents='none';
+  sequence.push(i);note.textContent=sequence.map(n=>String.fromCharCode(65+n)).join(' → ');
   if(sequence.length===count){
+   await new Promise(resolve=>setTimeout(resolve,400));
    state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
    overlay.remove();render();saveLocal();play('shuffle');
    setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
-  }else paint();
+  }
+  busy=false;
  }
- paint();
 }
 function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}))}catch(e){setStatus('この環境ではブラウザー保存を利用できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};settings.dealSkipFirst=0;settings.dealSkipSchedule='';settings.spreadDealOrders={};state={completionShown:false,...(data.state||{})};customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus('保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
 function updateStandaloneAvailability(){const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash;w.title=noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}if(c){c.disabled=noCut;c.title=noCut?'カットは「なし」に設定されています':'山札をカット'}}function sync(){if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';$('pool').value=settings.pool;$('spread').value=settings.spread;syncSpreadShortcut();syncDealOrderField();$('initialOrder').value=settings.initialOrder||'random';$('quickWashDirection').value=settings.quickWashDirection||'random';$('quickWashRounds').value=settings.quickWashRounds||1;updateStandaloneAvailability();$('dealSkipFirst').value=Number(settings.dealSkipFirst)||0;$('dealSkipSchedule').value=settings.dealSkipSchedule||'';$('cutCountSetting').value=String(settings.cutCount??3);$('reversals').checked=settings.reversals;$('altarToggle').checked=settings.altar;$('quickLabels').textContent=settings.labels?'ポジション名 ON':'ポジション名 OFF';$('quickLabels').setAttribute('aria-pressed',String(settings.labels));$('crossLabelLayer').value=settings.crossLabelLayer==='front'?'front':'behind';$('soundToggle').checked=settings.sound;$('shuffleMethod').value=settings.shuffleMethod||'overhand';$('visualTheme').value=settings.visualTheme||'classic';$('effectPreset').value=settings.effectPreset||'ritual';applyVisuals();syncRecipes();updateDealRuleSummary();updateStandaloneAvailability()}function applyVisuals(){document.body.dataset.visualTheme=settings.visualTheme||'classic';document.body.dataset.effectPreset=settings.effectPreset||'ritual';const desc={silent:'静かな反転。完成時の追加演出なし。',ritual:'暖かな金色の光。カードが厳かに反転される。',mystic:'青白い光輪。完成後も神秘的な発光を維持。',psychic:'紫の霊光。完成後もカードが明滅し続ける。'};if($('effectDescription'))$('effectDescription').textContent=desc[settings.effectPreset]||desc.ritual;updateCompletionAura()}let __effectTimer=null;function previewVisualEffect(finale=false){const stage=$('stage');stage.classList.remove('effect-demo','effect-finale');void stage.offsetWidth;stage.classList.add(finale?'effect-finale':'effect-demo');clearTimeout(__effectTimer);__effectTimer=setTimeout(()=>stage.classList.remove('effect-demo','effect-finale'),finale?3800:1900)}function coreTargetCount(){if(settings.spread==='free')return state.placed.length;return getSlots().length}function coreFaceUpCount(){if(settings.spread==='free')return state.placed.filter(p=>p.faceUp).length;return state.placed.filter(p=>p.slot!=null&&p.faceUp).length}function isCoreSpreadOpen(){const target=coreTargetCount();return target>0&&coreFaceUpCount()>=target}function updateCompletionAura(){const stage=$('stage');if(!stage)return;stage.classList.remove('spread-complete-ritual','spread-complete-mystic','spread-complete-psychic');if(!isCoreSpreadOpen())return;const preset=settings.effectPreset;if(preset==='ritual')stage.classList.add('spread-complete-ritual');else if(preset==='mystic')stage.classList.add('spread-complete-mystic');else if(preset==='psychic')stage.classList.add('spread-complete-psychic')}function maybeTriggerCompletionEffect(force=false){if(isCoreSpreadOpen()){updateCompletionAura();if(force||!state.completionShown){state.completionShown=true;if(settings.effectPreset!=='silent')previewVisualEffect(true)}}else{state.completionShown=false;updateCompletionAura()}}
