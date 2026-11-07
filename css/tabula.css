@@ -864,3 +864,10 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
  .table-utility-actions .label-cycle-settings[open]{grid-column:1/-1}
  .table-utility-actions .label-cycle-settings>summary{min-height:43px;padding:8px 23px 8px 9px;font-size:12px}
 }
+
+/* Compact split-action dropdowns: retain the five-column tabletop toolbar. */
+.table-shortcuts .quick-action-choice{position:relative;min-width:0;display:flex;align-items:stretch}
+.table-shortcuts .quick-action-choice>button{width:100%;padding-right:29px}
+.table-shortcuts .quick-action-choice>select{position:absolute;right:0;top:0;height:100%;width:27px;min-width:0;max-width:27px;margin:0;padding:0;box-sizing:border-box;appearance:none;-webkit-appearance:none;border:0;border-left:1px solid #857352;background:transparent;color:transparent;font-size:0;cursor:pointer;z-index:2}
+.table-shortcuts .quick-action-choice>select option{color:#1b2421;background:#f1dfbd;font-size:14px}
+.table-shortcuts .quick-action-choice::after{content:'▾';position:absolute;right:8px;top:50%;transform:translateY(-50%);font:16px/1 sans-serif;color:var(--ui-text,#f0dfbf);pointer-events:none;z-index:3}
