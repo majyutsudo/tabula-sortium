@@ -34,9 +34,29 @@ test('built-in spread definitions preserve their positions and names',()=>{
   assert.equal(presets.treeOfLife[0].x,50);
   assert.ok(presets.treeOfLife[0].y<presets.treeOfLife[9].y);
   for(const id of ['fiveCross','pentagram','treeOfLife'])assert.ok(presets[id].every(p=>p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100));
+  assert.ok(presets.treeOfLife[3].y-presets.treeOfLife[1].y>=18);
+  assert.ok(presets.treeOfLife[6].y-presets.treeOfLife[3].y>=18);
+  assert.ok(presets.treeOfLife[9].y-presets.treeOfLife[8].y>=18);
+  assert.ok(presets.treeOfLife[0].y<presets.treeOfLife[1].y);
+  assert.equal(builtinSpreadCardSizes.fiveCross.mobile,1.5);
+  assert.equal(builtinSpreadCardSizes.pentagram.mobile,1.5);
+  assert.equal(builtinSpreadCardSizes.horseshoe.mobile,1.45);
+  for(const id of ['fiveCross','pentagram','horseshoe']){
+    assert.ok(builtinSpreadCardSizes[id].desktop>=builtinSpreadCardSizes.celtic.desktop);
+    assert.ok(builtinSpreadCardSizes[id].mobile>=builtinSpreadCardSizes.celtic.mobile);
+  }
   assert.equal(presets.horoscope.length,13);
   assert.equal(presets.horseshoe.length,7);
   assert.equal(presets.horoscope[12].name,'総合');
+  assert.equal(presets.horoscope[0].x,10);
+  assert.equal(presets.horoscope[3].y,90);
+  assert.equal(presets.horoscope[6].x,90);
+  assert.equal(presets.horoscope[9].y,10);
+  const zodiac=presets.horoscope.slice(0,12);
+  for(let i=0;i<zodiac.length;i++){
+    const p=zodiac[i],q=zodiac[(i+1)%zodiac.length];
+    assert.ok(Math.abs(p.x-q.x)>=10||Math.abs(p.y-q.y)>=18,'zodiac cards must retain space at neighbors');
+  }
   assert.ok(presets.horoscope.every(p=>p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100));
   assert.ok(presets.horseshoe.every(p=>p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100));
   assert.equal(presets.free.length,0);
