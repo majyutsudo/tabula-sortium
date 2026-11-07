@@ -1265,6 +1265,7 @@ const renderBeforeCandles=render;render=function(){renderBeforeCandles();renderC
 
 const dealWorkbenchController=TabulaDealWorkbench.install({
  deck:()=>state.deck.map(c=>({...c})),
+ editorDeck:()=>[...state.deck,...state.placed,...(state.removed||[])].map(c=>({...c})),
  spreadCount:()=>settings.spread==='free'?0:getSlots().length,
  defaultOrder:()=>getDealOrder(),
  shuffleRecipes:()=>recipes.map(r=>({id:r.id,name:r.name,steps:r.steps.map(st=>({...st}))})),
