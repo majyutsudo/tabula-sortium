@@ -1278,8 +1278,18 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
     const pos=slot!==null&&slots[slot]?slots[slot]:{x:20+(i%7)*10,y:22+(Math.floor(i/7)%5)*13,angle:0};
     return {...card,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{...pos},faceUp:false};
   });
-  state.deck=cards.map(c=>({...c}));state.placed=placed;state.removed=removed.map(c=>({...c}));state.selected=null;state.completionShown=false;state.dealCheckpoint=null;
-  render();saveLocal();setStatus('独自ディールを確定しました。卓上に'+placed.length+'枚を配札しました。');
+  state.deck=cards.map(c=>({...c}));state.placed=[];state.removed=removed.map(c=>({...c}));state.selected=null;state.completionShown=false;state.dealCheckpoint=null;
+  // Display cards sequentially, matching the standard 340ms deal rhythm.
+  // The workflow has already determined their identities and positions.
+  const batch=placed.slice();let cursor=0;
+  function nextCustomCard(){
+    if(cursor>=batch.length){render();saveLocal();setStatus('独自ディールを完了しました。'+batch.length+'枚を配札、'+removed.length+'枚を除外しました。');return}
+    state.placed.push(batch[cursor++]);play('deal');render();saveLocal();
+    setStatus('独自ディール：'+cursor+' / '+batch.length+'枚を配札中');
+    setTimeout(nextCustomCard,340);
+  }
+  render();if(batch.length)nextCustomCard();else{saveLocal();setStatus('独自ディールを完了しました。')}
+
  },
  status:setStatus
 });
