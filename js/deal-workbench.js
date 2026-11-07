@@ -100,7 +100,7 @@ function install(api){
   shade.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
   paint();
  }
- refreshPicker();trigger.onclick=()=>{if(!dialog)open()};
+ refreshPicker();trigger.onclick=()=>{if(dialog)return;try{open()}catch(error){if(dialog){dialog.remove();dialog=null}const reason=error&&error.message?error.message:String(error);api.status('ディール編集画面のエラー：'+reason);window.alert('ディール編集画面を開けませんでした。\n'+reason)}};
  return Object.freeze({executeSelected});
 }
 root.TabulaDealWorkbench=Object.freeze({install});
