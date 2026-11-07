@@ -22,7 +22,7 @@ function install(api){
   function change(next,sel=next.length-1){try{const value=run(next);if(value.dealt.length>52)throw Error('配札は52枚までです');steps=next;selected=sel;result=value;message='';paint()}catch(e){message='工程を実行できません：'+e.message;paint()}}
   function label(st){const pile=n=>'束'+String.fromCharCode(65+n);switch(st.type){
    case 'split':return '山札を分割：'+st.sizes.join(' / ')+'枚';
-   case 'take':return (st.from==='stock'?'山札':pile(st.from))+'から'+st.count+'枚取り出す';
+   case 'take':return (st.from==='stock'?'山札':pile(st.from))+'から'+st.count+'枚'+(st.to==='removed'?'除外':st.to==='selected'?'保留':'配札');
    case 'collect':return '積み直す：'+st.order.map(pile).join(' → ');
    case 'reverse-pile':return pile(st.pile)+'の上下順を逆にする';
    default:return st.type;
@@ -37,7 +37,7 @@ function install(api){
    const fields=el('div',undefined,box);
    function drawFields(){fields.replaceChildren();const type=kind.value;
     if(type==='split'){el('span','各束の枚数',fields);const n=s.stock.length,third=Math.floor(n/3);const sizes=input([third,third,n-third*2].join(','),fields);return()=>({type,sizes:sizes.value.split(',').map(x=>Number(x.trim()))})}
-    if(type==='take'){const opts=[];if(s.stock.length)opts.push(['stock','山札 ('+s.stock.length+'枚)']);s.piles.forEach((p,i)=>{if(p.length)opts.push([i,'束'+String.fromCharCode(65+i)+' ('+p.length+'枚)'])});const from=select(opts,fields);el('span','枚数',fields);const count=input('1',fields);count.type='number';count.min='1';return()=>({type,from:from.value==='stock'?'stock':Number(from.value),count:Number(count.value),to:'dealt'})}
+    if(type==='take'){const opts=[];if(s.stock.length)opts.push(['stock','山札 ('+s.stock.length+'枚)']);s.piles.forEach((p,i)=>{if(p.length)opts.push([i,'束'+String.fromCharCode(65+i)+' ('+p.length+'枚)'])});const from=select(opts,fields);el('span','枚数',fields);const count=input('1',fields);count.type='number';count.min='1';el('span','用途',fields);const to=select([['dealt','卓上に配札'],['removed','除外する']],fields);return()=>({type,from:from.value==='stock'?'stock':Number(from.value),count:Number(count.value),to:to.value})}
     if(type==='collect'){el('span','上からの束の順序（例：C,A,B）',fields);const order=input(s.piles.map((_,i)=>String.fromCharCode(65+i)).join(','),fields);return()=>({type,order:order.value.toUpperCase().split(',').map(x=>x.trim().charCodeAt(0)-65)})}
     const pile=select(s.piles.map((_,i)=>[i,'束'+String.fromCharCode(65+i)]),fields);return()=>({type,pile:Number(pile.value)});
    }
@@ -47,7 +47,7 @@ function install(api){
   function edit(index){const step=steps[index],before=stateBefore(index),box=el('div');box.style.cssText='border:1px solid #b29b70;border-radius:6px;padding:10px;margin:8px 0';
    el('strong','工程 '+(index+1)+' を編集',box);let read;
    if(step.type==='split'){el('span','分割枚数',box);const v=input(step.sizes.join(','),box);read=()=>({...step,sizes:v.value.split(',').map(x=>Number(x.trim()))})}
-   else if(step.type==='take'){const opts=[];if(before.stock.length)opts.push(['stock','山札']);before.piles.forEach((p,i)=>{if(p.length)opts.push([i,'束'+String.fromCharCode(65+i)])});const from=select(opts,box);from.value=String(step.from);el('span','枚数',box);const n=input(String(step.count),box);n.type='number';read=()=>({...step,from:from.value==='stock'?'stock':Number(from.value),count:Number(n.value)})}
+   else if(step.type==='take'){const opts=[];if(before.stock.length)opts.push(['stock','山札']);before.piles.forEach((p,i)=>{if(p.length)opts.push([i,'束'+String.fromCharCode(65+i)])});const from=select(opts,box);from.value=String(step.from);el('span','枚数',box);const n=input(String(step.count),box);n.type='number';el('span','用途',box);const to=select([['dealt','卓上に配札'],['removed','除外する']],box);to.value=step.to||'dealt';read=()=>({...step,from:from.value==='stock'?'stock':Number(from.value),count:Number(n.value),to:to.value})}
    else if(step.type==='collect'){el('span','積み直し順（例：C,A,B）',box);const v=input(step.order.map(i=>String.fromCharCode(65+i)).join(','),box);read=()=>({...step,order:v.value.toUpperCase().split(',').map(x=>x.trim().charCodeAt(0)-65)})}
    else {const v=select(before.piles.map((_,i)=>[i,'束'+String.fromCharCode(65+i)]),box);v.value=String(step.pile);read=()=>({...step,pile:Number(v.value)})}
    btn('変更を適用',()=>change(steps.map((x,i)=>i===index?read():x),index),box);btn('閉じる',paint,box);
@@ -56,27 +56,6 @@ function install(api){
    panel.replaceChildren();el('h2','ディール・アクション');
    el('p','工程を上から順に実行します。変更は「卓上に実行」まで現在の占いに反映されません。');
    if(message){const m=el('p',message);m.setAttribute('role','alert');m.style.color='#ffb9a4'}
-   if(root.TabulaMathersFirst&&original.length===78){
-    const historical=el('div');historical.style.cssText='border:1px solid #9d8967;border-radius:7px;padding:10px;margin:10px 0';
-    el('strong','史料プリセット：マザーズ第一法（1888）',historical);
-    el('p','78枚を規則的に振り分け、A・C・Eを順に馬蹄形で読む方式です。以下は各段階の配札を試す暫定機能です。',historical);
-    btn('束の構成を確認',()=>{
-      const m=root.TabulaMathersFirst.run(original);
-      message='A '+m.piles.A.length+'枚 / C '+m.piles.C.length+'枚 / E '+m.piles.E.length+'枚 / F '+m.piles.F.length+'枚（除外）。原文のE=11/F=24とは計算が一致しません。';
-      paint();
-    },historical);
-    const group=select([['A','A：最初の26枚'],['C','C：次の17枚'],['E','E：最後の12枚（記述どおりに配った場合）']],historical);
-    btn('選択した束を卓上に配る',()=>{
-      if(!api.canStart()){message='卓上のカードを回収してください。';paint();return}
-      try{
-       const m=root.TabulaMathersFirst.run(original),key=group.value;
-       const chosen=m.piles[key];
-       const rest=['A','C','E','F'].filter(k=>k!==key).flatMap(k=>m.piles[k]);
-       api.commit(rest,chosen);close();
-      }catch(e){message=e.message;paint()}
-    },historical);
-    el('p','注：馬蹄形の専用配置とA→C→Eの連続読解は未実装です。現在のスプレッド位置に配ります。',historical);
-   }
    const title=input(name);title.setAttribute('aria-label','アクション名');title.style.width='min(360px,95%)';title.onchange=()=>{name=title.value.trim()||'新しいディール'};
    const list=el('div');list.style.cssText='border:1px solid #6b756b;border-radius:7px;padding:8px;margin:10px 0';
    el('strong','実行リスト（'+steps.length+'工程）',list);
@@ -89,7 +68,7 @@ function install(api){
    });
    if(selected>=0&&selected<steps.length)edit(selected);
    const actions=el('div');btn('＋ 工程追加',addStep,actions);btn('一工程戻す',()=>change(steps.slice(0,-1)),actions,!steps.length);btn('最初から',()=>change([], -1),actions,!steps.length);
-   const summary=el('p','現在の計算結果：山札 '+result.stock.length+'枚 / '+result.piles.map((p,i)=>'束'+String.fromCharCode(65+i)+' '+p.length+'枚').join('、')+' / 配札 '+result.dealt.length+'枚');
+   const summary=el('p','現在の計算結果：山札 '+result.stock.length+'枚 / '+result.piles.map((p,i)=>'束'+String.fromCharCode(65+i)+' '+p.length+'枚').join('、')+' / 配札 '+result.dealt.length+'枚 / 除外 '+result.removed.length+'枚');
    summary.setAttribute('role','status');
    if(result.piles.length)el('p','実行時、残りの束はA→B→Cの順に自動で積み直します。');
    const store=el('div');store.style.cssText='border-top:1px solid #6b756b;padding-top:10px;margin-top:10px';
@@ -98,7 +77,7 @@ function install(api){
    btn('読み込む',()=>{const item=items.find(x=>x.name===chooser.value);if(!item)return;name=item.name;change(item.steps.map(x=>({...x})), -1)},store);
    btn('削除',()=>{if(!chooser.value)return;const remaining=items.filter(x=>x.name!==chooser.value);if(persist(remaining)){message='保存済みアクションを削除しました。';paint()}},store);
    const footer=el('div');footer.style.cssText='border-top:1px solid #6b756b;padding-top:10px;margin-top:10px';
-   btn('▶ 卓上に実行',()=>{if(!steps.length)return;if(!api.canStart()){message='卓上の状態が変わりました。';paint();return}try{const final=result.piles.length?run([...steps,{type:'collect',order:result.piles.map((_,i)=>i)}]):result;if(final.selected.length)throw Error('保留カードが残っています');api.commit(final.stock,final.dealt);close()}catch(e){message=e.message;paint()}},footer,!steps.length);
+   btn('▶ 卓上に実行',()=>{if(!steps.length)return;if(!api.canStart()){message='卓上の状態が変わりました。';paint();return}try{const final=result.piles.length?run([...steps,{type:'collect',order:result.piles.map((_,i)=>i)}]):result;if(final.selected.length)throw Error('保留カードが残っています');api.commit(final.stock,final.dealt,final.removed);close()}catch(e){message=e.message;paint()}},footer,!steps.length);
    btn('キャンセル',close,footer);
   }
   shade.addEventListener('click',e=>{if(e.target===shade)close()});
