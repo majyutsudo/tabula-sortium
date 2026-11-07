@@ -83,7 +83,7 @@ function install(api){
    summary.setAttribute('role','status');
    if(result.piles.length)el('p','実行時、残りの束はA→B→Cの順に自動で積み直します。');
    const store=el('div');store.style.cssText='border-top:1px solid #6b756b;padding-top:10px;margin-top:10px';
-   btn('アクションを保存',()=>{name=title.value.trim()||'新しいディール';const items=saved();const ix=items.findIndex(x=>x.name===name);customOrder=orderField.value;const entry={name,steps:steps.map(x=>({...x})),autoDeal,orderMode,customOrder};if(ix>=0)items[ix]=entry;else items.push(entry);if(persist(items)){message='「'+name+'」を保存しました。';paint()}},store,!steps.length);
+   btn('アクションを保存',()=>{name=title.value.trim()||'新しいディール';const items=saved();const ix=items.findIndex(x=>x.name===name);customOrder=orderField.value;const entry={name,steps:steps.map(x=>({...x})),autoDeal,orderMode,customOrder};if(ix>=0)items[ix]=entry;else items.push(entry);if(persist(items)){message='「'+name+'」を保存しました。';paint()}},store,!steps.length&&!autoDeal);
    const items=saved();const chooser=select([['','保存済みアクションを選択'],...items.map(x=>[x.name,x.name])],store);
    btn('読み込む',()=>{const item=items.find(x=>x.name===chooser.value);if(!item)return;name=item.name;autoDeal=item.autoDeal!==false;orderMode=item.orderMode||'standard';customOrder=item.customOrder||'';change(item.steps.map(x=>({...x})), -1)},store);
    btn('削除',()=>{if(!chooser.value)return;const remaining=items.filter(x=>x.name!==chooser.value);if(persist(remaining)){message='保存済みアクションを削除しました。';paint()}},store);
