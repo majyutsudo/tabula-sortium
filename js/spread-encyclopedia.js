@@ -8,6 +8,8 @@ const BUILTIN={
  pentagram:{name:'ペンタグラム（5枚）',alternate:'Pentagram spread',overview:'地・水・風・火の四元素を経て、頂点の霊・統合へ進む五芒星形の展開法。元素と配札順はTABULA用の構成です。'},
  horoscope:{name:'ホロスコープ（13枚）',alternate:'Horoscope spread',overview:'十二の占星術的ハウスに一枚ずつを配し、中央の第13札を総合として読む展開法。第1ハウスは左、第10ハウスは上に配置します。'},
  horseshoe:{name:'ホースシュー（7枚）',alternate:'Horseshoe spread',overview:'七枚を馬蹄形に配し、過去から現状、隠れた影響、障害、周囲、助言、結末へと読む展開法。位置の意味には異なる流儀があります。'},
+ fiveCross:{name:'ファイブカード・クロス（5枚）',alternate:'Five-card Cross',overview:'過去・未来・意識・根底を四方に置き、最後の中央札で核心を読む五枚十字。配札順は左、右、上、下、中央。位置と順序には諸流儀があり、この定義はTABULA標準です。'},
+ pentagram:{name:'ペンタグラム（5枚）',alternate:'Pentagram spread',overview:'風・地・火・水の四元素と、頂点の霊を対応させる五芒星型の展開。左上、左下、右下、右上、頂点の順に配札します。元素対応と配札順はTABULAで採用した一例です。'},
  free:{name:'フリースプレッド',alternate:'Free spread',overview:'カードを卓上へ自由に配置する方式。配置の意味や形は使用者が決めます。'}
 };
 function text(v,max=3000){return typeof v==='string'?v.slice(0,max):''}
