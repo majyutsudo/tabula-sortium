@@ -41,6 +41,7 @@ function install(api){
     button('卓上用に取り出す',()=>{const count=Number(amount.value);if(s.dealt.length+count>52){alert('一度に配札できるのは52枚までです。');return}apply([...steps,{type:'take',from:source.value==='stock'?'stock':Number(source.value),count,to:'dealt'}])});
    }
    if(s.dealt.length){const note=document.createElement('p');note.textContent='卓上に配る予定：'+s.dealt.length+'枚。確定すると現在のスプレッドの空き位置に順番に配置し、残りは自由配置します。';panel.append(note)}
+   if(s.piles.length){const note=document.createElement('p');note.textContent='このまま確定すると、残りの束は A → B → C の順に自動で積み直されます。別の順序にしたい場合は先に束を選んで積み直してください。';panel.append(note)}
    if(s.piles.length){
     const label=document.createElement('p');label.textContent='束を選択した順に山札の上から積み直します。';panel.append(label);
     let order=[];
@@ -54,7 +55,14 @@ function install(api){
    }
    button('一工程戻す',()=>apply(steps.slice(0,-1)),steps.length===0);
    button('最初から',()=>apply([]),steps.length===0);
-   button('山札と配札を確定',()=>{if(s.piles.length||s.selected.length){alert('残りの束を積み直してから確定してください。');return}if(!api.canStart()){alert('卓の状態が変わりました。操作をやり直してください。');return}api.commit(s.stock,s.dealt);close()},!!(s.piles.length||s.selected.length||!steps.length));
+   button('山札と配札を確定',()=>{
+    if(s.selected.length){alert('保留中のカードを山札へ戻してください。');return}
+    if(!api.canStart()){alert('卓の状態が変わりました。操作をやり直してください。');return}
+    // Preserve the remaining cards when a user deals directly from split piles.
+    // If the user has not explicitly chosen a restack order, use A → B → C.
+    const finalized=s.piles.length?root.TabulaDealWorkflow.run(original,[...steps,{type:'collect',order:s.piles.map((_,i)=>i)}]):s;
+    api.commit(finalized.stock,finalized.dealt);close();
+   },!!(!steps.length||s.selected.length));
    button('キャンセル',close);
   }
   shade.addEventListener('click',e=>{if(e.target===shade)close()});
