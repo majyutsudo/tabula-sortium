@@ -17,7 +17,7 @@ function install(api){
  function open(){
   if(!api.canStart()){api.status('卓上のカードを回収してから開始してください。');return}
   const original=api.deck();if(original.length<2){api.status('山札が2枚以上必要です。');return}
-  let steps=[],selected=-1,result=root.TabulaDealWorkflow.run(original,[]),message='',name='新しいディール',autoDeal=true,orderMode='standard',customOrder='';
+  let steps=[],selected=-1,result=root.TabulaDealWorkflow.run(original,[]),message='',name='新しいディール',editingName=null,autoDeal=true,orderMode='standard',customOrder='';
   const shade=document.createElement('div');shade.style.cssText='position:fixed;inset:0;background:#000b;z-index:99999;display:grid;place-items:center;padding:12px';
   const panel=document.createElement('section');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','ディール・アクション');panel.style.cssText='background:#1b2926;color:#f1dfbd;border:1px solid #b29b70;border-radius:10px;width:min(650px,100%);max-height:92vh;overflow:auto;padding:18px;font:inherit';
   shade.append(panel);document.body.append(shade);dialog=shade;
@@ -71,6 +71,7 @@ function install(api){
    panel.replaceChildren();el('h2','ディール・アクション');
    el('p','上から順に操作します。通常ディールは現在のスプレッドの必要枚数を自動で配ります。');
    if(message){const m=el('p',message);m.setAttribute('role','alert');m.style.color='#ffb9a4'}
+   if(editingName)el('p','編集中：'+editingName+'（上書き保存できます）');
    const title=input(name);title.setAttribute('aria-label','アクション名');title.style.width='min(360px,95%)';title.onchange=()=>{name=title.value.trim()||'新しいディール'};
    const list=el('div');list.style.cssText='border:1px solid #6b756b;border-radius:7px;padding:8px;margin:10px 0';
    el('strong','実行リスト（'+steps.length+'工程）',list);
@@ -89,10 +90,22 @@ function install(api){
    summary.setAttribute('role','status');
    if(result.piles.length)el('p','実行時、残りの束はA→B→Cの順に自動で積み直します。');
    const store=el('div');store.style.cssText='border-top:1px solid #6b756b;padding-top:10px;margin-top:10px';
-   btn('アクションを保存',()=>{name=title.value.trim()||'新しいディール';const items=saved();const ix=items.findIndex(x=>x.name===name);customOrder=orderField.value;const entry={name,steps:steps.map(x=>({...x})),autoDeal,orderMode,customOrder};if(ix>=0)items[ix]=entry;else items.push(entry);if(persist(items)){refreshPicker();picker.value=name;message='「'+name+'」を保存しました。';paint()}},store,!steps.length&&!autoDeal);
+   function saveAction(overwrite){
+    const target=overwrite?editingName:(title.value.trim()||'新しいディール');
+    if(!target){message='上書き対象のアクションがありません。';paint();return}
+    const items=saved(),ix=items.findIndex(x=>x.name===target);
+    if(overwrite&&ix<0){message='上書き対象が見つかりません。';paint();return}
+    if(!overwrite&&ix>=0&&target!==editingName){message='同じ名前のアクションがあります。上書き保存するか、別の名前を指定してください。';paint();return}
+    customOrder=orderField.value;
+    const entry={name:target,steps:steps.map(x=>({...x})),autoDeal,orderMode,customOrder};
+    if(ix>=0)items[ix]=entry;else items.push(entry);
+    if(persist(items)){editingName=target;name=target;refreshPicker();picker.value=target;message='「'+target+'」を'+(overwrite?'上書き保存':'保存')+'しました。';paint()}
+   }
+   btn('上書き保存',()=>saveAction(true),store,!editingName||(!steps.length&&!autoDeal));
+   btn('名前を付けて保存',()=>saveAction(false),store,!steps.length&&!autoDeal);
    const items=saved();const chooser=select([['','保存済みアクションを選択'],...items.map(x=>[x.name,x.name])],store);
-   btn('読み込む',()=>{const item=items.find(x=>x.name===chooser.value);if(!item)return;name=item.name;autoDeal=item.autoDeal!==false;orderMode=item.orderMode||'standard';customOrder=item.customOrder||'';change(item.steps.map(x=>({...x})), -1)},store);
-   btn('削除',()=>{if(!chooser.value)return;const remaining=items.filter(x=>x.name!==chooser.value);if(persist(remaining)){refreshPicker();message='保存済みアクションを削除しました。';paint()}},store);
+   btn('読み込む',()=>{const item=items.find(x=>x.name===chooser.value);if(!item)return;name=item.name;editingName=item.name;autoDeal=item.autoDeal!==false;orderMode=item.orderMode||'standard';customOrder=item.customOrder||'';change(item.steps.map(x=>({...x})), -1)},store);
+   btn('削除',()=>{if(!chooser.value)return;const remaining=items.filter(x=>x.name!==chooser.value);if(persist(remaining)){if(editingName===chooser.value)editingName=null;refreshPicker();message='保存済みアクションを削除しました。';paint()}},store);
    const footer=el('div');footer.style.cssText='border-top:1px solid #6b756b;padding-top:10px;margin-top:10px';
    btn('▶ 卓上に実行',()=>{if(!steps.length&&!autoDeal)return;if(!api.canStart()){message='卓上の状態が変わりました。';paint();return}try{const final=finalRun();customOrder=orderField.value;if(final.selected.length)throw Error('保留カードが残っています');api.commit(final.stock,final.dealt,final.removed,{mode:orderMode,order:customOrder,tableRemovedIds:tableRemovedIds(original,steps)});close()}catch(e){message=e.message;paint()}},footer,!steps.length&&!autoDeal);
    btn('キャンセル',close,footer);
