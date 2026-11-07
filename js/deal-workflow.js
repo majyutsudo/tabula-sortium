@@ -55,11 +55,12 @@ function run(deck,steps,options={}){
     if(!Number.isInteger(n)||n<1)fail('invalid take count');
     const source=step.from==='stock'?state.stock:state.piles[index(step.from,state.piles.length,'pile index')];
     if(source.length<n)fail('not enough cards');
-    const cards=source.splice(0,n);
-    if(step.to==='dealt')state.dealt.push(...cards);
-    else if(step.to==='removed')state.removed.push(...cards);
-    else if(step.to==='selected')state.selected.push(...cards);
-    else fail('invalid destination');
+    if(!['dealt','removed','selected'].includes(step.to))fail('invalid destination');
+    for(let i=0;i<n;i++){
+      const card=source.shift();
+      state[step.to].push(card);
+      capture(step.to==='dealt'?'dealt':step.to==='removed'?'removed':'selected',(step.to==='dealt'?'配札':step.to==='removed'?'除外':'保留')+' '+(i+1)+' / '+n);
+    }
     break;
    }
    case 'return-selected':{
@@ -74,7 +75,7 @@ function run(deck,steps,options={}){
    default:fail('unsupported operation '+step.type);
   }
   if(count()!==before)fail('card conservation violated');
-  if(step.type!=='skip-deal'&&step.type!=='deal-rest')capture(step.type,step.type==='shuffle-recipe'?'シャッフル':step.type==='take'?(step.to==='removed'?'除外':step.to==='dealt'?'配札':'保留'):step.type==='split'?'山札を分割':step.type==='collect'?'山札を積み直す':'工程を実行');
+  if(step.type!=='skip-deal'&&step.type!=='deal-rest'&&step.type!=='take')capture(step.type,step.type==='shuffle-recipe'?'シャッフル':step.type==='take'?(step.to==='removed'?'除外':step.to==='dealt'?'配札':'保留'):step.type==='split'?'山札を分割':step.type==='collect'?'山札を積み直す':'工程を実行');
   if(options.trace&&step.type==='shuffle-recipe'&&state.timeline.length)state.timeline[state.timeline.length-1].recipeId=step.recipeId;
   state.log.push({type:step.type,stock:state.stock.length,piles:state.piles.map(p=>p.length),selected:state.selected.length,dealt:state.dealt.length,removed:state.removed.length});
  }
