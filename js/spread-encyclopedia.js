@@ -4,7 +4,7 @@ const BUILTIN={
  one:{name:'1枚引き',alternate:'One-card spread',overview:'一つの問いに一枚のカードで応じる、簡潔な展開法。'},
  three:{name:'3枚引き',alternate:'Three-card spread',overview:'過去・現在・未来の三つの位置を用いて、状況の推移を読む展開法。'},
  celtic:{name:'ケルト十字',alternate:'Celtic Cross',overview:'現在の問題、影響、過去、未来、周囲の状況などを十枚のカードで多角的に読む展開法。位置の意味には異なる伝承・流儀があります。'},
- fiveCross:{name:'五枚十字（5枚）',alternate:'Five-card Cross',overview:'西方教会で十字を切る動作の順序に従い、上（額）・下（胸）・左肩・右肩へカードを置き、最後に中央の第5札で核心を読む。位置に与えた占断上の意味はTABULA独自の構成。'},
+ fiveCross:{name:'五枚十字（5枚）',alternate:'Five-card Cross',overview:'過去・未来・意識・根底の四つの要因と、中央の核心を読む五枚十字。配札は上・下・左・右・中央の順に行うが、これは十字を切る動作に着想を得たTABULAの標準順序であり、占断上の意味とは独立している。'},
  pentagram:{name:'ペンタグラム（5枚）',alternate:'Pentagram Spread',overview:'地の召喚五芒星の描画方向に沿って、左下の地から水・風・火を経由し、頂点の霊で結ぶ五枚の展開法。描線の起点である霊を最後の札として配るのはTABULA独自の占法。'},
  treeOfLife:{name:'生命の樹（10枚）',alternate:'Tree of Life Spread',overview:'西洋秘教的カバラの生命の樹に従い、ケテルからマルクトまで十のセフィロトに一枚ずつ配札する展開法。伝統的な番号順（稲妻の閃光）で根源から現実化までの諸力を読み解く。セフィロトへのタロット配札と各札の占断上の意味は後世の応用である。'},
  horoscope:{name:'ホロスコープ（13枚）',alternate:'Horoscope spread',overview:'十二の占星術的ハウスに一枚ずつを配し、中央の第13札を総合として読む展開法。第1ハウスは左、第10ハウスは上に配置します。'},
