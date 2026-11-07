@@ -384,15 +384,27 @@ function gestureTilt(track){
  return Math.max(-3,Math.min(3,dx*.09));
 }
 function updateNaturalTiltButton(){
+ let panel=document.getElementById('placementTools');
+ if(!panel){
+  panel=document.createElement('div');panel.id='placementTools';
+  panel.style.cssText='position:absolute;right:12px;bottom:12px;z-index:550;display:flex;flex-direction:column;align-items:flex-end;gap:5px;pointer-events:auto;';
+  const trigger=document.createElement('button');trigger.type='button';trigger.textContent='⚙ 配置';
+  trigger.style.cssText='padding:5px 9px;border:1px solid #9d8862;border-radius:5px;background:#182621ed;color:#d6c6a5;font-size:11px;cursor:pointer;';
+  const content=document.createElement('div');content.id='placementToolsContent';content.hidden=true;
+  content.style.cssText='padding:8px;border:1px solid #9d8862;border-radius:6px;background:#182621f5;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 16px #0008;';
+  trigger.onclick=()=>{content.hidden=!content.hidden;content.style.display=content.hidden?'none':'flex';};
+  content.style.display='none';
+  panel.append(content,trigger);$('surface').append(panel);
+ }
  let button=document.getElementById('naturalTiltButton');
  if(!button){
   button=document.createElement('button');button.id='naturalTiltButton';button.type='button';
-  button.style.cssText='position:absolute;right:12px;bottom:43px;z-index:550;padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621dc;color:#d6c6a5;font-size:11px;cursor:pointer;opacity:.75;';
+  button.style.cssText='padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621;color:#d6c6a5;font-size:11px;cursor:pointer;';
   button.onclick=()=>{naturalTilt=!naturalTilt;updateNaturalTiltButton();setStatus('手置きの微細な傾き：'+(naturalTilt?'ON':'OFF'));};
-  $('surface').append(button);
+  document.getElementById('placementToolsContent').append(button);
  }
- button.textContent=naturalTilt?'◌ 手置き ON':'◌ 手置き';
- button.title='手動ドラッグの終わり方でカードを最大±3度傾ける';
+ button.textContent=naturalTilt?'◌ 手置き ON':'◌ 手置き OFF';
+ button.title='ドラッグ終端の動きによる微細な傾き（長押し回転とは独立）';
  button.setAttribute('aria-pressed',String(naturalTilt));
 }
 function recordTiltSample(track,e){
@@ -428,30 +440,43 @@ function snapFreePosition(x,y,excludeId=null){
  return {x:bestX,y:bestY};
 }
 function syncFreeSnapButton(){
- const surface=$('surface');let button=document.getElementById('freeSnapButton');
+ updateNaturalTiltButton();
+ let button=document.getElementById('freeSnapButton');
  if(!button){
   button=document.createElement('button');button.id='freeSnapButton';button.type='button';
-  button.style.cssText='position:absolute;right:12px;bottom:12px;z-index:550;padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621dc;color:#d6c6a5;font-size:11px;cursor:pointer;opacity:.75;';
+  button.style.cssText='padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621;color:#d6c6a5;font-size:11px;cursor:pointer;';
   button.onclick=()=>{
    freeSnapMode=freeSnapMode==='off'?'grid':freeSnapMode==='grid'?'object':'off';
    syncFreeSnapButton();setStatus('フリースプレッド：'+({off:'自由配置',grid:'グリッドスナップ',object:'カード吸着'}[freeSnapMode]));
   };
-  surface.append(button);
+  document.getElementById('placementToolsContent').prepend(button);
  }
  button.hidden=settings.spread!=='free';
+ button.style.display=button.hidden?'none':'block';
  button.textContent={off:'⊞ 自由',grid:'⊞ 格子',object:'⊞ カード吸着'}[freeSnapMode];
- button.title='クリックで自由配置 → 格子吸着 → カード吸着を切り替え';
+ button.title='自由配置 → 格子吸着 → カード吸着';
  button.setAttribute('aria-pressed',String(freeSnapMode!=='off'));
 }
 function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
- node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;selectCard(index);saveLocal()}},520);
+ node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;drag.rotating=true;
+const bounds=node.getBoundingClientRect();
+drag.rotateCenterX=bounds.left+bounds.width/2;drag.rotateCenterY=bounds.top+bounds.height/2;
+drag.rotateStart=Math.atan2(drag.startY-drag.rotateCenterY,drag.startX-drag.rotateCenterX);
+drag.rotateAngle=Number(item.angle)||0;
+node.style.cursor='grabbing';selectCard(index);saveLocal()}},520);
 // Each grab raises the selected card to the highest persistent stack layer.
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
 node.style.setProperty('--z',String(1000+nextOrder));
-node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){recordTiltSample(drag,e);cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');const wasLong=!!drag.longSelected;const finishingTilt=dragMoved&&!spreadWorkbench?gestureTilt(drag):0;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(finishingTilt){item.angle=Math.round((item.angle+finishingTilt)*10)/10;}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
+node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;if(drag.rotating){
+ const angle=Math.atan2(e.clientY-drag.rotateCenterY,e.clientX-drag.rotateCenterX);
+ const diff=(angle-drag.rotateStart)*180/Math.PI;
+ item.angle=Math.round((drag.rotateAngle+diff)*10)/10;
+ node.style.setProperty('--rotation',cardDisplayRotation(item)+'deg');
+ return;
+}const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){recordTiltSample(drag,e);cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';const wasLong=!!drag.longSelected;const wasRotating=!!drag.rotating;const finishingTilt=dragMoved&&!wasRotating&&!spreadWorkbench?gestureTilt(drag):0;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(finishingTilt){item.angle=Math.round((item.angle+finishingTilt)*10)/10;}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
 node.classList.toggle('faceup',item.faceUp);
