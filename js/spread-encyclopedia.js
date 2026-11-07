@@ -4,10 +4,10 @@ const BUILTIN={
  one:{name:'1枚引き',alternate:'One-card spread',overview:'一つの問いに一枚のカードで応じる、簡潔な展開法。'},
  three:{name:'3枚引き',alternate:'Three-card spread',overview:'過去・現在・未来の三つの位置を用いて、状況の推移を読む展開法。'},
  celtic:{name:'ケルト十字',alternate:'Celtic Cross',overview:'現在の問題、影響、過去、未来、周囲の状況などを十枚のカードで多角的に読む展開法。位置の意味には異なる伝承・流儀があります。'},
- fiveCross:{name:'五枚十字（5枚）',alternate:'Five-card Cross',overview:'過去・未来・意識・根底の四つの要因と、中央の核心を読む五枚十字。配札は上・下・左・右・中央の順に行うが、これは十字を切る動作に着想を得たTABULAの標準順序であり、占断上の意味とは独立している。'},
- pentagram:{name:'ペンタグラム（5枚）',alternate:'Pentagram Spread',overview:'地の召喚五芒星の描画方向に沿って、左下の地から水・風・火を経由し、頂点の霊で結ぶ五枚の展開法。描線の起点である霊を最後の札として配るのはTABULA独自の占法。'},
- treeOfLife:{name:'生命の樹（10枚）',alternate:'Tree of Life Spread',overview:'西洋秘教的カバラの生命の樹に従い、ケテルからマルクトまで十のセフィロトに一枚ずつ配札する展開法。伝統的な番号順（稲妻の閃光）で根源から現実化までの諸力を読み解く。セフィロトへのタロット配札と各札の占断上の意味は後世の応用である。'},
- horoscope:{name:'ホロスコープ（13枚）',alternate:'Horoscope spread',overview:'十二の占星術的ハウスに一枚ずつを配し、中央の第13札を総合として読む展開法。第1ハウスは左、第10ハウスは上に配置します。'},
+ fiveCross:{name:'五枚十字（5枚）',alternate:'Five-card Cross',overview:'過去・未来・意識・根底の四つの要因と、中央の核心を読む五枚十字。五枚のカードを十字形に配置する占法には、配札順や各位置に与える意味が異なる多くの流儀がある。TABULAでは上・下・左・右・中央の順に配る。これは十字を切る動作に着想を得た配札順であり、カードの意味は一般的な五枚十字の解釈に従う。'},
+ pentagram:{name:'ペンタグラム（5枚）',alternate:'Pentagram Spread',overview:'地の召喚五芒星の描画方向に沿って、左下の地から水・風・火を経由し、頂点の霊で結ぶ五枚の展開法。霊の頂点を最後の札とすることで、四元素の働きを統合して読む構成としている。'},
+ treeOfLife:{name:'生命の樹（10枚）',alternate:'Tree of Life Spread',overview:'西洋秘教的カバラの生命の樹に従い、ケテルからマルクトまで十のセフィロトに一枚ずつ配札する展開法。伝統的な番号順（稲妻の閃光）で根源から現実化までの諸力を読み解く。各セフィラに現れたカードを相互に関連づけ、上位の原理から下位の現実へ至る展開や、左右の柱に表れる力の均衡を読み解く。'},
+ horoscope:{name:'ホロスコープ（13枚）',alternate:'Horoscope spread',overview:'十二の占星術的ハウスに一枚ずつを配し、中央の第13札を総合として読む展開法。カードは左側の第1ハウスから反時計回りに第12ハウスまで順に並べ、中央の第13札で全体を総合する。'},
  horseshoe:{name:'ホースシュー（7枚）',alternate:'Horseshoe spread',overview:'七枚を馬蹄形に配し、過去から現状、隠れた影響、障害、周囲、助言、結末へと読む展開法。位置の意味には異なる流儀があります。'},
  free:{name:'フリースプレッド',alternate:'Free spread',overview:'カードを卓上へ自由に配置する方式。配置の意味や形は使用者が決めます。'}
 };
