@@ -814,8 +814,11 @@ function applyDeckPosition(){
     return;
   }
   const sw=surface.offsetWidth||1,sh=surface.offsetHeight||1;
-  const x=Math.max(0,Math.min(Number(position.x),100*(sw-pile.offsetWidth)/sw));
-  const y=Math.max(0,Math.min(Number(position.y),100*(sh-pile.offsetHeight)/sh));
+  // Keep previously saved deck coordinates, but clamp them to the inner cloth
+  // after a card-size change. The outer card shadow also needs breathing room.
+  const inset=18;
+  const x=Math.max(100*inset/sw,Math.min(Number(position.x),100*Math.max(inset,sw-pile.offsetWidth-inset)/sw));
+  const y=Math.max(100*inset/sh,Math.min(Number(position.y),100*Math.max(inset,sh-pile.offsetHeight-inset)/sh));
   pile.style.left=x+'%';pile.style.top=y+'%';pile.style.right='auto';pile.style.bottom='auto';
   // Keep the counter beside the pile instead of leaving it at its old location.
   const leftSide=x>65;
