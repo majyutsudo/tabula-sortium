@@ -1266,9 +1266,13 @@ const renderBeforeCandles=render;render=function(){renderBeforeCandles();renderC
 TabulaDealWorkbench.install({
  deck:()=>state.deck.map(c=>({...c})),
  spreadCount:()=>settings.spread==='free'?0:getSlots().length,
+ defaultOrder:()=>getDealOrder(),
+ shuffleRecipes:()=>recipes.map(r=>({id:r.id,name:r.name,steps:r.steps.map(st=>({...st}))})),
  canStart:()=>!state.placed.length&&!(state.removed||[]).length,
- commit:(cards,dealt=[],removed=[])=>{
-  const slots=getSlots(),order=settings.spread==='free'?[]:getDealOrder();
+ commit:(cards,dealt=[],removed=[],positionOptions={})=>{
+  const slots=getSlots();let order=settings.spread==='free'?[]:getDealOrder();
+  if(positionOptions.mode==='random'){order=order.slice();for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}}
+  if(positionOptions.mode==='custom'&&settings.spread!=='free')order=parseDealOrderInput(positionOptions.order);
   const placed=dealt.map((card,i)=>{
     const slot=i<order.length?order[i]:null;
     const pos=slot!==null&&slots[slot]?slots[slot]:{x:20+(i%7)*10,y:22+(Math.floor(i/7)%5)*13,angle:0};
