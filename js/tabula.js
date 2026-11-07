@@ -1280,28 +1280,44 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
   });
   const tableIds=new Set(positionOptions.tableRemovedIds||[]);
   const tableCards=removed.filter(c=>tableIds.has(c.id));
-  state.deck=cards.map(c=>({...c}));
   const zoneRect=$('zone').getBoundingClientRect(),surfaceRect=$('surface').getBoundingClientRect(),size=metrics();
   const pileX=(surfaceRect.left+surfaceRect.width*.057+size.w/2-zoneRect.left)/zoneRect.width*100;
   const pileY=(surfaceRect.top+surfaceRect.height*.058+size.h/2-zoneRect.top)/zoneRect.height*100;
-  state.placed=tableCards.map((c,i)=>{const pos={x:pileX+i*.12,y:pileY+i*.12,angle:0};return {...c,slot:null,...pos,origin:{...pos},faceUp:false,auxiliaryPile:true,dragOrder:i+1}});
-  state.removed=removed.filter(c=>!tableIds.has(c.id)).map(c=>({...c}));state.selected=null;state.completionShown=false;state.dealCheckpoint=null;
-  // Display cards sequentially, matching the standard 340ms deal rhythm.
-  // The workflow has already determined their identities and positions.
-  const batch=placed.slice();let cursor=0;
-  function nextCustomCard(){
-    if(cursor>=batch.length){render();saveLocal();setStatus('独自ディールを完了しました。'+batch.length+'枚を配札、'+removed.length+'枚を除外（卓上 '+tableCards.length+'枚）。');return}
-    state.placed.push(batch[cursor++]);play('deal');render();saveLocal();
-    setStatus('独自ディール：'+cursor+' / '+batch.length+'枚を配札中');
-    setTimeout(nextCustomCard,340);
+  const placeRemoved=(list)=>list.map((c,i)=>{const pos={x:pileX+i*.12,y:pileY+i*.12,angle:0};return {...c,slot:null,...pos,origin:{...pos},faceUp:false,auxiliaryPile:true,dragOrder:i+1}});
+  const placeDealt=(list)=>placed.slice(0,list.length);
+  state.selected=null;state.completionShown=false;state.dealCheckpoint=null;
+  const timeline=Array.isArray(positionOptions.timeline)?positionOptions.timeline:null;
+  if(timeline&&timeline.length){
+    const finalIds=dealt.map(c=>c.id).join('|')+';'+removed.map(c=>c.id).join('|');
+    const last=timeline[timeline.length-1];
+    if(last.dealt.map(c=>c.id).join('|')+';'+last.removed.map(c=>c.id).join('|')!==finalIds)throw Error('ディール工程の最終結果が一致しません');
+    const sequence=[{type:'start',label:'開始',stock:[...state.deck],piles:[],selected:[],dealt:[],removed:[]},...timeline];
+    let cursor=0;
+    function nextStage(){
+      const frame=sequence[cursor];
+      const stock=[...frame.stock,...frame.piles.flat(),...frame.selected];
+      state.deck=stock.map(c=>({...c}));
+      state.placed=[...placeRemoved(frame.removed),...placeDealt(frame.dealt)];
+      state.removed=[];
+      render();saveLocal();
+      setStatus('独自ディール '+cursor+' / '+timeline.length+'：'+frame.label+'（配札 '+frame.dealt.length+'枚・除外 '+frame.removed.length+'枚）');
+      if(frame.type==='dealt'||frame.type==='removed'||frame.type==='take')play('deal');
+      cursor++;
+      if(cursor<sequence.length)setTimeout(nextStage,frame.type==='shuffle-recipe'?650:frame.type==='split'||frame.type==='collect'?430:300);
+      else{
+        state.deck=cards.map(c=>({...c}));
+        state.placed=[...placeRemoved(tableCards),...placed];
+        state.removed=removed.filter(c=>!tableIds.has(c.id)).map(c=>({...c}));
+        render();saveLocal();
+        setStatus('独自ディールを完了しました。'+dealt.length+'枚を配札、'+removed.length+'枚を除外しました。');
+      }
+    }
+    nextStage();return;
   }
-  render();saveLocal();
-  if(removed.length){
-    setStatus('独自ディール：先に'+removed.length+'枚を除外しました。続いて配札します。');
-    if(batch.length)setTimeout(nextCustomCard,340);
-    else setStatus('独自ディールを完了しました。'+removed.length+'枚を除外しました。');
-  }else if(batch.length)nextCustomCard();
-  else setStatus('独自ディールを完了しました。');
+  state.deck=cards.map(c=>({...c}));
+  state.placed=[...placeRemoved(tableCards),...placed];
+  state.removed=removed.filter(c=>!tableIds.has(c.id)).map(c=>({...c}));
+  render();saveLocal();setStatus('独自ディールを完了しました。');
 
  },
  status:setStatus
