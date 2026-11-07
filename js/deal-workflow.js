@@ -5,7 +5,7 @@
 function fail(message){throw new Error('Deal workflow: '+message)}
 function copy(cards){if(!Array.isArray(cards))fail('cards must be an array');return cards.map(c=>({...c}))}
 function index(value,max,label){if(!Number.isInteger(value)||value<0||value>=max)fail('invalid '+label);return value}
-function run(deck,steps){
+function run(deck,steps,options={}){
  if(!Array.isArray(steps)||steps.length>100)fail('invalid steps');
  const initial=copy(deck),state={stock:initial,piles:[],selected:[],dealt:[],removed:[],log:[]};
  const count=()=>state.stock.length+state.piles.reduce((n,p)=>n+p.length,0)+state.selected.length+state.dealt.length+state.removed.length;
@@ -25,6 +25,22 @@ function run(deck,steps){
     if(!Array.isArray(order)||order.length!==state.piles.length||new Set(order).size!==order.length)fail('order must include each pile once');
     order.forEach(n=>index(n,state.piles.length,'pile index'));
     state.stock=order.flatMap(n=>state.piles[n]);state.piles=[];break;
+   }
+   case 'shuffle-recipe':{
+    if(state.piles.length||state.selected.length)fail('collect piles before shuffle');
+    const recipes=options.recipes||[];const recipe=recipes.find(r=>r.id===step.recipeId);
+    if(!recipe)fail('shuffle recipe not found');
+    if(!root.TabulaShuffle)fail('shuffle engine unavailable');
+    for(const raw of recipe.steps){const st=root.TabulaShuffle.normStep(raw,{wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'});for(let i=0;i<st.reps;i++)state.stock=root.TabulaShuffle.applyShuffleMethod(state.stock.slice(),st,false,i)}
+    break;
+   }
+   case 'skip-deal':{
+    const times=step.times,skip=step.skip;
+    if(!Number.isInteger(times)||times<1||!Number.isInteger(skip)||skip<0)fail('invalid repeated deal');
+    if(state.piles.length)fail('collect piles before repeated deal');
+    if(state.stock.length<times*(skip+1))fail('not enough cards for repeated deal');
+    for(let i=0;i<times;i++){state.removed.push(...state.stock.splice(0,skip));state.dealt.push(...state.stock.splice(0,1))}
+    break;
    }
    case 'deal-rest':{
     const n=step.count;
