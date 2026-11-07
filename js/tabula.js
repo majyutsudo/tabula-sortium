@@ -387,7 +387,7 @@ function updateNaturalTiltButton(){
  let panel=document.getElementById('placementTools');
  if(!panel){
   panel=document.createElement('div');panel.id='placementTools';
-  panel.style.cssText='position:absolute;right:12px;bottom:12px;z-index:550;display:flex;flex-direction:column;align-items:flex-end;gap:5px;pointer-events:auto;';
+  panel.style.cssText='position:absolute;right:12px;bottom:12px;z-index:10000;display:flex;flex-direction:column;align-items:flex-end;gap:5px;pointer-events:auto;';
   const trigger=document.createElement('button');trigger.type='button';trigger.textContent='·';trigger.setAttribute('aria-label','配置設定を開く');trigger.title='配置設定';
   trigger.style.cssText='width:20px;height:20px;padding:0;border:1px solid #9d8862;border-radius:50%;background:#182621ed;color:#d6c6a5;font-size:15px;line-height:16px;cursor:pointer;opacity:.65;';
   const content=document.createElement('div');content.id='placementToolsContent';content.hidden=true;
