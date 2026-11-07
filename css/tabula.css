@@ -864,3 +864,69 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
  .table-utility-actions .label-cycle-settings[open]{grid-column:1/-1}
  .table-utility-actions .label-cycle-settings>summary{min-height:43px;padding:8px 23px 8px 9px;font-size:12px}
 }
+
+/* Compact split-action dropdowns: retain the five-column tabletop toolbar. */
+.table-shortcuts .quick-action-choice{position:relative;min-width:0;display:flex;align-items:stretch}
+.table-shortcuts .quick-action-choice>button{width:100%;padding-right:29px}
+.table-shortcuts .quick-action-choice>select{position:absolute;right:0;top:0;height:100%;width:27px;min-width:0;max-width:27px;margin:0;padding:0;box-sizing:border-box;appearance:none;-webkit-appearance:none;border:0;border-left:1px solid #857352;background:transparent;color:transparent;font-size:0;cursor:pointer;z-index:2}
+.table-shortcuts .quick-action-choice>select option{color:#1b2421;background:#f1dfbd;font-size:14px}
+.table-shortcuts .quick-action-choice::after{content:'▾';position:absolute;right:8px;top:50%;transform:translateY(-50%);font:16px/1 sans-serif;color:var(--ui-text,#f0dfbf);pointer-events:none;z-index:3}
+
+/* Tabletop execution row and compact settings row */
+.table-shortcuts .quick-action-choice{display:contents}
+.table-shortcuts .quick-action-choice>button{width:100%;padding-right:4px}
+.table-shortcuts .quick-action-choice>select{position:static;display:none}
+.table-shortcuts .quick-action-choice::after{display:none}
+.table-active-recipe[hidden]{display:none!important}
+.table-action-settings{display:grid;grid-template-columns:1.25fr 1.1fr .8fr 1.1fr;gap:10px;padding:8px 10px;background:#202b25;border-bottom:1px solid #5d5b46;color:#e8d3a7;font:12px Georgia,'Yu Mincho',serif}
+.table-action-settings>label{display:flex;align-items:center;gap:7px;min-width:0;white-space:nowrap}
+.table-action-settings select{min-width:0;max-width:100%;width:100%;padding:5px 18px 5px 6px;border:1px solid #857352;border-radius:4px;background:#2f3a32;color:#f0dfbf;font:12px Georgia,'Yu Mincho',serif}
+.table-action-settings label>span:not(.table-wash-controls){flex:1;min-width:0}
+.table-action-settings .table-wash-controls{display:flex;flex:1;gap:4px;min-width:0}
+.table-action-settings #tableWashRounds{max-width:65px}
+.table-action-settings #quickShuffleChoice,.table-action-settings #quickDealChoice{display:block;position:static;appearance:auto;-webkit-appearance:menulist;font-size:12px;color:#f0dfbf;max-width:100%;height:auto;min-width:0;cursor:pointer}
+@media(max-width:780px){.table-action-settings{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:8px 6px}.table-action-settings>label{font-size:11px}.table-action-settings select{font-size:11px}}
+
+/* v0.120: visually separate primary card actions, settings, table utilities and records. */
+.table-action-settings{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:5px 10px 12px;background:var(--ui-tool,#1b2421);border-bottom:0}
+.table-action-settings>label,.table-action-settings>.table-open-placeholder{min-width:0;width:100%;box-sizing:border-box;display:flex;align-items:center;height:30px}
+.table-action-settings>label{gap:0}
+.table-action-settings select{height:30px;min-height:30px;padding:4px 19px 4px 7px;background:#202a25;border-color:#485849;color:#bfc7b8;font-size:11px}
+.table-action-settings .table-wash-controls{width:100%;gap:4px}
+.table-action-settings #tableWashRounds{width:58px;flex:0 0 58px}
+.table-action-settings #quickShuffleChoice,.table-action-settings #quickDealChoice{height:30px;min-height:30px;font-size:11px;background:#202a25;border-color:#485849;color:#bfc7b8}
+.table-action-settings .table-open-placeholder{border:1px solid #303d33;border-radius:4px;background:transparent;opacity:.45}
+.table-utility-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:13px 10px 7px;border-top:1px solid #4d594c;background:var(--ui-tool,#1b2421)}
+.table-utility-actions button{width:100%;min-width:0;min-height:36px;box-sizing:border-box;flex:none;padding:6px 4px;font-size:11px;background:#29332c;border-color:#53614f;color:#c7cdbd;white-space:nowrap}
+.results-toggle-bar{padding:12px 10px 4px;border-top:1px solid #4d594c}
+.results-toggle-bar button{min-height:32px;font-size:11px}
+.table-record-actions{gap:7px;padding:6px 10px 12px}
+.table-record-actions button{min-height:36px;font-size:11px;background:#262e28;border-color:#786e55}
+@media(max-width:780px){
+.table-action-settings{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px 8px 10px}
+.table-action-settings .table-open-placeholder{display:none}
+.table-utility-actions{grid-template-columns:repeat(3,minmax(0,1fr));padding:12px 8px 7px}
+.table-utility-actions button,.table-utility-actions button:first-child{grid-column:auto;min-height:38px}
+.table-record-actions button{min-height:42px}
+}
+
+/* v0.121: text hierarchy independent of compact settings selectors. */
+.table-utility-actions button{font-size:12px;line-height:1.35}
+.results-toggle-bar button{font-size:13px;line-height:1.35}
+.table-record-actions button{font-size:13px;line-height:1.35;min-height:40px}
+@media(max-width:780px){.table-utility-actions button{font-size:12px}.results-toggle-bar button{font-size:12px}.table-record-actions button{font-size:13px}}
+
+/* Hide spread guides while wash or shuffle is visibly in progress. */
+.table-surface:has(.shuffle-layer.active) .slot,
+.table-surface:has(.shuffle-layer.active) .zone-label,
+.table-surface:has(.shuffle-layer.active) .slot-num{visibility:hidden!important}
+
+/* Keep the default deck fully inside the cloth after card-size increases. */
+.deck{top:calc(100% - var(--ch) - 25px)}
+
+/* Default deck: use one vertical anchor, safely inside the cloth. */
+.deck{top:auto;bottom:25px}
+
+/* Dragged cards use the same full-size back artwork as dealt cards. */
+.deck-drag-preview{display:block;box-sizing:border-box;border:0;background:none;overflow:visible}
+.deck-drag-preview>.face.back{position:absolute;inset:0;display:block;width:100%;height:100%;box-sizing:border-box;backface-visibility:visible}

@@ -12,7 +12,12 @@ test('mobile cockpit has four visible actions without overlap', async ({ page })
     expect(a.x + a.width).toBeLessThanOrEqual(b.x + 1);
     expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(2);
   }
-  expect(Math.abs(boxes[0].width - boxes[3].width)).toBeLessThanOrEqual(3);
+  const spreadGroup=await page.locator('.mobile-cockpit-actions>.toolbar-spread-shortcut').boundingBox();
+  const infoButton=await page.locator('#spreadInfoButton').boundingBox();
+  expect(spreadGroup && infoButton).toBeTruthy();
+  expect(Math.abs(spreadGroup.width - boxes[3].width)).toBeLessThanOrEqual(3);
+  expect(boxes[0].x+boxes[0].width).toBeLessThanOrEqual(infoButton.x+1);
+  expect(infoButton.x+infoButton.width).toBeLessThanOrEqual(boxes[1].x+1);
 });
 
 test('mobile card size adjustment persists through reload', async ({ page }) => {
