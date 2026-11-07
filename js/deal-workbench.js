@@ -22,7 +22,7 @@ function install(api){
   function select(options,parent=panel){const e=el('select',undefined,parent);e.style.cssText='padding:8px;margin:4px;background:#f8f2e6;color:#17221e';options.forEach(([v,t])=>{const o=el('option',t,e);o.value=String(v)});return e}
   function run(list){return root.TabulaDealWorkflow.run(original,list)}
   function finalRun(list=steps,automatic=autoDeal){const preliminary=run(list);if(!automatic)return preliminary.piles.length?run([...list,{type:'collect',order:preliminary.piles.map((_,i)=>i)}]):preliminary;const available=api.spreadCount?api.spreadCount():0;const remaining=Math.max(0,available-preliminary.dealt.length);if(!remaining)return preliminary;const extra=preliminary.piles.length?[{type:'collect',order:preliminary.piles.map((_,i)=>i)},{type:'deal-rest',count:remaining}]:[{type:'deal-rest',count:remaining}];return run([...list,...extra])}
-  function change(next,sel=next.length-1){try{const value=run(next);if(value.dealt.length>original.length)throw Error('配札枚数が山札を超えています');steps=next;selected=sel;result=value;message='';paint()}catch(e){message='工程を実行できません：'+e.message;paint()}}
+  function change(next,sel=-1){try{const value=run(next);if(value.dealt.length>original.length)throw Error('配札枚数が山札を超えています');steps=next;selected=sel;result=value;message='';paint()}catch(e){message='工程を実行できません：'+e.message;paint()}}
   function label(st){const pile=n=>'束'+String.fromCharCode(65+n);switch(st.type){
    case 'split':return '山札を分割：'+st.sizes.join(' / ')+'枚';
    case 'take':return (st.from==='stock'?'山札':pile(st.from))+'から'+st.count+'枚'+(st.to==='removed'?'除外':st.to==='selected'?'保留':'配札');
@@ -45,7 +45,7 @@ function install(api){
     const pile=select(s.piles.map((_,i)=>[i,'束'+String.fromCharCode(65+i)]),fields);return()=>({type,pile:Number(pile.value)});
    }
    let read=drawFields();kind.onchange=()=>{read=drawFields()};
-   btn('工程を追加',()=>change([...steps,read()]),box);btn('閉じる',paint,box);
+   btn('工程を追加',()=>change([...steps,read()]),box);btn('閉じる',()=>{selected=-1;paint()},box);
   }
   function edit(index){const step=steps[index],before=stateBefore(index),box=el('div');box.style.cssText='border:1px solid #b29b70;border-radius:6px;padding:10px;margin:8px 0';
    el('strong','工程 '+(index+1)+' を編集',box);let read;
@@ -53,7 +53,7 @@ function install(api){
    else if(step.type==='take'){const opts=[];if(before.stock.length)opts.push(['stock','山札']);before.piles.forEach((p,i)=>{if(p.length)opts.push([i,'束'+String.fromCharCode(65+i)])});const from=select(opts,box);from.value=String(step.from);el('span','枚数',box);const n=input(String(step.count),box);n.type='number';el('span','用途',box);const to=select([['removed','カードを除外'],['dealt','指定枚数を配札']],box);to.value=step.to||'dealt';read=()=>({...step,from:from.value==='stock'?'stock':Number(from.value),count:Number(n.value),to:to.value})}
    else if(step.type==='collect'){el('span','積み直し順（例：C,A,B）',box);const v=input(step.order.map(i=>String.fromCharCode(65+i)).join(','),box);read=()=>({...step,order:v.value.toUpperCase().split(',').map(x=>x.trim().charCodeAt(0)-65)})}
    else {const v=select(before.piles.map((_,i)=>[i,'束'+String.fromCharCode(65+i)]),box);v.value=String(step.pile);read=()=>({...step,pile:Number(v.value)})}
-   btn('変更を適用',()=>change(steps.map((x,i)=>i===index?read():x),index),box);btn('閉じる',paint,box);
+   btn('変更を適用',()=>change(steps.map((x,i)=>i===index?read():x),-1),box);btn('閉じる',paint,box);
   }
   function paint(){
    panel.replaceChildren();el('h2','ディール・アクション');
