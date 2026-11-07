@@ -4,10 +4,14 @@ function install(api){
  const host=document.getElementById('cutCountSetting');if(!host||!root.TabulaDealWorkflow)return;
  const field=document.createElement('div');field.className='field';
  const heading=document.createElement('span');heading.textContent='ディール手順';
- const trigger=document.createElement('button');trigger.type='button';trigger.textContent='番号順';trigger.title='ディール手順の選択・編集';trigger.style.width='100%';
- field.append(heading,trigger);host.closest('label')?.after(field);
+ const picker=document.createElement('select');picker.setAttribute('aria-label','卓上のディール手順');
+ const trigger=document.createElement('button');trigger.type='button';trigger.textContent='手順を編集';trigger.title='ディール手順の作成・編集';
+ field.append(heading,picker,trigger);host.closest('label')?.after(field);
  const STORE='tabula-deal-actions-v1';
  let dialog=null;
+ function refreshPicker(){const current=picker.value;picker.replaceChildren();const standard=document.createElement('option');standard.value='';standard.textContent='番号順（通常ディール）';picker.append(standard);saved().forEach(item=>{const option=document.createElement('option');option.value=item.name;option.textContent=item.name;picker.append(option)});picker.value=[...picker.options].some(o=>o.value===current)?current:''}
+ function executeSelected(){if(!picker.value)return false;if(!api.canStart()){api.status('卓上のカードを回収してから独自ディールを実行してください。');return true}const item=saved().find(x=>x.name===picker.value);if(!item){refreshPicker();return false}try{const original=api.deck();const steps=item.steps||[];const run=list=>root.TabulaDealWorkflow.run(original,list,{recipes:api.shuffleRecipes?api.shuffleRecipes():[]});const preliminary=run(steps);const extra=[];if(preliminary.piles.length)extra.push({type:'collect',order:preliminary.piles.map((_,i)=>i)});if(item.autoDeal!==false){const remaining=Math.max(0,(api.spreadCount?api.spreadCount():0)-preliminary.dealt.length);if(remaining)extra.push({type:'deal-rest',count:remaining})}const result=run([...steps,...extra]);if(result.selected.length)throw Error('保留カードが残っています');api.commit(result.stock,result.dealt,result.removed,{mode:item.orderMode||'standard',order:item.customOrder||''})}catch(e){api.status('ディール手順を実行できません：'+e.message)}return true}
+
  function open(){
   if(!api.canStart()){api.status('卓上のカードを回収してから開始してください。');return}
   const original=api.deck();if(original.length<2){api.status('山札が2枚以上必要です。');return}
@@ -83,10 +87,10 @@ function install(api){
    summary.setAttribute('role','status');
    if(result.piles.length)el('p','実行時、残りの束はA→B→Cの順に自動で積み直します。');
    const store=el('div');store.style.cssText='border-top:1px solid #6b756b;padding-top:10px;margin-top:10px';
-   btn('アクションを保存',()=>{name=title.value.trim()||'新しいディール';const items=saved();const ix=items.findIndex(x=>x.name===name);customOrder=orderField.value;const entry={name,steps:steps.map(x=>({...x})),autoDeal,orderMode,customOrder};if(ix>=0)items[ix]=entry;else items.push(entry);if(persist(items)){message='「'+name+'」を保存しました。';paint()}},store,!steps.length&&!autoDeal);
+   btn('アクションを保存',()=>{name=title.value.trim()||'新しいディール';const items=saved();const ix=items.findIndex(x=>x.name===name);customOrder=orderField.value;const entry={name,steps:steps.map(x=>({...x})),autoDeal,orderMode,customOrder};if(ix>=0)items[ix]=entry;else items.push(entry);if(persist(items)){refreshPicker();picker.value=name;message='「'+name+'」を保存しました。';paint()}},store,!steps.length&&!autoDeal);
    const items=saved();const chooser=select([['','保存済みアクションを選択'],...items.map(x=>[x.name,x.name])],store);
    btn('読み込む',()=>{const item=items.find(x=>x.name===chooser.value);if(!item)return;name=item.name;autoDeal=item.autoDeal!==false;orderMode=item.orderMode||'standard';customOrder=item.customOrder||'';change(item.steps.map(x=>({...x})), -1)},store);
-   btn('削除',()=>{if(!chooser.value)return;const remaining=items.filter(x=>x.name!==chooser.value);if(persist(remaining)){message='保存済みアクションを削除しました。';paint()}},store);
+   btn('削除',()=>{if(!chooser.value)return;const remaining=items.filter(x=>x.name!==chooser.value);if(persist(remaining)){refreshPicker();message='保存済みアクションを削除しました。';paint()}},store);
    const footer=el('div');footer.style.cssText='border-top:1px solid #6b756b;padding-top:10px;margin-top:10px';
    btn('▶ 卓上に実行',()=>{if(!steps.length&&!autoDeal)return;if(!api.canStart()){message='卓上の状態が変わりました。';paint();return}try{const final=finalRun();customOrder=orderField.value;if(final.selected.length)throw Error('保留カードが残っています');api.commit(final.stock,final.dealt,final.removed,{mode:orderMode,order:customOrder});close()}catch(e){message=e.message;paint()}},footer,!steps.length&&!autoDeal);
    btn('キャンセル',close,footer);
@@ -95,7 +99,8 @@ function install(api){
   shade.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
   paint();
  }
- trigger.onclick=()=>{if(!dialog)open()};
+ refreshPicker();trigger.onclick=()=>{if(!dialog)open()};
+ return Object.freeze({executeSelected});
 }
 root.TabulaDealWorkbench=Object.freeze({install});
 })(globalThis);
