@@ -1263,5 +1263,11 @@ function installCandles(){const section=$('altarToggle').closest('section');sect
 installCandles();
 const renderBeforeCandles=render;render=function(){renderBeforeCandles();renderCandles();};
 
+TabulaDealWorkbench.install({
+ deck:()=>state.deck.map(c=>({...c})),
+ canStart:()=>!state.placed.length&&!(state.removed||[]).length,
+ commit:cards=>{state.deck=cards.map(c=>({...c}));state.dealCheckpoint=null;render();saveLocal();setStatus('独自ディールの束操作を山札に反映しました。')},
+ status:setStatus
+});
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
 const initial=localStorage.getItem(KEY);if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()} })();
