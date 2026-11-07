@@ -25,6 +25,11 @@ test('built-in spread definitions preserve their positions and names',()=>{
   assert.equal(presets.one.length,1);
   assert.equal(presets.three.length,3);
   assert.equal(presets.celtic.length,10);
+  assert.equal(presets.fiveCross.length,5);
+  assert.equal(presets.pentagram.length,5);
+  assert.equal(presets.fiveCross[4].name,'核心');
+  assert.equal(presets.pentagram[4].name,'霊・統合');
+  for(const id of ['fiveCross','pentagram'])assert.ok(presets[id].every(p=>p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100));
   assert.equal(presets.horoscope.length,13);
   assert.equal(presets.horseshoe.length,7);
   assert.equal(presets.horoscope[12].name,'総合');
