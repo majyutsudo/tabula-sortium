@@ -1263,7 +1263,7 @@ function installCandles(){const section=$('altarToggle').closest('section');sect
 installCandles();
 const renderBeforeCandles=render;render=function(){renderBeforeCandles();renderCandles();};
 
-TabulaDealWorkbench.install({
+const dealWorkbenchController=TabulaDealWorkbench.install({
  deck:()=>state.deck.map(c=>({...c})),
  spreadCount:()=>settings.spread==='free'?0:getSlots().length,
  defaultOrder:()=>getDealOrder(),
