@@ -1266,14 +1266,14 @@ const renderBeforeCandles=render;render=function(){renderBeforeCandles();renderC
 TabulaDealWorkbench.install({
  deck:()=>state.deck.map(c=>({...c})),
  canStart:()=>!state.placed.length&&!(state.removed||[]).length,
- commit:(cards,dealt=[])=>{
+ commit:(cards,dealt=[],removed=[])=>{
   const slots=getSlots(),order=settings.spread==='free'?[]:getDealOrder();
   const placed=dealt.map((card,i)=>{
     const slot=i<order.length?order[i]:null;
     const pos=slot!==null&&slots[slot]?slots[slot]:{x:20+(i%7)*10,y:22+(Math.floor(i/7)%5)*13,angle:0};
     return {...card,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{...pos},faceUp:false};
   });
-  state.deck=cards.map(c=>({...c}));state.placed=placed;state.removed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;
+  state.deck=cards.map(c=>({...c}));state.placed=placed;state.removed=removed.map(c=>({...c}));state.selected=null;state.completionShown=false;state.dealCheckpoint=null;
   render();saveLocal();setStatus('独自ディールを確定しました。卓上に'+placed.length+'枚を配札しました。');
  },
  status:setStatus
