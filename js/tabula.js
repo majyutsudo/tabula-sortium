@@ -1310,14 +1310,14 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
           const rounds=(recipe?.steps||[]).flatMap(raw=>{const step=normStep(raw);return Array.from({length:step.reps},(_,i)=>({step,i}))});
           let round=0;
           function animateRound(){
-            if(round>=rounds.length){play('shuffle');setTimeout(nextStage,180);return}
+            if(round>=rounds.length){play('shuffle');setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(nextStage)),300);return}
             const {step,i}=rounds[round++];
             const direction=step.washDirection==='alternate'?(i%2===0?'cw':'ccw'):step.washDirection;
             setStatus('独自ディール・シャッフル：'+methods[step.method]+' '+round+'/'+rounds.length);
             animateShuffle(step.method,animateRound,false,{direction,piles:step.groups});
           }
           if(rounds.length)animateRound();else setTimeout(nextStage,300);
-        }else setTimeout(nextStage,frame.type==='split'||frame.type==='collect'?430:300);
+        }else setTimeout(()=>requestAnimationFrame(nextStage),frame.type==='split'||frame.type==='collect'?430:380);
       }
       else{
         state.deck=cards.map(c=>({...c}));
@@ -1327,7 +1327,8 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
         setStatus('独自ディールを完了しました。'+dealt.length+'枚を配札、'+removed.length+'枚を除外しました。');
       }
     }
-    nextStage();return;
+    // Give the browser a paint before beginning a potentially long animated procedure.
+    requestAnimationFrame(()=>requestAnimationFrame(nextStage));return;
   }
   state.deck=cards.map(c=>({...c}));
   state.placed=[...placeRemoved(tableCards),...placed];
