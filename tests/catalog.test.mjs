@@ -27,7 +27,7 @@ test('built-in spread definitions preserve their positions and names',()=>{
   assert.equal(presets.celtic.length,10);
   assert.equal(presets.fiveCross.length,5);
   assert.equal(presets.pentagram.length,5);
-  assert.deepEqual(Array.from(presets.fiveCross,p=>p.name),['意識・額','基盤・胸','左肩・過去','右肩・未来','核心・アーメン']);
+  assert.deepEqual(Array.from(presets.fiveCross,p=>p.name),['意識','根底','過去','未来','核心']);
   assert.deepEqual(Array.from(presets.pentagram,p=>p.name),['地・物質','水・感情','風・思考','火・行動','霊・統合']);
   assert.equal(presets.treeOfLife.length,10);
   assert.deepEqual(Array.from(presets.treeOfLife,p=>p.name.split('（')[0]),['ケテル','コクマー','ビナー','ケセド','ゲブラー','ティファレト','ネツァク','ホド','イエソド','マルクト']);
