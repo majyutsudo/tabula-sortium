@@ -1265,6 +1265,7 @@ const renderBeforeCandles=render;render=function(){renderBeforeCandles();renderC
 
 TabulaDealWorkbench.install({
  deck:()=>state.deck.map(c=>({...c})),
+ spreadCount:()=>settings.spread==='free'?0:getSlots().length,
  canStart:()=>!state.placed.length&&!(state.removed||[]).length,
  commit:(cards,dealt=[],removed=[])=>{
   const slots=getSlots(),order=settings.spread==='free'?[]:getDealOrder();
