@@ -464,7 +464,7 @@ function syncFreeSnapButton(){
  button.title='自由配置 → 格子吸着 → カード吸着';
  button.setAttribute('aria-pressed',String(freeSnapMode!=='off'));
 }
-function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
+function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
  node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;drag.rotating=true;
@@ -495,7 +495,7 @@ const cardData=cards.find(c=>c.id===item.id),position=item.slot!=null?getSlots()
 $('infoText').textContent=`${cardData.name}（${item.reversed?'逆位置':'正位置'}）${position?` — ${item.slot+1}. ${position.name}：${position.detail}`:' — 自由配置'}`;
 if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position.name:'');updateLiveResults();maybeTriggerCompletionEffect();saveLocal()});node.addEventListener('pointercancel',()=>{cancelCardLongPress();node.classList.remove('dragging');drag=null});node.addEventListener('contextmenu',e=>{e.preventDefault();if(inspectionEnabled()||e.pointerType==='touch')return;item.angle=(item.angle+90)%360;render();saveLocal()});if(inspectionEnabled()){node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',item.faceUp?c.name+'を拡大する':'伏せ札');}node.addEventListener('click',()=>{if(inspectionEnabled())inspectTableCard(index,node)});node.addEventListener('keydown',e=>{if(inspectionEnabled()&&(e.key==='Enter'||e.key===' ')){e.preventDefault();inspectTableCard(index,node)}});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
 function syncResultsVisibility(){const panel=$('liveResults'),button=$('toggleResults');if(!panel||!button)return;panel.hidden=!resultsVisible;button.textContent=resultsVisible?'RESULTSを閉じる ▴':'RESULTSを表示 ▾';button.setAttribute('aria-expanded',String(resultsVisible))}
-function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(cards.find(c=>c.id===item.id)||cards[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${all.filter(p=>p.faceUp).length} / ${all.length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
+function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:item.significator?'シグニフィケイター':`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(cards.find(c=>c.id===item.id)||cards[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${all.filter(p=>p.faceUp&&!p.significator).length} / ${all.filter(p=>!p.significator).length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
 $('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
 const TABULA_BACK_PALETTE={green:'#0d3428',burgundy:'#651622',navy:'#11234b',purple:'#3b2458',black:'#18191a',sepia:'#55331d',ivory:'#e6d6b1'};
 function syncTabulaBack(){
@@ -529,11 +529,11 @@ function render(){
  return plan;
 }
 function applyDealRemoval(){
- const ordinal=state.placed.length+1;
+ const ordinal=state.placed.filter(c=>!c.significator).length+1;
  let plan;try{plan=parseDealSchedule(settings.dealSkipSchedule)}catch(e){setStatus(e.message);return false}
  const count=(ordinal===1?Math.max(0,Math.trunc(Number(settings.dealSkipFirst)||0)):0)+(plan.get(ordinal)||0);
  if(!Array.isArray(state.removed))state.removed=[];
- if(!state.placed.length&&!Array.isArray(state.dealCheckpoint))state.dealCheckpoint=state.deck.map(c=>({...c}));
+ if(!state.placed.some(c=>!c.significator)&&!Array.isArray(state.dealCheckpoint))state.dealCheckpoint=state.deck.map(c=>({...c}));
  if(state.deck.length<=count){setStatus(`第${ordinal}枚の配札に必要なカードが足りません。除外${count}枚に対して山札は${state.deck.length}枚です。`);return false}
  if(count){state.removed.push(...state.deck.splice(0,count));setStatus(`第${ordinal}枚の配札前に${count}枚を取り除きました（累計${state.removed.length}枚）。`)}
  return true;
@@ -553,6 +553,7 @@ function animateCardFromDeck(index,sourceRect){
 }
 // Select a physical card from the current deck and place it at an exact table point.
 let chosenPhysicalCardId=null;
+let chosenPhysicalRole='ordinary';
 function installPhysicalCardPicker(){
  const panel=document.createElement('div');panel.id='physicalCardPicker';
  panel.style.cssText='position:fixed;inset:0;z-index:12000;background:#07110ed9;display:none;align-items:center;justify-content:center;padding:16px;';
@@ -564,9 +565,12 @@ function installPhysicalCardPicker(){
  const filter=document.createElement('input');filter.type='search';filter.placeholder='カード名を検索';filter.setAttribute('aria-label','カード名を検索');filter.style.cssText='width:100%;box-sizing:border-box;padding:9px;background:#101a16;color:#eee;border:1px solid #7e7053;border-radius:4px;margin-bottom:12px;';
  const list=document.createElement('div');list.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;';
  const note=document.createElement('p');note.style.cssText='font-size:12px;opacity:.75;margin:0 0 12px';note.textContent='カードを選んだあと、卓上の置きたい位置をクリックしてください。選んだカードは山札から抜かれます。';
+ const roleRow=document.createElement('label');roleRow.style.cssText='display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;cursor:pointer;';
+ const signifyCheck=document.createElement('input');signifyCheck.type='checkbox';signifyCheck.style.accentColor='#b99b68';
+ roleRow.append(signifyCheck,document.createTextNode('シグニフィケイターとして配置（通常の配札枚数に含めない）'));
  const returnTitle=document.createElement('p');returnTitle.style.cssText='margin:16px 0 8px;font-size:13px';returnTitle.textContent='指定して置いたカードを山札へ戻す';
  const returns=document.createElement('div');returns.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
- dialog.append(head,note,filter,list,returnTitle,returns);panel.append(dialog);document.body.append(panel);
+ dialog.append(head,note,roleRow,filter,list,returnTitle,returns);panel.append(dialog);document.body.append(panel);
  panel.addEventListener('pointerdown',e=>{if(e.target===panel)panel.style.display='none'});
  const buttonStyle='padding:8px 6px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;cursor:pointer;text-align:left;font-size:12px;';
  function populate(){
@@ -577,7 +581,7 @@ function installPhysicalCardPicker(){
    const name=displayCard(card).name;
    if(q&&!name.toLocaleLowerCase().includes(q)&&!entry.id.toLocaleLowerCase().includes(q))continue;
    const b=document.createElement('button');b.type='button';b.textContent=name;b.style.cssText=buttonStyle;
-   b.onclick=()=>{chosenPhysicalCardId=entry.id;panel.style.display='none';setStatus('「'+name+'」を選択中。卓上の置きたい位置をクリックしてください。Escで解除できます。');};
+   b.onclick=()=>{chosenPhysicalCardId=entry.id;chosenPhysicalRole=signifyCheck.checked?'significator':'ordinary';panel.style.display='none';setStatus('「'+name+'」を'+(chosenPhysicalRole==='significator'?'シグニフィケイターとして':'')+'選択中。卓上の置きたい位置をクリックしてください。Escで解除できます。');};
    list.append(b)
   }
   if(!list.childElementCount){const empty=document.createElement('span');empty.textContent='該当するカードは山札にありません。';list.append(empty)}
@@ -606,9 +610,9 @@ function installPhysicalCardPicker(){
   const x=(e.clientX-rect.left)/rect.width*100,y=(e.clientY-rect.top)/rect.height*100;
   if(x<0||x>100||y<0||y>100)return;
   const [entry]=state.deck.splice(idx,1);
-  state.placed.push({...entry,slot:null,x,y,angle:0,origin:{x,y,angle:0},faceUp:true,physicalSelection:true});
+  state.placed.push({...entry,slot:null,x,y,angle:0,origin:{x,y,angle:0},faceUp:true,physicalSelection:true,significator:chosenPhysicalRole==='significator'});
   chosenPhysicalCardId=null;play('deal');render();saveLocal();
-  setStatus('指定カードを山札から抜いて配置しました。');
+  setStatus(chosenPhysicalRole==='significator'?'シグニフィケイターを配置しました（通常の配札枚数には含みません）。':'指定カードを山札から抜いて配置しました。');
  },true);
 }
 function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&state.placed.some(p=>p.slot===slot)){setStatus('その位置にはすでにカードがあります。');return}const physical=[...state.deck,...state.placed,...(state.removed||[])];
