@@ -569,9 +569,9 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
  surface.append(overlay);
  const m=metrics(),width=surface.clientWidth,height=surface.clientHeight;
  const cardW=Math.min(m.w,Math.max(30,(width-28)/(count+1.4))),cardH=cardW*1.52;
- const center={x:width*.5-cardW*.5,y:height*.55-cardH*.5};
+ const center={x:width*.5-cardW*.5,y:height*.64-cardH*.5};
  const span=Math.min(width*.77,cardW*(count-1)*1.32);
- const positions=lengths.map((_,i)=>({x:width*.5-cardW*.5+(i-(count-1)/2)*(span/Math.max(1,count-1)),y:height*.36-cardH*.5}));
+ const positions=lengths.map((_,i)=>({x:width*.5-cardW*.5+(i-(count-1)/2)*(span/Math.max(1,count-1)),y:height*.50-cardH*.5}));
  const piles=[];
  function makeStack(i){
   const el=document.createElement('button');el.type='button';el.setAttribute('aria-label','束 '+String.fromCharCode(65+i)+'、'+lengths[i]+'枚');
@@ -611,20 +611,26 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
    const node=piles[pileIndex],from=positions[pileIndex];
    const dx=center.x-from.x+order*2,dy=center.y-from.y+order*4;
    node.style.zIndex=String(100+count-order);
-   return node.animate([
+   const animation=node.animate([
     {transform:'translate(0px,0px) scale(1)',filter:'brightness(.38) saturate(.55)'},
     {offset:.24,transform:'translate(0px,-9px) scale(1.015)',filter:'brightness(.72) saturate(.85)'},
     {transform:'translate('+dx+'px,'+dy+'px) scale(1)',filter:'brightness(1) saturate(1)'}
-   ],{duration:720,delay:order*55,easing:'cubic-bezier(.24,.65,.25,1)',fill:'forwards'}).finished.catch(()=>{});
+   ],{duration:720,delay:order*55,easing:'cubic-bezier(.24,.65,.25,1)',fill:'forwards'});
+   return {node,dx,dy,animation};
   });
-  await Promise.all(animations);
+  await Promise.all(animations.map(({animation})=>animation.finished.catch(()=>{})));
   // Clear the persistent dimming on the actual pile elements, not just on
   // the animation keyframes, so the finished stack visibly brightens.
-  piles.forEach(el=>{
-   el.style.filter='brightness(1) saturate(1)';
-   el.style.transition='filter 180ms ease';
+  // A fill-forwards animation overrides inline filter, so cancel it after
+  // transferring the final transform. Then the complete stack is truly bright.
+  animations.forEach(({node,dx,dy,animation})=>{
+   node.style.transform='translate('+dx+'px,'+dy+'px) scale(1)';
+   node.style.filter='brightness(1) saturate(1)';
+   node.style.transition='none';
+   animation.cancel();
   });
-  await new Promise(resolve=>setTimeout(resolve,420));
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  await new Promise(resolve=>setTimeout(resolve,600));
   state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
   overlay.remove();render();saveLocal();play('shuffle');
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
