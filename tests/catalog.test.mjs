@@ -43,7 +43,7 @@ test('built-in spread definitions preserve their positions and names',()=>{
 });
 
 test('card sizes are defined for desktop and mobile for every built-in spread',()=>{
-  for(const id of ['one','three','celtic','horoscope','horseshoe','free']){
+  for(const id of ['one','three','celtic','horoscope','horseshoe','fiveCross','pentagram','free']){
     const size=builtinSpreadCardSizes[id];
     assert.ok(size);
     assert.ok(size.desktop>=.8&&size.desktop<=2.3);
