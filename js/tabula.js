@@ -1288,7 +1288,13 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
     setStatus('独自ディール：'+cursor+' / '+batch.length+'枚を配札中');
     setTimeout(nextCustomCard,340);
   }
-  render();if(batch.length)nextCustomCard();else{saveLocal();setStatus('独自ディールを完了しました。')}
+  render();saveLocal();
+  if(removed.length){
+    setStatus('独自ディール：先に'+removed.length+'枚を除外しました。続いて配札します。');
+    if(batch.length)setTimeout(nextCustomCard,340);
+    else setStatus('独自ディールを完了しました。'+removed.length+'枚を除外しました。');
+  }else if(batch.length)nextCustomCard();
+  else setStatus('独自ディールを完了しました。');
 
  },
  status:setStatus
