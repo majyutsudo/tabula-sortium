@@ -239,3 +239,21 @@ test('reference lookup does not alter active dealt cards and using a new spread 
  await page.locator('#spreadGuideUse').click();await accept;
  await expect(page.locator('#spread')).toHaveValue('three');
 });
+
+test('free spread encyclopedia tile uses a bounded graphic without overlapping prose',async({page})=>{
+ await page.locator('#spreadAtlasMenu').click();
+ const free=page.locator('.spread-atlas-item').filter({hasText:'フリースプレッド'});
+ await expect(free).toBeVisible();
+ await expect(free.locator('.spread-diagram-unassigned')).toHaveCount(1);
+ await expect(free.locator('.spread-diagram-empty')).toHaveCount(0);
+ const geometry=await free.evaluate(el=>{
+  const thumb=el.querySelector('.spread-atlas-thumb').getBoundingClientRect();
+  const label=el.querySelector('.spread-atlas-item-text').getBoundingClientRect();
+  return {thumbRight:thumb.right,labelLeft:label.left,thumbWidth:thumb.width}
+ });
+ expect(geometry.thumbRight).toBeLessThanOrEqual(geometry.labelLeft+1);
+ expect(geometry.thumbWidth).toBeLessThanOrEqual(110);
+ await free.click();
+ await expect(page.locator('.spread-guide h2')).toHaveText('フリースプレッド');
+ await expect(page.locator('#spreadGuideDiagram .spread-diagram-unassigned')).toHaveCount(1);
+});
