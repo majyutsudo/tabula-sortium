@@ -26,6 +26,13 @@ function run(deck,steps){
     order.forEach(n=>index(n,state.piles.length,'pile index'));
     state.stock=order.flatMap(n=>state.piles[n]);state.piles=[];break;
    }
+   case 'deal-rest':{
+    const n=step.count;
+    if(!Number.isInteger(n)||n<0)fail('invalid spread card count');
+    if(state.piles.length)fail('collect piles before normal deal');
+    if(state.stock.length<n)fail('not enough cards for spread');
+    state.dealt.push(...state.stock.splice(0,n));break;
+   }
    case 'take':{
     const n=step.count;
     if(!Number.isInteger(n)||n<1)fail('invalid take count');
