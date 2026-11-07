@@ -596,7 +596,8 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   busy=true;
   const el=piles[i],from=positions[i];
   const dx=center.x-from.x,dy=center.y-from.y+sequence.length*1.6;
-  el.style.zIndex=String(100+sequence.length);
+  // The first selected pile stays on top; subsequent piles slide underneath it.
+  el.style.zIndex=String(100+count-sequence.length);
   const animation=el.animate([{transform:'translate(0,0) scale(1)'},{offset:.28,transform:'translate('+(dx*.25)+'px,'+(dy*.25-12)+'px) scale(1.025)'},{transform:'translate('+dx+'px,'+dy+'px) scale(1)'}],{duration:430,easing:'cubic-bezier(.25,.65,.3,1)',fill:'forwards'});
   await animation.finished.catch(()=>{});
   el.style.transform='translate('+dx+'px,'+dy+'px)';
