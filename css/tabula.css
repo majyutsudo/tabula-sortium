@@ -909,3 +909,9 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 .table-utility-actions button,.table-utility-actions button:first-child{grid-column:auto;min-height:38px}
 .table-record-actions button{min-height:42px}
 }
+
+/* v0.121: text hierarchy independent of compact settings selectors. */
+.table-utility-actions button{font-size:12px;line-height:1.35}
+.results-toggle-bar button{font-size:13px;line-height:1.35}
+.table-record-actions button{font-size:13px;line-height:1.35;min-height:40px}
+@media(max-width:780px){.table-utility-actions button{font-size:12px}.results-toggle-bar button{font-size:12px}.table-record-actions button{font-size:13px}}
