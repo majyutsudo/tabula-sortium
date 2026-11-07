@@ -1,7 +1,7 @@
 /* TABULA SORTIUM — shared spread encyclopedia definitions and vector diagrams. */
 (function(root){'use strict';
 const BUILTIN={
- free:{name:'フリースプレッド',alternate:'Free spread',overview:'カードを卓上へ自由に配置する方式。配置の意味や形は使用者が決めます。'}
+ free:{name:'フリースプレッド',alternate:'Free spread',overview:'カードを卓上へ自由に配置する方式。配置の意味や形は使用者が決めます。'},
  one:{name:'ワンカード',alternate:'One-card spread',overview:'一つの問いに一枚のカードで応じる、簡潔な展開法。'},
  three:{name:'スリーカード',alternate:'Three-card spread',overview:'過去・現在・未来の三つの位置を用いて、状況の推移を読む展開法。'},
  fiveCross:{name:'ファイブカード・クロス（5枚）',alternate:'Five-card Cross',overview:'過去・未来・意識・根底の四つの要因と、中央の核心を読む五枚十字。五枚のカードを十字形に配置する占法には、配札順や各位置に与える意味が異なる多くの流儀がある。TABULAでは上・下・左・右・中央の順に配る。これは十字を切る動作に着想を得た配札順であり、カードの意味は一般的な五枚十字の解釈に従う。'},
