@@ -9,6 +9,7 @@ function install(api){
  field.append(heading,picker,trigger);host.closest('label')?.after(field);
  const STORE='tabula-deal-actions-v1';
  let dialog=null;
+ function saved(){try{const v=JSON.parse(localStorage.getItem(STORE)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}}
  function refreshPicker(){const current=picker.value;picker.replaceChildren();const standard=document.createElement('option');standard.value='';standard.textContent='番号順（通常ディール）';picker.append(standard);saved().forEach(item=>{const option=document.createElement('option');option.value=item.name;option.textContent=item.name;picker.append(option)});picker.value=[...picker.options].some(o=>o.value===current)?current:''}
  function executeSelected(){if(!picker.value)return false;if(!api.canStart()){api.status('卓上のカードを回収してから独自ディールを実行してください。');return true}const item=saved().find(x=>x.name===picker.value);if(!item){refreshPicker();return false}try{const original=api.deck();const steps=item.steps||[];const run=list=>root.TabulaDealWorkflow.run(original,list,{recipes:api.shuffleRecipes?api.shuffleRecipes():[]});const preliminary=run(steps);const extra=[];if(preliminary.piles.length)extra.push({type:'collect',order:preliminary.piles.map((_,i)=>i)});if(item.autoDeal!==false){const remaining=Math.max(0,(api.spreadCount?api.spreadCount():0)-preliminary.dealt.length);if(remaining)extra.push({type:'deal-rest',count:remaining})}const result=run([...steps,...extra]);if(result.selected.length)throw Error('保留カードが残っています');api.commit(result.stock,result.dealt,result.removed,{mode:item.orderMode||'standard',order:item.customOrder||''})}catch(e){api.status('ディール手順を実行できません：'+e.message)}return true}
 
@@ -36,7 +37,7 @@ function install(api){
    case 'reverse-pile':return pile(st.pile)+'の上下順を逆にする';
    default:return st.type;
   }}
-  function saved(){try{const v=JSON.parse(localStorage.getItem(STORE)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}}
+
   function persist(v){try{localStorage.setItem(STORE,JSON.stringify(v));return true}catch(e){message='保存できませんでした（ブラウザーの保存領域を確認してください）。';paint();return false}}
   function stateBefore(index){return run(steps.slice(0,index))}
   function addStep(){const s=result;const kinds=[];if(s.stock.length||s.piles.some(p=>p.length))kinds.push(['take','カードを除外・配札']);if(!s.piles.length&&s.stock.length>=2)kinds.push(['split','山札を分割']);if(!s.piles.length&&s.stock.length){kinds.push(['skip-deal','除外を挟んで繰り返し配札']);if((api.shuffleRecipes?api.shuffleRecipes():[]).length)kinds.push(['shuffle-recipe','登録済みシャッフルを実行'])}if(s.piles.length){kinds.push(['collect','束を積み直す'],['reverse-pile','束の上下順を逆にする'])}
