@@ -33,7 +33,7 @@ function install(api){
   function saved(){try{const v=JSON.parse(localStorage.getItem(STORE)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}}
   function persist(v){try{localStorage.setItem(STORE,JSON.stringify(v));return true}catch(e){message='保存できませんでした（ブラウザーの保存領域を確認してください）。';paint();return false}}
   function stateBefore(index){return run(steps.slice(0,index))}
-  function addStep(){const s=result;const kinds=[];if(!s.piles.length&&s.stock.length>=2)kinds.push(['split','山札を分割']);if(s.stock.length||s.piles.some(p=>p.length))kinds.push(['take','カードを配札・除外']);if(s.piles.length){kinds.push(['collect','束を積み直す'],['reverse-pile','束の上下順を逆にする'])}
+  function addStep(){const s=result;const kinds=[];if(s.stock.length||s.piles.some(p=>p.length))kinds.push(['take','カードを除外・配札']);if(!s.piles.length&&s.stock.length>=2)kinds.push(['split','山札を分割']);if(s.piles.length){kinds.push(['collect','束を積み直す'],['reverse-pile','束の上下順を逆にする'])}
    if(!kinds.length){message='追加できる工程がありません。';paint();return}
    const box=el('div');box.style.cssText='border:1px solid #7b796c;padding:10px;margin:8px 0;border-radius:6px';
    el('strong','追加する操作',box);const kind=select(kinds,box);
