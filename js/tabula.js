@@ -374,27 +374,46 @@ $('rotateLeft').addEventListener('click',()=>rotateSelected(-90));$('rotateFineL
 $('zone').addEventListener('contextmenu',e=>e.preventDefault());
 $('surface').addEventListener('contextmenu',e=>e.preventDefault());
 $('zone').addEventListener('pointerdown',e=>{if(e.target===$('zone')){state.selected=null;updateCardSelection()}});
-let freeSnap=false;
-function snapFreePosition(x,y){
- if(settings.spread!=='free'||!freeSnap)return {x,y};
+let freeSnapMode='off';
+function snapFreePosition(x,y,excludeId=null){
+ if(settings.spread!=='free'||freeSnapMode==='off')return {x,y};
  const z=$('zone').getBoundingClientRect(),m=metrics();
- // Half-card steps permit aligned rows as well as staggered pyramid layouts.
- const sx=Math.max(8,m.w*.5),sy=Math.max(8,m.h*.5);
- return {x:Math.round(x*z.width/100/sx)*sx/z.width*100,
-         y:Math.round(y*z.height/100/sy)*sy/z.height*100};
+ if(freeSnapMode==='grid'){
+  const sx=Math.max(8,m.w*.5),sy=Math.max(8,m.h*.5);
+  return {x:Math.round(x*z.width/100/sx)*sx/z.width*100,
+          y:Math.round(y*z.height/100/sy)*sy/z.height*100};
+ }
+ // Magnetic alignment to existing card centers and edges. Each axis snaps
+ // independently, allowing rows, columns, and half-card pyramid staggering.
+ const candidates=state.placed.filter(c=>!c.auxiliaryPile&&c.id!==excludeId);
+ if(!candidates.length)return {x,y};
+ const stepX=m.w/z.width*100,stepY=m.h/z.height*100;
+ const thresholdX=14/z.width*100,thresholdY=14/z.height*100;
+ let bestX=x,bestY=y,distX=thresholdX,distY=thresholdY;
+ for(const c of candidates){
+  for(const offset of [-1,-.5,0,.5,1]){
+   const cx=c.x+offset*stepX,cy=c.y+offset*stepY;
+   if(Math.abs(x-cx)<distX){distX=Math.abs(x-cx);bestX=cx}
+   if(Math.abs(y-cy)<distY){distY=Math.abs(y-cy);bestY=cy}
+  }
+ }
+ return {x:bestX,y:bestY};
 }
 function syncFreeSnapButton(){
  const surface=$('surface');let button=document.getElementById('freeSnapButton');
  if(!button){
   button=document.createElement('button');button.id='freeSnapButton';button.type='button';
-  button.style.cssText='position:absolute;right:12px;bottom:12px;z-index:550;padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621dc;color:#d6c6a5;font-size:11px;cursor:pointer;opacity:.62;';
-  button.onclick=()=>{freeSnap=!freeSnap;syncFreeSnapButton();setStatus('フリースプレッドの吸着：'+(freeSnap?'ON':'OFF'));};
+  button.style.cssText='position:absolute;right:12px;bottom:12px;z-index:550;padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621dc;color:#d6c6a5;font-size:11px;cursor:pointer;opacity:.75;';
+  button.onclick=()=>{
+   freeSnapMode=freeSnapMode==='off'?'grid':freeSnapMode==='grid'?'object':'off';
+   syncFreeSnapButton();setStatus('フリースプレッド：'+({off:'自由配置',grid:'グリッドスナップ',object:'カード吸着'}[freeSnapMode]));
+  };
   surface.append(button);
  }
  button.hidden=settings.spread!=='free';
- button.textContent=freeSnap?'⊞ 吸着 ON':'⊞ 吸着';
- button.title='自由配置の格子吸着を切り替え（半カード間隔）';
- button.setAttribute('aria-pressed',String(freeSnap));
+ button.textContent={off:'⊞ 自由',grid:'⊞ 格子',object:'⊞ カード吸着'}[freeSnapMode];
+ button.title='クリックで自由配置 → 格子吸着 → カード吸着を切り替え';
+ button.setAttribute('aria-pressed',String(freeSnapMode!=='off'));
 }
 function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
@@ -404,7 +423,7 @@ function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];co
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
 node.style.setProperty('--z',String(1000+nextOrder));
-node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');const wasLong=!!drag.longSelected;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnap){const p=snapFreePosition(item.x,item.y);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
+node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');const wasLong=!!drag.longSelected;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
 node.classList.toggle('faceup',item.faceUp);
