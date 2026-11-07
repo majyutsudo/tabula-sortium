@@ -567,6 +567,10 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
  overlay.id='physicalCutOverlay';
  overlay.style.cssText='position:absolute;inset:0;z-index:850;pointer-events:none;overflow:hidden;';
  surface.append(overlay);
+ surface.classList.add('cut-in-progress');
+ const cutStyle=document.createElement('style');
+ cutStyle.textContent='.cut-in-progress .slot,.cut-in-progress .zone-label,.cut-in-progress .slot-num{visibility:hidden!important}';
+ overlay.append(cutStyle);
  const m=metrics(),width=surface.clientWidth,height=surface.clientHeight;
  const cardW=Math.min(m.w,Math.max(30,(width-28)/(count+1.4))),cardH=cardW*1.52;
  const center={x:width*.5-cardW*.5,y:height*.64-cardH*.5};
@@ -596,7 +600,6 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   const el=piles[i];
   sequence.push(i);
   // Selection is silent and stationary: only the chosen pile becomes subdued.
-  el.disabled=true;
   el.style.pointerEvents='none';
   el.style.filter='brightness(.38) saturate(.55)';
   el.style.transition='filter 200ms ease';
@@ -625,14 +628,15 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   // transferring the final transform. Then the complete stack is truly bright.
   animations.forEach(({node,dx,dy,animation})=>{
    node.style.transform='translate('+dx+'px,'+dy+'px) scale(1)';
-   node.style.filter='brightness(1) saturate(1)';
    node.style.transition='none';
    animation.cancel();
+   node.style.filter='none';
+   node.style.opacity='1';
   });
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   await new Promise(resolve=>setTimeout(resolve,600));
   state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
-  overlay.remove();render();saveLocal();play('shuffle');
+  overlay.remove();surface.classList.remove('cut-in-progress');render();saveLocal();play('shuffle');
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
  }
 }
