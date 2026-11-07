@@ -1,0 +1,49 @@
+
+/* SPREAD ENCYCLOPEDIA: reference pages belong to the spread, not the reading. */
+#spreadInfoButton{flex:0 0 33px;min-width:33px;width:33px;height:34px;min-height:34px;padding:0!important;border:1px solid #aa9167;border-radius:6px;font:700 21px/1 Georgia,serif;color:#f1dda9;background:#2b3933;align-self:center;touch-action:manipulation}
+#spreadInfoButton:hover{background:#48564a}
+.spread-atlas-menu{display:block;margin:0 0 8px;padding:9px 12px;font-size:13px;width:100%;text-align:left}
+.spread-guide-kicker{font:10px/1.5 Georgia,serif;letter-spacing:.18em;color:#d1b47b;margin-bottom:8px}
+.spread-guide h2,.spread-atlas h2,.spread-guide-editor h2{font:normal 24px/1.35 Georgia,'Yu Mincho',serif;color:#f2dfbc;margin:0 0 10px}
+.spread-guide-meta{font:12px/1.6 Arial,'Yu Gothic',sans-serif;color:#c8bdac;margin:6px 0}
+.spread-guide-meta strong{font-weight:500;color:#efd4a6}
+.spread-guide-prose,.spread-guide-positions{border-top:1px solid #6b675456;margin-top:16px;padding-top:13px}
+.spread-guide-prose h3,.spread-guide-positions h3{font-size:14px;margin:0 0 8px;color:#ead0a3}
+.spread-guide-prose p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;margin:0}
+.spread-guide-diagram-wrap{border:1px solid #7a735e;border-radius:8px;padding:8px;background:#192523;margin-top:15px}
+.spread-diagram{width:100%;height:auto;max-height:365px;display:block}
+.spread-diagram-slot[role=button]{cursor:pointer;outline:none}
+.spread-diagram-slot.is-selected rect:first-child{stroke:#fff0bd;stroke-width:2.5;fill:#526355}
+.spread-diagram-slot:focus rect:first-child{stroke:#fff0bd;stroke-width:2.5}
+.spread-diagram-empty{padding:35px;text-align:center;font:12px sans-serif;color:#a99c83}
+.spread-guide-positions-list{display:flex;flex-wrap:wrap;gap:6px}
+.spread-guide-position{display:inline-flex;align-items:center;gap:7px;min-width:0;white-space:normal;text-align:left;padding:7px 9px;font:12px/1.4 sans-serif}
+.spread-guide-position b{color:#e7c78c}
+.spread-guide-position.is-selected{background:#56604c;border-color:#e3c68e}
+.spread-guide-slot-detail{padding:12px;background:#1b2927;border-radius:6px;min-height:40px;white-space:pre-wrap;margin:10px 0!important}
+.spread-guide-slot-detail strong,.spread-guide-slot-detail span{display:block;line-height:1.65}
+.spread-guide-slot-detail strong{color:#f3dbac}
+.spread-guide-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.spread-guide-actions button{white-space:normal;flex:1 1 130px}
+.spread-atlas-filters{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.spread-atlas-filters button{padding:8px 11px;font-size:12px}
+.spread-atlas-filters button.is-selected{border-color:#e5c98b;background:#515b4d}
+.spread-atlas-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.spread-atlas-item{display:flex;align-items:center;gap:8px;padding:8px;min-width:0;text-align:left;white-space:normal;background:#202e2a;border:1px solid #776b50;border-radius:6px}
+.spread-atlas-item:hover{background:#354439}
+.spread-atlas-thumb{width:90px;max-width:42%;flex:0 0 90px;pointer-events:none}
+.spread-atlas-thumb .spread-diagram{max-height:86px}
+.spread-atlas-item-text{display:flex;flex-direction:column;gap:5px;min-width:0;overflow-wrap:anywhere}
+.spread-atlas-item-text strong{font:14px/1.4 Georgia,'Yu Mincho',serif;color:#f2dcaf}
+.spread-atlas-item-text small{font:11px/1.4 sans-serif;color:#bdad91}
+.spread-guide-editor .field{display:block;margin:12px 0}
+.spread-guide-editor .field input,.spread-guide-editor .field textarea{width:100%;box-sizing:border-box;display:block;margin-top:5px}
+.spread-guide-editor .field textarea{resize:vertical;min-height:84px}
+@media(max-width:780px){
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut select{flex:1 1 0;min-width:0!important;width:calc(100% - 39px)!important}
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut #spreadInfoButton{flex:0 0 34px!important;width:34px!important;min-width:34px!important;min-height:44px!important;height:44px!important;margin:0!important;padding:0!important;font-size:20px!important;box-sizing:border-box}
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut{gap:5px!important}
+ .spread-atlas-list{grid-template-columns:1fr}
+ .spread-atlas-thumb{flex-basis:94px}
+ .spread-guide-actions{gap:6px}
+}
