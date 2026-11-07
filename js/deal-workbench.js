@@ -56,6 +56,27 @@ function install(api){
    panel.replaceChildren();el('h2','ディール・アクション');
    el('p','工程を上から順に実行します。変更は「卓上に実行」まで現在の占いに反映されません。');
    if(message){const m=el('p',message);m.setAttribute('role','alert');m.style.color='#ffb9a4'}
+   if(root.TabulaMathersFirst&&original.length===78){
+    const historical=el('div');historical.style.cssText='border:1px solid #9d8967;border-radius:7px;padding:10px;margin:10px 0';
+    el('strong','史料プリセット：マザーズ第一法（1888）',historical);
+    el('p','78枚を規則的に振り分け、A・C・Eを順に馬蹄形で読む方式です。以下は各段階の配札を試す暫定機能です。',historical);
+    btn('束の構成を確認',()=>{
+      const m=root.TabulaMathersFirst.run(original);
+      message='A '+m.piles.A.length+'枚 / C '+m.piles.C.length+'枚 / E '+m.piles.E.length+'枚 / F '+m.piles.F.length+'枚（除外）。原文のE=11/F=24とは計算が一致しません。';
+      paint();
+    },historical);
+    const group=select([['A','A：最初の26枚'],['C','C：次の17枚'],['E','E：最後の12枚（記述どおりに配った場合）']],historical);
+    btn('選択した束を卓上に配る',()=>{
+      if(!api.canStart()){message='卓上のカードを回収してください。';paint();return}
+      try{
+       const m=root.TabulaMathersFirst.run(original),key=group.value;
+       const chosen=m.piles[key];
+       const rest=['A','C','E','F'].filter(k=>k!==key).flatMap(k=>m.piles[k]);
+       api.commit(rest,chosen);close();
+      }catch(e){message=e.message;paint()}
+    },historical);
+    el('p','注：馬蹄形の専用配置とA→C→Eの連続読解は未実装です。現在のスプレッド位置に配ります。',historical);
+   }
    const title=input(name);title.setAttribute('aria-label','アクション名');title.style.width='min(360px,95%)';title.onchange=()=>{name=title.value.trim()||'新しいディール'};
    const list=el('div');list.style.cssText='border:1px solid #6b756b;border-radius:7px;padding:8px;margin:10px 0';
    el('strong','実行リスト（'+steps.length+'工程）',list);
