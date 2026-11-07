@@ -18,6 +18,8 @@ function install(api){
   if(!api.canStart()){api.status('卓上のカードを回収してから開始してください。');return}
   const original=api.deck();if(original.length<2){api.status('山札が2枚以上必要です。');return}
   let steps=[],selected=-1,result=root.TabulaDealWorkflow.run(original,[]),message='',name='新しいディール',editingName=null,autoDeal=true,orderMode='standard',customOrder='';
+  const active=saved().find(item=>item.name===picker.value);
+  if(active){name=active.name;editingName=active.name;steps=(active.steps||[]).map(st=>({...st}));autoDeal=active.autoDeal!==false;orderMode=active.orderMode||'standard';customOrder=active.customOrder||'';result=root.TabulaDealWorkflow.run(original,steps,{recipes:api.shuffleRecipes?api.shuffleRecipes():[]});}
   const shade=document.createElement('div');shade.style.cssText='position:fixed;inset:0;background:#000b;z-index:99999;display:grid;place-items:center;padding:12px';
   const panel=document.createElement('section');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','ディール・アクション');panel.style.cssText='background:#1b2926;color:#f1dfbd;border:1px solid #b29b70;border-radius:10px;width:min(650px,100%);max-height:92vh;overflow:auto;padding:18px;font:inherit';
   shade.append(panel);document.body.append(shade);dialog=shade;
