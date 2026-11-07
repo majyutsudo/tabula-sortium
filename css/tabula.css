@@ -903,7 +903,7 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 .table-record-actions{gap:7px;padding:6px 10px 12px}
 .table-record-actions button{min-height:36px;font-size:11px;background:#262e28;border-color:#786e55}
 @media(max-width:780px){
-.table-action-settings{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px 8px 10px}
+.table-action-settings{order:3;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px 8px 10px}
 .table-action-settings .table-open-placeholder{display:none}
 .table-utility-actions{grid-template-columns:repeat(3,minmax(0,1fr));padding:12px 8px 7px}
 .table-utility-actions button,.table-utility-actions button:first-child{grid-column:auto;min-height:38px}
