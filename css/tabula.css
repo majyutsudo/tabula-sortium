@@ -920,3 +920,6 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 .table-surface:has(.shuffle-layer.active) .slot,
 .table-surface:has(.shuffle-layer.active) .zone-label,
 .table-surface:has(.shuffle-layer.active) .slot-num{visibility:hidden!important}
+
+/* Keep the default deck fully inside the cloth after card-size increases. */
+.deck{top:calc(100% - var(--ch) - 25px)}
