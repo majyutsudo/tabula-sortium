@@ -31,6 +31,16 @@ function install(api){
     button('束に分ける',()=>{const sizes=field.value.split(',').map(x=>Number(x.trim()));apply([...steps,{type:'split',sizes}])});
    }
    if(last?.type==='collect'&&!showNextSplit){button('続けて山札を分割する',()=>{showNextSplit=true;paint()});}
+   if(s.stock.length||s.piles.length){
+    const takeTitle=document.createElement('p');takeTitle.textContent='カードを取り出して卓上に配る（合計52枚まで）';panel.append(takeTitle);
+    const source=document.createElement('select');source.style.cssText='padding:8px;margin:4px;background:#f8f2e6;color:#17221e';
+    if(s.stock.length){const option=document.createElement('option');option.value='stock';option.textContent='山札 ('+s.stock.length+'枚)';source.append(option)}
+    s.piles.forEach((pile,i)=>{if(!pile.length)return;const option=document.createElement('option');option.value=String(i);option.textContent='束 '+String.fromCharCode(65+i)+' ('+pile.length+'枚)';source.append(option)});
+    panel.append(source);
+    const amount=document.createElement('input');amount.type='number';amount.min='1';amount.max='52';amount.value='1';amount.style.cssText='width:70px;padding:8px;margin:4px;background:#f8f2e6;color:#17221e';amount.setAttribute('aria-label','取り出す枚数');panel.append(amount);
+    button('卓上用に取り出す',()=>{const count=Number(amount.value);if(s.dealt.length+count>52){alert('一度に配札できるのは52枚までです。');return}apply([...steps,{type:'take',from:source.value==='stock'?'stock':Number(source.value),count,to:'dealt'}])});
+   }
+   if(s.dealt.length){const note=document.createElement('p');note.textContent='卓上に配る予定：'+s.dealt.length+'枚。確定すると現在のスプレッドの空き位置に順番に配置し、残りは自由配置します。';panel.append(note)}
    if(s.piles.length){
     const label=document.createElement('p');label.textContent='束を選択した順に山札の上から積み直します。';panel.append(label);
     let order=[];
@@ -44,7 +54,7 @@ function install(api){
    }
    button('一工程戻す',()=>apply(steps.slice(0,-1)),steps.length===0);
    button('最初から',()=>apply([]),steps.length===0);
-   button('山札に確定',()=>{if(s.piles.length||s.selected.length||s.dealt.length){alert('すべての束を積み直してから確定してください。');return}if(!api.canStart()){alert('卓の状態が変わりました。操作をやり直してください。');return}api.commit(s.stock);close()},!!(s.piles.length||s.selected.length||s.dealt.length||!steps.length));
+   button('山札と配札を確定',()=>{if(s.piles.length||s.selected.length){alert('残りの束を積み直してから確定してください。');return}if(!api.canStart()){alert('卓の状態が変わりました。操作をやり直してください。');return}api.commit(s.stock,s.dealt);close()},!!(s.piles.length||s.selected.length||!steps.length));
    button('キャンセル',close);
   }
   shade.addEventListener('click',e=>{if(e.target===shade)close()});
