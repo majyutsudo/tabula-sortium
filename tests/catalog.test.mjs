@@ -47,6 +47,10 @@ test('built-in spread definitions preserve their positions and names',()=>{
   }
   assert.equal(presets.horoscope.length,13);
   assert.equal(presets.horseshoe.length,7);
+  assert.deepEqual(Array.from(presets.horseshoe,p=>p.y),[14,46,78,87,78,46,14]);
+  assert.ok(presets.horseshoe[1].y-presets.horseshoe[0].y>=30);
+  assert.ok(presets.horseshoe[2].y-presets.horseshoe[1].y>=30);
+  assert.equal(builtinSpreadCardSizes.horseshoe.mobile,1.45);
   assert.equal(presets.horoscope[12].name,'総合');
   assert.equal(presets.horoscope[0].x,10);
   assert.equal(presets.horoscope[3].y,90);
