@@ -374,6 +374,34 @@ $('rotateLeft').addEventListener('click',()=>rotateSelected(-90));$('rotateFineL
 $('zone').addEventListener('contextmenu',e=>e.preventDefault());
 $('surface').addEventListener('contextmenu',e=>e.preventDefault());
 $('zone').addEventListener('pointerdown',e=>{if(e.target===$('zone')){state.selected=null;updateCardSelection()}});
+let naturalTilt=false;
+function gestureTilt(track){
+ if(!naturalTilt||!track||!track.samples||track.samples.length<2)return 0;
+ const pts=track.samples,last=pts[pts.length-1],first=pts[0];
+ const dx=last.x-first.x,dy=last.y-first.y;
+ if(Math.hypot(dx,dy)<5)return 0;
+ // A gentle clockwise or counterclockwise wrist-like finish.
+ return Math.max(-3,Math.min(3,dx*.09));
+}
+function updateNaturalTiltButton(){
+ let button=document.getElementById('naturalTiltButton');
+ if(!button){
+  button=document.createElement('button');button.id='naturalTiltButton';button.type='button';
+  button.style.cssText='position:absolute;right:12px;bottom:43px;z-index:550;padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621dc;color:#d6c6a5;font-size:11px;cursor:pointer;opacity:.75;';
+  button.onclick=()=>{naturalTilt=!naturalTilt;updateNaturalTiltButton();setStatus('手置きの微細な傾き：'+(naturalTilt?'ON':'OFF'));};
+  $('surface').append(button);
+ }
+ button.textContent=naturalTilt?'◌ 手置き ON':'◌ 手置き';
+ button.title='手動ドラッグの終わり方でカードを最大±3度傾ける';
+ button.setAttribute('aria-pressed',String(naturalTilt));
+}
+function recordTiltSample(track,e){
+ if(!track)return;
+ const now=performance.now();
+ if(!track.samples)track.samples=[];
+ track.samples.push({x:e.clientX,y:e.clientY,t:now});
+ track.samples=track.samples.filter(p=>now-p.t<160).slice(-12);
+}
 let freeSnapMode='off';
 function snapFreePosition(x,y,excludeId=null){
  if(settings.spread!=='free'||freeSnapMode==='off')return {x,y};
@@ -418,12 +446,12 @@ function syncFreeSnapButton(){
 function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
- node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;selectCard(index);saveLocal()}},520);
+ node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;selectCard(index);saveLocal()}},520);
 // Each grab raises the selected card to the highest persistent stack layer.
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
 node.style.setProperty('--z',String(1000+nextOrder));
-node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');const wasLong=!!drag.longSelected;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
+node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){recordTiltSample(drag,e);cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');const wasLong=!!drag.longSelected;const finishingTilt=dragMoved&&!spreadWorkbench?gestureTilt(drag):0;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(finishingTilt){item.angle=Math.round((item.angle+finishingTilt)*10)/10;}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
 node.classList.toggle('faceup',item.faceUp);
@@ -456,7 +484,7 @@ function render(){
   settings.deckPosition=null;
  }
  lastRenderedSpread=settings.spread;
- syncFreeSnapButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');updateLiveResults();const m=metrics(),zone=$('zone');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set(state.placed.map(p=>p.slot).filter(s=>s!==null));getSlots().forEach((p,i)=>{if(assigned.has(i))return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}updateCardSelection();const deck=$('deck');deck.classList.toggle('empty',state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyDeckPosition();$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=cards.find(c=>c.id===p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
+ syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');updateLiveResults();const m=metrics(),zone=$('zone');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set(state.placed.map(p=>p.slot).filter(s=>s!==null));getSlots().forEach((p,i)=>{if(assigned.has(i))return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}updateCardSelection();const deck=$('deck');deck.classList.toggle('empty',state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyDeckPosition();$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=cards.find(c=>c.id===p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
  const plan=new Map(),raw=String(value||'').trim();if(!raw)return plan;
  for(const token of raw.split(/[,，、;；\n]+/)){
   const t=token.trim();if(!t)continue;
@@ -919,7 +947,7 @@ function beginDeckPreview(e){
 }
 deck.addEventListener('pointerdown',e=>{
   if(e.button!==0||!state.deck.length)return;
-  drag={type:'deck',startX:e.clientX,startY:e.clientY,pointerId:e.pointerId};
+  drag={type:'deck',startX:e.clientX,startY:e.clientY,pointerId:e.pointerId};recordTiltSample(drag,e);
   dragMoved=false;
   deck.setPointerCapture(e.pointerId);
 });
@@ -928,16 +956,17 @@ deck.addEventListener('pointermove',e=>{
   if(!dragMoved&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>8){
     dragMoved=true;beginDeckPreview(e);
   }
-  if(dragMoved)moveDeckPreview(e);
+  if(dragMoved){recordTiltSample(drag,e);moveDeckPreview(e);}
 });
 deck.addEventListener('pointerup',e=>{
   if(drag?.type!=='deck'||drag.pointerId!==e.pointerId)return;
+  const finishingTilt=dragMoved?gestureTilt(drag):0;
   drag=null;clearDeckPreview();
   if(!dragMoved){drawAt();return}
   const r=$('zone').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
   if(x<0||x>100||y<0||y>100)return;
   if(settings.spread==='free'||getSlots().every((_,i)=>state.placed.some(p=>p.slot===i)))
-    {const p=snapFreePosition(x,y);drawAt(null,p.x,p.y,false);}
+    {const p=snapFreePosition(x,y);drawAt(null,p.x,p.y,false);if(finishingTilt&&state.placed.length){const card=state.placed[state.placed.length-1];card.angle=Math.round(finishingTilt*10)/10;render();saveLocal();}}
   else{
     const slots=getSlots(),available=slots.map((s,i)=>({...s,i})).filter(s=>!state.placed.some(p=>p.slot===s.i));
     const nearest=available.sort((a,b)=>(a.x-x)**2+(a.y-y)**2-(b.x-x)**2-(b.y-y)**2)[0];
