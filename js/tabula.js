@@ -873,7 +873,7 @@ function beginDeckPreview(e){
   deckPreview=document.createElement('div');
   deckPreview.className='deck-drag-preview';
   deckPreview.style.width=m.w*tableCamera.scale+'px';deckPreview.style.height=m.h*tableCamera.scale+'px';
-  deckPreview.innerHTML='<span class="deck-drag-preview-symbol">✧</span>';
+  deckPreview.innerHTML='<span class="face back" aria-hidden="true"></span>';
   document.body.append(deckPreview);moveDeckPreview(e);
 }
 deck.addEventListener('pointerdown',e=>{
