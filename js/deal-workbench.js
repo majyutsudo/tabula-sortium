@@ -63,10 +63,10 @@ function install(api){
    if(step.type==='shuffle-recipe'){const r=api.shuffleRecipes?api.shuffleRecipes():[];const v=select(r.map(x=>[x.id,x.name]),box);v.value=step.recipeId;read=()=>({...step,recipeId:v.value})}
    else if(step.type==='skip-deal'){el('span','各回の除外枚数',box);const skip=input(String(step.skip),box);skip.type='number';el('span','配札回数',box);const times=input(String(step.times),box);times.type='number';read=()=>({...step,skip:Number(skip.value),times:Number(times.value)})}
    else if(step.type==='split'){el('span','分割枚数',box);const v=input(step.sizes.join(','),box);read=()=>({...step,sizes:v.value.split(',').map(x=>Number(x.trim()))})}
-   else if(step.type==='take'){const opts=[];if(before.stock.length)opts.push(['stock','山札']);before.piles.forEach((p,i)=>{if(p.length)opts.push([i,'束'+String.fromCharCode(65+i)])});const from=select(opts,box);from.value=String(step.from);el('span','枚数',box);const n=input(String(step.count),box);n.type='number';el('span','用途',box);const to=select([['removed','カードを除外'],['dealt','指定枚数を配札']],box);to.value=step.to||'dealt';read=()=>({...step,from:from.value==='stock'?'stock':Number(from.value),count:Number(n.value),to:to.value,display:to.value==='removed'?display.value:'hidden'})}
+   else if(step.type==='take'){const opts=[];if(before.stock.length)opts.push(['stock','山札']);before.piles.forEach((p,i)=>{if(p.length)opts.push([i,'束'+String.fromCharCode(65+i)])});const from=select(opts,box);from.value=String(step.from);el('span','枚数',box);const n=input(String(step.count),box);n.type='number';el('span','用途',box);const to=select([['removed','カードを除外'],['dealt','指定枚数を配札']],box);to.value=step.to||'dealt';read=()=>({...step,from:from.value==='stock'?'stock':Number(from.value),count:Number(n.value),to:to.value})}
    else if(step.type==='collect'){el('span','積み直し順（例：C,A,B）',box);const v=input(step.order.map(i=>String.fromCharCode(65+i)).join(','),box);read=()=>({...step,order:v.value.toUpperCase().split(',').map(x=>x.trim().charCodeAt(0)-65)})}
    else {const v=select(before.piles.map((_,i)=>[i,'束'+String.fromCharCode(65+i)]),box);v.value=String(step.pile);read=()=>({...step,pile:Number(v.value)})}
-   btn('変更を適用',()=>change(steps.map((x,i)=>i===index?read():x),-1),box);btn('閉じる',paint,box);
+   btn('変更を適用',()=>change(steps.map((x,i)=>i===index?read():x),-1),box);btn('閉じる',()=>{selected=-1;paint()},box);
   }
   function paint(){
    panel.replaceChildren();el('h2','ディール・アクション');
