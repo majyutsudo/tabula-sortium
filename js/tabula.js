@@ -1762,7 +1762,7 @@ function positionSecondDeck(){
    const py=Math.max(12,Math.min(move.y*sh/100,sh-deckB.offsetHeight-12));
    deckB.style.left=px+'px';deckB.style.top=py+'px';
  }
- labelA.textContent=dualSession.mixed?'混合 '+dualSession.piles.mixed.length+'枚':'A '+dualSession.piles.A.length+'枚';
+ labelA.textContent=isSharedTables()?'共有 '+dualSession.piles.A.length+'枚':dualSession.mixed?'混合 '+dualSession.piles.mixed.length+'枚':'A '+dualSession.piles.A.length+'枚';
  deck.classList.toggle('dual-selected',dualSession.activePile!=='B');
  deckB.classList.toggle('dual-selected',dualSession.activePile==='B');
  deckB.classList.toggle('empty',!dualSession.piles.B.length);
@@ -1844,8 +1844,11 @@ function dualRefreshControls(){
  for(const id of ['dualPile','dualAppearanceB','dualBackB']){
   const field=$(id)?.closest('label');if(field)field.hidden=shared;
  }
- $('dualAppearanceA').closest('label').hidden=false;
- $('dualBackA').closest('label').hidden=false;
+ const appearanceALabel=$('dualAppearanceA').closest('label');
+ const backALabel=$('dualBackA').closest('label');
+ appearanceALabel.hidden=false;backALabel.hidden=false;
+ appearanceALabel.firstChild.textContent=shared?'カードの外観 ':'外観A ';
+ backALabel.firstChild.textContent=shared?'裏面色 ':'裏面A ';
  $('dualNew').hidden=shared;
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
