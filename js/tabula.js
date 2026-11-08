@@ -163,7 +163,7 @@ if(isStored)$('deleteCustomSpread').onclick=()=>{if(!confirm('この登録スプ
 }display()}
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('先に「展開法」から登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
-const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';let settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:'',spreadDealOrders:{}};let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};let dualSession=null,dualSingleBackup=null,dualDealBusy=false;const DUAL_SESSION_KEY='tabula_sortium_dual_session_v1';let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;const quick=$('quickShuffleChoice');if(quick){quick.replaceChildren();const single=recipes.find(r=>r.id==='single');const currentMethod=single?.steps?.[0]?.method||settings.shuffleMethod||'overhand';for(const [method,label] of [['hindu','ヒンズー'],['overhand','オーバーハンド'],['riffle','リフル'],['pile','パイル（山分け）']]){const option=document.createElement('option');option.value='method:'+method;option.textContent=label;quick.append(option)}const custom=recipes.filter(r=>r.id!=='single');if(custom.length){const group=document.createElement('optgroup');group.label='登録済みシャッフル手順';custom.forEach(r=>{const option=document.createElement('option');option.value='recipe:'+r.id;option.textContent=r.name;group.append(option)});quick.append(group)}const editOption=document.createElement('option');editOption.value='__edit__';editOption.textContent='手順を編集・登録…';quick.append(editOption);quick.value=recipeId==='single'?'method:'+currentMethod:'recipe:'+recipeId}const tag=$('activeRecipeLabel');if(tag){const r=selectedRecipe();tag.textContent='シャッフル手順：'+(r?r.name:'単独シャッフル');tag.title='卓上のシャッフルボタンで実行される手順';}}function shuffleStepDefaults(method){return {method,reps:1,groups:method==='pile'?4:method==='hindu'||method==='overhand'?7:1,washDirection:'random'}}
+const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';let settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:'',spreadDealOrders:{}};let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};let dualSession=null,dualSingleBackup=null,dualDealBusy=false;const DUAL_SESSION_KEY='tabula_sortium_dual_session_v1';const DUAL_RESTORE_ONCE_KEY='tabula_sortium_dual_restore_once_v1';let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;const quick=$('quickShuffleChoice');if(quick){quick.replaceChildren();const single=recipes.find(r=>r.id==='single');const currentMethod=single?.steps?.[0]?.method||settings.shuffleMethod||'overhand';for(const [method,label] of [['hindu','ヒンズー'],['overhand','オーバーハンド'],['riffle','リフル'],['pile','パイル（山分け）']]){const option=document.createElement('option');option.value='method:'+method;option.textContent=label;quick.append(option)}const custom=recipes.filter(r=>r.id!=='single');if(custom.length){const group=document.createElement('optgroup');group.label='登録済みシャッフル手順';custom.forEach(r=>{const option=document.createElement('option');option.value='recipe:'+r.id;option.textContent=r.name;group.append(option)});quick.append(group)}const editOption=document.createElement('option');editOption.value='__edit__';editOption.textContent='手順を編集・登録…';quick.append(editOption);quick.value=recipeId==='single'?'method:'+currentMethod:'recipe:'+recipeId}const tag=$('activeRecipeLabel');if(tag){const r=selectedRecipe();tag.textContent='シャッフル手順：'+(r?r.name:'単独シャッフル');tag.title='卓上のシャッフルボタンで実行される手順';}}function shuffleStepDefaults(method){return {method,reps:1,groups:method==='pile'?4:method==='hindu'||method==='overhand'?7:1,washDirection:'random'}}
 function normStep(st){return TabulaShuffle.normStep(st,methods)}
 const applyShuffleMethod=TabulaShuffle.applyShuffleMethod;
 const washSequence=TabulaShuffle.washSequence;
@@ -695,15 +695,139 @@ const fileNamePart=TabulaStorage.fileNamePart;
 function downloadJSON(payload,name){const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000)}
 function exportOne(v){if(!v)return;downloadJSON({format:EXPORT_FORMAT,version:1,kind:'reading',exportedAt:new Date().toISOString(),reading:v},'TABULA_'+fileNamePart(v.name)+'.json');setStatus('占例をJSONファイルに書き出しました。')}
 function exportCurrentReading(){if(!state.placed.length){setStatus('書き出すカードがありません。');return}const v={id:'shared_'+Date.now(),name:'占例 '+freshName(),time:new Date().toISOString(),settings:{...settings},placed:JSON.parse(JSON.stringify(state.placed)),slots:JSON.parse(JSON.stringify(getSlots())),deckRemaining:state.deck.length,removed:JSON.parse(JSON.stringify(state.removed||[])),dealCheckpoint:JSON.parse(JSON.stringify(state.dealCheckpoint)),deck:JSON.parse(JSON.stringify(state.deck)),customIds:[...customIds],recipeId,cardPool:settings.pool,spread:settings.spread};exportOne(v)}
-function exportAllData(){downloadJSON({format:EXPORT_FORMAT,version:1,kind:'backup',exportedAt:new Date().toISOString(),workspace:{schemaVersion:STORAGE_SCHEMA_VERSION,settings,state,customIds,recipes,recipeId},snapshots:snapshots,spreadLibrary:spreadLibrary,deckLibrary:deckLibrary},'TABULA_BACKUP_'+new Date().toISOString().slice(0,10)+'.json');setStatus('全データをJSONファイルに書き出しました。')}
+/* A full backup contains the ordinary table plus an optional saved physical
+   multi-table workspace. This is independent of which table is currently visible. */
+function backupMultiWorkspace(){
+ let workspace=null;
+ if(dualSession){
+  if(dualBusy())throw Error('シャッフル・カットなどの操作を完了してからバックアップしてください。');
+  workspace=dualClone(dualSession);
+  workspace.piles[workspace.activePile]=dualClone(state.deck);
+  const t=workspace.tables[workspace.activeTable];
+  t.placed=dualClone(state.placed);t.removed=dualClone(state.removed||[]);
+  t.spread=settings.spread;t.cardSize=zoom;
+  if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;}
+  t.color=settings.color;t.altar=!!settings.altar;
+  t.candles=dualClone(altarCandles());t.selected=state.selected;
+  t.completionShown=state.completionShown;t.dealCheckpoint=dualClone(state.dealCheckpoint);
+  t.cutStage=dualClone(state.cutStage);
+ }else{
+  const raw=localStorage.getItem(DUAL_SESSION_KEY);
+  if(raw)workspace=JSON.parse(raw);
+ }
+ if(workspace)TabulaMultiWorkspace.validate(workspace);
+ return workspace;
+}
+function exportAllData(){
+ try{
+  const multiWorkspace=backupMultiWorkspace();
+  // During a double-deck session the normal main table is kept separately,
+  // not in the currently visible state.
+  const ordinary=dualSingleBackup
+   ?{schemaVersion:STORAGE_SCHEMA_VERSION,settings:dualClone(dualSingleBackup.settings),state:dualClone(dualSingleBackup.state),customIds,recipes,recipeId}
+   :dualSession?.workspaceKind==='single-shared'||dualSession?.workspaceKind==='independent'
+    ?JSON.parse(localStorage.getItem(KEY)||'null')
+    :{schemaVersion:STORAGE_SCHEMA_VERSION,settings,state,customIds,recipes,recipeId};
+  const base=ordinary||{schemaVersion:STORAGE_SCHEMA_VERSION,settings,state,customIds,recipes,recipeId};
+  downloadJSON({
+   format:EXPORT_FORMAT,version:2,kind:'backup',exportedAt:new Date().toISOString(),
+   workspace:base,multiWorkspace,
+   activeMultiWorkspace:!!dualSession,
+   snapshots,spreadLibrary,deckLibrary
+  },'TABULA_BACKUP_'+new Date().toISOString().slice(0,10)+'.json');
+  setStatus('通常の卓・追加卓・デッキ・記録を含むバックアップを書き出しました。');
+ }catch(e){setStatus('バックアップを作成できませんでした：'+e.message)}
+}
 const validateReading=v=>TabulaStorage.validateReading(v,cards);
-function readExternalFile(file){if(!file)return;if(file.size>4*1024*1024){alert('ファイルが大きすぎます（上限4MB）。');return}const reader=new FileReader();reader.onerror=()=>alert('ファイルを読み込めませんでした。');reader.onload=()=>{let data;try{data=JSON.parse(String(reader.result));}catch(e){alert('JSONファイルとして読み込めませんでした。');return}if(data?.format!==EXPORT_FORMAT||data.version!==1||!['reading','backup'].includes(data.kind)){alert('TABULA SORTIUMの対応するJSONファイルではありません。');return}if(data.kind==='reading'){const v=data.reading;if(!validateReading(v)){alert('占例の内容が不正です。');return}const imported=JSON.parse(JSON.stringify(v));imported.id='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);imported.name=String(imported.name||'読み込んだ占例').slice(0,100);if(!confirm('占例「'+imported.name+'」を記録一覧に追加しますか？ 現在の卓は変更されません。'))return;snapshots.unshift(imported);if(!storeSnapshots()){snapshots.shift();return}setStatus('占例を記録一覧に追加しました。卓上の「記録一覧・比較」から確認・復元できます。');return}
-const w=data.workspace;if(!w||(!TabulaStorage.supportsSchema(w.schemaVersion))||!w.settings||!w.state||!Array.isArray(w.state.deck)||!Array.isArray(w.state.placed)||w.state.deck.length>120||!validateReading({...w,placed:w.state.placed})||w.state.deck.some(c=>!c||!cards.some(x=>x.id===c.id))||!Array.isArray(data.snapshots)||data.snapshots.length>1000||!data.snapshots.every(validateReading)||!Array.isArray(w.recipes)||w.recipes.length>100||!Array.isArray(w.customIds)||w.customIds.some(id=>!cards.some(c=>c.id===id))||(data.deckLibrary!==undefined&&(!Array.isArray(data.deckLibrary)||data.deckLibrary.length>50||data.deckLibrary.some(d=>!TabulaDeckStore.validate(d,cards))))){alert('バックアップの内容が不正です。');return}
-if(!confirm('全データを復元すると、現在の作業状態・保存記録・設定が上書きされます。よろしいですか？'))return;
-const prev={settings,state,customIds,recipes,recipeId,snapshots,spreadLibrary,deckLibrary};try{const ws=JSON.parse(JSON.stringify(w));const ss=JSON.parse(JSON.stringify(data.snapshots));settings={...settings,...ws.settings};state={...ws.state,completionShown:!!ws.state.completionShown};customIds=ws.customIds;recipes=ws.recipes;recipeId=ws.recipeId;snapshots=ss;deckLibrary=Array.isArray(data.deckLibrary)?data.deckLibrary.map(d=>TabulaDeckStore.sanitize(d,cards)):[];storeDeckLibrary();if(Array.isArray(data.spreadLibrary)){spreadLibrary=data.spreadLibrary.filter(v=>v&&/^custom_/.test(v.id)&&Array.isArray(v.slots)&&v.slots.length<=52&&v.slots.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.angle))).slice(0,100);storeSpreadLibrary()}localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state,customIds,recipes,recipeId}));localStorage.setItem(HISTORY_KEY,JSON.stringify(snapshots));setCardSize(validCardSize(ws.settings?.cardSize)?ws.settings.cardSize:spreadCardSize(settings.spread));sync();render();setStatus('全データを復元しました。')}catch(e){({settings,state,customIds,recipes,recipeId,snapshots,spreadLibrary,deckLibrary}=prev);refreshCustomPresets();alert('バックアップの復元に失敗しました。元の状態を維持します。')}};reader.readAsText(file)}
+function validBackupMultiWorkspace(workspace){
+ if(workspace===null)return true;
+ if(!workspace||typeof workspace!=='object')return false;
+ try{
+  if(workspace.schemaVersion!==1||!['single-shared','independent',undefined].includes(workspace.workspaceKind))return false;
+  if(!Array.isArray(workspace.instances)||workspace.instances.length>200)return false;
+  if(Object.keys(workspace.tables||{}).length!==2)return false;
+  if(workspace.instances.some(c=>!cards.some(card=>card.id===c.id)))return false;
+  return TabulaMultiWorkspace.validate(workspace)===true;
+ }catch(e){return false}
+}
+function readExternalFile(file){
+ if(!file)return;
+ if(file.size>4*1024*1024){alert('ファイルが大きすぎます（上限4MB）。');return}
+ const reader=new FileReader();
+ reader.onerror=()=>alert('ファイルを読み込めませんでした。');
+ reader.onload=()=>{
+  let data;
+  try{data=JSON.parse(String(reader.result))}
+  catch(e){alert('JSONファイルとして読み込めませんでした。');return}
+  if(data?.format!==EXPORT_FORMAT||!((data.kind==='reading'&&data.version===1)||(data.kind==='backup'&&[1,2].includes(data.version)))){
+   alert('TABULA SORTIUMの対応するJSONファイルではありません。');return;
+  }
+  if(data.kind==='reading'){
+   const v=data.reading;
+   if(!validateReading(v)){alert('占例の内容が不正です。');return}
+   const imported=dualClone(v);
+   imported.id='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+   imported.name=String(imported.name||'読み込んだ占例').slice(0,100);
+   if(!confirm('占例「'+imported.name+'」を記録一覧に追加しますか？ 現在の卓は変更されません。'))return;
+   snapshots.unshift(imported);
+   if(!storeSnapshots()){snapshots.shift();return}
+   setStatus('占例を記録一覧に追加しました。卓上の「記録一覧・比較」から確認・復元できます。');return;
+  }
+  const w=data.workspace,extra=data.version===2?data.multiWorkspace:null;
+  const valid=!!w&&TabulaStorage.supportsSchema(w.schemaVersion)
+   &&w.settings&&w.state&&Array.isArray(w.state.deck)&&Array.isArray(w.state.placed)
+   &&w.state.deck.length<=120&&validateReading({...w,placed:w.state.placed})
+   &&w.state.deck.every(c=>c&&cards.some(x=>x.id===c.id))
+   &&Array.isArray(data.snapshots)&&data.snapshots.length<=1000&&data.snapshots.every(validateReading)
+   &&Array.isArray(w.recipes)&&w.recipes.length<=100
+   &&Array.isArray(w.customIds)&&w.customIds.every(id=>cards.some(c=>c.id===id))
+   &&Array.isArray(data.spreadLibrary)&&data.spreadLibrary.length<=100
+   &&data.spreadLibrary.every(x=>TabulaSpreadStore.validSpread(x))
+   &&Array.isArray(data.deckLibrary)&&data.deckLibrary.length<=50
+   &&data.deckLibrary.every(d=>TabulaDeckStore.validate(d,cards))
+   &&validBackupMultiWorkspace(extra);
+  if(!valid){alert('バックアップの内容が不正です。');return}
+  if(!confirm('全データを復元すると、通常の卓・追加卓・デッキ・保存記録・設定を置き換えます。よろしいですか？'))return;
+  // Stage all serialized values before touching storage. If any write fails,
+  // roll back every affected key rather than keeping half an import.
+  const keys=[KEY,HISTORY_KEY,SPREAD_LIBRARY_KEY,TabulaDeckStore.KEY,DUAL_SESSION_KEY,DUAL_RESTORE_ONCE_KEY];
+  const previous=new Map();
+  try{
+   const values=[
+    JSON.stringify(w),JSON.stringify(data.snapshots),
+    JSON.stringify(data.spreadLibrary),JSON.stringify(data.deckLibrary),
+    extra?JSON.stringify(extra):null,
+    extra&&data.activeMultiWorkspace&&extra.workspaceKind===undefined?'1':null
+   ];
+   for(const key of keys)previous.set(key,localStorage.getItem(key));
+   keys.forEach((key,i)=>values[i]===null?localStorage.removeItem(key):localStorage.setItem(key,values[i]));
+  }catch(e){
+   try{for(const [key,value] of previous)value===null?localStorage.removeItem(key):localStorage.setItem(key,value)}catch(_){}
+   alert('保存領域への復元に失敗しました。空き容量を確認してください。');return;
+  }
+  // Reload through the usual startup path; a one-time marker also restores
+  // an active double-deck mode without altering the ordinary main table.
+  alert('バックアップを復元しました。画面を再読み込みして保存時の卓へ戻ります。');
+  location.reload();
+ };
+ reader.readAsText(file);
+}
 
 function freshName(){let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
-function captureSnapshot(name){if(!state.placed.length){setStatus('結果がありません。まずカードを配ってください。');return false}const obj=TabulaReadingHistory.createSnapshot({id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:name||freshName(),time:new Date().toISOString(),settings,state,slots:getSlots(),customIds,recipeId});snapshots.unshift(obj);if(!storeSnapshots()){snapshots.shift();return false}setStatus('占い結果を記録しました。記録一覧から比較できます。');return true}
+function captureSnapshot(name){if(!state.placed.length){setStatus('結果がありません。まずカードを配ってください。');return false}const obj=TabulaReadingHistory.createSnapshot({id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:name||freshName(),time:new Date().toISOString(),settings,state,slots:getSlots(),customIds,recipeId});if(dualSession){
+ obj.multiTableReading=true;
+ obj.tableName=dualSession.tables[dualSession.activeTable]?.name||dualSession.activeTable;
+ obj.sourcePile=dualSession.activePile;
+ if(isIndependentTables()){
+  // A reading in an independent workspace owns exactly one physical pile.
+  // Save its table identity and the full inventory to restore ONLY that pile.
+  const source=dualSession.activeTable==='table2'?'B':'A';
+  obj.independentTable={tableId:dualSession.activeTable,source,
+   instanceIds:dualSession.instances.filter(c=>c.sourceDeck===source).map(c=>c.instanceId)};
+  obj.savedAppearance=appearanceForPile(source);
+  obj.savedBackColor=dualBackTone(source);
+ }
+}snapshots.unshift(obj);if(!storeSnapshots()){snapshots.shift();return false}setStatus('占い結果を記録しました。記録一覧から比較できます。');return true}
 function saveSnapshotModal(){if(!state.placed.length){setStatus('保存する結果がありません。');return}modal('<h2>占い結果を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">結果を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
 function saveAndAgain(){if(captureSnapshot('')){initialize();setStatus('結果を保存し、同じ設定で新しい占いを開始しました。')}}
 const snapshotSummary=TabulaUiFormat.snapshotSummary;
@@ -722,20 +846,106 @@ function snapshotPanel(v){
  const rows=ordered.map((p,i)=>{let pos=p.slot!=null?v.slots?.[p.slot]:null;return `<div class="snapshot-row"><b>${pos?`${p.slot+1}. ${escapeHTML(pos.name)}`:`補助 ${i+1}`}</b><span>${p.faceUp?escapeHTML(snapshotFace(p)):'裏向き'}${p.reversed?'（逆）':''}</span></div>`}).join('');
  return `<div class="snapshot-board" style="--record-cloth:${cloth}">${altar}${pieces}</div><div class="snapshot-details">${rows}</div>`;
 }
+/* A reading is portable between the ordinary main table and either table
+   of an independent-deck workspace. Its entire stock replaces the target stock. */
+function snapshotStockForTable(v,source){
+ if(!Array.isArray(v.deck)||!Array.isArray(v.placed)||!Array.isArray(v.removed))throw Error('保存記録に山札の全情報がありません。');
+ const all=[...v.deck,...v.placed,...v.removed],ids=new Set();
+ if(!all.length||all.length>120)throw Error('山札の枚数が正しくありません。');
+ for(const card of all){
+  if(!card||typeof card.id!=='string'||!cards.some(c=>c.id===card.id)||ids.has(card.id))throw Error('記録に重複・不明なカードがあります。');
+  ids.add(card.id);
+ }
+ if(v.independentTable){
+  if(!Array.isArray(v.independentTable.instanceIds)||v.independentTable.instanceIds.length!==all.length
+     ||v.independentTable.instanceIds.some(id=>!ids.has(String(id).split(':').slice(1).join(':'))))throw Error('記録内のカード構成が一致しません。');
+ }
+ const convert=arr=>arr.map(c=>({...dualClone(c),instanceId:source+':'+c.id,sourceDeck:source}));
+ return {instances:Array.from(ids,id=>({id,instanceId:source+':'+id,sourceDeck:source})),
+  deck:convert(v.deck),placed:convert(v.placed),removed:convert(v.removed)};
+}
+function restoreIndependentTableSnapshot(v){
+ if(!isIndependentTables()||dualBusy())return;
+ let stock;
+ const source=dualSession.activeTable==='table2'?'B':'A',tableId=dualSession.activeTable;
+ try{
+  stock=snapshotStockForTable(v,source);
+  if(v.settings?.deckId&&!['builtin','simple'].includes(v.settings.deckId)
+     &&!deckLibrary.some(d=>d.id===v.settings.deckId))throw Error('記録に使われた登録デッキが見つかりません。');
+ }catch(e){alert('復元できません：'+e.message);return}
+ const targetName=dualSession.tables[tableId]?.name||'現在の卓';
+ if(!confirm('記録「'+v.name+'」を現在の「'+targetName+'」へ復元しますか？ この卓の山札・配札・設定を保存時のものに置き換えます。もう一方の卓は変更しません。'))return;
+ const candidate=dualClone(dualSession);
+ // Preserve the currently displayed table if any state has not been persisted yet.
+ const current=candidate.tables[candidate.activeTable];
+ candidate.piles[candidate.activePile]=dualClone(state.deck);
+ current.placed=dualClone(state.placed);current.removed=dualClone(state.removed||[]);
+ current.spread=settings.spread;current.cardSize=zoom;current.color=settings.color;
+ current.altar=!!settings.altar;current.candles=dualClone(altarCandles());
+ current.dealCheckpoint=dualClone(state.dealCheckpoint);
+ if(isIndependentTables()){current.deckId=settings.deckId;current.pool=settings.pool;current.savedSettings=dualClone(settings);}
+ // Only the chosen source is replaced; retain the other source and table.
+ candidate.instances=candidate.instances.filter(c=>c.sourceDeck!==source).concat(stock.instances);
+ candidate.piles[source]=stock.deck;
+ const target=candidate.tables[tableId];
+ target.placed=stock.placed;target.removed=stock.removed;
+ target.spread=v.spread||v.settings?.spread||'free';
+ target.cardSize=validCardSize(v.settings?.cardSize)?v.settings.cardSize:spreadCardSize(target.spread);
+ target.color=Number.isInteger(v.settings?.color)?v.settings.color:target.color;
+ target.altar=typeof v.settings?.altar==='boolean'?v.settings.altar:target.altar;
+ target.candles=Array.isArray(v.settings?.candles)?dualClone(v.settings.candles):target.candles;
+ target.deckId=v.settings?.deckId||'builtin';
+ target.pool=v.settings?.pool||v.cardPool||'all';
+ target.selected=null;target.completionShown=false;
+ target.dealCheckpoint=dualClone(v.dealCheckpoint||null);target.cutStage=null;
+ candidate.appearances??={A:'standard',B:'standard'};
+ candidate.backColors??={A:'sepia',B:'navy'};
+ candidate.appearances[source]=validAppearance(v.savedAppearance||v.settings?.deckAppearance);
+ candidate.backColors[source]=v.savedBackColor||v.settings?.cardBackColor||'sepia';
+ try{TabulaMultiWorkspace.validate(candidate)}
+ catch(e){alert('復元前の確認に失敗しました。卓は変更していません：'+e.message);return}
+ // Set the active table's general settings from the record; the other table
+ // keeps its own stored appearance, spread, pool and physical cards.
+ const nextSettings={...settings,...dualClone(v.settings||{}),spread:target.spread,
+  deckId:target.deckId,pool:target.pool,color:target.color,altar:target.altar,
+  candles:dualClone(target.candles||[]),cardSize:target.cardSize};
+ target.savedSettings=dualClone(nextSettings);
+ dualSession=candidate;settings=nextSettings;
+ if(Array.isArray(v.customIds))customIds=dualClone(v.customIds);
+ if(v.recipeId&&recipes.some(r=>r.id===v.recipeId))recipeId=v.recipeId;
+ dualRestoreView();dualSave();closeModal();
+ setStatus('「'+v.name+'」を現在の「'+targetName+'」に復元しました。もう一方の卓は維持されています。');
+ window.scrollTo({top:0,behavior:'instant'});
+}
 function restoreSnapshot(v){
  if(!v)return;
- if(!confirm('記録「'+v.name+'」をメインの卓に復元しますか？ 現在の未保存の作業状態は置き換わります。'))return;
+ if(isIndependentTables()){
+  if(v.multiTableReading&&!v.independentTable){alert('この記録には独立卓としての山札情報がありません。');return}
+  restoreIndependentTableSnapshot(v);return;
+ }
+ if(dualSession||(v.multiTableReading&&!v.independentTable)){alert('複数卓モード中の記録は、現在のところ閲覧・比較・書き出しのみ対応しています。配札と山札の整合性を守るため、この記録を卓に直接復元することはできません。「全データをバックアップ」からは複数卓の作業状態を復元できます。');return;}
+ // A reading saved in an independent workspace may also be restored to the
+ // ordinary main table after its additional table has been removed.
+ let portable=null;
+ if(v.independentTable){
+  try{portable=snapshotStockForTable(v,'A');
+   if(v.settings?.deckId&&!['builtin','simple'].includes(v.settings.deckId)
+      &&!deckLibrary.some(d=>d.id===v.settings.deckId))throw Error('登録デッキがありません。');
+  }catch(e){alert('復元できません：'+e.message);return}
+ }
+ if(!confirm('記録「'+v.name+'」を現在のメイン卓に復元しますか？ 現在の配札・山札・設定は保存時のものに置き換わります。'))return;
  settings={...settings,...(v.settings||{})};
  if(v.spread)settings.spread=v.spread;
  if(Array.isArray(v.customIds))customIds=[...v.customIds];
- const placed=JSON.parse(JSON.stringify(v.placed));
+ const placed=portable?portable.placed.map(({instanceId,sourceDeck,...card})=>card):JSON.parse(JSON.stringify(v.placed));
  let deck;
- if(Array.isArray(v.deck))deck=JSON.parse(JSON.stringify(v.deck));
+ if(portable)deck=portable.deck.map(({instanceId,sourceDeck,...card})=>card);
+ else if(Array.isArray(v.deck))deck=JSON.parse(JSON.stringify(v.deck));
  else{
   const seen=new Set(placed.map(p=>p.id));
   deck=selectedCards().filter(c=>!seen.has(c.id)).map(c=>({id:c.id,reversed:false}));
  }
- state={deck,placed,cutStage:null,selected:null,completionShown:false,dealCheckpoint:Array.isArray(v.dealCheckpoint)?structuredClone(v.dealCheckpoint):null,removed:Array.isArray(v.removed)?structuredClone(v.removed):[]};
+ state={deck,placed,cutStage:null,selected:null,completionShown:false,dealCheckpoint:Array.isArray(v.dealCheckpoint)?structuredClone(v.dealCheckpoint):null,removed:portable?portable.removed.map(({instanceId,sourceDeck,...card})=>card):Array.isArray(v.removed)?structuredClone(v.removed):[]};
  if(v.recipeId&&recipes.some(r=>r.id===v.recipeId))recipeId=v.recipeId;
  setCardSize(validCardSize(v.settings?.cardSize)?v.settings.cardSize:spreadCardSize(settings.spread));sync();render();saveLocal();closeModal();
  setStatus('保存記録「'+v.name+'」を復元しました。補助カードも追加できます。'+(!Array.isArray(v.deck)?'※旧記録につき山札の順序は再現できません。':''));
@@ -1125,7 +1335,7 @@ installPileInteraction(deck,'A');installPileInteraction(deckB,'B');
 window.addEventListener('resize',render);
 // Independent disclosure state; no navigation or form submission on toggle.
 if((Number(settings.dealSkipFirst)||0)||(settings.dealSkipSchedule||'').trim())$('dealRulesDetails').open=true;
-const HELP_CONTENT="\n<p class=\"mini\">TABULA SORTIUM v0.9.96 — タロットを自由に扱うための仮想カードテーブル。基本操作とデータの扱いをまとめています。</p>\n<h3>1. はじめに</h3>\n<p>「Ⅰ. 使用するカード」でカード群（全78枚・大／小アルカナ・コートカード・任意選択）と展開法（1枚・3枚・ケルト十字・自由配置）を選び、「新しい占いを始める」を押します。初期設定はケルト十字、単独シャッフルはオーバーハンドです。デッキは「ランダム」または「新品（整列）」から開始できます。左側の各セクションは見出しをクリックすると折り畳み・展開でき、開閉状態はブラウザーに保存されます。</p>\n<h3>2. 山札の操作</h3>\n<p>「ウォッシュ」は選択した方向と回数で混ぜます。「シャッフル」は登録した手順を実行します。手順は方式・回数・束数などを組み合わせて編集・保存できます。「カット」は山札を分割して積み直します。各操作は任意で、整列した山札をそのまま使用することもできます。</p>\n<h3>3. 配札・自由配置</h3>\n<p>「ディール」で選択中の展開法に従って配札します。空のポジションをタップしてその位置に配ることもできます。山札を卓へドラッグするとカードの裏面が指に追従し、離した位置に配られます。山札の右上にある✥ハンドルをドラッグすると山札そのものを移動できます。移動した位置は自動保存されます。フリースプレッドでは枚数と置き場所を自由に決められます。基本の展開を終えた後も補助カードを追加できます。</p>\n<h3>4. カードの表裏・移動・回転</h3>\n<p>カードをタップすると表裏が切り替わります。「オープン」は伏せたカードを順番に開きます。ドラッグで移動すると、そのカードが最前面になり、金色の枠で選択されます。長押し（約0.5秒）でも移動せずに選択できます。卓の直下に表示される回転ボタンで選択カードを左右90°・15°ずつ回したり、0°に戻したりできます。配置角度と占術上の正逆位置は別々に管理され、回転操作で正逆位置は変更されません。PCでは右クリックでも90°回転します。卓の余白をタップすると選択が解除されます。</p>\n<h3>5. 正逆位置とポジション</h3>\n<p>正逆位置を有効にすると、カードの向きはランダムに決まります。逆位置はカード自体を180°回転させますが、ポジション番号は初期位置・初期角度に固定されます。「ポジション名 ON／OFF」で表示を切り替えられます。「位置を戻す」はカードの配置位置を戻す操作です。</p>\n<h3>6. 自作スプレッド</h3><p>フリースプレッドでカードを並べ、操作バーの「手帖」を開き、「現在の卓から作成」を押します。位置名を編集し、必要に応じてグリッドスナップや円形整列（半径・回転・カード向きの調整付き）を行って登録します。手帖では登録した展開法の利用・編集・複製・削除ができます。登録した展開法は一覧からも選べます。配置だけを記録するので、使用したカードの種類や正逆位置は登録されません。全データのJSONバックアップにも登録内容が含まれます。</p><h3>7. 結果の表示・記録</h3>\n<p>「RESULTS」で現在のカードと表裏の状況を確認できます。「結果を保存」で占例を記録し、「記録一覧・比較」で保存した占例を参照できます。卓の状態はブラウザー内に自動保存されます。</p>\n<h3>8. JSONの書き出し・読み込み</h3>\n<p>「現在の占例を書き出す」はその占例のJSONを出力します。「全データをバックアップ」は保存記録や設定等を含むデータのバックアップ用です。「外部ファイルを読み込む」でJSONを取り込めます。単独の占例JSONは記録一覧に追加され、現在の卓は変更されません。全データのバックアップJSONは、確認後に作業状態・保存記録・設定を置き換えます。全データを読み込む前には、必要に応じて現在のデータをバックアップしてください。</p>\n<h3>9. 保存場所・注意事項</h3>\n<p>通常の使用データは、利用中のブラウザー・端末内に保存されます。別の端末やブラウザーへ自動同期されません。プライベートブラウズ、サイトデータの削除、ブラウザーの保存領域の制限によって失われる場合があります。重要な記録はJSONとして別途保管してください。</p>\n<h3>10. 卓の拡大・移動（PC・スマホ）</h3><p>スマホでは2本指のピンチで卓を拡大・縮小し、拡大後は卓の空いている部分を1本指で動かせます。カード上ではカード操作が優先されるため、2本指で移動することもできます。「全景」で元の表示に戻せます。PCでは卓の表示倍率スライダーで全景と細部を切り替え、拡大中は卓の余白をドラッグして表示位置を動かせます。表示倍率や位置は新しい占い・シャッフル後も維持されます。カードそのもののサイズは「Ⅰ. 使用するカード」の「詳細設定：カードサイズ」で調整し、「標準」で戻します。「カードを見る」をONにすると、表向きの札をクリックして拡大画像と解説を確認できます。</p>\n";
+const HELP_CONTENT="\n<p class=\"mini\">TABULA SORTIUM v0.308 — 仮想の占術卓でカードを配り、複数の卓やデッキを使い分けるための操作説明です。画面の項目名に沿って、基本操作から順に説明します。</p>\n<h3>1. 最初の一回：デッキを選んで占う</h3>\n<p>「Ⅱ. 使用するカード」で使用デッキとカード群を選び、展開法を選択します。卓上の「新しい占い」を押すと、その山札を準備します。スプレッドは卓上の選択欄からも変更できます。「ディール」で自動配札するほか、山札をドラッグして好きな位置へ置けます。</p>\n<p>デッキ初期状態は「ランダム（標準）」または「新品（整列）」から選べます。シャッフル・カットは任意です。正逆位置を有効にすると、カードを用意する際に表裏の向きが決まります。</p>\n<h3>2. 左メニューの構成</h3>\n<p>「Ⅰ. 卓の管理」では卓の追加とモード選択、「Ⅱ. 使用するカード」ではデッキ・カード名・カード群・展開法、「Ⅲ. カード操作」ではウォッシュ・シャッフル・カットの設定、「Ⅳ. アルター設定」ではクロス色・キャンドル・演出、「Ⅴ. 保存・管理」ではJSONの入出力や初期化を扱います。各見出しは折りたたみ可能です。</p>\n<h3>3. 卓とデッキの違い</h3>\n<p><strong>卓</strong>は、カードを置く場所であり、配札、展開法、カードサイズ、クロスやアルターの状態を持ちます。<strong>デッキ（山札）</strong>は、実際にカードを引くためのカードの組です。同じカード名を収録していても、独立したデッキ同士なら別々のカードとして扱われます。卓を切り替えても、もう一方の卓の配札は維持されます。</p>\n<h3>4. 卓を追加する：3つの方式</h3>\n<p>「Ⅰ. 卓の管理」→「＋ 卓を追加」で、用途に合わせて次の方式を選びます。</p>\n<ul>\n<li><strong>山札を共有する卓：</strong>メイン卓と追加卓が一組の山札Aを共有します。すでに一方の卓にあるカードは、もう一方の卓では同時に引けません。</li>\n<li><strong>独立したデッキを持つ卓：</strong>メイン卓の山札Aとは別に、追加卓用の山札Bを作ります。追加時に標準・シンプル・登録デッキを選び、収録カードすべて／大アルカナ22枚／小アルカナ56枚／コートカード16枚などの構成を指定できます。登録デッキに含めた任意枚数のカード構成も使用できます。たとえばメイン卓78枚＋追加卓22枚が可能です。</li>\n<li><strong>ダブルデッキモード：</strong>専用の卓Ⅰ・卓Ⅱと山札A・Bを用意する方式です。操作対象の山札を選び、A＋Bを混合したり二組に分けたりできます。「メイン卓に戻る」では通常の卓に戻り、ダブルデッキの作業状態は保存されます。</li>\n</ul>\n<p>この3方式は同時には開始できません。別の方式へ移るには、現在の追加卓の片付けなどが必要です。誤って配札を失わないよう、片付ける前に確認が表示されます。通常の追加卓では、現在の卓に応じて操作する山札A／Bが自動的に切り替わります。</p>\n<h3>5. 卓の切り替え・名前・外観</h3>\n<p>上部の「卓」選択欄からメイン卓と追加卓を行き来できます。卓設定では名前の変更と、メイン／追加デッキそれぞれの外観・裏面色を設定できます。外観はStandard（標準）、Pocket（小型）、Worn（使い古し）から選択できます。クロス色は「Ⅳ. アルター設定」で変更します。卓の色とカードの裏面色は別の設定です。</p>\n<p>ダブルデッキモードでは、卓の選択に加えて「操作する山札」を選択できます。共有卓・独立卓では、デッキの取り違えを避けるため山札の操作対象を卓に合わせて管理します。</p>\n<h3>6. デッキの複製・編集</h3>\n<p>「Ⅱ. 使用するカード」→「デッキを複製・編集」から、TABULA TAROTを元にオリジナルデッキを登録できます。収録するカード、カード名・番号、言語、裏面色などを調整し、登録デッキとして選択できます。標準デッキそのもののカード画像を書き換える機能ではありません。登録したデッキは追加卓用にも選択できます。</p>\n<h3>7. スプレッドと自由配置</h3>\n<p>ワンカード、スリーカード、ケルト十字、生命の樹、ホロスコープ、フリースプレッドなどから選びます。「スプレッド図鑑」やスプレッド選択欄の情報ボタンから解説を確認できます。山札から卓へドラッグして自由に置くことも、空のポジションをタップしてカードを配ることもできます。基本の展開後に補助カードを追加することもできます。</p>\n<p>配札中に展開法を変更する場合、現在の卓のカードを回収する確認が表示されます。了承した場合、他の卓の配札は維持されます。「新しい占い」も現在操作している卓が対象です。</p>\n<h3>8. シャッフル・カット・配札・回収</h3>\n<p>卓上の「ウォッシュ」は「Ⅲ. カード操作」で指定した方向・巡回数を使います。「シャッフル」は選択した方式または登録済み手順を実行します。「カット」は山札を分割して積み直します。山札を整列したまま配札することもできます。「ディール」は選択したスプレッドに従ってカードを配ります。</p>\n<p>「回収」は現在の卓で配ったカードを山札へ戻す操作です。別の卓にあるカードはそのまま残ります。配札前の順番へ戻す「復元」と、次の占いを続けるためにカードを回収する操作は目的が異なります。</p>\n<h3>9. 表裏・移動・回転・札を見る</h3>\n<p>卓のカードをタップすると表裏が切り替わります。ドラッグで位置を変えられ、長押しで選択できます。カードの回転は配置角度だけを変更する操作で、占術上の正逆位置とは別に管理されます。札を拡大して意味を確認するには、卓上の虫眼鏡（カードを見る）を使います。ポジション名やカード名の表示も切り替えられます。</p>\n<h3>10. スプレッド手帖と占例</h3>\n<p>「手帖」では登録済みの展開法を呼び出し、編集・複製・削除できます。自作する際はフリースプレッドで位置を並べ、「現在の卓から作成」を利用します。登録されるのはカードそのものではなく位置の配置です。スプレッドの制作・編集は現状、単独の卓で行ってください。複数卓モード中は一時的に利用できません。</p>\n<p>「RESULTS」で卓の配札結果を確認できます。「結果を保存」で現在の占例を記録し、「記録一覧・比較」から過去の占例を参照できます。独立したデッキを持つ卓では、保存した占例を現在表示中のメイン卓または追加卓に復元できます。復元先の配札・山札・カード構成・設定は保存時のものに置き換わり、もう一方の卓は変更されません。追加卓を片付けた後でも、通常のメイン卓に記録を復元できます。共有卓・ダブルデッキの占例は閲覧・比較・書き出しに対応しますが、直接復元はできません。</p>\n<h3>11. スマートフォンとPCでの表示操作</h3>\n<p><strong>スマホ：</strong>上部の卓選択で卓を切り替えます。追加卓の細かい設定は「卓の設定を開く」で展開できます。卓は2本指でピンチ拡大・縮小でき、拡大後は空いている部分を1本指で移動できます。「全景」で元の見え方へ戻せます。表示操作とスプレッド・虫眼鏡・手帖は上部のコンパクトなツールバーにまとめています。</p>\n<p><strong>PC：</strong>卓を見る距離を切り替え、拡大した卓の余白をドラッグして表示位置を調整できます。カード自体の大きさの調整と、卓全体の拡大表示は別の操作です。</p>\n<h3>12. JSONの書き出し・読み込み</h3>\n<p>「現在の占例を書き出す（JSON）」は占例一件を書き出します。「全データをバックアップ（JSON）」は、通常の卓の設定・状態、占例の記録、登録スプレッド、登録デッキ、シャッフル手順などをまとめて書き出します。占例JSONの読み込みは記録一覧への追加、全データJSONの読み込みは確認後の既存データ置き換えです。</p>\n<p><strong>複数卓についての注意：</strong>「全データをバックアップ（JSON）」には共有卓・独立卓・ダブルデッキの山札、配札、卓設定を含みます。読み込み後は保存時に開いていた卓を復元します。使用していなかったダブルデッキの作業状態も保持され、必要なときに再開できます。</p>\n<h3>13. 保存場所と注意</h3>\n<p>作業状態はブラウザー・端末内に保存され、別端末とは自動同期されません。プライベートブラウズやサイトデータ削除、ブラウザー側の保存制限で失われる可能性があります。大切な記録や登録デッキは定期的にJSONファイルとして保管してください。表示や操作が不安定な場合は、初期化をする前に保存内容を確認してください。</p>\n";
 
 $('openHelp').addEventListener('click',()=>{modal('<div class="help-popup-content"><h2>操作説明・仕様</h2>'+HELP_CONTENT+'</div>')});
 
@@ -1783,7 +1993,7 @@ function dualCapture(){
  const t=dualSession.tables[dualSession.activeTable];
  t.placed=dualClone(state.placed);
  t.spread=settings.spread;t.cardSize=zoom;
- if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;}
+ if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;t.savedSettings=dualClone(settings);}
  t.color=settings.color;t.altar=!!settings.altar;t.candles=dualClone(altarCandles());
  t.selected=state.selected;t.completionShown=state.completionShown;
  t.dealCheckpoint=dualClone(state.dealCheckpoint);
@@ -1793,6 +2003,7 @@ function dualCapture(){
 function dualRestoreView(){
  if(isIndependentTables())dualSession.activePile=dualSession.activeTable==='table2'?'B':'A';
  const t=dualSession.tables[dualSession.activeTable];
+ if(isIndependentTables()&&t.savedSettings)settings={...settings,...dualClone(t.savedSettings)};
  state={deck:dualClone(dualSession.piles[dualSession.activePile]),placed:dualClone(t.placed||[]),cutStage:dualClone(t.cutStage||null),
  selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[])};
  settings.spread=t.spread||'free';
@@ -2092,7 +2303,7 @@ $('dualClear').onclick=()=>{
    // The surviving main table and all remaining physical cards become
    // the standalone reading. Nothing is duplicated or silently lost.
    const main=dualSession.tables.table1,extra=dualSession.tables.table2;
-   const oldSettings=dualSingleBackup?.settings;
+   const oldSettings=main.savedSettings||dualSingleBackup?.settings;
    if(oldSettings)settings=dualClone(oldSettings);
    const strip=c=>{const {instanceId,sourceDeck,...rest}=c;return rest};
    state={deck:[...dualSession.piles.A,...(isSharedTables()?(extra?.placed||[]):[]),...(isSharedTables()?(extra?.removed||[]):[])].map(strip),
@@ -2163,8 +2374,11 @@ try{
  const raw=localStorage.getItem(DUAL_SESSION_KEY);
  if(raw){
   const saved=JSON.parse(raw);
-  if(saved.workspaceKind==='single-shared'||saved.workspaceKind==='independent'){
+  const restoreDouble=localStorage.getItem(DUAL_RESTORE_ONCE_KEY)==='1';
+  localStorage.removeItem(DUAL_RESTORE_ONCE_KEY);
+  if(saved.workspaceKind==='single-shared'||saved.workspaceKind==='independent'||restoreDouble){
    TabulaMultiWorkspace.validate(saved);
+   if(restoreDouble&&saved.workspaceKind===undefined)dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
    dualSession=saved;
    dualSession.appearances={A:'standard',B:'standard',...(saved.appearances||{})};
    dualSession.backColors={...DUAL_BACK_DEFAULTS,...(saved.backColors||{})};
