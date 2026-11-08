@@ -1072,3 +1072,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .dual-deck-fields strong{font-size:12px;color:#dcc89f;font-weight:600}
 .dual-table-identity{display:none!important}
 @media(max-width:780px){.dual-table-setup,.dual-deck-settings{width:100%}.dual-table-setup label,.dual-deck-fields label{grid-template-columns:64px minmax(0,1fr)}}
+
+/* Respect a full-width name input within the compact table settings. */
+.dual-table-setup #dualTableName{width:100%;max-width:100%;min-width:0}
+.table-legacy-options[hidden]{display:none!important}
