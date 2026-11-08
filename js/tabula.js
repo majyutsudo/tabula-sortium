@@ -1677,6 +1677,11 @@ function dualFresh(){
  w.backColors={...DUAL_BACK_DEFAULTS};w.appearances={A:'standard',B:'standard'};
  w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
  w.tables.table2.spread='free';w.tables.table2.cardSize=spreadCardSize('free');
+ // Give each physical table its own persistent visual identity.
+ w.tables.table1.name='卓Ⅰ';w.tables.table1.color=settings.color;
+ w.tables.table1.altar=!!settings.altar;w.tables.table1.candles=dualClone(altarCandles());
+ w.tables.table2.name='卓Ⅱ';w.tables.table2.color=(settings.color+1)%colors.length;
+ w.tables.table2.altar=!!settings.altar;w.tables.table2.candles=dualClone(altarCandles());
  return w;
 }
 function dualCapture(){
@@ -1685,6 +1690,7 @@ function dualCapture(){
  const t=dualSession.tables[dualSession.activeTable];
  t.placed=dualClone(state.placed);
  t.spread=settings.spread;t.cardSize=zoom;
+ t.color=settings.color;t.altar=!!settings.altar;t.candles=dualClone(altarCandles());
  t.selected=state.selected;t.completionShown=state.completionShown;
  t.dealCheckpoint=dualClone(state.dealCheckpoint);
  t.removed=dualClone(state.removed||[]);
@@ -1695,6 +1701,10 @@ function dualRestoreView(){
  state={deck:dualClone(dualSession.piles[dualSession.activePile]),placed:dualClone(t.placed||[]),cutStage:dualClone(t.cutStage||null),
  selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[])};
  settings.spread=t.spread||'free';
+ settings.color=Number.isInteger(t.color)&&t.color>=0&&t.color<colors.length?t.color:0;
+ settings.altar=typeof t.altar==='boolean'?t.altar:!!settings.altar;
+ settings.candles=Array.isArray(t.candles)?dualClone(t.candles):dualClone(altarCandles());
+ selectedCandle=null;
  settings.dealSkipFirst=0;settings.dealSkipSchedule='';
  setCardSize(validCardSize(t.cardSize)?t.cardSize:spreadCardSize(settings.spread),false);
  sync();render();dualRefreshControls();
@@ -1754,6 +1764,7 @@ function dualRefreshControls(){
  const controls=$('dualControls');
  if(!controls)return;
  controls.hidden=!dualSession;
+ if(!dualSession && $('dualTableIdentity'))$('dualTableIdentity').hidden=true;
  $('dualToggle').textContent=dualSession?'一組モードに戻る':'二組モードを開始';
  document.body.classList.toggle('dual-enabled',!!dualSession);
  if(!dualSession)return;
@@ -1761,7 +1772,21 @@ function dualRefreshControls(){
  selected.value=dualSession.activePile;
  $('dualBackA').value=dualBackTone('A');$('dualBackB').value=dualBackTone('B');updateAppearanceControls();
  for(const option of selected.options)option.hidden=dualSession.mixed?option.value!=='mixed':option.value==='mixed';
- $('dualTable').value=dualSession.activeTable;
+ const tableSelect=$('dualTable');
+ for(const option of tableSelect.options){
+  const t=dualSession.tables[option.value];
+  if(t)option.textContent=t.name||t.id;
+ }
+ tableSelect.value=dualSession.activeTable;
+ const current=dualSession.tables[dualSession.activeTable];
+ const identity=$('dualTableIdentity');
+ if(identity){
+  identity.hidden=false;
+  identity.textContent=current?.name||'現在の卓';
+  identity.style.borderLeftColor=colors[settings.color]?.[1]||'#b69a65';
+ }
+ const nameField=$('dualTableName');
+ if(nameField)nameField.value=current?.name||'';
  $('dualMix').hidden=dualSession.mixed;
  $('dualSeparate').hidden=!dualSession.mixed;
  $('dualSummary').textContent='山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
@@ -1860,6 +1885,13 @@ for(const [id,tone] of Object.entries({dualBackA:'A',dualBackB:'B'})){
 $('dualToggle').onclick=dualToggle;
 $('dualPile').onchange=e=>dualSwitchPile(e.target.value);
 $('dualTable').onchange=e=>dualSwitchTable(e.target.value);
+$('dualTableName').onchange=e=>{
+ if(!dualSession)return;
+ const t=dualSession.tables[dualSession.activeTable];
+ const name=e.target.value.trim().slice(0,30);
+ t.name=name||(t.id==='table1'?'卓Ⅰ':'卓Ⅱ');
+ dualSave();
+};
 $('dualMix').onclick=()=>dualMixOrSeparate(false);
 $('dualSeparate').onclick=()=>dualMixOrSeparate(true);
 $('dualNew').onclick=()=>{
