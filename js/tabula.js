@@ -589,10 +589,10 @@ function installPhysicalCardPicker(){
    const card=cards.find(c=>c.id===item.id);const b=document.createElement('button');b.type='button';
    b.textContent=(card?displayCard(card).name:item.id)+' ↩';b.style.cssText=buttonStyle;
    b.onclick=()=>{
-    const idx=state.placed.findIndex(c=>c.id===item.id&&c.physicalSelection);
+    const idx=state.placed.findIndex(c=>c.physicalSelection&&(item.instanceId?c.instanceId===item.instanceId:c.id===item.id));
     if(idx<0)return;
     const [removed]=state.placed.splice(idx,1);
-    state.deck.unshift({id:removed.id,reversed:!!removed.reversed});
+    state.deck.unshift(dualSession?{id:removed.id,instanceId:removed.instanceId,sourceDeck:removed.sourceDeck,reversed:!!removed.reversed}:{id:removed.id,reversed:!!removed.reversed});
     render();saveLocal();populate();setStatus('カードを山札へ戻しました。');
    };returns.append(b)
   }
@@ -619,7 +619,7 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.leng
  const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
  if(duplicate){setStatus('同じカードが重複しています（'+duplicate.id+'）。新しい占いを始めるかバックアップを確認してください。');return}
  if(!applyDealRemoval())return;
- const sourceRect=$('deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:false});play('deal');render();if(animateArrival)animateCardFromDeck(state.placed.length-1,sourceRect);setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);saveLocal()}function dealAuto(){if(dealWorkbenchController?.executeSelected())return;if(!state.deck.length)return;if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}const slots=getSlots();const unfilled=getDealOrder().filter(i=>!state.placed.some(p=>p.slot===i));if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}if(dualSession){dualDealBusy=true;unfilled.forEach((s,i)=>setTimeout(()=>{drawAt(s);if(i===unfilled.length-1)dualDealBusy=false},i*340));return}unfilled.forEach((s,i)=>setTimeout(()=>drawAt(s),i*340))}let shuffleBusy=false;
+ const sourceRect=$('deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:false});play('deal');render();if(animateArrival)animateCardFromDeck(state.placed.length-1,sourceRect);setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);saveLocal()}function dealAuto(){if(!dualSession&&dealWorkbenchController?.executeSelected())return;if(!state.deck.length)return;if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}const slots=getSlots();const unfilled=getDealOrder().filter(i=>!state.placed.some(p=>p.slot===i));if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}if(dualSession){dualDealBusy=true;unfilled.forEach((s,i)=>setTimeout(()=>{drawAt(s);if(i===unfilled.length-1)dualDealBusy=false},i*340));return}unfilled.forEach((s,i)=>setTimeout(()=>drawAt(s),i*340))}let shuffleBusy=false;
 const riffleSequence=TabulaShuffle.riffleSequence;
 const overhandSequence=TabulaShuffle.overhandSequence;
 const pileSequence=TabulaShuffle.pileSequence;
@@ -1494,7 +1494,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
  spreadCount:()=>settings.spread==='free'?0:getSlots().length,
  defaultOrder:()=>getDealOrder(),
  shuffleRecipes:()=>recipes.map(r=>({id:r.id,name:r.name,steps:r.steps.map(st=>({...st}))})),
- canStart:()=>!state.placed.length&&!(state.removed||[]).length,
+ canStart:()=>!dualSession&&!state.placed.length&&!(state.removed||[]).length,
  commit:(cards,dealt=[],removed=[],positionOptions={})=>{
   const slots=getSlots();let order=settings.spread==='free'?[]:getDealOrder();
   if(positionOptions.mode==='random'){order=order.slice();for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}}
