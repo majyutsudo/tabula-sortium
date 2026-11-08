@@ -337,3 +337,22 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
   content:none !important;
   display:none !important;
 }
+
+
+/* v0.181: the entire TABULA back is an illustration, including its own
+   decorative perimeter. The previous 2px .face / 3px .deck border survived
+   even when made transparent. Remove border WIDTH on all TABULA backs so
+   the image occupies the same card rectangle as the front artwork.
+   Keep selected-card and source-deck outlines; those are interaction cues. */
+body[data-tabula-back="on"] :is(
+  #zone .card .face.back,
+  .table-surface .deck,
+  .deck-drag-preview > .face.back,
+  .shuffle-card,
+  #physicalCutOverlay .face.back
+){
+ border:0 !important;
+ box-sizing:border-box;
+ background-origin:border-box !important;
+ background-clip:border-box !important;
+}
