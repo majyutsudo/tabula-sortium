@@ -144,3 +144,34 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
 .table-card-view .worn-artwork::before {
   box-shadow:inset 0 0 5px 2px #5e3b204a;
 }
+
+/* v0.173: historical wear is mostly edge abrasion, not severe distortion.
+   Keep the entire recognizable card footprint; age the continuous perimeter. */
+#zone .card[data-appearance="worn"] .face,
+.table-card-view .worn-artwork {
+  -webkit-mask-size:99% 99%;
+  mask-size:99% 99%;
+  -webkit-mask-position:center;
+  mask-position:center;
+}
+#zone .card[data-appearance="worn"] .face.front::after,
+#zone .card[data-appearance="worn"] .face.back::after {
+  background-image:url("../images/ui/worn-edge-abrasion.svg"),
+                   url("../images/ui/worn-microtexture.svg"),
+                   url("../images/ui/worn-patina.svg");
+  background-size:100% 100%,100% 100%,100% 100%;
+  background-repeat:no-repeat;
+  opacity:.78;
+  box-shadow:inset 0 0 2px rgba(84,55,32,.18);
+}
+.table-card-view .worn-artwork::after {
+  background-image:url("../images/ui/worn-edge-abrasion.svg"),
+                   url("../images/ui/worn-microtexture.svg"),
+                   url("../images/ui/worn-patina.svg");
+  background-size:100% 100%,100% 100%,100% 100%;
+  background-repeat:no-repeat;
+  opacity:.91;
+}
+.table-card-view .worn-artwork::before {
+  box-shadow:inset 0 0 4px 1px rgba(86,59,35,.24);
+}
