@@ -1039,3 +1039,10 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
   min-height:36px;font-size:12px;
  }
 }
+
+
+/* v0.293: hide deck-B-only controls in a one-deck shared workspace.
+   Existing display:flex form rules must not override the hidden attribute. */
+.dual-mode-controls label[hidden],
+.dual-mode-controls button[hidden],
+.table-workspace-start button[hidden]{display:none!important}
