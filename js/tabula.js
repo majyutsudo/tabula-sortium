@@ -1712,6 +1712,17 @@ $('dualNew').onclick=()=>{
 dualRefreshControls();
 
 installTableActionSettings();
+function positionDualDock(){
+ const bar=$('dualModeBar'),toolbar=document.querySelector('.main>.toolbar'),stageShell=document.querySelector('.main>.stage-shell');
+ if(!bar||!toolbar||!stageShell)return;
+ if(window.innerWidth>780){
+  if(bar.parentNode!==toolbar)toolbar.append(bar);
+ }else{
+  if(bar.parentNode!==stageShell.parentNode||bar.nextElementSibling!==stageShell)stageShell.before(bar);
+ }
+}
+positionDualDock();
+window.addEventListener('resize',positionDualDock);
 installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
 const initial=localStorage.getItem(KEY);if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()} })();
