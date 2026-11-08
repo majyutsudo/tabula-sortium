@@ -66,3 +66,61 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
  border:2px solid rgba(105,62,36,.40);box-shadow:inset 0 0 9px #352012;
  pointer-events:none;z-index:2;
 }
+
+/* Worn II: four fixed physically irregular outlines. The data-wear-variant
+   is derived from a physical card ID, so a card keeps the same scars. */
+[data-appearance="worn"][data-wear-variant="a"]{--worn-edge:url("../images/ui/worn-edge-a.svg")}
+[data-appearance="worn"][data-wear-variant="b"]{--worn-edge:url("../images/ui/worn-edge-b.svg")}
+[data-appearance="worn"][data-wear-variant="c"]{--worn-edge:url("../images/ui/worn-edge-c.svg")}
+[data-appearance="worn"][data-wear-variant="d"]{--worn-edge:url("../images/ui/worn-edge-d.svg")}
+#zone .card[data-appearance="worn"] .face,
+.table-surface .deck[data-appearance="worn"],
+.deck-drag-preview[data-appearance="worn"] .face.back,
+.shuffle-card[data-appearance="worn"],
+#physicalCutOverlay .face.back[data-appearance="worn"]{
+  -webkit-mask-image:var(--worn-edge,url("../images/ui/worn-edge-a.svg"));
+  mask-image:var(--worn-edge,url("../images/ui/worn-edge-a.svg"));
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+#zone .card[data-appearance="worn"] .face{
+ border-radius:0;box-shadow:inset 0 0 6px 1px #643c2380;
+}
+#zone .card[data-appearance="worn"] .face.front::after,
+#zone .card[data-appearance="worn"] .face.back::after{
+ background-image:url("../images/ui/worn-microtexture.svg"),url("../images/ui/worn-patina.svg");
+ background-size:100% 100%,100% 100%;
+ background-repeat:no-repeat;
+ mix-blend-mode:multiply;
+ opacity:.66;
+}
+/* Paper and card art are physically aged in the detail viewer, but preserved
+   as their original image pixels for Standard/Pocket and for other viewers. */
+.table-card-view .worn-artwork{
+  display:block;flex:0 1 auto;position:relative;
+  width:min(41vw,420px);max-width:100%;aspect-ratio:2/3;
+  max-height:65vh;isolation:isolate;overflow:hidden;
+  -webkit-mask-image:var(--worn-edge,url("../images/ui/worn-edge-a.svg"));
+  mask-image:var(--worn-edge,url("../images/ui/worn-edge-a.svg"));
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  box-shadow:0 0 0 1px #a08a65;
+}
+.table-card-view .worn-artwork :is(img,svg.card-art){
+ display:block;width:100%;height:100%;max-width:none;max-height:none;
+ aspect-ratio:2/3;border-radius:0;
+ filter:sepia(.15) saturate(.83) contrast(.91);
+}
+.table-card-view .worn-artwork::after{
+ content:"";display:block;pointer-events:none;position:absolute;inset:0;z-index:4;
+ background:url("../images/ui/worn-microtexture.svg") center / 100% 100% no-repeat,
+            url("../images/ui/worn-patina.svg") center / 100% 100% no-repeat;
+ opacity:.83;mix-blend-mode:multiply;
+}
+.table-card-view .worn-artwork::before{
+ content:"";position:absolute;inset:0;z-index:5;pointer-events:none;
+ box-shadow:inset 0 0 9px 3px #5e3b2090,inset 0 0 0 2px #a48a63;
+}
+@media(max-width:780px){
+ .table-card-view .worn-artwork{width:min(78vw,400px)}
+}
