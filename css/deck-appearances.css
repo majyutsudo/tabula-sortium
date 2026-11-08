@@ -305,3 +305,35 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
    9px 11px 8px #000a !important;
  border-color:#a58c66 !important;
 }
+
+
+/* v0.180: TABULA backs already contain their own printed ornamental frame.
+   Paint both the printed back and age texture through the transparent CSS
+   border. Previously the Worn card's opaque CSS border made a second,
+   flat grey/brown rectangular frame around the illustrated card. */
+body[data-tabula-back="on"] :is(
+  .card[data-appearance="worn"] .face.back,
+  .table-surface .deck[data-appearance="worn"],
+  .deck-drag-preview[data-appearance="worn"] .face.back,
+  .shuffle-card[data-appearance="worn"],
+  #physicalCutOverlay .face.back[data-appearance="worn"]
+){
+  border-color:transparent !important;
+  background-origin:border-box !important;
+  background-clip:border-box !important;
+  box-sizing:border-box;
+}
+body[data-tabula-back="on"] .card[data-appearance="worn"] .face.back{
+  border-radius:4px;
+}
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
+  border-color:transparent !important;
+  border-style:solid !important;
+  border-radius:4px;
+}
+/* The old generic ::before deck-edge treatment paints a rectangular stroke
+   over the already printed frame; hide it only for the Worn stack. */
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before{
+  content:none !important;
+  display:none !important;
+}
