@@ -41,3 +41,20 @@ body[data-tabula-back="on"] .shuffle-card::after{
 body[data-tabula-back="on"] .cut-piles .cut-stack{background-size:cover!important;position:relative;text-shadow:0 1px 3px #000,0 0 5px #000;color:#fff1d1;box-shadow:inset 0 0 0 2px #392819,0 3px 8px #0008}
 body[data-tabula-back="on"] .cut-piles .cut-stack.picked{border-color:#f2d48d!important;box-shadow:0 0 0 2px #f2d48d,inset 0 0 0 2px #392819,0 3px 8px #0008}
 body[data-tabula-back="on"] .cut-piles .cut-stack :is(span,small){background:#211b16b8;padding:2px 5px;border-radius:3px;color:#fff1d1}
+
+/* Dual mode: each physical card retains its origin's original TABULA back design.
+   Overrides the global single-deck tone without modifying the face art. */
+body[data-tabula-back="on"].dual-enabled .card[data-back-tone="sepia"] .face.back,
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="sepia"]{background-image:url("../images/decks/tabula-tarot/backs/sepia.webp")!important;background-color:#55331d!important}
+body[data-tabula-back="on"].dual-enabled .card[data-back-tone="green"] .face.back,
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="green"]{background-image:url("../images/decks/tabula-tarot/backs/green.webp")!important;background-color:#0d3428!important}
+body[data-tabula-back="on"].dual-enabled .card[data-back-tone="burgundy"] .face.back,
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="burgundy"]{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp")!important;background-color:#651622!important}
+body[data-tabula-back="on"].dual-enabled .card[data-back-tone="navy"] .face.back,
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="navy"]{background-image:url("../images/decks/tabula-tarot/backs/navy.webp")!important;background-color:#11234b!important}
+body[data-tabula-back="on"].dual-enabled .card[data-back-tone="purple"] .face.back,
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="purple"]{background-image:url("../images/decks/tabula-tarot/backs/purple.webp")!important;background-color:#3b2458!important}
+body[data-tabula-back="on"].dual-enabled .card[data-back-tone="black"] .face.back,
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="black"]{background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;background-color:#18191a!important}
+body[data-tabula-back="on"].dual-enabled .card[data-back-tone="ivory"] .face.back,
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="ivory"]{background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;background-color:#e6d6b1!important}
