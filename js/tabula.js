@@ -1624,7 +1624,7 @@ function dualFresh(){
  for(const p of ['A','B']){
   w.piles[p]=randomize(w.piles[p].map(c=>({...c,reversed:settings.reversals?Math.random()<.5:false})));
  }
- w.backColors={...DUAL_BACK_DEFAULTS};w.appearances={A:'standard',B:'worn'};
+ w.backColors={...DUAL_BACK_DEFAULTS};w.appearances={A:'standard',B:'standard'};
  w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
  w.tables.table2.spread='free';w.tables.table2.cardSize=spreadCardSize('free');
  return w;
