@@ -1760,14 +1760,45 @@ deckMoveHandleB.addEventListener('pointercancel',endSecondDeckMove);
 deckMoveHandleB.addEventListener('lostpointercapture',()=>{if(secondDeckMove){secondDeckMove=null;dualSave()}});
 deckMoveHandleB.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
 
+/* A table is a workspace; selecting A or B changes the active stock only.
+   Existing dual-session data is retained until the user explicitly clears it. */
+function storedExtraWorkspace(){
+ try{return !!localStorage.getItem(DUAL_SESSION_KEY)}catch(e){return false}
+}
+function refreshWorkspaceSwitcher(){
+ const hasWorkspace=!!dualSession||storedExtraWorkspace();
+ const switcher=$('workspaceSwitcher'),selector=$('workspaceTable');
+ if(switcher)switcher.hidden=!hasWorkspace;
+ if(!selector)return;
+ selector.value=dualSession?dualSession.activeTable:'main';
+ if(dualSession){
+  for(const option of selector.options){
+   if(option.value!=='main')option.textContent=dualSession.tables[option.value]?.name||option.value;
+  }
+ }else if(hasWorkspace){
+  try{
+   const w=JSON.parse(localStorage.getItem(DUAL_SESSION_KEY));
+   for(const option of selector.options){
+    if(option.value!=='main')option.textContent=w?.tables?.[option.value]?.name||option.value;
+   }
+  }catch(e){ /* Keep default names if the stored session is unreadable. */ }
+ }
+}
 function dualRefreshControls(){
- const controls=$('dualControls');
- if(!controls)return;
- controls.hidden=!dualSession;
- if(!dualSession && $('dualTableIdentity'))$('dualTableIdentity').hidden=true;
- $('dualToggle').textContent=dualSession?'一組モードに戻る':'二組モードを開始';
- document.body.classList.toggle('dual-enabled',!!dualSession);
- if(!dualSession)return;
+ const controls=$('dualControls'),bar=$('dualModeBar');
+ if(!controls||!bar)return;
+ const active=!!dualSession,stored=!active&&storedExtraWorkspace();
+ controls.hidden=!active;
+ bar.hidden=!active&&!stored;
+ const compact=$('dualStoredControls');
+ if(compact)compact.hidden=!stored;
+ $('dualToggle').textContent=active?'メイン卓に戻る':stored?'追加卓を再開':'追加卓を用意する';
+ document.body.classList.toggle('dual-enabled',active);
+ if(!active){
+  $('dualTableIdentity').hidden=true;
+  refreshWorkspaceSwitcher();
+  return;
+ }
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
  $('dualBackA').value=dualBackTone('A');$('dualBackB').value=dualBackTone('B');updateAppearanceControls();
@@ -1780,16 +1811,15 @@ function dualRefreshControls(){
  tableSelect.value=dualSession.activeTable;
  const current=dualSession.tables[dualSession.activeTable];
  const identity=$('dualTableIdentity');
- if(identity){
-  identity.hidden=false;
-  identity.textContent=current?.name||'現在の卓';
-  identity.style.borderLeftColor=colors[settings.color]?.[1]||'#b69a65';
- }
+ identity.hidden=false;
+ identity.textContent=current?.name||'現在の卓';
+ identity.style.borderLeftColor=colors[settings.color]?.[1]||'#b69a65';
  const nameField=$('dualTableName');
  if(nameField)nameField.value=current?.name||'';
  $('dualMix').hidden=dualSession.mixed;
  $('dualSeparate').hidden=!dualSession.mixed;
  $('dualSummary').textContent='山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
+ refreshWorkspaceSwitcher();
 }
 function dualSave(){
  if(!dualSession||state.cutStage)return; // Never persist a temporarily split stock during a cut.
@@ -1883,6 +1913,33 @@ for(const [id,tone] of Object.entries({dualBackA:'A',dualBackB:'B'})){
  select.onchange=e=>{if(!dualSession)return;dualSession.backColors[tone]=e.target.value;render();dualSave();setStatus('デッキ'+tone+'の裏面色を変更しました。')};
 }
 $('dualToggle').onclick=dualToggle;
+$('dualResume').onclick=()=>{if(!dualSession)dualToggle()};
+$('dualClear').onclick=()=>{
+ if(dualBusy())return;
+ if(!dualSession&&!storedExtraWorkspace()){dualRefreshControls();return}
+ if(!confirm('追加卓Ⅰ・Ⅱの配札とデッキA・Bの保存状態をすべて片付けますか？ メイン卓と保存済みの占い記録は維持します。'))return;
+ // Restore the single-table view first; never delete its reading.
+ if(dualSession){
+  dualSave();
+  dualSession=null;
+  const old=dualSingleBackup;dualSingleBackup=null;
+  if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
+ }
+ try{localStorage.removeItem(DUAL_SESSION_KEY)}catch(e){setStatus('追加卓を片付けられませんでした：'+e.message);return}
+ sync();render();dualRefreshControls();
+ setStatus('追加卓と追加デッキを片付けました。メイン卓は維持されています。');
+};
+$('workspaceTable').onchange=e=>{
+ const target=e.target.value;
+ if(target==='main'){
+  if(dualSession)dualToggle();
+  else dualRefreshControls();
+ }else if(target==='table1'||target==='table2'){
+  if(!dualSession)dualToggle();
+  if(dualSession)dualSwitchTable(target);
+ }
+ dualRefreshControls();
+};
 $('dualPile').onchange=e=>dualSwitchPile(e.target.value);
 $('dualTable').onchange=e=>dualSwitchTable(e.target.value);
 $('dualTableName').onchange=e=>{
@@ -1914,4 +1971,4 @@ positionDualDock();
 window.addEventListener('resize',positionDualDock);
 installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
-const initial=localStorage.getItem(KEY);if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()} })();
+const initial=localStorage.getItem(KEY);if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()}dualRefreshControls(); })();
