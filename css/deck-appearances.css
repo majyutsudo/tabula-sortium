@@ -369,7 +369,7 @@ body[data-tabula-back="on"] :is(
   .shuffle-card,
   #physicalCutOverlay .face.back
 ){
-  background-size:105% 104% !important;
+  background-size:106% 108% !important;
   background-position:50% 50% !important;
   background-repeat:no-repeat !important;
 }
@@ -382,7 +382,7 @@ body[data-tabula-back="on"] :is(
   .shuffle-card[data-appearance="worn"],
   #physicalCutOverlay .face.back[data-appearance="worn"]
 ){
-  background-size:100% 100%,105% 104% !important;
+  background-size:100% 100%,106% 108% !important;
   background-position:center,center !important;
   background-repeat:no-repeat,no-repeat !important;
 }
