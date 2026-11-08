@@ -59,3 +59,14 @@ test('reject invalid duplicates and reordering that loses cards',()=>{
  n.tables.table1.placed.push({...n.tables.table1.placed[0]});
  assert.throws(()=>M.validate(n));
 });
+
+test('temporarily removed cards remain accounted for in their table',()=>{
+ let w=M.create(a,b);
+ const c=w.piles.A.shift();
+ w.tables.table1.removed=[{...c}];
+ assert.equal(M.validate(w),true);
+ w=M.selectTable(w,'table1');
+ assert.equal(M.validate(w),true);
+ w.tables.table1.removed=[];
+ assert.throws(()=>M.validate(w));
+});
