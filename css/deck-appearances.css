@@ -454,3 +454,35 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
 body:not(.dual-enabled)[data-tabula-back="on"] .table-surface .deck .deck-move-handle{
   z-index:20;
 }
+
+
+/* v0.185: Reframed, full-card-size back assets. The original illustration is
+   embedded in a new paper-bounded SVG, eliminating the dark margin at the
+   SOURCE instead of cropping it with CSS or adding offset pseudo-borders. */
+body[data-tabula-back="on"]:not(.dual-enabled)[data-tabula-back-tone="sepia"] :is(.card .face.back,.table-surface .deck,.deck-drag-preview > .face.back,.shuffle-card,#physicalCutOverlay .face.back,.cut-stack){background-image:url("../images/decks/tabula-tarot/backs/reframed-sepia.svg")!important}
+body[data-tabula-back="on"]:not(.dual-enabled)[data-tabula-back-tone="sepia"] :is(.card[data-appearance="worn"] .face.back,.table-surface .deck[data-appearance="worn"],.deck-drag-preview[data-appearance="worn"] > .face.back,.shuffle-card[data-appearance="worn"],#physicalCutOverlay .face.back[data-appearance="worn"]){background-image:url("../images/ui/worn-back-weathering.svg"),url("../images/decks/tabula-tarot/backs/reframed-sepia.svg")!important;background-size:100% 100%,100% 100%!important}
+body[data-tabula-back="on"].dual-enabled :is(.card[data-back-tone="sepia"] .face.back,.table-surface .deck[data-back-tone="sepia"],.deck-drag-preview[data-back-tone="sepia"] > .face.back,.shuffle-card[data-back-tone="sepia"],#physicalCutOverlay .face.back[data-back-tone="sepia"]){background-image:url("../images/decks/tabula-tarot/backs/reframed-sepia.svg")!important}
+body[data-tabula-back="on"].dual-enabled :is(.card[data-back-tone="sepia"][data-appearance="worn"] .face.back,.table-surface .deck[data-back-tone="sepia"][data-appearance="worn"],.deck-drag-preview[data-back-tone="sepia"][data-appearance="worn"] > .face.back,.shuffle-card[data-back-tone="sepia"][data-appearance="worn"],#physicalCutOverlay .face.back[data-back-tone="sepia"][data-appearance="worn"]){background-image:url("../images/ui/worn-back-weathering.svg"),url("../images/decks/tabula-tarot/backs/reframed-sepia.svg")!important;background-size:100% 100%,100% 100%!important}
+body[data-tabula-back="on"]:not(.dual-enabled)[data-tabula-back-tone="navy"] :is(.card .face.back,.table-surface .deck,.deck-drag-preview > .face.back,.shuffle-card,#physicalCutOverlay .face.back,.cut-stack){background-image:url("../images/decks/tabula-tarot/backs/reframed-navy.svg")!important}
+body[data-tabula-back="on"]:not(.dual-enabled)[data-tabula-back-tone="navy"] :is(.card[data-appearance="worn"] .face.back,.table-surface .deck[data-appearance="worn"],.deck-drag-preview[data-appearance="worn"] > .face.back,.shuffle-card[data-appearance="worn"],#physicalCutOverlay .face.back[data-appearance="worn"]){background-image:url("../images/ui/worn-back-weathering.svg"),url("../images/decks/tabula-tarot/backs/reframed-navy.svg")!important;background-size:100% 100%,100% 100%!important}
+body[data-tabula-back="on"].dual-enabled :is(.card[data-back-tone="navy"] .face.back,.table-surface .deck[data-back-tone="navy"],.deck-drag-preview[data-back-tone="navy"] > .face.back,.shuffle-card[data-back-tone="navy"],#physicalCutOverlay .face.back[data-back-tone="navy"]){background-image:url("../images/decks/tabula-tarot/backs/reframed-navy.svg")!important}
+body[data-tabula-back="on"].dual-enabled :is(.card[data-back-tone="navy"][data-appearance="worn"] .face.back,.table-surface .deck[data-back-tone="navy"][data-appearance="worn"],.deck-drag-preview[data-back-tone="navy"][data-appearance="worn"] > .face.back,.shuffle-card[data-back-tone="navy"][data-appearance="worn"],#physicalCutOverlay .face.back[data-back-tone="navy"][data-appearance="worn"]){background-image:url("../images/ui/worn-back-weathering.svg"),url("../images/decks/tabula-tarot/backs/reframed-navy.svg")!important;background-size:100% 100%,100% 100%!important}
+
+/* The new picture contains its own outer paper edge. No additional frame. */
+body[data-tabula-back="on"] :is(#zone .card .face.back,.deck-drag-preview > .face.back,#physicalCutOverlay .face.back){
+ box-shadow:none !important;
+ border:0 !important;
+}
+body[data-tabula-back="on"] .table-surface .deck::before{
+ border:0 !important;
+ box-shadow:none !important;
+ background:none !important;
+}
+/* Do not apply a Worn filter to the entire interactive stock, which also
+   contains the move handle and the A/B identity badge. */
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
+ filter:none !important;
+ -webkit-mask-image:none !important;
+ mask-image:none !important;
+ overflow:visible !important;
+}
