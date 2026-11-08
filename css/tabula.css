@@ -966,3 +966,14 @@ body.dual-enabled .table-zone .card[data-source-deck="B"]{outline:1px solid rgba
  .main>.toolbar .dual-mode-controls select{min-width:95px}
  .main>.toolbar .dual-mode-summary{font-size:11px;line-height:1.55}
 }
+
+/* Two independent physical stocks on the tabletop. The existing A pile keeps its
+   original position and move handle; B sits alongside it unless moved manually. */
+.dual-second-deck[hidden]{display:none!important}
+.dual-second-deck{left:calc(3% + var(--cw) + 24px);top:82%;z-index:5}
+.dual-deck-identity{display:none;position:absolute;left:50%;bottom:calc(100% + 7px);transform:translateX(-50%);pointer-events:none;white-space:nowrap;
+ font:600 11px/1.2 sans-serif;letter-spacing:.07em;color:#f0dfb9;background:#16251fe8;border:1px solid #9b8259;border-radius:5px;padding:3px 7px;box-shadow:0 3px 8px #0009}
+body.dual-enabled .dual-deck-identity{display:block}
+body.dual-enabled .deck.dual-selected{outline:2px solid #e0c485;outline-offset:4px}
+body.dual-enabled .dual-second-deck:not(.dual-selected){filter:brightness(.88)}
+@media(max-width:780px){.dual-second-deck{left:calc(3% + var(--cw) + 14px)}.dual-deck-identity{font-size:10px;padding:2px 5px}}
