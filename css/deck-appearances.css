@@ -478,36 +478,15 @@ body[data-tabula-back="on"] .table-surface .deck::before{
  box-shadow:none !important;
  background:none !important;
 }
-/* Do not apply a Worn filter to the entire interactive stock, which also
-   contains the move handle and the A/B identity badge. */
+/* Worn stock and dealt backs must use the same physical paper tint.
+   Match the image finish rather than maintaining conflicting stock overrides. */
 body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
- filter:none !important;
- -webkit-mask-image:none !important;
- mask-image:none !important;
- overflow:visible !important;
-}
+ filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91) !important;
+ -webkit-mask-image:none !import
 
-
-/* Keep Worn stock artwork and dealt-card backs at the same finish.
-   Filter an isolated, noninteractive artwork layer instead of the stock
-   container, so the move handle and A/B markers remain untouched. */
+/* The stock's own Worn background uses the same two layers as a dealt back.
+   Its move handle remains independently interactive (no masking/clipping). */
 body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute;
-  inset:0;
-  z-index:1;
-  pointer-events:none;
-  border:0 !important;
-  border-radius:inherit;
-  box-shadow:none !important;
-  background-image:url("../images/ui/worn-back-weathering.svg"),var(--worn-back-image) !important;
-  background-position:center,center !important;
-  background-size:100% 100%,100% 100% !important;
-  background-repeat:no-repeat,no-repeat !important;
-  filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91);
-}
-body[data-tabula-back="on"]:not(.dual-enabled)[data-tabula-back-tone] .table-surface .deck[data-appearance="worn"],
-body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone][data-appearance="worn"]{
-  background-image:none !important;
+  content:none !important;
+  display:none !important;
 }
