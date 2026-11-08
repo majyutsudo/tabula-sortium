@@ -451,7 +451,6 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
   border-color:#947c5c;
   box-shadow:inset 0 0 6px #49352399;
 }
-body[data-tabula-back="on"] .table-surface .deck .deck-move-handle{
+body:not(.dual-enabled)[data-tabula-back="on"] .table-surface .deck .deck-move-handle{
   z-index:20;
-  display:grid !important;
 }
