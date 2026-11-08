@@ -1870,22 +1870,22 @@ function refreshWorkspaceSwitcher(){
  const hasWorkspace=!!dualSession||storedExtraWorkspace();
  const switcher=$('workspaceSwitcher'),selector=$('workspaceTable');
  if(switcher)switcher.hidden=!hasWorkspace;
- if(!selector)return;
- selector.value=dualSession?((isSharedTables()||isIndependentTables())&&dualSession.activeTable==='table1'?'main':dualSession.activeTable):'main';
- const standaloneTableOption=selector.querySelector('option[value="table1"]');
- if(standaloneTableOption)standaloneTableOption.hidden=isSharedTables()||isIndependentTables();
- if(dualSession){
-  for(const option of selector.options){
-   if(option.value!=='main')option.textContent=dualSession.tables[option.value]?.name||option.value;
-  }
- }else if(hasWorkspace){
-  try{
-   const w=JSON.parse(localStorage.getItem(DUAL_SESSION_KEY));
-   for(const option of selector.options){
-    if(option.value!=='main')option.textContent=w?.tables?.[option.value]?.name||option.value;
-   }
-  }catch(e){ /* Keep default names if the stored session is unreadable. */ }
+ if(!selector||!hasWorkspace)return;
+ let w=dualSession;
+ if(!w){try{w=JSON.parse(localStorage.getItem(DUAL_SESSION_KEY))}catch(e){}}
+ const sharedOrIndependent=w?.workspaceKind==='single-shared'||w?.workspaceKind==='independent';
+ const choices=[new Option(sharedOrIndependent?'メイン卓':'メイン卓（通常）','main')];
+ // For ordinary additional tables, table1 *is* the main table:
+ // never expose an indistinguishable duplicate native select option.
+ if(!sharedOrIndependent)choices.push(new Option(w?.tables?.table1?.name||'卓Ⅰ','table1'));
+ choices.push(new Option(w?.tables?.table2?.name||'追加卓Ⅰ','table2'));
+ const current=dualSession?(sharedOrIndependent&&dualSession.activeTable==='table1'?'main':dualSession.activeTable):'main';
+ const signature=choices.map(o=>o.value+':'+o.textContent).join('|');
+ if(selector.dataset.choices!==signature){
+  selector.replaceChildren(...choices);
+  selector.dataset.choices=signature;
  }
+ selector.value=current;
 }
 let tableAddExpanded=false;
 function updateTableAddPanel(){
@@ -1909,6 +1909,11 @@ function refreshClothIndicators(){
   const el=$(id);if(el){el.style.backgroundColor=tone;el.title='クロス色：'+(colors[settings.color]?.[0]||'現在の色');}
  }
 }
+let mobileWorkspaceSettingsExpanded=false;
+$('mobileWorkspaceSettingsToggle').onclick=()=>{
+ mobileWorkspaceSettingsExpanded=!mobileWorkspaceSettingsExpanded;
+ dualRefreshControls();
+};
 function dualRefreshControls(){
  const controls=$('dualControls'),bar=$('dualModeBar');
  if(!controls||!bar)return;
@@ -1917,6 +1922,11 @@ function dualRefreshControls(){
  refreshClothIndicators();
  controls.hidden=!active;
  bar.hidden=!active&&!stored;
+ const mobileToggle=$('mobileWorkspaceSettingsToggle');
+ mobileToggle.hidden=!active;
+ mobileToggle.setAttribute('aria-expanded',String(mobileWorkspaceSettingsExpanded));
+ mobileToggle.firstChild.textContent=mobileWorkspaceSettingsExpanded?'卓の設定を閉じる ':'卓の設定を開く ';
+ controls.classList.toggle('mobile-expanded',mobileWorkspaceSettingsExpanded);
  const compact=$('dualStoredControls');
  if(compact)compact.hidden=!stored;
  $('sharedTableClear').hidden=!shared&&!independent;
