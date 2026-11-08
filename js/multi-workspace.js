@@ -22,7 +22,7 @@ function validate(w){
  if(!PILES.includes(w.activePile))fail('invalid active pile');
  const expected=new Set(w.instances.map(c=>c.instanceId));
  if(expected.size!==w.instances.length)fail('duplicate instance definition');
- const all=[...PILES.flatMap(p=>w.piles[p]),...Object.values(w.tables).flatMap(t=>t.placed||[])];
+ const all=[...PILES.flatMap(p=>w.piles[p]),...Object.values(w.tables).flatMap(t=>[...(t.placed||[]),...(t.removed||[])])];
  const seen=new Set();
  for(const c of all){
   if(!c||typeof c.instanceId!=='string'||seen.has(c.instanceId)||!expected.has(c.instanceId))fail('missing or duplicate physical card');
