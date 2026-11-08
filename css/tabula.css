@@ -977,3 +977,14 @@ body.dual-enabled .dual-deck-identity{display:block}
 body.dual-enabled .deck.dual-selected{outline:2px solid #e0c485;outline-offset:4px}
 body.dual-enabled .dual-second-deck:not(.dual-selected){filter:brightness(.88)}
 @media(max-width:780px){.dual-second-deck{left:calc(3% + var(--cw) + 14px)}.dual-deck-identity{font-size:10px;padding:2px 5px}}
+
+/* v0.168: keep the two independent stock piles side by side by default.
+   Specificity must exceed the legacy .table-surface .deck positioning rules. */
+body.dual-enabled .table-surface .deck.dual-second-deck{
+ left:calc(6% + var(--cw) + 26px);
+ right:auto;top:auto;bottom:25px;
+}
+body.dual-enabled .table-surface .deck .deck-move-handle{display:grid!important}
+@media(max-width:780px){
+ body.dual-enabled .table-surface .deck.dual-second-deck{left:calc(5.7% + var(--cw) + 16px)}
+}
