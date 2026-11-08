@@ -108,8 +108,9 @@ function openSpreadGuideEditor(id){
  };
 }
 
-function spreadCapture(){closeSpreadArchive();if(!state.placed.length){alert('フリースプレッドでカードを並べてから実行してください。');return}if(state.placed.length>52){alert('スプレッドに登録できるのは52位置までです。');return}if(spreadWorkbench)return;spreadWorkbench={previousCardSize:zoom,original:JSON.parse(JSON.stringify(state.placed)),chosen:[],names:{},title:'新しいスプレッド',circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};$('spreadSave').textContent='スプレッドを登録';document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;spreadSnap=true;$('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');$('zone').style.setProperty('--workgrid',($('spreadGridSize').value||24)+'px');refreshWorkbench();render();$('spreadWorkbench').scrollIntoView({block:'nearest',behavior:'smooth'});}
+function spreadCapture(){if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。一組モードで登録してください。');return}closeSpreadArchive();if(!state.placed.length){alert('フリースプレッドでカードを並べてから実行してください。');return}if(state.placed.length>52){alert('スプレッドに登録できるのは52位置までです。');return}if(spreadWorkbench)return;spreadWorkbench={previousCardSize:zoom,original:JSON.parse(JSON.stringify(state.placed)),chosen:[],names:{},title:'新しいスプレッド',circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};$('spreadSave').textContent='スプレッドを登録';document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;spreadSnap=true;$('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');$('zone').style.setProperty('--workgrid',($('spreadGridSize').value||24)+'px');refreshWorkbench();render();$('spreadWorkbench').scrollIntoView({block:'nearest',behavior:'smooth'});}
 function openStoredSpreadWorkbench(source){
+ if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。');return}
  if(spreadWorkbench)return;
  if(!source||!Array.isArray(source.slots)||!source.slots.length){alert('このスプレッドには編集できる配置がありません。');return}
  // Editing uses working copies of the registered positions, not the real deck or its cards.
@@ -146,7 +147,7 @@ $('spreadRestoreLayout').onclick=()=>{if(spreadWorkbench){state.placed=JSON.pars
 $('spreadCancel').onclick=()=>spreadEnd(true);
 $('spreadCancel').onclick=()=>spreadEnd(true);
 $('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(spreadLibrary.some(v=>v.name===name&&v.id!==w.editingId)){alert('同名のスプレッドがあります。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした。');return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}const id='custom_'+Date.now();spreadLibrary.push({id,name,slots,cardSize:zoom});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした。');return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。展開法から選択できます。')};
-function spreadEditor(source,isStored){let draft=JSON.parse(JSON.stringify(source));if(!validCardSize(draft.cardSize))draft.cardSize=zoom;function display(){let html='<h2>'+(isStored?'登録スプレッドを編集':'新しいスプレッドを登録')+'</h2><p class="spread-editor-note">番号は上からの順番です。カードの種類や正逆位置は保存せず、位置・角度・名前・カードサイズを登録します。整列はこの編集画面の配置データに適用され、現在の卓は変更しません。</p><label class="field">スプレッド名<input id="spreadTitle" maxlength="80" value="'+escapeHTML(draft.name)+'"></label><div class="spread-editor-actions"><button id="alignSpreadX" type="button">左右の中心を揃える</button><button id="alignSpreadY" type="button">上下の中心を揃える</button><button id="spaceSpreadX" type="button">横方向を等間隔</button><button id="spaceSpreadY" type="button">縦方向を等間隔</button><button id="circleSpread" type="button">円形に整列</button><button id="undoSpreadAlign" type="button">配置を初期状態に戻す</button></div><div class="spread-editor-table">';draft.slots.forEach((p,i)=>{html+='<div class="spread-editor-row"><label>'+(i+1)+'番</label><input data-idx="'+i+'" class="spread-slot-name" maxlength="80" value="'+escapeHTML(p.name||'')+'" aria-label="'+(i+1)+'番の位置名"></div>'});html+='</div><p class="spread-editor-note">円形整列は卓の中央（50%, 50%）を基準に、1番を上、以降を時計回りに配置します。カードの向きも円周方向に合わせます。</p><div class="row"><button type="button" class="primary" id="saveCustomSpread">'+(isStored?'変更を保存':'スプレッドを登録')+'</button><button type="button" id="cancelSpreadEdit">キャンセル</button>'+(isStored?'<button type="button" id="deleteCustomSpread">登録を削除</button>':'')+'</div>';modal(html);
+function spreadEditor(source,isStored){if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。');return}let draft=JSON.parse(JSON.stringify(source));if(!validCardSize(draft.cardSize))draft.cardSize=zoom;function display(){let html='<h2>'+(isStored?'登録スプレッドを編集':'新しいスプレッドを登録')+'</h2><p class="spread-editor-note">番号は上からの順番です。カードの種類や正逆位置は保存せず、位置・角度・名前・カードサイズを登録します。整列はこの編集画面の配置データに適用され、現在の卓は変更しません。</p><label class="field">スプレッド名<input id="spreadTitle" maxlength="80" value="'+escapeHTML(draft.name)+'"></label><div class="spread-editor-actions"><button id="alignSpreadX" type="button">左右の中心を揃える</button><button id="alignSpreadY" type="button">上下の中心を揃える</button><button id="spaceSpreadX" type="button">横方向を等間隔</button><button id="spaceSpreadY" type="button">縦方向を等間隔</button><button id="circleSpread" type="button">円形に整列</button><button id="undoSpreadAlign" type="button">配置を初期状態に戻す</button></div><div class="spread-editor-table">';draft.slots.forEach((p,i)=>{html+='<div class="spread-editor-row"><label>'+(i+1)+'番</label><input data-idx="'+i+'" class="spread-slot-name" maxlength="80" value="'+escapeHTML(p.name||'')+'" aria-label="'+(i+1)+'番の位置名"></div>'});html+='</div><p class="spread-editor-note">円形整列は卓の中央（50%, 50%）を基準に、1番を上、以降を時計回りに配置します。カードの向きも円周方向に合わせます。</p><div class="row"><button type="button" class="primary" id="saveCustomSpread">'+(isStored?'変更を保存':'スプレッドを登録')+'</button><button type="button" id="cancelSpreadEdit">キャンセル</button>'+(isStored?'<button type="button" id="deleteCustomSpread">登録を削除</button>':'')+'</div>';modal(html);
 function read(){draft.name=$('spreadTitle').value.trim();document.querySelectorAll('.spread-slot-name').forEach(input=>{draft.slots[Number(input.dataset.idx)].name=input.value.trim()||'位置'+(Number(input.dataset.idx)+1)})}
 const initial=JSON.parse(JSON.stringify(source.slots));
 function action(fn){read();fn();display()}
@@ -162,7 +163,7 @@ if(isStored)$('deleteCustomSpread').onclick=()=>{if(!confirm('この登録スプ
 }display()}
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('先に「展開法」から登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
-const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';let settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:'',spreadDealOrders:{}};let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;const quick=$('quickShuffleChoice');if(quick){quick.replaceChildren();const single=recipes.find(r=>r.id==='single');const currentMethod=single?.steps?.[0]?.method||settings.shuffleMethod||'overhand';for(const [method,label] of [['hindu','ヒンズー'],['overhand','オーバーハンド'],['riffle','リフル'],['pile','パイル（山分け）']]){const option=document.createElement('option');option.value='method:'+method;option.textContent=label;quick.append(option)}const custom=recipes.filter(r=>r.id!=='single');if(custom.length){const group=document.createElement('optgroup');group.label='登録済みシャッフル手順';custom.forEach(r=>{const option=document.createElement('option');option.value='recipe:'+r.id;option.textContent=r.name;group.append(option)});quick.append(group)}const editOption=document.createElement('option');editOption.value='__edit__';editOption.textContent='手順を編集・登録…';quick.append(editOption);quick.value=recipeId==='single'?'method:'+currentMethod:'recipe:'+recipeId}const tag=$('activeRecipeLabel');if(tag){const r=selectedRecipe();tag.textContent='シャッフル手順：'+(r?r.name:'単独シャッフル');tag.title='卓上のシャッフルボタンで実行される手順';}}function shuffleStepDefaults(method){return {method,reps:1,groups:method==='pile'?4:method==='hindu'||method==='overhand'?7:1,washDirection:'random'}}
+const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';let settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:'',spreadDealOrders:{}};let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};let dualSession=null,dualSingleBackup=null,dualDealBusy=false;const DUAL_SESSION_KEY='tabula_sortium_dual_session_v1';let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;const quick=$('quickShuffleChoice');if(quick){quick.replaceChildren();const single=recipes.find(r=>r.id==='single');const currentMethod=single?.steps?.[0]?.method||settings.shuffleMethod||'overhand';for(const [method,label] of [['hindu','ヒンズー'],['overhand','オーバーハンド'],['riffle','リフル'],['pile','パイル（山分け）']]){const option=document.createElement('option');option.value='method:'+method;option.textContent=label;quick.append(option)}const custom=recipes.filter(r=>r.id!=='single');if(custom.length){const group=document.createElement('optgroup');group.label='登録済みシャッフル手順';custom.forEach(r=>{const option=document.createElement('option');option.value='recipe:'+r.id;option.textContent=r.name;group.append(option)});quick.append(group)}const editOption=document.createElement('option');editOption.value='__edit__';editOption.textContent='手順を編集・登録…';quick.append(editOption);quick.value=recipeId==='single'?'method:'+currentMethod:'recipe:'+recipeId}const tag=$('activeRecipeLabel');if(tag){const r=selectedRecipe();tag.textContent='シャッフル手順：'+(r?r.name:'単独シャッフル');tag.title='卓上のシャッフルボタンで実行される手順';}}function shuffleStepDefaults(method){return {method,reps:1,groups:method==='pile'?4:method==='hindu'||method==='overhand'?7:1,washDirection:'random'}}
 function normStep(st){return TabulaShuffle.normStep(st,methods)}
 const applyShuffleMethod=TabulaShuffle.applyShuffleMethod;
 const washSequence=TabulaShuffle.washSequence;
@@ -322,21 +323,38 @@ function effectivePipBackground(){return activeDeck()?.pipBackground||settings.p
 function displayCard(c){const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
 function tableCardName(c){const lang=settings.tableCardLanguage||'linked';return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
-function refreshDeckPicker(){const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));picker.value=activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
+function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));picker.value=activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
 const randomize=TabulaShuffle.randomize;function selectedCards(){
  const d=activeDeck();
  const base=TabulaCardRules.selectCards(cards,settings.pool,customIds).filter(c=>!d||d.included.includes(c.id));
  return base.sort((a,b)=>a.group==='major'&&b.group==='major'?((displayCard(a).number??-1)-(displayCard(b).number??-1)):0);
-}function setStatus(t){$('status').textContent=t}function play(type){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(type==='flip'?360:160,t);osc.frequency.exponentialRampToValueAtTime(type==='flip'?180:90,t+.06);g.gain.setValueAtTime(.035,t);g.gain.exponentialRampToValueAtTime(.001,t+.075);osc.connect(g);g.connect(audioCtx.destination);osc.start(t);osc.stop(t+.085)}catch(e){}}function initialize(){state={deck:(settings.initialOrder==='ordered'?selectedCards().map(c=>({id:c.id,reversed:false})):randomize(selectedCards().map(c=>({id:c.id,reversed:settings.reversals?Math.random()<.5:false})))),placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};render();setStatus(`新しい占い：${state.deck.length}枚のカードを用意しました。`);saveLocal()}function defaultDealOrder(spread){return TabulaCardRules.defaultDealOrder(presets,spread)}
+}function setStatus(t){$('status').textContent=t}function play(type){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(type==='flip'?360:160,t);osc.frequency.exponentialRampToValueAtTime(type==='flip'?180:90,t+.06);g.gain.setValueAtTime(.035,t);g.gain.exponentialRampToValueAtTime(.001,t+.075);osc.connect(g);g.connect(audioCtx.destination);osc.start(t);osc.stop(t+.085)}catch(e){}}function initialize(){
+ if(dualSession){
+  if(dualBusy())return;
+  // A new reading operates only on the selected table. Another table may
+  // retain cards from this same shared physical deck.
+  if(state.placed.length||(state.removed||[]).length){
+   if(!confirm('現在の卓の配札を回収し、この卓で新しい占いを始めますか？ 他の卓の配札は維持されます。'))return;
+   dualCollect();
+  }
+  state.deck=settings.initialOrder==='ordered'
+   ?state.deck.slice().sort((a,b)=>cards.findIndex(c=>c.id===a.id)-cards.findIndex(c=>c.id===b.id))
+   :randomize(state.deck.map(c=>({...c,reversed:settings.reversals?Math.random()<.5:!!c.reversed})));
+  state.dealCheckpoint=null;state.cutStage=null;state.selected=null;state.completionShown=false;
+  render();dualSave();
+  setStatus('現在の卓で新しい占いを始めました。山札 '+state.deck.length+'枚。他の卓の配札は維持されています。');
+  return;
+ }
+ state={deck:(settings.initialOrder==='ordered'?selectedCards().map(c=>({id:c.id,reversed:false})):randomize(selectedCards().map(c=>({id:c.id,reversed:settings.reversals?Math.random()<.5:false})))),placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};render();setStatus(`新しい占い：${state.deck.length}枚のカードを用意しました。`);saveLocal()}function defaultDealOrder(spread){return TabulaCardRules.defaultDealOrder(presets,spread)}
 function getDealOrder(spread=settings.spread){return TabulaCardRules.getDealOrder(presets,spread,settings.spreadDealOrders)}
 function parseDealOrderInput(raw,spread=settings.spread){return TabulaCardRules.parseDealOrderInput(raw,presets,spread)}
 function syncDealOrderField(){const el=$('spreadDealOrder'),help=$('spreadOrderHelp'),reset=$('resetSpreadDealOrder');if(!el)return;const spread=settings.spread,count=getSlots().length;el.disabled=spread==='free';reset.disabled=spread==='free';el.value=spread==='free'?'':getDealOrder().map(n=>n+1).join(', ');help.textContent=spread==='free'?'自由配置では配札位置の指定順はありません。':`位置番号1〜${count}を並べ替えます。カードの意味・結果番号はそのままです。`}
 function nextDealSlot(){const occupied=new Set(state.placed.map(p=>p.slot));return getDealOrder().find(slot=>!occupied.has(slot))??-1}
 function getSlots(){return presets[settings.spread]||[];
 }function metrics(){const rect=$('zone').getBoundingClientRect();const z={width:$('zone').offsetWidth,height:$('zone').offsetHeight};const scale=zoom;const pc=window.innerWidth>780;const w=Math.min(z.width*(pc?.129:.12),z.height*(pc?.268:.25),pc?92:85)*scale;return{w,h:w*1.52,z:rect}}function shortName(c){c=displayCard(c);if(activeDeck()&&activeDeck().names[c.id])return c.name;if(c.group==='major')return c.name;const nm={wands:'ワンド',cups:'カップ',swords:'ソード',pentacles:'ペンタクル'}[c.suit]||'';const rank=c.number<=10?(c.number===1?'A':String(c.number)):['ペイジ','ナイト','クイーン','キング'][c.number-11];return nm+(c.number<=10?rank:'の'+rank)}const TABULA_TAROT_IMAGES={"major_00":"images/decks/tabula-tarot/base/major_00.webp","major_01":"images/decks/tabula-tarot/base/major_01.webp","major_02":"images/decks/tabula-tarot/base/major_02.webp","major_03":"images/decks/tabula-tarot/base/major_03.webp","major_04":"images/decks/tabula-tarot/base/major_04.webp","major_05":"images/decks/tabula-tarot/base/major_05.webp","major_06":"images/decks/tabula-tarot/base/major_06.webp","major_07":"images/decks/tabula-tarot/base/major_07.webp","major_08":"images/decks/tabula-tarot/base/major_08.webp","major_09":"images/decks/tabula-tarot/base/major_09.webp","major_10":"images/decks/tabula-tarot/base/major_10.webp","major_11":"images/decks/tabula-tarot/base/major_11.webp","major_12":"images/decks/tabula-tarot/base/major_12.webp","major_13":"images/decks/tabula-tarot/base/major_13.webp","major_14":"images/decks/tabula-tarot/base/major_14.webp","major_15":"images/decks/tabula-tarot/base/major_15.webp","major_16":"images/decks/tabula-tarot/base/major_16.webp","major_17":"images/decks/tabula-tarot/base/major_17.webp","major_18":"images/decks/tabula-tarot/base/major_18.webp","major_19":"images/decks/tabula-tarot/base/major_19.webp","major_20":"images/decks/tabula-tarot/base/major_20.webp","major_21":"images/decks/tabula-tarot/base/major_21.webp","wands_14":"images/decks/tabula-tarot/base/wands_14.webp","wands_13":"images/decks/tabula-tarot/base/wands_13.webp","wands_12":"images/decks/tabula-tarot/base/wands_12.webp","wands_11":"images/decks/tabula-tarot/base/wands_11.webp","cups_14":"images/decks/tabula-tarot/base/cups_14.webp","cups_13":"images/decks/tabula-tarot/base/cups_13.webp","cups_12":"images/decks/tabula-tarot/base/cups_12.webp","cups_11":"images/decks/tabula-tarot/base/cups_11.webp","swords_14":"images/decks/tabula-tarot/base/swords_14.webp","swords_13":"images/decks/tabula-tarot/base/swords_13.webp","swords_12":"images/decks/tabula-tarot/base/swords_12.webp","swords_11":"images/decks/tabula-tarot/base/swords_11.webp","pentacles_14":"images/decks/tabula-tarot/base/pentacles_14.webp","pentacles_13":"images/decks/tabula-tarot/base/pentacles_13.webp","pentacles_12":"images/decks/tabula-tarot/base/pentacles_12.webp","pentacles_11":"images/decks/tabula-tarot/base/pentacles_11.webp","wands_01":"images/decks/tabula-tarot/base/wands_01.webp","wands_02":"images/decks/tabula-tarot/base/wands_02.webp","wands_03":"images/decks/tabula-tarot/base/wands_03.webp","wands_04":"images/decks/tabula-tarot/base/wands_04.webp","wands_05":"images/decks/tabula-tarot/base/wands_05.webp","wands_06":"images/decks/tabula-tarot/base/wands_06.webp","wands_07":"images/decks/tabula-tarot/base/wands_07.webp","wands_08":"images/decks/tabula-tarot/base/wands_08.webp","wands_09":"images/decks/tabula-tarot/base/wands_09.webp","wands_10":"images/decks/tabula-tarot/base/wands_10.webp","cups_01":"images/decks/tabula-tarot/base/cups_01.webp","cups_02":"images/decks/tabula-tarot/base/cups_02.webp","cups_03":"images/decks/tabula-tarot/base/cups_03.webp","cups_04":"images/decks/tabula-tarot/base/cups_04.webp","cups_05":"images/decks/tabula-tarot/base/cups_05.webp","cups_06":"images/decks/tabula-tarot/base/cups_06.webp","cups_07":"images/decks/tabula-tarot/base/cups_07.webp","cups_08":"images/decks/tabula-tarot/base/cups_08.webp","cups_09":"images/decks/tabula-tarot/base/cups_09.webp","cups_10":"images/decks/tabula-tarot/base/cups_10.webp","swords_01":"images/decks/tabula-tarot/base/swords_01.webp","swords_02":"images/decks/tabula-tarot/base/swords_02.webp","swords_03":"images/decks/tabula-tarot/base/swords_03.webp","swords_04":"images/decks/tabula-tarot/base/swords_04.webp","swords_05":"images/decks/tabula-tarot/base/swords_05.webp","swords_06":"images/decks/tabula-tarot/base/swords_06.webp","swords_07":"images/decks/tabula-tarot/base/swords_07.webp","swords_08":"images/decks/tabula-tarot/base/swords_08.webp","swords_09":"images/decks/tabula-tarot/base/swords_09.webp","swords_10":"images/decks/tabula-tarot/base/swords_10.webp","pentacles_01":"images/decks/tabula-tarot/base/pentacles_01.webp","pentacles_02":"images/decks/tabula-tarot/base/pentacles_02.webp","pentacles_03":"images/decks/tabula-tarot/base/pentacles_03.webp","pentacles_04":"images/decks/tabula-tarot/base/pentacles_04.webp","pentacles_05":"images/decks/tabula-tarot/base/pentacles_05.webp","pentacles_06":"images/decks/tabula-tarot/base/pentacles_06.webp","pentacles_07":"images/decks/tabula-tarot/base/pentacles_07.webp","pentacles_08":"images/decks/tabula-tarot/base/pentacles_08.webp","pentacles_09":"images/decks/tabula-tarot/base/pentacles_09.webp","pentacles_10":"images/decks/tabula-tarot/base/pentacles_10.webp"};
-function cardMark(c){c=displayCard(c);
- if(settings.cardDesign==='standard' && TABULA_TAROT_IMAGES[c.id])return cardArtworkMarkup(finishedCardSource(c,true)).replace('class="card-art"','class="card-art tarot-face-art"');
+function cardMark(c,appearance='standard'){c=displayCard(c);
+ if(settings.cardDesign==='standard' && TABULA_TAROT_IMAGES[c.id])return cardArtworkMarkup(finishedCardSource(c,true,appearance)).replace('class="card-art"','class="card-art tarot-face-art"');
  if(c.group==='major')return `<div class="major-rank">${c.number===null?'':c.number}</div><div class="major-name">${escapeHTML(c.name)}</div>`;
  const rank=c.number<=10?String(c.number):['P','N','Q','K'][c.number-11];
  const symbols={
@@ -464,10 +482,10 @@ function syncFreeSnapButton(){
  button.title='自由配置 → 格子吸着 → カード吸着';
  button.setAttribute('aria-pressed',String(freeSnapMode!=='off'));
 }
-function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
+function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;node.dataset.appearance=appearanceForCard(item);if(node.dataset.appearance==='worn'){node.dataset.wearVariant=wearVariant(item);if(wornMaterialAvailable(item.id))node.dataset.wornAsset='true'}if(item.sourceDeck){node.dataset.sourceDeck=item.sourceDeck;node.dataset.backTone=dualBackTone(item.sourceDeck)}if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
- node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;drag.rotating=true;
+ node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;drag.rotating=true;
 const bounds=node.getBoundingClientRect();
 drag.rotateCenterX=bounds.left+bounds.width/2;drag.rotateCenterY=bounds.top+bounds.height/2;
 drag.rotateStart=Math.atan2(drag.startY-drag.rotateCenterY,drag.startX-drag.rotateCenterX);
@@ -497,6 +515,7 @@ if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position
 function syncResultsVisibility(){const panel=$('liveResults'),button=$('toggleResults');if(!panel||!button)return;panel.hidden=!resultsVisible;button.textContent=resultsVisible?'RESULTSを閉じる ▴':'RESULTSを表示 ▾';button.setAttribute('aria-expanded',String(resultsVisible))}
 function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:item.significator?'シグニフィケイター':`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(cards.find(c=>c.id===item.id)||cards[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${all.filter(p=>p.faceUp&&!p.significator).length} / ${all.filter(p=>!p.significator).length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
 $('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
+const BACK_COLOR_LABELS={"sepia":"セピア","green":"緑","burgundy":"深紅","navy":"紺","purple":"紫","black":"黒","ivory":"象牙色"};
 const TABULA_BACK_PALETTE={green:'#0d3428',burgundy:'#651622',navy:'#11234b',purple:'#3b2458',black:'#18191a',sepia:'#55331d',ivory:'#e6d6b1'};
 function syncTabulaBack(){
  const tone=Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'sepia';
@@ -510,13 +529,15 @@ function syncTabulaBack(){
 }
 let lastRenderedSpread=null;
 function render(){
+ updateAppearanceControls();
+ refreshClothIndicators();
  if(lastRenderedSpread!==null&&lastRenderedSpread!==settings.spread){
   // A manually moved deck belongs to the current spread only.
   // Switching spreads restores the destination spread's default deck position.
   settings.deckPosition=null;
  }
  lastRenderedSpread=settings.spread;
- syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');updateLiveResults();const m=metrics(),zone=$('zone');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set(state.placed.map(p=>p.slot).filter(s=>s!==null));getSlots().forEach((p,i)=>{if(assigned.has(i))return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}updateCardSelection();const deck=$('deck');deck.classList.toggle('empty',state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyDeckPosition();$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=cards.find(c=>c.id===p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
+ syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');updateLiveResults();const m=metrics(),zone=$('zone');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set(state.placed.map(p=>p.slot).filter(s=>s!==null));getSlots().forEach((p,i)=>{if(assigned.has(i))return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}updateCardSelection();const deck=$('deck');const renderedDeckSource=dualSession?.mixed?state.deck[0]?.sourceDeck:(isIndependentTables()?dualSession.activePile:'A');deck.dataset.appearance=appearanceForPile(renderedDeckSource);if(deck.dataset.appearance==='worn')deck.dataset.wearVariant=wearVariant(dualSession?.mixed?state.deck[0]:(isIndependentTables()?state.deck[0]:(dualSession?.piles.A[0]||state.deck[0])));else delete deck.dataset.wearVariant;if(dualSession){deck.dataset.backTone=dualSession.mixed?dualBackTone(state.deck[0]?.sourceDeck):dualBackTone(isIndependentTables()?dualSession.activePile:'A')}else delete deck.dataset.backTone;deck.classList.toggle('empty',dualSession&&!dualSession.mixed&&!isIndependentTables()?dualSession.piles.A.length===0:state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyDeckPosition();positionSecondDeck();$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=cards.find(c=>c.id===p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
  const plan=new Map(),raw=String(value||'').trim();if(!raw)return plan;
  for(const token of raw.split(/[,，、;；\n]+/)){
   const t=token.trim();if(!t)continue;
@@ -545,6 +566,18 @@ function animateCardFromDeck(index,sourceRect){
  const card=cardsOnTable[index];if(!card||!sourceRect||!card.animate)return;
  const end=card.getBoundingClientRect();if(!end.width||!end.height)return;
  const ghost=card.cloneNode(true);ghost.style.cssText='position:fixed;pointer-events:none;margin:0;z-index:100000;left:'+end.left+'px;top:'+end.top+'px;width:'+end.width+'px;height:'+end.height+'px;transform:none;';
+ // A cloned card leaves #zone, losing zone-scoped Worn rules. Copy the
+ // rendered back directly to the flying face instead of adding new CSS.
+ if(card.dataset.appearance==='worn'){
+  const originalBack=card.querySelector('.face.back');
+  const ghostBack=ghost.querySelector('.face.back');
+  if(originalBack&&ghostBack){
+   const computed=getComputedStyle(originalBack);
+   for(const prop of ['background-image','background-size','background-position','background-repeat','filter','border']){
+    ghostBack.style.setProperty(prop,computed.getPropertyValue(prop),'important');
+   }
+  }
+ }
  document.body.append(ghost);
  card.style.visibility='hidden';
  const dx=sourceRect.left+sourceRect.width/2-(end.left+end.width/2),dy=sourceRect.top+sourceRect.height/2-(end.top+end.height/2);
@@ -589,10 +622,10 @@ function installPhysicalCardPicker(){
    const card=cards.find(c=>c.id===item.id);const b=document.createElement('button');b.type='button';
    b.textContent=(card?displayCard(card).name:item.id)+' ↩';b.style.cssText=buttonStyle;
    b.onclick=()=>{
-    const idx=state.placed.findIndex(c=>c.id===item.id&&c.physicalSelection);
+    const idx=state.placed.findIndex(c=>c.physicalSelection&&(item.instanceId?c.instanceId===item.instanceId:c.id===item.id));
     if(idx<0)return;
     const [removed]=state.placed.splice(idx,1);
-    state.deck.unshift({id:removed.id,reversed:!!removed.reversed});
+    state.deck.unshift(dualSession?{id:removed.id,instanceId:removed.instanceId,sourceDeck:removed.sourceDeck,reversed:!!removed.reversed}:{id:removed.id,reversed:!!removed.reversed});
     render();saveLocal();populate();setStatus('カードを山札へ戻しました。');
    };returns.append(b)
   }
@@ -616,14 +649,14 @@ function installPhysicalCardPicker(){
  },true);
 }
 function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&state.placed.some(p=>p.slot===slot)){setStatus('その位置にはすでにカードがあります。');return}const physical=[...state.deck,...state.placed,...(state.removed||[])];
- const seen=new Set(),duplicate=physical.find(c=>{if(seen.has(c.id))return true;seen.add(c.id);return false});
+ const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
  if(duplicate){setStatus('同じカードが重複しています（'+duplicate.id+'）。新しい占いを始めるかバックアップを確認してください。');return}
  if(!applyDealRemoval())return;
- const sourceRect=$('deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:false});play('deal');render();if(animateArrival)animateCardFromDeck(state.placed.length-1,sourceRect);setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);saveLocal()}function dealAuto(){if(dealWorkbenchController?.executeSelected())return;if(!state.deck.length)return;if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}const slots=getSlots();const unfilled=getDealOrder().filter(i=>!state.placed.some(p=>p.slot===i));if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}unfilled.forEach((s,i)=>setTimeout(()=>drawAt(s),i*340))}let shuffleBusy=false;
+ const sourceRect=$(dualSession&&dualSession.activePile==='B'&&!isIndependentTables()?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:false});play('deal');render();if(animateArrival)animateCardFromDeck(state.placed.length-1,sourceRect);setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);saveLocal()}function dealAuto(){if(!dualSession&&dealWorkbenchController?.executeSelected())return;if(!state.deck.length)return;if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}const slots=getSlots();const unfilled=getDealOrder().filter(i=>!state.placed.some(p=>p.slot===i));if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}if(dualSession){dualDealBusy=true;unfilled.forEach((s,i)=>setTimeout(()=>{drawAt(s);if(i===unfilled.length-1)dualDealBusy=false},i*340));return}unfilled.forEach((s,i)=>setTimeout(()=>drawAt(s),i*340))}let shuffleBusy=false;
 const riffleSequence=TabulaShuffle.riffleSequence;
 const overhandSequence=TabulaShuffle.overhandSequence;
 const pileSequence=TabulaShuffle.pileSequence;
-function animateShuffle(method,done,manual=false,opts={}){let layer=$('shuffleLayer');layer.innerHTML='';layer.classList.add('active');const n=Math.min(state.deck.length,method==='wash'?44:32);const w=layer.clientWidth||500,h=layer.clientHeight||500;const originX=w*.5,originY=h*.5;const physical=metrics();const spriteW=Math.min(physical.w,w*.22),spriteH=spriteW*1.52;const sprites=[];for(let i=0;i<n;i++){let c=document.createElement('div');c.className='shuffle-card';c.style.zIndex=i;c.style.width=spriteW+'px';c.style.height=spriteH+'px';c.style.left=originX+'px';c.style.top=originY+'px';layer.append(c);sprites.push(c)}const seq=method==='wash'?3:method==='overhand'||method==='hindu'?3:method==='riffle'?3:2;let animations=[];sprites.forEach((c,i)=>{let spreadX,spreadY,rot;if(method==='wash'){const theta=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*Math.min(w,h)*.35;spreadX=Math.cos(theta)*rad;spreadY=Math.sin(theta)*rad;rot=(Math.random()-.5)*340;if(opts.direction==='cw'||opts.direction==='ccw'){const sign=opts.direction==='cw'?1:-1;rot=sign*(140+Math.random()*100);}}else if(method==='riffle'){spreadX=(i%2===0?-w*.19:w*.19)+((i%6)-3)*1.4;spreadY=(i%4)*1.4;rot=i%2===0?-7:7;}else if(method==='pile'){spreadX=((i%(opts.piles||4))-((opts.piles||4)-1)/2)*Math.min(w*.13,w*.65/(opts.piles||4));spreadY=((i%3)-1)*3;rot=0;}else if(method==='hindu'){spreadX=0;spreadY=h*.14*(i%3-1)+(i%9-4)*2;rot=i%2?3:-3;}else{spreadX=w*.14*(i%3-1);spreadY=-h*.14+(i%9)*4;rot=i%2?6:-6;}const circleDir=opts.direction==='ccw'?-1:1;const swirl=method==='wash'&&(opts.direction==='cw'||opts.direction==='ccw');const midX=swirl?(-spreadY*circleDir*.88):(method==='wash'?spreadX*.65+Math.sin(i*2)*w*.16:spreadX*.6);const midY=swirl?(spreadX*circleDir*.88):(method==='wash'?spreadY*.7+Math.cos(i*1.7)*h*.13:spreadY*.65);const frames=[{transform:'translate(-50%,-50%) translate(0px,0px) rotate(0deg)'},{transform:`translate(-50%,-50%) translate(${spreadX}px,${spreadY}px) rotate(${rot}deg)`,offset:.27},{transform:`translate(-50%,-50%) translate(${midX}px,${midY}px) rotate(${method==='wash'?(opts.direction==='cw'?rot+110:opts.direction==='ccw'?rot-110:rot+110):rot*1.4}deg)`,offset:.7},{transform:'translate(-50%,-50%) translate(0px,0px) rotate(0deg)'}];const anim=c.animate(frames,{duration:manual?1000:850,delay:i*9,easing:'ease-in-out',fill:'forwards'});animations.push(anim)});Promise.all(animations.map(a=>a.finished.catch(()=>{}))).then(()=>{layer.innerHTML='';layer.classList.remove('active');done()})}
+function animateShuffle(method,done,manual=false,opts={}){let layer=$('shuffleLayer');layer.innerHTML='';layer.classList.add('active');const n=Math.min(state.deck.length,method==='wash'?44:32);const w=layer.clientWidth||500,h=layer.clientHeight||500;const originX=w*.5,originY=h*.5;const physical=metrics();const spriteW=Math.min(physical.w,w*.22),spriteH=spriteW*1.52;const sprites=[];for(let i=0;i<n;i++){let c=document.createElement('div');c.className='shuffle-card';if(dualSession){const sample=state.deck[Math.floor(i*state.deck.length/n)];c.dataset.backTone=dualBackTone(sample?.sourceDeck||dualSession.activePile);c.dataset.appearance=appearanceForCard(sample||{});if(c.dataset.appearance==='worn')c.dataset.wearVariant=wearVariant(sample)}else{c.dataset.appearance=appearanceForPile();if(c.dataset.appearance==='worn')c.dataset.wearVariant=wearVariant(state.deck[Math.floor(i*state.deck.length/n)])}c.style.zIndex=i;c.style.width=spriteW+'px';c.style.height=spriteH+'px';c.style.left=originX+'px';c.style.top=originY+'px';layer.append(c);sprites.push(c)}const seq=method==='wash'?3:method==='overhand'||method==='hindu'?3:method==='riffle'?3:2;let animations=[];sprites.forEach((c,i)=>{let spreadX,spreadY,rot;if(method==='wash'){const theta=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*Math.min(w,h)*.35;spreadX=Math.cos(theta)*rad;spreadY=Math.sin(theta)*rad;rot=(Math.random()-.5)*340;if(opts.direction==='cw'||opts.direction==='ccw'){const sign=opts.direction==='cw'?1:-1;rot=sign*(140+Math.random()*100);}}else if(method==='riffle'){spreadX=(i%2===0?-w*.19:w*.19)+((i%6)-3)*1.4;spreadY=(i%4)*1.4;rot=i%2===0?-7:7;}else if(method==='pile'){spreadX=((i%(opts.piles||4))-((opts.piles||4)-1)/2)*Math.min(w*.13,w*.65/(opts.piles||4));spreadY=((i%3)-1)*3;rot=0;}else if(method==='hindu'){spreadX=0;spreadY=h*.14*(i%3-1)+(i%9-4)*2;rot=i%2?3:-3;}else{spreadX=w*.14*(i%3-1);spreadY=-h*.14+(i%9)*4;rot=i%2?6:-6;}const circleDir=opts.direction==='ccw'?-1:1;const swirl=method==='wash'&&(opts.direction==='cw'||opts.direction==='ccw');const midX=swirl?(-spreadY*circleDir*.88):(method==='wash'?spreadX*.65+Math.sin(i*2)*w*.16:spreadX*.6);const midY=swirl?(spreadX*circleDir*.88):(method==='wash'?spreadY*.7+Math.cos(i*1.7)*h*.13:spreadY*.65);const frames=[{transform:'translate(-50%,-50%) translate(0px,0px) rotate(0deg)'},{transform:`translate(-50%,-50%) translate(${spreadX}px,${spreadY}px) rotate(${rot}deg)`,offset:.27},{transform:`translate(-50%,-50%) translate(${midX}px,${midY}px) rotate(${method==='wash'?(opts.direction==='cw'?rot+110:opts.direction==='ccw'?rot-110:rot+110):rot*1.4}deg)`,offset:.7},{transform:'translate(-50%,-50%) translate(0px,0px) rotate(0deg)'}];const anim=c.animate(frames,{duration:manual?1000:850,delay:i*9,easing:'ease-in-out',fill:'forwards'});animations.push(anim)});Promise.all(animations.map(a=>a.finished.catch(()=>{}))).then(()=>{layer.innerHTML='';layer.classList.remove('active');done()})}
 function runWashQuick(){
  if(shuffleBusy)return;
  if(state.deck.length<2){setStatus('ウォッシュには2枚以上必要です。');return}
@@ -729,7 +762,7 @@ function compareModal(){
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
 function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1};recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
-function resetEverythingAction(){if(!confirm('現在の卓、保存結果、登録したシャッフル手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:''};customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
+function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録したシャッフル手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:''};customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false){
  if(Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
  if(state.deck.length<2){setStatus('カットには2枚以上必要です。');return}
@@ -753,8 +786,10 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
  function makeStack(i){
   const el=document.createElement('button');el.type='button';el.setAttribute('aria-label','束 '+String.fromCharCode(65+i)+'、'+lengths[i]+'枚');
   el.style.cssText='position:absolute;pointer-events:auto;cursor:pointer;border:0;background:transparent;padding:0;width:'+cardW+'px;height:'+(cardH+12)+'px;left:'+positions[i].x+'px;top:'+positions[i].y+'px;touch-action:manipulation;';
+  const pileStart=lengths.slice(0,i).reduce((sum,n)=>sum+n,0);
   for(let j=0;j<Math.min(5,lengths[i]);j++){
    const card=document.createElement('span');card.className='face back';
+   if(dualSession){const source=state.deck[pileStart+Math.min(lengths[i]-1,j)];card.dataset.backTone=dualBackTone(source?.sourceDeck||dualSession.activePile);card.dataset.appearance=appearanceForCard(source||{});if(card.dataset.appearance==='worn')card.dataset.wearVariant=wearVariant(source)}else{card.dataset.appearance=appearanceForPile();if(card.dataset.appearance==='worn')card.dataset.wearVariant=wearVariant(state.deck[pileStart+j])}
    card.style.cssText='position:absolute;display:block;box-sizing:border-box;width:'+cardW+'px;height:'+cardH+'px;left:0;top:'+(8-j*2)+'px;border-radius:4px;box-shadow:1px 2px 3px #0009;';
    el.append(card);
   }
@@ -813,17 +848,18 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
  }
 }
-function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}))}catch(e){setStatus('この環境ではブラウザー保存を利用できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};settings.dealSkipFirst=0;settings.dealSkipSchedule='';settings.spreadDealOrders={};state={completionShown:false,...(data.state||{})};customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus('保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
-function updateStandaloneAvailability(){const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash;w.title=noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}if(c){c.disabled=noCut;c.title=noCut?'カットは「なし」に設定されています':'山札をカット'}}function sync(){if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';$('pool').value=settings.pool;$('spread').value=settings.spread;syncSpreadShortcut();syncDealOrderField();$('initialOrder').value=settings.initialOrder||'random';$('quickWashDirection').value=settings.quickWashDirection||'random';$('quickWashRounds').value=settings.quickWashRounds||1;updateStandaloneAvailability();$('dealSkipFirst').value=Number(settings.dealSkipFirst)||0;$('dealSkipSchedule').value=settings.dealSkipSchedule||'';$('cutCountSetting').value=String(settings.cutCount??3);$('reversals').checked=settings.reversals;$('altarToggle').checked=settings.altar;$('quickLabels').textContent=settings.labels?'ポジション名 ON':'ポジション名 OFF';$('quickLabels').setAttribute('aria-pressed',String(settings.labels));$('crossLabelLayer').value=settings.crossLabelLayer==='front'?'front':'behind';$('soundToggle').checked=settings.sound;$('shuffleMethod').value=settings.shuffleMethod||'overhand';$('visualTheme').value=settings.visualTheme||'classic';$('effectPreset').value=settings.effectPreset||'ritual';applyVisuals();syncRecipes();updateDealRuleSummary();updateStandaloneAvailability()}function applyVisuals(){document.body.dataset.visualTheme=settings.visualTheme||'classic';document.body.dataset.effectPreset=settings.effectPreset||'ritual';const desc={silent:'静かな反転。完成時の追加演出なし。',ritual:'暖かな金色の光。カードが厳かに反転される。',mystic:'青白い光輪。完成後も神秘的な発光を維持。',psychic:'紫の霊光。完成後もカードが明滅し続ける。'};if($('effectDescription'))$('effectDescription').textContent=desc[settings.effectPreset]||desc.ritual;updateCompletionAura()}let __effectTimer=null;function previewVisualEffect(finale=false){const stage=$('stage');stage.classList.remove('effect-demo','effect-finale');void stage.offsetWidth;stage.classList.add(finale?'effect-finale':'effect-demo');clearTimeout(__effectTimer);__effectTimer=setTimeout(()=>stage.classList.remove('effect-demo','effect-finale'),finale?3800:1900)}function coreTargetCount(){if(settings.spread==='free')return state.placed.length;return getSlots().length}function coreFaceUpCount(){if(settings.spread==='free')return state.placed.filter(p=>p.faceUp).length;return state.placed.filter(p=>p.slot!=null&&p.faceUp).length}function isCoreSpreadOpen(){const target=coreTargetCount();return target>0&&coreFaceUpCount()>=target}function updateCompletionAura(){const stage=$('stage');if(!stage)return;stage.classList.remove('spread-complete-ritual','spread-complete-mystic','spread-complete-psychic');if(!isCoreSpreadOpen())return;const preset=settings.effectPreset;if(preset==='ritual')stage.classList.add('spread-complete-ritual');else if(preset==='mystic')stage.classList.add('spread-complete-mystic');else if(preset==='psychic')stage.classList.add('spread-complete-psychic')}function maybeTriggerCompletionEffect(force=false){if(isCoreSpreadOpen()){updateCompletionAura();if(force||!state.completionShown){state.completionShown=true;if(settings.effectPreset!=='silent')previewVisualEffect(true)}}else{state.completionShown=false;updateCompletionAura()}}
+function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){if(dualSession){dualSave();return}try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}))}catch(e){setStatus('この環境ではブラウザー保存を利用できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};settings.dealSkipFirst=0;settings.dealSkipSchedule='';settings.spreadDealOrders={};state={completionShown:false,...(data.state||{})};customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus('保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
+function updateStandaloneAvailability(){const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash;w.title=noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}if(c){c.disabled=noCut;c.title=noCut?'カットは「なし」に設定されています':'山札をカット'}}function sync(){updateAppearanceControls();if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';$('pool').value=settings.pool;$('spread').value=settings.spread;syncSpreadShortcut();syncDealOrderField();$('initialOrder').value=settings.initialOrder||'random';$('quickWashDirection').value=settings.quickWashDirection||'random';$('quickWashRounds').value=settings.quickWashRounds||1;updateStandaloneAvailability();$('dealSkipFirst').value=Number(settings.dealSkipFirst)||0;$('dealSkipSchedule').value=settings.dealSkipSchedule||'';$('cutCountSetting').value=String(settings.cutCount??3);$('reversals').checked=settings.reversals;$('altarToggle').checked=settings.altar;$('quickLabels').textContent=settings.labels?'ポジション名 ON':'ポジション名 OFF';$('quickLabels').setAttribute('aria-pressed',String(settings.labels));$('crossLabelLayer').value=settings.crossLabelLayer==='front'?'front':'behind';$('soundToggle').checked=settings.sound;$('shuffleMethod').value=settings.shuffleMethod||'overhand';$('visualTheme').value=settings.visualTheme||'classic';$('effectPreset').value=settings.effectPreset||'ritual';applyVisuals();syncRecipes();updateDealRuleSummary();updateStandaloneAvailability()}function applyVisuals(){document.body.dataset.visualTheme=settings.visualTheme||'classic';document.body.dataset.effectPreset=settings.effectPreset||'ritual';const desc={silent:'静かな反転。完成時の追加演出なし。',ritual:'暖かな金色の光。カードが厳かに反転される。',mystic:'青白い光輪。完成後も神秘的な発光を維持。',psychic:'紫の霊光。完成後もカードが明滅し続ける。'};if($('effectDescription'))$('effectDescription').textContent=desc[settings.effectPreset]||desc.ritual;updateCompletionAura()}let __effectTimer=null;function previewVisualEffect(finale=false){const stage=$('stage');stage.classList.remove('effect-demo','effect-finale');void stage.offsetWidth;stage.classList.add(finale?'effect-finale':'effect-demo');clearTimeout(__effectTimer);__effectTimer=setTimeout(()=>stage.classList.remove('effect-demo','effect-finale'),finale?3800:1900)}function coreTargetCount(){if(settings.spread==='free')return state.placed.length;return getSlots().length}function coreFaceUpCount(){if(settings.spread==='free')return state.placed.filter(p=>p.faceUp).length;return state.placed.filter(p=>p.slot!=null&&p.faceUp).length}function isCoreSpreadOpen(){const target=coreTargetCount();return target>0&&coreFaceUpCount()>=target}function updateCompletionAura(){const stage=$('stage');if(!stage)return;stage.classList.remove('spread-complete-ritual','spread-complete-mystic','spread-complete-psychic');if(!isCoreSpreadOpen())return;const preset=settings.effectPreset;if(preset==='ritual')stage.classList.add('spread-complete-ritual');else if(preset==='mystic')stage.classList.add('spread-complete-mystic');else if(preset==='psychic')stage.classList.add('spread-complete-psychic')}function maybeTriggerCompletionEffect(force=false){if(isCoreSpreadOpen()){updateCompletionAura();if(force||!state.completionShown){state.completionShown=true;if(settings.effectPreset!=='silent')previewVisualEffect(true)}}else{state.completionShown=false;updateCompletionAura()}}
 
 function activateDeck(id,ask=true){
+ if(dualSession){setStatus('二組モードのデッキ定義はこの試作では共通です。一組モードで変更してください。');refreshDeckPicker();return false}
  const deck=deckLibrary.find(d=>d.id===id)||null;
  if(ask&&(state.placed.length||(state.removed||[]).length)&&!confirm('デッキを変更すると、現在の配札を片付けて新しい山札を作ります。続けますか？')){refreshDeckPicker();return false}
  settings.deckId=deck?.id||(id==='simple'?'simple':'builtin');
  settings.pool='all';
  customIds=cards.map(c=>c.id);
  settings.cardDesign=deck?.faceStyle||(id==='simple'?'simple':'standard');
- if(deck)settings.cardBackColor=deck.backColor;
+ settings.cardBackColor=deck?.backColor||'sepia';
  finishedCache.clear();
  sync();initialize();
  setStatus((deck?.name||(id==='simple'?'シンプル':'TABULA TAROT（標準）'))+' を読み込みました。');
@@ -838,7 +874,7 @@ function openDeckEditor(createCopy=false){
   draft.name=source?source.name+'（複製）':'新しいデッキ';
   if(!source){draft.language=effectiveCardLanguage();draft.pipBackground=effectivePipBackground();draft.backColor=settings.cardBackColor||'sepia';draft.faceStyle=settings.cardDesign==='simple'?'simple':'standard'}
  }
- const colorNames={sepia:'Sepia',green:'Green',burgundy:'Burgundy',navy:'Navy',purple:'Purple',black:'Black',ivory:'Ivory'};
+ 
  const groups=[['major','大アルカナ'],...suitDefs.map(([id,name])=>[id,name])];
  let html='<h2>デッキの編集</h2><p class="note">原版のカード画像はそのままに、番号・名称・背景・収録カードを編集します。番号の変更は相手のカードと自動交換されます。</p>';
  html+='<label class="field">デッキ名<input id="deckEditorName" maxlength="80" value="'+escapeHTML(draft.name)+'"></label>';
@@ -846,7 +882,7 @@ function openDeckEditor(createCopy=false){
  html+='<label class="field">カード名の言語<select id="deckEditorLanguage">'+TabulaDeckStore.LANGUAGES.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('')+'</select></label>';
  html+='<div class="row deck-editor-shortcuts"><button type="button" id="deckEditorSwap">力 VIII ↔ 正義 XI</button><button type="button" id="deckEditorUnnumbered">愚者を番号なしに</button></div>';
  html+='<label class="field">小アルカナ数札の図像<select id="deckEditorPip"><option value="landscape">背景あり（風景とスート）</option><option value="none">背景なし（スートを全面に大きく配置）</option></select></label>';
- html+='<label class="field">裏面色<select id="deckEditorBack">'+TabulaDeckStore.COLORS.map(color=>'<option value="'+color+'">'+colorNames[color]+'</option>').join('')+'</select></label>';
+ html+='<label class="field">裏面色<select id="deckEditorBack">'+TabulaDeckStore.COLORS.map(color=>'<option value="'+color+'">'+BACK_COLOR_LABELS[color]+'</option>').join('')+'</select></label>';
  html+='<p class="note">使用するカードをチェックし、必要な番号と名前を変更してください。</p>';
  for(const [group,label] of groups){
   const items=cards.filter(c=>group==='major'?c.group==='major':c.suit===group);
@@ -938,12 +974,17 @@ $('pipBackground').addEventListener('change',e=>{
 $('deckLibrarySelect').addEventListener('change',e=>activateDeck(e.target.value));
 $('deckEditNew').addEventListener('click',()=>openDeckEditor(true));
 $('deckEditCurrent').addEventListener('click',()=>openDeckEditor(false));
-function customModal(){const groups=[['major','大アルカナ'],...suitDefs.map(s=>[s[0],s[1]])];let h='<h2>使用カードを個別に選択</h2><p class="note">チェックしたカードだけを山札として使用します。</p><div class="row"><button type="button" id="allCards">すべて選択</button><button type="button" id="noCards">すべて解除</button></div>';groups.forEach(([id,name])=>{h+=`<h3>${name}</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px">`;cards.filter(c=>id==='major'?c.group==='major':c.suit===id).forEach(c=>{h+=`<label class="choice"><input type="checkbox" class="pick-card" value="${c.id}" ${customIds.includes(c.id)?'checked':''}>${c.name}</label>`});h+='</div>'});h+='<p><button type="button" class="primary" id="confirmCards">このカード群を使用</button></p>';modal(h);$('allCards').onclick=()=>document.querySelectorAll('.pick-card').forEach(e=>e.checked=true);$('noCards').onclick=()=>document.querySelectorAll('.pick-card').forEach(e=>e.checked=false);$('confirmCards').onclick=()=>{const ids=[...document.querySelectorAll('.pick-card:checked')].map(el=>el.value);if(!ids.length){alert('カードを1枚以上選択してください。');return}customIds=ids;settings.pool='custom';$('pool').value='custom';closeModal();initialize()}}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewVisualEffect(true)};$('previewEffect').onclick=()=>previewVisualEffect(true);colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(e.target.value==='custom'){customModal();return}settings.pool=e.target.value;initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{const newSpread=e.target.value;if(newSpread===settings.spread){syncSpreadShortcut();return;}if(state.placed.length||(state.removed||[]).length)restoreDealWithoutPrompt();settings.spread=newSpread;syncSpreadShortcut();applySpreadCardSize(newSpread);syncDealOrderField();render();saveLocal();setStatus('展開法を切り替えました。山札の配列は維持しています。')};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
+function customModal(){const groups=[['major','大アルカナ'],...suitDefs.map(s=>[s[0],s[1]])];let h='<h2>使用カードを個別に選択</h2><p class="note">チェックしたカードだけを山札として使用します。</p><div class="row"><button type="button" id="allCards">すべて選択</button><button type="button" id="noCards">すべて解除</button></div>';groups.forEach(([id,name])=>{h+=`<h3>${name}</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px">`;cards.filter(c=>id==='major'?c.group==='major':c.suit===id).forEach(c=>{h+=`<label class="choice"><input type="checkbox" class="pick-card" value="${c.id}" ${customIds.includes(c.id)?'checked':''}>${c.name}</label>`});h+='</div>'});h+='<p><button type="button" class="primary" id="confirmCards">このカード群を使用</button></p>';modal(h);$('allCards').onclick=()=>document.querySelectorAll('.pick-card').forEach(e=>e.checked=true);$('noCards').onclick=()=>document.querySelectorAll('.pick-card').forEach(e=>e.checked=false);$('confirmCards').onclick=()=>{const ids=[...document.querySelectorAll('.pick-card:checked')].map(el=>el.value);if(!ids.length){alert('カードを1枚以上選択してください。');return}customIds=ids;settings.pool='custom';$('pool').value='custom';closeModal();initialize()}}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewVisualEffect(true)};$('previewEffect').onclick=()=>previewVisualEffect(true);colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('二組モードのカード構成は開始時に確定します。新しく始める場合は一組モードで構成を変更してください。');return}if(e.target.value==='custom'){customModal();return}settings.pool=e.target.value;initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{const newSpread=e.target.value;if(newSpread===settings.spread){syncSpreadShortcut();return;}if(dualSession&&(state.placed.length||(state.removed||[]).length)){
+ if(dualBusy()||!confirm('現在の卓の配札を山札に回収して展開法を変更しますか？ 他の卓の配札は維持されます。')){
+  e.target.value=settings.spread;syncSpreadShortcut();return;
+ }
+ dualCollect();
+}else if(state.placed.length||(state.removed||[]).length)restoreDealWithoutPrompt();settings.spread=newSpread;e.target.value=newSpread;syncSpreadShortcut();applySpreadCardSize(newSpread);syncDealOrderField();render();saveLocal();setStatus('展開法を切り替えました。山札の配列は維持しています。')};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
 $('resetSpreadDealOrder').onclick=()=>{settings.spreadDealOrders={...(settings.spreadDealOrders||{})};delete settings.spreadDealOrders[settings.spread];syncDealOrderField();saveLocal();setStatus('このスプレッドの配札順を番号順に戻しました。')};
 $('reversals').onchange=e=>{settings.reversals=e.target.checked;initialize()};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('次に新しい占いを始める際のデッキ初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('soundToggle').onchange=e=>{settings.sound=e.target.checked;saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
 function openSequentially(){if(openingBusy)return;const closed=state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999));if(!closed.length){setStatus('開ける伏せ札がありません。カードをタップすると個別に表裏を切り替えられます。');return}openingBusy=true;$('quickOpen').disabled=true;$('quickRevealAll').disabled=true;const pace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;let index=0;function step(){if(index>=closed.length){openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;render();maybeTriggerCompletionEffect();saveLocal();setStatus(closed.length+'枚を順番に開きました。');return}closed[index].faceUp=true;index++;play('flip');render();saveLocal();setStatus(`オープン中：${index} / ${closed.length}枚`);setTimeout(step,pace)}step()}
-function restoreDealWithoutPrompt(){if(!state.placed.length&&!(state.removed||[]).length)return false;if(Array.isArray(state.dealCheckpoint)){state.deck=state.dealCheckpoint.map(c=>({...c}));}else{state.deck=[...(state.removed||[]),...state.placed.map(p=>({id:p.id,reversed:p.reversed})),...state.deck];}state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();return true}
-function collectForNextReading(){if(!state.placed.length&&!(state.removed||[]).length){setStatus('回収するカードがありません。');return}const returned=state.placed.map(p=>({id:p.id,reversed:p.reversed}));state.deck=[...returned,...(state.removed||[]),...state.deck];state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();setStatus('配札したカードと除外カードを回収しました。同じデッキで次の占いを続けられます。')}
+function restoreDealWithoutPrompt(){if(dualSession){setStatus('現在の卓のカードは「カードを回収」から回収してください。');return false}if(!state.placed.length&&!(state.removed||[]).length)return false;if(Array.isArray(state.dealCheckpoint)){state.deck=state.dealCheckpoint.map(c=>({...c}));}else{state.deck=[...(state.removed||[]),...state.placed.map(p=>({id:p.id,reversed:p.reversed})),...state.deck];}state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();return true}
+function collectForNextReading(){if(dualSession){dualCollect();return}if(!state.placed.length&&!(state.removed||[]).length){setStatus('回収するカードがありません。');return}const returned=state.placed.map(p=>({id:p.id,reversed:p.reversed}));state.deck=[...returned,...(state.removed||[]),...state.deck];state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();setStatus('配札したカードと除外カードを回収しました。同じデッキで次の占いを続けられます。')}
 function returnPositions(){if(!state.placed.length){setStatus('戻すカードがありません。');return}for(const p of state.placed){if(p.slot!=null&&getSlots()[p.slot]){const slot=getSlots()[p.slot];p.x=slot.x;p.y=slot.y;p.angle=slot.angle;p.manualMoved=false;p.dragOrder=0;}else if(p.origin){p.x=p.origin.x;p.y=p.origin.y;p.angle=p.origin.angle;p.manualMoved=false;p.dragOrder=0;}}render();saveLocal();setStatus('卓のカード位置を元に戻しました。')}
 $('quickPositions').onclick=returnPositions;
 $('quickReturn').onclick=()=>{if(!state.placed.length&&!(state.removed||[]).length){setStatus('戻す配札がありません。');return}if(confirm('配札前の山札の順番と正逆位置を復元しますか？')){restoreDealWithoutPrompt();setStatus('配札前の山札を完全復元しました。')}};
@@ -969,6 +1010,9 @@ function changeDesktopCardSize(delta,reset=false){setCardSize(reset?spreadCardSi
 $('zoomIn').onclick=()=>changeDesktopCardSize(.1);
 $('zoomOut').onclick=()=>changeDesktopCardSize(-.1);
 $('zoomReset').onclick=()=>changeDesktopCardSize(0,true);const deck=$('deck');
+const deckB=document.createElement('div');deckB.id='deckB';deckB.className='deck dual-second-deck';deckB.title='デッキB：クリックで配札、ドラッグで配札';deckB.hidden=true;
+const labelA=document.createElement('span');labelA.className='dual-deck-identity';labelA.textContent='A';deck.append(labelA);
+const labelB=document.createElement('span');labelB.className='dual-deck-identity';labelB.textContent='B';deckB.append(labelB);deck.after(deckB);
 // The move handle is separate from deck dragging, which still deals a card.
 // Coordinates are relative to the table surface and persist with the workspace.
 const deckMoveHandle=document.createElement('button');
@@ -979,7 +1023,7 @@ deckMoveHandle.title='ここをドラッグして山札を移動';
 deckMoveHandle.setAttribute('aria-label','山札を移動する（ドラッグ）');
 deck.append(deckMoveHandle);
 function applyDeckPosition(){
-  const position=settings.deckPosition;
+  const position=dualSession?(dualSession.deckPositions?.[dualSession.mixed?'mixed':'A']||null):settings.deckPosition;
   const pile=$('deck'),label=$('deckCount'),surface=$('surface');
   if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.y)){
     for(const prop of ['left','top','right','bottom'])pile.style.removeProperty(prop);
@@ -1016,7 +1060,7 @@ deckMoveHandle.addEventListener('pointermove',e=>{
   const surface=$('surface'),sw=surface.offsetWidth||1,sh=surface.offsetHeight||1;
   const x=Math.max(0,Math.min(sw-deck.offsetWidth,deckMove.x+(e.clientX-deckMove.startX)/(deckMove.scaleX||1)));
   const y=Math.max(0,Math.min(sh-deck.offsetHeight,deckMove.y+(e.clientY-deckMove.startY)/(deckMove.scaleY||1)));
-  settings.deckPosition={x:100*x/sw,y:100*y/sh};
+  if(dualSession){dualSession.deckPositions??={};dualSession.deckPositions[dualSession.mixed?'mixed':'A']={x:100*x/sw,y:100*y/sh}}else settings.deckPosition={x:100*x/sw,y:100*y/sh};
   applyDeckPosition();
 });
 function finishDeckMove(e){
@@ -1039,22 +1083,27 @@ function beginDeckPreview(e){
   deckPreview.className='deck-drag-preview';
   deckPreview.style.width=m.w*tableCamera.scale+'px';deckPreview.style.height=m.h*tableCamera.scale+'px';
   deckPreview.innerHTML='<span class="face back" aria-hidden="true"></span>';
+  if(dualSession)deckPreview.dataset.backTone=dualSession.activePile==='mixed'?dualBackTone(state.deck[0]?.sourceDeck):dualBackTone(dualSession.activePile);
+  deckPreview.dataset.appearance=appearanceForPile(dualSession?.mixed?state.deck[0]?.sourceDeck:dualSession?.activePile);if(deckPreview.dataset.appearance==='worn')deckPreview.dataset.wearVariant=wearVariant(state.deck[0]);
   document.body.append(deckPreview);moveDeckPreview(e);
 }
-deck.addEventListener('pointerdown',e=>{
-  if(e.button!==0||!state.deck.length)return;
+function installPileInteraction(pile,source){
+pile.addEventListener('pointerdown',e=>{
+  if(e.button!==0)return;
+  if(dualSession&&!dualSession.mixed&&source!==dualSession.activePile){if(dualBusy())return;dualSwitchPile(source)}
+  if(!state.deck.length)return;
   drag={type:'deck',startX:e.clientX,startY:e.clientY,pointerId:e.pointerId};recordTiltSample(drag,e);
   dragMoved=false;
-  deck.setPointerCapture(e.pointerId);
+  pile.setPointerCapture(e.pointerId);
 });
-deck.addEventListener('pointermove',e=>{
+pile.addEventListener('pointermove',e=>{
   if(drag?.type!=='deck'||drag.pointerId!==e.pointerId)return;
   if(!dragMoved&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>8){
     dragMoved=true;beginDeckPreview(e);
   }
   if(dragMoved){recordTiltSample(drag,e);moveDeckPreview(e);}
 });
-deck.addEventListener('pointerup',e=>{
+pile.addEventListener('pointerup',e=>{
   if(drag?.type!=='deck'||drag.pointerId!==e.pointerId)return;
   const finishingTilt=dragMoved?gestureTilt(drag):0;
   drag=null;clearDeckPreview();
@@ -1069,8 +1118,10 @@ deck.addEventListener('pointerup',e=>{
     if(nearest)drawAt(nearest.i,null,null,false);
   }
 });
-deck.addEventListener('pointercancel',()=>{if(drag?.type==='deck')drag=null;clearDeckPreview()});
-deck.addEventListener('lostpointercapture',()=>{clearDeckPreview();if(drag?.type==='deck')drag=null});
+pile.addEventListener('pointercancel',()=>{if(drag?.type==='deck')drag=null;clearDeckPreview()});
+pile.addEventListener('lostpointercapture',()=>{clearDeckPreview();if(drag?.type==='deck')drag=null});
+}
+installPileInteraction(deck,'A');installPileInteraction(deckB,'B');
 window.addEventListener('resize',render);
 // Independent disclosure state; no navigation or form submission on toggle.
 if((Number(settings.dealSkipFirst)||0)||(settings.dealSkipSchedule||'').trim())$('dealRulesDetails').open=true;
@@ -1200,10 +1251,24 @@ const RESTORED_CARD_IMAGES={"major_09":"images/decks/tabula-tarot/restored/major
 const ACE_ART_LAYOUT={wands:{w:65,h:222.44,angle:0},cups:{w:160,h:159.36,angle:0},swords:{w:72,h:222.44,angle:180},pentacles:{w:140.4,h:140.4,angle:0}};
 const finishedCache=new Map();
 const majorEnglish=['THE FOOL','THE MAGICIAN','THE HIGH PRIESTESS','THE EMPRESS','THE EMPEROR','THE HIEROPHANT','THE LOVERS','THE CHARIOT','STRENGTH','THE HERMIT','WHEEL OF FORTUNE','JUSTICE','THE HANGED MAN','DEATH','TEMPERANCE','THE DEVIL','THE TOWER','THE STAR','THE MOON','THE SUN','JUDGEMENT','THE WORLD'];
-function finishedCardSource(c,tabletop=false){
+/* One committed, fixed material SVG per TABULA card (78 files).
+   No procedural paper wear is generated during rendering. */
+const WORN_MATERIAL_ASSETS=Object.freeze(Object.fromEntries(
+ Object.keys(TABULA_TAROT_IMAGES).map(id=>[id,'images/decks/tabula-tarot/worn/'+id+'.svg?v=0288'])
+));
+function wornMaterialAvailable(id){return Object.hasOwn(WORN_MATERIAL_ASSETS,id)}
+function wornMaterialMarkup(id){
+ if(!wornMaterialAvailable(id))return '';
+ return '<image class="worn-material-layer" href="'+WORN_MATERIAL_ASSETS[id]+'" x="0" y="0" width="300" height="450" preserveAspectRatio="none" pointer-events="none"/>';
+}
+function finishedCardSource(c,tabletop=false,appearance='standard'){
  c=displayCard(c);
  const d=activeDeck(),pipPlain=effectivePipBackground()==='none';
- const key=(d?.id||'builtin')+':'+c.id+':'+c.name+':'+c.number+':'+effectiveCardLanguage()+':'+(pipPlain?'plain':'landscape')+':'+facePrefs.major+':'+facePrefs.pip+':'+(tabletop?'tabletop':'full');if(finishedCache.has(key))return finishedCache.get(key);
+ const wornMaterial=appearance==='worn'&&wornMaterialAvailable(c.id);
+ const finishOverlay=wornMaterial?wornMaterialMarkup(c.id):'';
+ const wornInk=wornMaterial?'#795a40':null;
+ const wornPrintFilter=wornMaterial?'<filter id="wornPrint" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values=".58"/><feComponentTransfer><feFuncR type="linear" slope=".89" intercept=".065"/><feFuncG type="linear" slope=".89" intercept=".065"/><feFuncB type="linear" slope=".89" intercept=".065"/></feComponentTransfer></filter>':'';
+ const key=(d?.id||'builtin')+':'+c.id+':'+c.name+':'+c.number+':'+effectiveCardLanguage()+':'+(pipPlain?'plain':'landscape')+':'+facePrefs.major+':'+facePrefs.pip+':'+(tabletop?'tabletop':'full')+(wornMaterial?':worn-material':'');if(finishedCache.has(key))return finishedCache.get(key);
  const pip=c.group==='minor';
  const rank=c.group==='major'?faceNumber(c.number,'major'):pip?faceNumber(c.number,'pip'):['PAGE','KNIGHT','QUEEN','KING'][c.number-11];
  // A secondary caption is complementary to the main title, never a duplicate.
@@ -1250,10 +1315,10 @@ function finishedCardSource(c,tabletop=false){
    const scale=282/260,tx=9-20*scale,ty=25+(400-332*scale)/2-48*scale;
    tableArt+=`<g transform="translate(${tx} ${ty}) scale(${scale})">${symbols}</g>`;
   }
-  const tableSvg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 300 450"><defs><linearGradient id="tablePaper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbefd2"/><stop offset="1" stop-color="#eddbb5"/></linearGradient><clipPath id="tableArtClip"><rect x="9" y="25" width="282" height="400"/></clipPath></defs><rect x="1" y="1" width="298" height="448" rx="3" fill="url(#tablePaper)" stroke="#ad915d" stroke-width=".7"/><rect x="4.5" y="4.5" width="291" height="441" rx="1.5" fill="none" stroke="#957544" stroke-width=".65"/><g clip-path="url(#tableArtClip)">${tableArt}</g><g fill="none" stroke="#8e6b3d" stroke-width=".6"><path d="M38 14H108M192 14H262M20 436H35M265 436H280"/><path d="M4.5 10Q10 10 10 4.5M290 4.5Q290 10 295.5 10M4.5 440Q10 440 10 445.5M290 445.5Q290 440 295.5 440"/></g><g fill="#8e6b3d"><path d="M106 14l2-1.3 2 1.3-2 1.3zM190 14l2-1.3 2 1.3-2 1.3z"/></g><text x="150" y="19" text-anchor="middle" fill="#30251c" font-family="Georgia,serif" font-size="${rank.length>5?14:17}" font-weight="500">${rank}</text><text x="150" y="441" text-anchor="middle" fill="#30251c" font-family="Georgia,serif" font-size="${title.length>22?10:11.5}" font-weight="500" letter-spacing=".6">${escapeHTML(title)}</text></svg>`;
+  const tableSvg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 300 450"><defs><linearGradient id="tablePaper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbefd2"/><stop offset="1" stop-color="#eddbb5"/></linearGradient><clipPath id="tableArtClip"><rect x="9" y="25" width="282" height="400"/></clipPath>${wornPrintFilter}</defs><rect x="1" y="1" width="298" height="448" rx="3" fill="url(#tablePaper)" stroke="#ad915d" stroke-width=".7"/><rect x="4.5" y="4.5" width="291" height="441" rx="1.5" fill="none" stroke="#957544" stroke-width=".65"/><g clip-path="url(#tableArtClip)"${wornMaterial?' filter="url(#wornPrint)"':''}>${tableArt}</g>${finishOverlay}<g fill="none" stroke="#8e6b3d" stroke-width=".6"><path d="M38 14H108M192 14H262M20 436H35M265 436H280"/><path d="M4.5 10Q10 10 10 4.5M290 4.5Q290 10 295.5 10M4.5 440Q10 440 10 445.5M290 445.5Q290 440 295.5 440"/></g><g fill="#8e6b3d"><path d="M106 14l2-1.3 2 1.3-2 1.3zM190 14l2-1.3 2 1.3-2 1.3z"/></g><text x="150" y="19" text-anchor="middle" fill="${wornInk||'#30251c'}" font-family="Georgia,serif" font-size="${rank.length>5?14:17}" font-weight="500">${rank}</text><text x="150" y="441" text-anchor="middle" fill="${wornInk||'#30251c'}" font-family="Georgia,serif" font-size="${title.length>22?10:11.5}" font-weight="500" letter-spacing=".6">${escapeHTML(title)}</text></svg>`;
   const source='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(tableSvg);finishedCache.set(key,source);return source;
  }
- const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 300 450"><defs><linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fbefcf"/><stop offset="1" stop-color="#e5cda1"/></linearGradient></defs><rect x="1" y="1" width="298" height="448" rx="10" fill="url(#paper)" stroke="#735b37" stroke-width="2"/><rect x="7" y="7" width="286" height="436" rx="5" fill="none" stroke="#ad8b51" stroke-width="2"/><rect x="12" y="12" width="276" height="426" rx="3" fill="none" stroke="#8b7049" stroke-width=".65"/><path d="M18 34H103M197 34H282M18 390H282" stroke="#a28554" stroke-width=".6"/><text x="150" y="34" text-anchor="middle" fill="#43301b" font-family="Georgia,serif" font-size="${rank.length>5?17:22}">${rank}</text>${art}<text x="150" y="412" text-anchor="middle" fill="#49341e" font-family="'Yu Mincho','Hiragino Mincho ProN',serif" font-size="14">${escapeHTML(c.name)}</text><text x="150" y="428" text-anchor="middle" fill="#6c5130" font-family="Georgia,serif" font-size="8" letter-spacing=".8">${escapeHTML(en)}</text><g fill="#997841"><path d="M16 16l3 4-3 4-3-4zM284 16l3 4-3 4-3-4zM16 426l3 4-3 4-3-4zM284 426l3 4-3 4-3-4z"/></g></svg>`;
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 300 450"><defs><linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fbefcf"/><stop offset="1" stop-color="#e5cda1"/></linearGradient>${wornPrintFilter}</defs><rect x="1" y="1" width="298" height="448" rx="10" fill="url(#paper)" stroke="#735b37" stroke-width="2"/><rect x="7" y="7" width="286" height="436" rx="5" fill="none" stroke="#ad8b51" stroke-width="2"/><rect x="12" y="12" width="276" height="426" rx="3" fill="none" stroke="#8b7049" stroke-width=".65"/><path d="M18 34H103M197 34H282M18 390H282" stroke="#a28554" stroke-width=".6"/><text x="150" y="34" text-anchor="middle" fill="${wornInk||'#43301b'}" font-family="Georgia,serif" font-size="${rank.length>5?17:22}">${rank}</text><g${wornMaterial?' filter="url(#wornPrint)"':''}>${art}</g>${finishOverlay}<text x="150" y="412" text-anchor="middle" fill="${wornInk||'#49341e'}" font-family="'Yu Mincho','Hiragino Mincho ProN',serif" font-size="14">${escapeHTML(c.name)}</text><text x="150" y="428" text-anchor="middle" fill="${wornInk||'#6c5130'}" font-family="Georgia,serif" font-size="8" letter-spacing=".8">${escapeHTML(en)}</text><g fill="#997841"><path d="M16 16l3 4-3 4-3-4zM284 16l3 4-3 4-3-4zM16 426l3 4-3 4-3-4zM284 426l3 4-3 4-3-4z"/></g></svg>`;
  const src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);finishedCache.set(key,src);return src;
 }
 const DEFAULT_CARD_TEXTS={"major_00":{"body":"一般的な意味\nまだ形の決まらない可能性と、新しい旅立ちを表します。経験よりも好奇心が先に立ち、未知の場所へ足を踏み出す場面です。\n\n正位置のキーワード\n自由、出発、冒険、可能性、無心\n\n逆位置のキーワード\n無謀、準備不足、軽率、方向の定まらなさ","source":""},"major_01":{"body":"一般的な意味\n手元の道具や知識を使い、考えを具体的な行動へ移す力です。始めるための条件を見つけ、自分から働きかける場面を示します。\n\n正位置のキーワード\n創意、技術、意志、着手、巧みな伝達\n\n逆位置のキーワード\n口先だけ、策略、技術不足、力の浪費","source":""},"major_02":{"body":"一般的な意味\n表面に現れていない事情や、静かな観察によって得られる知識を表します。すぐに結論を出さず、言葉の背後や隠された情報に目を向ける札です。\n\n正位置のキーワード\n洞察、秘密、学識、静観、慎重さ\n\n逆位置のキーワード\n思い込み、秘密の露見、閉鎖性、情報不足","source":""},"major_03":{"body":"一般的な意味\n生命や創作物を育て、豊かな実りを受け取る力です。快適な環境、感覚的な喜び、惜しみなく与える姿勢に結びつきます。\n\n正位置のキーワード\n豊穣、育成、創造、享受、包容力\n\n逆位置のキーワード\n過保護、浪費、停滞、甘やかし、実りの遅れ","source":""},"major_04":{"body":"一般的な意味\n秩序を築き、責任を引き受けて領域を守る力です。明確な方針や規則が役立つ一方、その力をどのように使うかも問われます。\n\n正位置のキーワード\n統率、責任、安定、権威、基盤\n\n逆位置のキーワード\n独断、硬直、支配、無責任、統率の欠如","source":""},"major_05":{"body":"一般的な意味\n受け継がれた教えや制度、師から学ぶことを表します。共通の規範に従って協力したり、経験ある人の助言を得たりする場面です。\n\n正位置のキーワード\n伝統、教導、信頼、規範、正式な手続き\n\n逆位置のキーワード\n形式主義、因習、不寛容、教えへの疑問","source":""},"major_06":{"body":"一般的な意味\n人や考えとの結びつき、心から選び取ることを表します。魅力に引かれるだけでなく、選択が自分の価値観に沿っているかが焦点です。\n\n正位置のキーワード\n愛情、調和、合意、選択、結びつき\n\n逆位置のキーワード\n不一致、誘惑、迷い、関係の亀裂、選択の先延ばし","source":""},"major_07":{"body":"一般的な意味\n相反する力をまとめ、目的へ進む意志です。勢いと統制を両立できれば前進しますが、勝ち急ぐほど進路を見失いやすくなります。\n\n正位置のキーワード\n前進、勝利、決意、統制、突破\n\n逆位置のキーワード\n暴走、足並みの乱れ、行き詰まり、制御不能","source":""},"major_08":{"body":"一般的な意味\n激しい力を、忍耐と落ち着きによって扱う姿です。圧倒するよりも、恐れや衝動に向き合い、粘り強く関わる力を示します。\n\n正位置のキーワード\n勇気、忍耐、自制、穏やかな強さ、信頼\n\n逆位置のキーワード\n気弱さ、焦り、抑圧、衝動、消耗","source":""},"major_09":{"body":"一般的な意味\n喧騒から離れ、自分で調べ、時間をかけて答えを探す姿です。経験に基づく知恵や、慎重に進むための小さな灯火を表します。\n\n正位置のキーワード\n探究、熟慮、経験、慎重さ、独学\n\n逆位置のキーワード\n孤立、閉じこもり、疑いすぎ、助言の拒絶","source":""},"major_10":{"body":"一般的な意味\n個人の意志だけでは動かせない変化や、状況の転換を表します。巡ってきた機会を捉えること、流れが変わる兆しを読むことが焦点です。\n\n正位置のキーワード\n転機、好機、循環、進展、時機\n\n逆位置のキーワード\n不運、足踏み、変化への抵抗、時機のずれ","source":""},"major_11":{"body":"一般的な意味\n事実を見比べ、公平な判断を下すことを表します。過去の行動の結果や、約束・契約・役割に応じた責任が明らかになる場面です。\n\n正位置のキーワード\n公平、均衡、判断、責任、正当な評価\n\n逆位置のキーワード\n偏見、不公平、責任逃れ、誤った判断","source":""},"major_12":{"body":"一般的な意味\n身動きの取れない時間を通じて、見方が変わる札です。すぐに成果を求めず、何を差し出し、何を待つ価値があるかを考えます。\n\n正位置のキーワード\n保留、献身、視点の転換、受容、熟成\n\n逆位置のキーワード\n無益な犠牲、徒労、停滞への執着、抵抗","source":""},"major_13":{"body":"一般的な意味\n一つの段階が終わり、従来の形を手放す変化です。終わったものを認めることで、新しい状況へ移る余地が生まれます。\n\n正位置のキーワード\n終結、区切り、刷新、別離、移行\n\n逆位置のキーワード\n変化への抵抗、未練、終われない関係、移行の遅れ","source":""},"major_14":{"body":"一般的な意味\n異なるものを少しずつ混ぜ、無理のない釣り合いを探す札です。調整、仲介、節度ある運用によって、全体を長く保つことに結びつきます。\n\n正位置のキーワード\n調和、節度、調整、協力、融和\n\n逆位置のキーワード\n不調和、過不足、無理な妥協、偏り","source":""},"major_15":{"body":"一般的な意味\n欲望や利益、習慣が強い拘束になる場面です。魅力的な条件の裏で、自由や判断力をどこまで差し出しているかが問われます。\n\n正位置のキーワード\n執着、誘惑、拘束、欲望、利害関係\n\n逆位置のキーワード\n束縛からの離脱、悪習の見直し、依存の自覚、誘惑への抵抗","source":""},"major_16":{"body":"一般的な意味\n脆い前提や保たれていた体制が、急な出来事で崩れる札です。衝撃とともに隠れていた問題が表れ、立て直しを迫られます。\n\n正位置のキーワード\n急変、崩壊、衝撃、真実の露呈、解放\n\n逆位置のキーワード\n危機の長期化、崩壊の回避、変化への抵抗、余震","source":""},"major_17":{"body":"一般的な意味\n困難の後に見える希望や、遠くから進路を示す光です。すぐの成果よりも、信頼できる展望や創作の源が戻ってくる兆しを表します。\n\n正位置のキーワード\n希望、澄んだ展望、着想、再生、信頼\n\n逆位置のキーワード\n落胆、見通しの弱さ、理想倒れ、希望を失うこと","source":""},"major_18":{"body":"一般的な意味\n輪郭の曖昧な状況、想像と事実が交じる時間です。夢や予感に耳を澄ませつつ、確かでない情報を確定事項として扱わない慎重さも要ります。\n\n正位置のキーワード\n不確かさ、夢、幻想、隠れた事情、予感\n\n逆位置のキーワード\n混乱の解消、誤解の発覚、秘密の露見、不安の長期化","source":""},"major_19":{"body":"一般的な意味\n物事が明るみに出て、喜びや成果を分かち合う札です。複雑だった状況が単純になり、率直さや活力が前進を助けます。\n\n正位置のキーワード\n成功、喜び、明快さ、活力、祝福\n\n逆位置のキーワード\n喜びの遅れ、過信、見栄、一時的な曇り","source":""},"major_20":{"body":"一般的な意味\n過去を振り返り、呼びかけに応じて次の段階へ進む札です。再評価、再出発、以前の行いへの返答が重要な意味を持ちます。\n\n正位置のキーワード\n覚醒、再起、決断、再評価、応答\n\n逆位置のキーワード\n決断の遅れ、後悔、呼びかけの無視、過去への固執","source":""},"major_21":{"body":"一般的な意味\n一つの過程がまとまり、全体が完成する札です。積み重ねてきた経験が結びつき、達成を受け取ったうえで新しい周期へ進みます。\n\n正位置のキーワード\n完成、達成、統合、充足、旅の結実\n\n逆位置のキーワード\n未完成、仕上げの不足、区切れないこと、停滞","source":""},"wands_01":{"body":"一般的な意味\n行動や創作を始める火種です。まだ実績はなくても、強い着想や意欲が生まれ、試してみる価値のある入口が現れます。\n\n正位置のキーワード\n着想、発端、熱意、創造力、挑戦\n\n逆位置のキーワード\n意欲の低下、着手の遅れ、空回り、短命な情熱","source":""},"wands_02":{"body":"一般的な意味\n目の前の成果を踏まえ、次に進む範囲を見定める札です。今の場所に留まるか、外へ広げるかという計画と選択を表します。\n\n正位置のキーワード\n構想、展望、計画、主導権、進路の選択\n\n逆位置のキーワード\n見通し不足、優柔不断、拡張への恐れ、計画倒れ","source":""},"wands_03":{"body":"一般的な意味\n準備したものが外へ届き、手応えを待つ段階です。交易や遠方との関わり、協力者を通じた発展、長期的な見通しに結びつきます。\n\n正位置のキーワード\n拡大、協働、遠方、先見、成果の兆し\n\n逆位置のキーワード\n遅延、期待外れ、連携不足、視野の狭さ","source":""},"wands_04":{"body":"一般的な意味\n一段落の成果を祝い、安心できる場を整える札です。住まい、仲間、催しなど、共に喜べる基盤が意味の中心になります。\n\n正位置のキーワード\n祝賀、安らぎ、団結、居場所、節目\n\n逆位置のキーワード\n落ち着かない環境、内輪の不和、祝いの延期、不安定な基盤","source":""},"wands_05":{"body":"一般的な意味\n複数の意志がぶつかり、競い合う状況です。対立が技量を磨く場合もありますが、目的を忘れると消耗する争いになります。\n\n正位置のキーワード\n競争、切磋琢磨、議論、衝突、訓練\n\n逆位置のキーワード\n争いの長期化、無益な対抗、紛争、競争からの離脱","source":""},"wands_06":{"body":"一般的な意味\n努力が認められ、人前で成果を受け取る札です。支持や評価が追い風となり、次の行動を導く自信につながります。\n\n正位置のキーワード\n勝利、承認、評判、支持、達成\n\n逆位置のキーワード\n評価の遅れ、慢心、不評、支持の喪失","source":""},"wands_07":{"body":"一般的な意味\n有利な立場を保ち、自分の領域を守る札です。周囲からの要求や競争に対し、必要な線を引いて踏みとどまります。\n\n正位置のキーワード\n防衛、勇敢さ、優位、信念、踏ん張り\n\n逆位置のキーワード\n圧倒されること、弱腰、過剰な防衛、立場の動揺","source":""},"wands_08":{"body":"一般的な意味\n動きが速まり、知らせや出来事が続けて届く札です。停滞がほどける一方、判断や応答にも速さが求められます。\n\n正位置のキーワード\n急展開、迅速な連絡、進行、接近、移動\n\n逆位置のキーワード\n行き違い、遅延、性急さ、混乱した連絡","source":""},"wands_09":{"body":"一般的な意味\nこれまでの経験を頼りに、もう一度備える姿です。傷や疲れがあっても持ちこたえる力と、警戒を解きにくい状態の両方を表します。\n\n正位置のキーワード\n忍耐、警戒、備え、持久力、再挑戦\n\n逆位置のキーワード\n消耗、疑いすぎ、守りの限界、抵抗の長期化","source":""},"wands_10":{"body":"一般的な意味\n引き受けた役目や成果が重荷になった状態です。終点は近くても、一人で抱える範囲を見直さなければ動きが鈍くなります。\n\n正位置のキーワード\n責任、重荷、多忙、抱え込み、最後の努力\n\n逆位置のキーワード\n負担の軽減、放棄、責任転嫁、過重な役割","source":""},"wands_11":{"body":"一般的な意味\n新しい世界に惹かれ、試しながら学ぶ人物や姿勢です。情熱を刺激する知らせ、企画の種、まだ経験の浅い挑戦者として現れます。\n\n正位置のキーワード\n好奇心、朗報、挑戦、若い情熱、探検\n\n逆位置のキーワード\n未熟、移り気、不確かな知らせ、実行不足","source":""},"wands_12":{"body":"一般的な意味\n勢いよく動き、変化を起こす人物や出来事です。旅や転身、素早い挑戦に向きますが、長く続ける工夫も問われます。\n\n正位置のキーワード\n行動力、冒険、出発、転換、情熱\n\n逆位置のキーワード\n短気、無鉄砲、中断、不和、持続力不足","source":""},"wands_13":{"body":"一般的な意味\n自分の魅力と意志で周囲を動かす人物や姿勢です。温かな支援と独立心を兼ね備え、場に活気をもたらします。\n\n正位置のキーワード\n自信、魅力、寛大さ、自立、活力\n\n逆位置のキーワード\n嫉妬、気の強さ、独占欲、虚勢、干渉","source":""},"wands_14":{"body":"一般的な意味\n大きな構想を掲げ、責任を持って人を率いる人物です。決断力と情熱を現実の行動へ結びつけ、全体の進路を定めます。\n\n正位置のキーワード\n統率、構想、決断、度量、先導\n\n逆位置のキーワード\n強引さ、尊大、独善、短気、無理な号令","source":""},"cups_01":{"body":"一般的な意味\n心を動かす出会いや、感情が満ち始める兆しです。愛情、喜び、創作の感動など、受け取って分かち合うものが生まれます。\n\n正位置のキーワード\n愛情、喜び、感受性、新しい関係、創作の泉\n\n逆位置のキーワード\n感情の閉塞、期待外れ、空虚、愛情の行き違い","source":""},"cups_02":{"body":"一般的な意味\n互いを認め合い、応じ合う関係です。恋愛に限らず、対等な協力、和解、双方の合意が成立する場面を示します。\n\n正位置のキーワード\n相愛、協力、合意、和解、対等さ\n\n逆位置のキーワード\n不一致、すれ違い、不均衡、別離、合意の難航","source":""},"cups_03":{"body":"一般的な意味\n喜びを仲間と分かち合う札です。友情、集まり、祝賀、力を持ち寄って実る楽しさを表します。\n\n正位置のキーワード\n友情、祝宴、交流、協力、喜びの共有\n\n逆位置のキーワード\n内輪の不和、享楽過多、噂、仲間外れ","source":""},"cups_04":{"body":"一般的な意味\n差し出されたものに心が動かず、立ち止まる状態です。倦怠や不満の中で、本当に欲しいものと、見落としている機会を見比べます。\n\n正位置のキーワード\n倦怠、熟考、無関心、満たされなさ、保留\n\n逆位置のキーワード\n新しい関心、機会への気づき、退屈からの脱出、再開","source":""},"cups_05":{"body":"一般的な意味\n失ったものへの悲しみや、期待が崩れた痛みです。残っている支えに目を向けられるかどうかが、その後の展開を左右します。\n\n正位置のキーワード\n喪失、失望、後悔、悲嘆、別れ\n\n逆位置のキーワード\n立ち直り、和解、残るものの発見、過去からの帰還","source":""},"cups_06":{"body":"一般的な意味\n昔の記憶や、親しみのある関係を表します。懐かしさ、贈り物、素直な好意がある一方、過去を美化していないかも見ます。\n\n正位置のキーワード\n思い出、旧友、贈り物、純真、懐旧\n\n逆位置のキーワード\n過去への執着、幼さ、古い関係からの離脱、未来志向","source":""},"cups_07":{"body":"一般的な意味\n多くの魅力的な可能性が浮かび、選択が曖昧になる札です。想像力の豊かさを活かすには、実現できるものを見極める必要があります。\n\n正位置のキーワード\n幻想、選択肢、夢、誘惑、想像力\n\n逆位置のキーワード\n現実的な選択、迷いの解消、幻滅、決意","source":""},"cups_08":{"body":"一般的な意味\n満たされない状況から離れ、別の道を探す姿です。すでに持っているものを捨てても、より重要なものを求める転換を示します。\n\n正位置のキーワード\n離脱、探求、見切り、旅立ち、価値の再検討\n\n逆位置のキーワード\n離れがたさ、引き返すこと、漂流、同じ場所への固執","source":""},"cups_09":{"body":"一般的な意味\n望んだものを受け取り、満足を味わう札です。個人的な喜びや快適さに恵まれる一方、それが本当に十分なのかも問われます。\n\n正位置のキーワード\n満足、願いの成就、享受、充足、好結果\n\n逆位置のキーワード\n過剰な欲望、うわべの満足、期待外れ、自己満足","source":""},"cups_10":{"body":"一般的な意味\n感情的な結びつきが安定し、喜びを共にする関係です。家族や共同体、長く安心して属せる場所を表します。\n\n正位置のキーワード\n円満、幸福、家族、調和、共通の喜び\n\n逆位置のキーワード\n不和、理想の押しつけ、表面だけの調和、価値観のずれ","source":""},"cups_11":{"body":"一般的な意味\n柔らかな感受性や、心に届く知らせを表します。想像力に富む人物、好意の表明、作品の着想として現れることもあります。\n\n正位置のキーワード\n感性、好意、知らせ、想像力、素直さ\n\n逆位置のキーワード\n幼い感情、気まぐれ、甘い誘い、誤解","source":""},"cups_12":{"body":"一般的な意味\n心に描いた理想を追い、言葉や行動で近づく人物です。誘い、提案、芸術的な働きかけなど、感情を運ぶ役割を持ちます。\n\n正位置のキーワード\n誘い、提案、求愛、優雅さ、理想の追求\n\n逆位置のキーワード\n口約束、見せかけ、感情の揺れ、失望","source":""},"cups_13":{"body":"一般的な意味\n感情を深く理解し、静かに受け止める人物や姿勢です。豊かな想像力と細やかな観察が、言葉にならない気持ちを読み取ります。\n\n正位置のキーワード\n共感、受容、想像力、思いやり、洞察\n\n逆位置のキーワード\n感情への没入、依存、過敏さ、境界の曖昧さ","source":""},"cups_14":{"body":"一般的な意味\n強い感情を抱えながら、落ち着いて関係を保つ人物です。理解と節度をもって仲介し、感情を創作や判断へ結びつけます。\n\n正位置のキーワード\n寛容、情緒の安定、理解、仲介、成熟\n\n逆位置のキーワード\n感情操作、二面性、不誠実、抑えた怒り","source":""},"swords_01":{"body":"一般的な意味\n曖昧なものを切り分け、事実や方針を明確にする力です。鋭い判断は突破口にもなりますが、言葉や決断の厳しさも伴います。\n\n正位置のキーワード\n明晰、決断、真実、突破、知的な勝利\n\n逆位置のキーワード\n混乱、誤判断、冷酷な言葉、過剰な力","source":""},"swords_02":{"body":"一般的な意味\n相反する立場の間で判断を保留している状態です。均衡は保たれていても、避けた情報や感情に向き合う必要が残っています。\n\n正位置のキーワード\n保留、均衡、休戦、板挟み、慎重な判断\n\n逆位置のキーワード\n迷いの増大、隠し事の露見、不均衡、選択を迫られること","source":""},"swords_03":{"body":"一般的な意味\n厳しい事実や言葉がもたらす痛みです。失望や別離を認める過程でもあり、傷ついた理由を明確にする札です。\n\n正位置のキーワード\n悲しみ、別離、衝撃、対立、痛い真実\n\n逆位置のキーワード\n和解、痛みの緩和、悲嘆の長期化、抑えた悲しみ","source":""},"swords_04":{"body":"一般的な意味\n争いや活動をいったん休め、回復の時間を取る札です。行動を急がず、距離を置いて状況を整理することに意味があります。\n\n正位置のキーワード\n休止、静養、退避、熟考、休戦\n\n逆位置のキーワード\n再開、落ち着けなさ、休息不足、消耗の継続","source":""},"swords_05":{"body":"一般的な意味\n勝つために払う代償や、後味の悪い争いです。優位を得ても信頼を損なう場合があり、争いを続ける価値そのものが問われます。\n\n正位置のキーワード\n対立、屈辱、損失、不名誉な勝利、利己心\n\n逆位置のキーワード\n和解の模索、敗北の受容、遺恨、争いの蒸し返し","source":""},"swords_06":{"body":"一般的な意味\n難しい場所から離れ、より穏やかな状況へ移る過程です。問題が完全に消えていなくても、援助や距離によって前進できます。\n\n正位置のキーワード\n移行、避難、旅、援助、状況の改善\n\n逆位置のキーワード\n移行の難航、引き戻されること、未解決の問題、足止め","source":""},"swords_07":{"body":"一般的な意味\n正面から進まず、策や隠密な行動によって目的へ近づく札です。機転と独立性が働く一方、欺きや責任回避の可能性も読みます。\n\n正位置のキーワード\n策略、機転、秘密、単独行動、抜け道\n\n逆位置のキーワード\n露見、告白、助言を受けること、策略の失敗","source":""},"swords_08":{"body":"一般的な意味\n制約や恐れのために、動ける道が見えにくい状態です。外側の条件と自分が想定した限界を分けることで、出口を探します。\n\n正位置のキーワード\n拘束、制限、無力感、行き詰まり、恐れ\n\n逆位置のキーワード\n解放、打開、制約の見直し、自由への一歩","source":""},"swords_09":{"body":"一般的な意味\n不安や後悔が頭から離れず、苦しみが膨らむ札です。現実に起きていることと、恐れによって思い描いたことの区別が焦点になります。\n\n正位置のキーワード\n苦悩、不眠、後悔、自責、強い不安\n\n逆位置のキーワード\n不安の緩和、打ち明けること、長引く心配、孤立した苦悩","source":""},"swords_10":{"body":"一般的な意味\n続けられない状況が、はっきり終わる札です。痛い結末であっても、一つの局面の底が見え、次を考える余地が生まれます。\n\n正位置のキーワード\n終局、破綻、敗北、限界、決定的な区切り\n\n逆位置のキーワード\n再起の兆し、最悪の回避、終わりへの抵抗、回復の途上","source":""},"swords_11":{"body":"一般的な意味\n周囲を警戒し、情報や言葉を鋭く扱う人物です。調査や学習に向く一方、噂や詮索、早すぎる断定にも結びつきます。\n\n正位置のキーワード\n警戒、調査、観察、学習、機敏な思考\n\n逆位置のキーワード\n詮索、噂、軽率な発言、誤情報、過剰な警戒","source":""},"swords_12":{"body":"一般的な意味\n明確な目的へ素早く突き進む人物や出来事です。論戦や難局を突破する力がありますが、他者や細部を置き去りにしやすい面もあります。\n\n正位置のキーワード\n迅速、断行、論戦、突破、強い決意\n\n逆位置のキーワード\n無謀、攻撃性、独断、衝突、性急な結論","source":""},"swords_13":{"body":"一般的な意味\n経験に裏打ちされた明晰さと、情に流されない判断を表します。厳しい言葉や境界を示す人物として現れ、冷たさと公正さの両面を持ちます。\n\n正位置のキーワード\n識別、独立、厳格さ、洞察、率直な言葉\n\n逆位置のキーワード\n冷酷さ、皮肉、偏見、操作、容赦のない裁き","source":""},"swords_14":{"body":"一般的な意味\n事実と規則をもとに、厳しく決断を下す人物です。権限や専門知識を持ち、問題の構造を見通して判断します。\n\n正位置のキーワード\n理性、公正、権限、専門性、決断力\n\n逆位置のキーワード\n圧政、恣意的な判断、冷酷、権力の濫用","source":""},"pentacles_01":{"body":"一般的な意味\n仕事や暮らしに根を下ろす、新しい機会や資源です。小さな種を手入れして育てるように、具体的な行動によって実りへ結びつけます。\n\n正位置のキーワード\n機会、資源、着実な始まり、豊かさ、実益\n\n逆位置のキーワード\n機会の見落とし、準備不足、浪費、実現の遅れ","source":""},"pentacles_02":{"body":"一般的な意味\n複数の用事や資源をやりくりし、変化に対応する札です。固定した均衡よりも、動きながら優先順位を調整する力が必要になります。\n\n正位置のキーワード\n柔軟性、両立、やりくり、適応、調整\n\n逆位置のキーワード\n手一杯、不均衡、優先順位の混乱、管理不足","source":""},"pentacles_03":{"body":"一般的な意味\n技術や役割を持ち寄り、具体的な成果を作る札です。専門性が評価され、協力や学びを通じて仕事の質が高まります。\n\n正位置のキーワード\n協働、技能、評価、計画、学習\n\n逆位置のキーワード\n連携不足、未熟な仕事、役割の不一致、評価不足","source":""},"pentacles_04":{"body":"一般的な意味\n得たものを確保し、生活や立場の安定を守る札です。堅実な管理が役立つ一方、失う恐れから何も動かせなくなる面もあります。\n\n正位置のキーワード\n保持、蓄え、保守、安定、所有\n\n逆位置のキーワード\n手放すこと、浪費、執着、守りすぎ、資源の停滞","source":""},"pentacles_05":{"body":"一般的な意味\n必要な資源や支えが乏しく、困難を感じる札です。孤立や排除の問題も含み、利用できる援助や協力先の存在が焦点になります。\n\n正位置のキーワード\n欠乏、困窮、疎外、苦境、孤立\n\n逆位置のキーワード\n支援の発見、改善の兆し、再建、困難の長期化","source":""},"pentacles_06":{"body":"一般的な意味\n資源や知識、時間を与えたり受け取ったりする関係です。援助のありがたさとともに、交換が公平か、立場が偏っていないかを見ます。\n\n正位置のキーワード\n援助、分配、寛大さ、返礼、公平な交換\n\n逆位置のキーワード\n不公平、見返りの要求、依存、一方的な援助","source":""},"pentacles_07":{"body":"一般的な意味\n育ててきたものを点検し、収穫まで待つ札です。すぐの結果よりも、労力に見合う成長があるかを見て、続け方を考えます。\n\n正位置のキーワード\n忍耐、点検、育成、長期的な成果、待機\n\n逆位置のキーワード\n焦り、実りの乏しさ、徒労、方向の見直し","source":""},"pentacles_08":{"body":"一般的な意味\n繰り返し手を動かし、技術と品質を磨く姿です。派手さよりも、丁寧な仕事や学習の積み重ねが成果を作ります。\n\n正位置のキーワード\n修練、勤勉、技能、集中、丁寧な仕事\n\n逆位置のキーワード\n手抜き、単調さ、未熟、完璧主義、集中不足","source":""},"pentacles_09":{"body":"一般的な意味\n積み重ねによって得た安定や、美しい暮らしを味わう札です。他人任せにせず、自分で選べる余裕と独立性を表します。\n\n正位置のキーワード\n自立、実り、洗練、余裕、達成の享受\n\n逆位置のキーワード\n虚飾、依存、浪費、基盤の弱さ、満たされない豊かさ","source":""},"pentacles_10":{"body":"一般的な意味\n長く続く基盤や、共同体に蓄えられた資産を表します。家、事業、相続、伝統など、個人を超えて受け継ぐものが焦点です。\n\n正位置のキーワード\n繁栄、継承、家系、長期的な安定、蓄積\n\n逆位置のキーワード\n継承の問題、内輪の不和、基盤の動揺、家のしがらみ","source":""},"pentacles_11":{"body":"一般的な意味\n実際に役立つ知識や技術を、丁寧に学ぶ人物です。新しい仕事や学習の知らせ、現実的な目標を育てる姿勢を表します。\n\n正位置のキーワード\n学習、勤勉、具体的な目標、好機、基礎作り\n\n逆位置のキーワード\n怠慢、準備不足、非現実的な計画、学びの停滞","source":""},"pentacles_12":{"body":"一般的な意味\n派手な近道よりも、確かな手順を繰り返す人物です。責任感と持続力によって成果を守り、時間をかけて前進します。\n\n正位置のキーワード\n堅実、責任感、忍耐、継続、信頼\n\n逆位置のキーワード\n停滞、頑固、惰性、働きすぎ、柔軟性不足","source":""},"pentacles_13":{"body":"一般的な意味\n暮らしや資源を巧みに整え、周囲を豊かにする人物です。実用的な配慮と美意識を兼ね備え、育てたものを惜しまず分かち合います。\n\n正位置のキーワード\n豊穣、実務、寛大さ、居心地のよさ、資源の管理\n\n逆位置のキーワード\n過干渉、浪費、物への執着、世話の偏り","source":""},"pentacles_14":{"body":"一般的な意味\n経験と管理能力によって、持続する豊かさを築く人物です。信頼できる実務家、経営者、家や土地を守る立場として現れます。\n\n正位置のキーワード\n成功、実務能力、信頼、繁栄、安定した基盤\n\n逆位置のキーワード\n強欲、保守への固執、独占、物質偏重、管理の失敗","source":""}};
@@ -1372,9 +1437,26 @@ function openTableCard(index){
  const p=state.placed[index];if(!p)return;if(!p.faceUp){setStatus('表向きのカードを選ぶと拡大できます。');return}
  const c=cards.find(c=>c.id===p.id);if(!c)return;
  const position=p.slot!=null?getSlots()[p.slot]:null;
- modal('<h2>'+escapeHTML(c.name)+(p.reversed?'〈逆位置〉':'〈正位置〉')+'</h2>'+(position?'<section class="table-reading-context" aria-label="ポジションの意味"><strong>'+escapeHTML(String(p.slot+1)+'. '+position.name)+'</strong>'+(position.detail?'<p>'+escapeHTML(position.detail)+'</p>':'')+'</section>':'')+'<div class="table-card-view detail-body"><img id="tableCardLarge" alt="'+escapeHTML(c.name)+'"><aside class="detail-copy" id="tableCardText" hidden></aside></div><div class="table-card-footer"><div class="row"><button type="button" id="tableCardPrev">前の札</button><button type="button" id="tableCardNext">次の札</button></div></div>');
+ modal('<h2>'+escapeHTML(c.name)+(p.reversed?'〈逆位置〉':'〈正位置〉')+'</h2>'+(position?'<section class="table-reading-context" aria-label="ポジションの意味"><strong>'+escapeHTML(String(p.slot+1)+'. '+position.name)+'</strong>'+(position.detail?'<p>'+escapeHTML(position.detail)+'</p>':'')+'</section>':'')+'<div class="table-card-view detail-body"><div id="tableCardArtFrame"><img id="tableCardLarge" alt="'+escapeHTML(c.name)+'"></div><aside class="detail-copy" id="tableCardText" hidden></aside></div><div class="table-card-footer"><div class="row"><button type="button" id="tableCardPrev">前の札</button><button type="button" id="tableCardNext">次の札</button></div></div>');
  $('modalBg').classList.add('card-viewer-active');$('modalClose').focus();
- const update=()=>{setCardArtwork($('tableCardLarge'),finishedCardSource(c));renderDetailText($('tableCardText'),c);$('tableCardLarge').style.transform=p.reversed?'rotate(180deg)':'';};update();
+ const update=()=>{
+  const appearance=appearanceForCard(p);
+  setCardArtwork($('tableCardLarge'),finishedCardSource(c,false,appearance));
+  renderDetailText($('tableCardText'),c);
+  const frame=$('tableCardArtFrame');
+  frame.dataset.wornAsset=(appearance==='worn'&&wornMaterialAvailable(p.id))?'true':'false';
+  frame.classList.toggle('worn-artwork',appearance==='worn');
+  frame.dataset.appearance=appearance;
+  if(appearance==='worn')frame.dataset.wearVariant=wearVariant(p);
+  else delete frame.dataset.wearVariant;
+  if(appearance==='worn'){
+    frame.style.transform=p.reversed?'rotate(180deg)':'';
+    $('tableCardLarge').style.transform='';
+  }else{
+    frame.style.transform='';
+    $('tableCardLarge').style.transform=p.reversed?'rotate(180deg)':'';
+  }
+ };update();
 
  const copyToggle=document.createElement('button');copyToggle.type='button';copyToggle.textContent=detailTextVisible?'文章：表示':'文章：非表示';copyToggle.onclick=()=>{detailTextVisible=!detailTextVisible;copyToggle.textContent=detailTextVisible?'文章：表示':'文章：非表示';renderDetailText($('tableCardText'),c)};$('tableCardNext').parentElement.after(copyToggle);
  const visible=state.placed.map((p,i)=>p.faceUp?i:-1).filter(i=>i>=0),at=visible.indexOf(index);
@@ -1476,7 +1558,7 @@ function renderCandles(){const host=$('altar');host.replaceChildren();host.hidde
  const finish=()=>{if(gesture){gesture=null;saveLocal();}};node.onpointerup=finish;node.onpointercancel=finish;node.onclick=e=>{e.stopPropagation();selectedCandle=c.id;syncCandleControls();};node.onkeydown=e=>{const v={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(v){e.preventDefault();const pc=window.innerWidth>780;c.x=Math.max(pc?0:5,Math.min(pc?100:95,c.x+v[0]));c.y=Math.max(pc?5:23,Math.min(pc?100:96,c.y+v[1]));node.style.left=c.x+'%';node.style.top=c.y+'%';saveLocal();}};
  });syncCandleControls();}
 function syncCandleControls(){const list=altarCandles(),c=list.find(c=>c.id===selectedCandle);$('candleSelection').textContent=c?'選択中：キャンドル '+(list.indexOf(c)+1):'キャンドルをクリックして選択';for(const id of ['candleLength','candleSize','candleLit','candleRemove','candleDeselect'])$(id).disabled=!c;$('candleSwatches').querySelectorAll('button').forEach(b=>{b.disabled=!c;const active=!!c&&b.dataset.color===c.color;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});$('candleColorName').textContent=c?(candlePalette.find(p=>p[1]===c.color)?.[0]||''):'色を変更するキャンドルを選択';if(c){$('candleLength').value=c.length==='short'?'short':'long';$('candleSize').value=String([60,80,100,120,140,160,180].includes(Number(c.size))?Number(c.size):100);$('candleColor').value=c.color;$('candleLit').checked=c.lit;} }
-function installCandles(){const section=$('altarToggle').closest('section');section.querySelector('h2 .section-title').textContent='Ⅲ. アルター設定';const panel=document.createElement('div');panel.className='candle-settings stack';panel.innerHTML='<div class="row"><button type="button" id="candleAdd">キャンドルを追加</button></div><div class="mini" id="candleSelection"></div><label class="field">蝋燭の長さ<select id="candleLength"><option value="long">長</option><option value="short">短</option></select></label><label class="field">表示サイズ<select id="candleSize"><option value="60">60%（小）</option><option value="80">80%</option><option value="100">100%（標準）</option><option value="120">120%</option><option value="140">140%</option><option value="160">160%</option><option value="180">180%（最大）</option></select></label><span class="field" id="candleColorHeading">キャンドルの色を選ぶ</span><div class="swatches" id="candleSwatches" role="group" aria-labelledby="candleColorHeading"></div><div class="mini" id="candleColorName"></div><select id="candleColor" hidden aria-hidden="true">'+candlePalette.map(([name,color])=>'<option value="'+color+'">'+name+'</option>').join('')+'</select><label class="choice"><input type="checkbox" id="candleLit">火を灯す</label><button type="button" id="candleRemove">選択したキャンドルを取り除く</button><button type="button" id="candleDeselect">選択を解除</button><p class="mini">ドラッグで配置。テーブルの余白を押すと選択を解除できます。</p>';$('altarToggle').closest('label').after(panel);
+function installCandles(){const section=$('altarToggle').closest('section');section.querySelector('h2 .section-title').textContent='Ⅳ. アルター設定';const panel=document.createElement('div');panel.className='candle-settings stack';panel.innerHTML='<div class="row"><button type="button" id="candleAdd">キャンドルを追加</button></div><div class="mini" id="candleSelection"></div><label class="field">蝋燭の長さ<select id="candleLength"><option value="long">長</option><option value="short">短</option></select></label><label class="field">表示サイズ<select id="candleSize"><option value="60">60%（小）</option><option value="80">80%</option><option value="100">100%（標準）</option><option value="120">120%</option><option value="140">140%</option><option value="160">160%</option><option value="180">180%（最大）</option></select></label><span class="field" id="candleColorHeading">キャンドルの色を選ぶ</span><div class="swatches" id="candleSwatches" role="group" aria-labelledby="candleColorHeading"></div><div class="mini" id="candleColorName"></div><select id="candleColor" hidden aria-hidden="true">'+candlePalette.map(([name,color])=>'<option value="'+color+'">'+name+'</option>').join('')+'</select><label class="choice"><input type="checkbox" id="candleLit">火を灯す</label><button type="button" id="candleRemove">選択したキャンドルを取り除く</button><button type="button" id="candleDeselect">選択を解除</button><p class="mini">ドラッグで配置。テーブルの余白を押すと選択を解除できます。</p>';$('altarToggle').closest('label').after(panel);
  const clothHeading=document.createElement('div');clothHeading.className='field';clothHeading.id='clothColorHeading';clothHeading.textContent='クロスの色を選ぶ';$('swatches').before(clothHeading);$('swatches').setAttribute('role','group');$('swatches').setAttribute('aria-labelledby','clothColorHeading');
  const deselect=()=>{selectedCandle=null;$('altar').querySelectorAll('.altar-object').forEach(n=>n.setAttribute('aria-pressed','false'));syncCandleControls();};$('candleDeselect').onclick=deselect;
  $('stage').addEventListener('pointerdown',e=>{if(!e.target.closest('.altar-object'))deselect();},true);
@@ -1493,7 +1575,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
  spreadCount:()=>settings.spread==='free'?0:getSlots().length,
  defaultOrder:()=>getDealOrder(),
  shuffleRecipes:()=>recipes.map(r=>({id:r.id,name:r.name,steps:r.steps.map(st=>({...st}))})),
- canStart:()=>!state.placed.length&&!(state.removed||[]).length,
+ canStart:()=>!dualSession&&!state.placed.length&&!(state.removed||[]).length,
  commit:(cards,dealt=[],removed=[],positionOptions={})=>{
   const slots=getSlots();let order=settings.spread==='free'?[]:getDealOrder();
   if(positionOptions.mode==='random'){order=order.slice();for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}}
@@ -1579,7 +1661,515 @@ function installTableActionSettings(){
  const previousSync=sync;sync=function(){previousSync();update()};
  update();
 }
+
+/* Two-deck working session: physically distinct card instances, separate tables.
+   One-deck work remains stored under the existing key without migration. */
+function dualClone(v){return JSON.parse(JSON.stringify(v))}
+const DUAL_BACK_DEFAULTS={A:'sepia',B:'navy'};
+const APPEARANCES=['standard','pocket','worn'];
+const APPEARANCE_LABELS={standard:'Standard（標準）',pocket:'Pocket（小型）',worn:'Worn（使い古し）'};
+function validAppearance(value){return APPEARANCES.includes(value)?value:'standard'}
+function appearanceForPile(source){
+ if(!dualSession)return validAppearance(settings.deckAppearance);
+ return validAppearance(dualSession.appearances?.[source]||dualSession.appearances?.A);
+}
+function appearanceForCard(card){
+ return appearanceForPile(dualSession?(card?.sourceDeck||dualSession.activePile):null);
+}
+/* Deterministic per-physical-card wear; never change during reshuffling or inspection. */
+function wearVariant(card){
+ const value=String(card?.instanceId||((card?.sourceDeck||'single')+':'+(card?.id||'default')));
+ let hash=2166136261;
+ for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619)>>>0;
+ return 'abcd'[hash%4];
+}
+function updateAppearanceControls(){
+ const field=$('deckAppearance');if(field){field.value=validAppearance(settings.deckAppearance);field.disabled=!!dualSession}
+ if(dualSession){
+  $('dualAppearanceA').value=appearanceForPile('A');
+  $('dualAppearanceB').value=appearanceForPile('B');
+ }
+}
+
+function dualBackTone(deck){const tone=dualSession?.backColors?.[deck]||DUAL_BACK_DEFAULTS[deck]||'sepia';return Object.hasOwn(TABULA_BACK_PALETTE,tone)?tone:'sepia'}
+
+function isIndependentTables(){return !!dualSession&&dualSession.workspaceKind==='independent'}
+function independentDeckChoices(){
+ const p=$('independentDeckSelect');if(!p)return;const old=p.value;
+ p.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));
+ for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
+ p.value=Array.from(p.options).some(o=>o.value===old)?old:'builtin';
+}
+function independentTableWorkspace(){
+ const deckId=$('independentDeckSelect').value,pool=$('independentDeckPool').value;
+ const registered=deckLibrary.find(d=>d.id===deckId),allowed=new Set(registered?registered.included:cards.map(c=>c.id));
+ const idsB=TabulaCardRules.selectCards(cards,pool==='included'?'all':pool,cards.map(c=>c.id)).filter(c=>allowed.has(c.id)).map(c=>c.id);
+ const physical=[...state.deck,...state.placed,...(state.removed||[])],idsA=physical.map(c=>c.id);
+ if(!idsB.length||!idsA.length||new Set(idsA).size!==idsA.length)throw Error('山札のカード構成を確認してください。');
+ const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(idsA,idsB,{spread:settings.spread}),'table2','追加卓Ⅰ');
+ const own=c=>({...c,instanceId:'A:'+c.id,sourceDeck:'A'});
+ w.workspaceKind='independent';w.piles.A=state.deck.map(own);
+ Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),spread:settings.spread,cardSize:zoom,deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles())});
+ Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),deckId,pool:pool==='included'?'all':pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles())});
+ w.piles.B=randomize(w.piles.B.map(c=>({...c,reversed:settings.reversals?Math.random()<.5:false})));
+ w.appearances={A:validAppearance(settings.deckAppearance),B:'standard'};
+ w.backColors={A:settings.cardBackColor||'sepia',B:registered?.backColor||'navy'};
+ TabulaMultiWorkspace.validate(w);return w;
+}
+function beginIndependentTable(){
+ if(dualBusy())return;
+ if(dualSession||storedExtraWorkspace()){setStatus('保存済みの追加卓を片付けてから操作してください。');return}
+ try{
+  const w=independentTableWorkspace();dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
+  dualSession=w;dualRestoreView();dualSave();dualSwitchTable('table2');
+  setStatus('追加卓Ⅰに独立した'+w.piles.B.length+'枚の山札を用意しました。');
+ }catch(e){setStatus('追加卓を作れませんでした：'+e.message)}
+}
+function isSharedTables(){return !!dualSession&&dualSession.workspaceKind==='single-shared'}
+function sharedTableWorkspace(){
+ const physical=[...state.deck,...state.placed,...(state.removed||[])];
+ const ids=physical.map(c=>c.id);
+ if(!ids.length||ids.length!==new Set(ids).size)throw Error('共有できるカード構成ではありません。');
+ const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(ids,[],{spread:settings.spread}),'table2','追加卓Ⅰ');
+ const own=c=>({...c,instanceId:'A:'+c.id,sourceDeck:'A'});
+ w.workspaceKind='single-shared';
+ w.instances=ids.map(id=>({id,instanceId:'A:'+id,sourceDeck:'A',reversed:false}));
+ w.piles.A=state.deck.map(own);
+ w.tables.table1.name='メイン卓';w.tables.table1.placed=state.placed.map(own);
+ w.tables.table1.removed=(state.removed||[]).map(own);
+ w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
+ w.tables.table1.color=settings.color;w.tables.table1.altar=!!settings.altar;
+ w.tables.table1.candles=dualClone(altarCandles());
+ w.tables.table2.name='追加卓Ⅰ';w.tables.table2.spread='free';
+ w.tables.table2.cardSize=spreadCardSize('free');
+ w.tables.table2.color=colors.findIndex(([name])=>name==='ダークレッド');
+ w.tables.table2.altar=!!settings.altar;w.tables.table2.candles=dualClone(altarCandles());
+ w.appearances={A:validAppearance(settings.deckAppearance),B:'standard'};
+ w.backColors={A:settings.cardBackColor||'sepia',B:'navy'};
+ TabulaMultiWorkspace.validate(w);
+ return w;
+}
+function beginSharedTable(){
+ if(dualBusy())return;
+ if(dualSession){if(isSharedTables())dualSwitchTable('table2');else setStatus('二組のデッキを保管してから、共有卓を利用してください。');return}
+ if(storedExtraWorkspace()){setStatus('保存中の追加卓があります。再開するか片付けてください。');return}
+ try{
+  const next=sharedTableWorkspace();
+  dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
+  dualSession=next;
+  dualRestoreView();dualSave();dualSwitchTable('table2');
+  setStatus('追加卓Ⅰを用意しました。メイン卓と同じ山札から配札します。');
+ }catch(e){setStatus('追加卓を作れませんでした：'+e.message)}
+}
+function dualFresh(){
+ const ids=selectedCards().map(c=>c.id);
+ let w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(ids,ids,{spread:settings.spread}),'table2','卓Ⅱ');
+ for(const p of ['A','B']){
+  w.piles[p]=randomize(w.piles[p].map(c=>({...c,reversed:settings.reversals?Math.random()<.5:false})));
+ }
+ w.backColors={...DUAL_BACK_DEFAULTS};w.appearances={A:'standard',B:'standard'};
+ w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
+ w.tables.table2.spread='free';w.tables.table2.cardSize=spreadCardSize('free');
+ // Give each physical table its own persistent visual identity.
+ w.tables.table1.name='卓Ⅰ';w.tables.table1.color=settings.color;
+ w.tables.table1.altar=!!settings.altar;w.tables.table1.candles=dualClone(altarCandles());
+ w.tables.table2.name='卓Ⅱ';w.tables.table2.color=colors.findIndex(([name])=>name==='ダークレッド');
+ w.tables.table2.altar=!!settings.altar;w.tables.table2.candles=dualClone(altarCandles());
+ return w;
+}
+function dualCapture(){
+ if(!dualSession)return;
+ dualSession.piles[dualSession.activePile]=dualClone(state.deck);
+ const t=dualSession.tables[dualSession.activeTable];
+ t.placed=dualClone(state.placed);
+ t.spread=settings.spread;t.cardSize=zoom;
+ if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;}
+ t.color=settings.color;t.altar=!!settings.altar;t.candles=dualClone(altarCandles());
+ t.selected=state.selected;t.completionShown=state.completionShown;
+ t.dealCheckpoint=dualClone(state.dealCheckpoint);
+ t.removed=dualClone(state.removed||[]);
+ t.cutStage=dualClone(state.cutStage);
+}
+function dualRestoreView(){
+ if(isIndependentTables())dualSession.activePile=dualSession.activeTable==='table2'?'B':'A';
+ const t=dualSession.tables[dualSession.activeTable];
+ state={deck:dualClone(dualSession.piles[dualSession.activePile]),placed:dualClone(t.placed||[]),cutStage:dualClone(t.cutStage||null),
+ selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[])};
+ settings.spread=t.spread||'free';
+ if(isIndependentTables()){
+  settings.deckId=t.deckId||'builtin';settings.pool=t.pool||'all';
+  const d=deckLibrary.find(x=>x.id===settings.deckId);
+  settings.cardDesign=d?.faceStyle||(settings.deckId==='simple'?'simple':'standard');
+  settings.cardBackColor=d?.backColor||(dualSession.backColors?.[dualSession.activePile]||'sepia');
+ }
+ settings.color=Number.isInteger(t.color)&&t.color>=0&&t.color<colors.length?t.color:0;
+ settings.altar=typeof t.altar==='boolean'?t.altar:!!settings.altar;
+ settings.candles=Array.isArray(t.candles)?dualClone(t.candles):dualClone(altarCandles());
+ selectedCandle=null;
+ settings.dealSkipFirst=0;settings.dealSkipSchedule='';
+ setCardSize(validCardSize(t.cardSize)?t.cardSize:spreadCardSize(settings.spread),false);
+ sync();render();dualRefreshControls();
+}
+
+function positionSecondDeck(){
+ if(!deckB)return;
+ deckB.hidden=!dualSession||dualSession.mixed||isSharedTables()||isIndependentTables();
+ deck.classList.toggle('dual-primary-deck',!!dualSession&&!isIndependentTables());
+ if(!dualSession){return}
+ const m=metrics();deckB.style.setProperty('--cw',m.w+'px');deckB.style.setProperty('--ch',m.h+'px');
+ deck.dataset.dualSource=dualSession.mixed?'mixed':isIndependentTables()?dualSession.activePile:'A';
+ deckB.dataset.backTone=dualBackTone('B');deckB.dataset.appearance=appearanceForPile('B');if(deckB.dataset.appearance==='worn')deckB.dataset.wearVariant=wearVariant(dualSession.piles.B[0]);else delete deckB.dataset.wearVariant;
+ const move=dualSession.deckPositions?.B;
+ for(const prop of ['left','top','right','bottom'])deckB.style.removeProperty(prop);
+ if(move&&Number.isFinite(move.x)&&Number.isFinite(move.y)){
+   const surface=$('surface'),sw=surface.offsetWidth||1,sh=surface.offsetHeight||1;
+   const px=Math.max(12,Math.min(move.x*sw/100,sw-deckB.offsetWidth-12));
+   const py=Math.max(12,Math.min(move.y*sh/100,sh-deckB.offsetHeight-12));
+   deckB.style.left=px+'px';deckB.style.top=py+'px';
+ }
+ labelA.textContent=isSharedTables()?'共有 '+dualSession.piles.A.length+'枚':dualSession.mixed?'混合 '+dualSession.piles.mixed.length+'枚':isIndependentTables()?(dualSession.activePile==='B'?'B ':'A ')+state.deck.length+'枚':'A '+dualSession.piles.A.length+'枚';
+ deck.classList.toggle('dual-selected',isIndependentTables()||dualSession.activePile!=='B');
+ deckB.classList.toggle('dual-selected',dualSession.activePile==='B');
+ deckB.classList.toggle('empty',!dualSession.piles.B.length);
+ labelB.textContent='B '+dualSession.piles.B.length+'枚';
+}
+const deckMoveHandleB=document.createElement('button');deckMoveHandleB.type='button';
+deckMoveHandleB.className='deck-move-handle';deckMoveHandleB.textContent='✥';
+deckMoveHandleB.title='デッキBを移動';deckMoveHandleB.setAttribute('aria-label','デッキBを移動');
+deckB.append(deckMoveHandleB);
+let secondDeckMove=null;
+deckMoveHandleB.addEventListener('pointerdown',e=>{
+ if(!dualSession||dualSession.mixed||e.button!==0)return;
+ e.preventDefault();e.stopPropagation();
+ const surface=$('surface'),r=surface.getBoundingClientRect();
+ secondDeckMove={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,x:deckB.offsetLeft,y:deckB.offsetTop,
+ scaleX:r.width/(surface.offsetWidth||1),scaleY:r.height/(surface.offsetHeight||1)};
+ deckMoveHandleB.setPointerCapture(e.pointerId);
+});
+deckMoveHandleB.addEventListener('pointermove',e=>{
+ if(!secondDeckMove||secondDeckMove.pointerId!==e.pointerId)return;
+ e.preventDefault();e.stopPropagation();
+ const surface=$('surface'),sw=surface.offsetWidth||1,sh=surface.offsetHeight||1;
+ const x=Math.max(0,Math.min(sw-deckB.offsetWidth,secondDeckMove.x+(e.clientX-secondDeckMove.startX)/(secondDeckMove.scaleX||1)));
+ const y=Math.max(0,Math.min(sh-deckB.offsetHeight,secondDeckMove.y+(e.clientY-secondDeckMove.startY)/(secondDeckMove.scaleY||1)));
+ dualSession.deckPositions??={};dualSession.deckPositions.B={x:100*x/sw,y:100*y/sh};
+ positionSecondDeck();
+});
+function endSecondDeckMove(e){if(!secondDeckMove||e.pointerId!==secondDeckMove.pointerId)return;e.stopPropagation();secondDeckMove=null;dualSave()}
+deckMoveHandleB.addEventListener('pointerup',endSecondDeckMove);
+deckMoveHandleB.addEventListener('pointercancel',endSecondDeckMove);
+deckMoveHandleB.addEventListener('lostpointercapture',()=>{if(secondDeckMove){secondDeckMove=null;dualSave()}});
+deckMoveHandleB.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
+
+/* A table is a workspace; selecting A or B changes the active stock only.
+   Existing dual-session data is retained until the user explicitly clears it. */
+function storedExtraWorkspace(){
+ try{return !!localStorage.getItem(DUAL_SESSION_KEY)}catch(e){return false}
+}
+function refreshWorkspaceSwitcher(){
+ const hasWorkspace=!!dualSession||storedExtraWorkspace();
+ const switcher=$('workspaceSwitcher'),selector=$('workspaceTable');
+ if(switcher)switcher.hidden=!hasWorkspace;
+ if(!selector||!hasWorkspace)return;
+ let w=dualSession;
+ if(!w){try{w=JSON.parse(localStorage.getItem(DUAL_SESSION_KEY))}catch(e){}}
+ const sharedOrIndependent=w?.workspaceKind==='single-shared'||w?.workspaceKind==='independent';
+ const choices=[new Option(sharedOrIndependent?'メイン卓':'メイン卓（通常）','main')];
+ // For ordinary additional tables, table1 *is* the main table:
+ // never expose an indistinguishable duplicate native select option.
+ if(!sharedOrIndependent)choices.push(new Option(w?.tables?.table1?.name||'卓Ⅰ','table1'));
+ choices.push(new Option(w?.tables?.table2?.name||'追加卓Ⅰ','table2'));
+ const current=dualSession?(sharedOrIndependent&&dualSession.activeTable==='table1'?'main':dualSession.activeTable):'main';
+ const signature=choices.map(o=>o.value+':'+o.textContent).join('|');
+ if(selector.dataset.choices!==signature){
+  selector.replaceChildren(...choices);
+  selector.dataset.choices=signature;
+ }
+ selector.value=current;
+}
+let tableAddExpanded=false;
+function updateTableAddPanel(){
+ const active=!!dualSession,stored=!active&&storedExtraWorkspace(),available=!active&&!stored;
+ const mode=$('tableAddMode').value;
+ $('tableAddOpen').hidden=!available;
+ $('tableAddOpen').setAttribute('aria-expanded',String(available&&tableAddExpanded));
+ $('tableAddPanel').hidden=!available||!tableAddExpanded;
+ document.querySelector('.table-shared-setup').hidden=mode!=='shared';
+ document.querySelector('.independent-deck-setup').hidden=mode!=='independent';
+ document.querySelector('.table-double-setup').hidden=mode!=='double';
+}
+$('tableAddOpen').onclick=()=>{tableAddExpanded=!tableAddExpanded;updateTableAddPanel();};
+$('tableAddMode').onchange=updateTableAddPanel;
+function refreshClothIndicators(){
+ const current=dualSession?.tables?.[dualSession.activeTable];
+ const currentName=current?.name||(dualSession?'現在の卓':'メイン卓');
+ const tone=colors[settings.color]?.[1]||'#b69a65';
+ $('tableMenuCurrent').textContent=currentName;
+ for(const id of ['tableMenuSwatch','dualClothSwatch','workspaceClothSwatch']){
+  const el=$(id);if(el){el.style.backgroundColor=tone;el.title='クロス色：'+(colors[settings.color]?.[0]||'現在の色');}
+ }
+}
+let mobileWorkspaceSettingsExpanded=false;
+$('mobileWorkspaceSettingsToggle').onclick=()=>{
+ mobileWorkspaceSettingsExpanded=!mobileWorkspaceSettingsExpanded;
+ dualRefreshControls();
+};
+function dualRefreshControls(){
+ const controls=$('dualControls'),bar=$('dualModeBar');
+ if(!controls||!bar)return;
+ const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables(),independent=isIndependentTables();
+ updateTableAddPanel();
+ refreshClothIndicators();
+ controls.hidden=!active;
+ bar.hidden=!active&&!stored;
+ const mobileToggle=$('mobileWorkspaceSettingsToggle');
+ mobileToggle.hidden=!active;
+ mobileToggle.setAttribute('aria-expanded',String(mobileWorkspaceSettingsExpanded));
+ mobileToggle.firstChild.textContent=mobileWorkspaceSettingsExpanded?'卓の設定を閉じる ':'卓の設定を開く ';
+ controls.classList.toggle('mobile-expanded',mobileWorkspaceSettingsExpanded);
+ const compact=$('dualStoredControls');
+ if(compact)compact.hidden=!stored;
+ $('sharedTableClear').hidden=!shared&&!independent;
+ $('dualReturnMain').hidden=!active||shared||independent;
+ $('dualToggle').textContent='ダブルデッキモードを開始';
+ $('dualToggle').hidden=shared||independent;
+ const add=$('sharedTableAdd');
+ if(add){add.hidden=(active&&!shared)||stored;add.textContent=shared?'追加卓Ⅰに切り替える':'卓を追加（1組の山札を共有）'}
+ document.body.classList.toggle('dual-enabled',active);
+ if(!active){
+  $('dualTableIdentity').hidden=true;
+  refreshWorkspaceSwitcher();
+  return;
+ }
+ for(const id of ['dualPile','dualAppearanceB','dualBackB']){
+  const field=$(id)?.closest('label');if(field)field.hidden=shared||(independent&&id==='dualPile');
+ }
+ const appearanceALabel=$('dualAppearanceA').closest('label');
+ const backALabel=$('dualBackA').closest('label');
+ appearanceALabel.hidden=false;backALabel.hidden=false;
+ $('dualDeckHeadingA').textContent=shared?'共有デッキ':independent?'メインデッキ':'デッキA';
+ $('dualDeckHeadingB').textContent=independent?'追加デッキ':'デッキB';
+ $('dualDeckFieldsB').hidden=shared;
+ $('dualNew').hidden=shared||independent;
+ const selected=$('dualPile');
+ selected.value=dualSession.activePile;
+ $('dualBackA').value=dualBackTone('A');$('dualBackB').value=dualBackTone('B');updateAppearanceControls();
+ for(const option of selected.options)option.hidden=dualSession.mixed?option.value!=='mixed':option.value==='mixed';
+ const tableSelect=$('dualTable');
+ for(const option of tableSelect.options){
+  const t=dualSession.tables[option.value];
+  if(t)option.textContent=t.name||t.id;
+ }
+ tableSelect.value=dualSession.activeTable;
+ const current=dualSession.tables[dualSession.activeTable];
+ const identity=$('dualTableIdentity');
+ identity.hidden=true;
+ identity.textContent=current?.name||'現在の卓';
+ identity.style.borderLeftColor=colors[settings.color]?.[1]||'#b69a65';
+ const nameField=$('dualTableName');
+ if(nameField)nameField.value=current?.name||'';
+ $('dualMix').hidden=shared||independent||dualSession.mixed;
+ $('dualSeparate').hidden=shared||independent||!dualSession.mixed;
+ $('dualSummary').textContent=shared
+ ?'共有山札 '+dualSession.piles.A.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓Ⅰ '+dualSession.tables.table2.placed.length+'枚'
+ :independent?'メイン山札 '+dualSession.piles.A.length+'枚 / 追加山札 '+dualSession.piles.B.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓 '+dualSession.tables.table2.placed.length+'枚'
+ :'山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
+ refreshWorkspaceSwitcher();
+}
+function dualSave(){
+ if(!dualSession||state.cutStage)return; // Never persist a temporarily split stock during a cut.
+ try{
+  dualCapture();
+  if(!state.cutStage){
+   TabulaMultiWorkspace.validate(dualSession);
+  }
+  localStorage.setItem(DUAL_SESSION_KEY,JSON.stringify(dualSession));
+  dualRefreshControls();
+ }catch(e){setStatus('二組モードの保存に失敗しました：'+e.message)}
+}
+function dualBusy(){
+ if(shuffleBusy||openingBusy||dualDealBusy||spreadWorkbench||state.cutStage){setStatus('操作が完了してから山札・卓を切り替えてください。');return true}
+ return false;
+}
+function dualSwitchPile(id){
+ if(!dualSession||dualBusy()||id===dualSession.activePile)return;
+ if(isIndependentTables()){setStatus('独立デッキは卓を切り替えることで選択します。');dualRefreshControls();return;}
+ dualSave();
+ try{const next=TabulaMultiWorkspace.selectPile(dualSession,id);dualSession=next;}
+ catch(e){setStatus(e.message);dualRefreshControls();return}
+ dualRestoreView();dualSave();setStatus('操作する山札を '+(id==='mixed'?'混合':'デッキ'+id)+' に変更しました。');
+}
+function dualSwitchTable(id){
+ if(!dualSession||dualBusy()||id===dualSession.activeTable)return;
+ dualSave();
+ try{dualSession=TabulaMultiWorkspace.selectTable(dualSession,id);
+  if(isIndependentTables())dualSession.activePile=id==='table2'?'B':'A';}
+ catch(e){setStatus(e.message);dualRefreshControls();return}
+ dualRestoreView();dualSave();setStatus((id==='table1'?'卓Ⅰ':'卓Ⅱ')+'へ切り替えました。もう一方の卓の配札は維持されています。');
+}
+function dualMixOrSeparate(separate){
+ if(!dualSession||dualBusy())return;
+ dualSave();
+ if(Object.values(dualSession.tables).some(t=>(t.removed||[]).length)){setStatus('除外カードを回収してから混合・分離してください。');return}
+ try{dualSession=separate?TabulaMultiWorkspace.separate(dualSession):TabulaMultiWorkspace.mix(dualSession);if(!separate)dualSession.piles.mixed=randomize(dualSession.piles.mixed)}
+ catch(e){setStatus(e.message);return}
+ for(const t of Object.values(dualSession.tables))t.dealCheckpoint=null;
+ dualRestoreView();dualSave();
+ setStatus(separate?'山札を元のA・Bに分離しました。卓上のカードは残ります。':'AとBを混ぜて一組の山札にしました。');
+}
+function dualCollect(){
+ if(!dualSession||dualBusy())return;
+ dualSave();
+ const t=dualSession.tables[dualSession.activeTable];
+ for(const c of [...t.placed,...(t.removed||[])]){
+  const destination=dualSession.mixed?'mixed':c.sourceDeck;
+  if(!['A','B','mixed'].includes(destination)){setStatus('所属不明のカードがあるため回収できません。');return}
+  dualSession.piles[destination].unshift({instanceId:c.instanceId,id:c.id,sourceDeck:c.sourceDeck,reversed:!!c.reversed});
+ }
+ t.placed=[];t.removed=[];t.dealCheckpoint=null;t.selected=null;t.completionShown=false;
+ dualRestoreView();dualSave();setStatus('現在の卓のカードを所属する山札へ回収しました。');
+}
+function dualToggle(){
+ if(dualBusy())return;
+ if(dualSession){
+  if(isSharedTables()||isIndependentTables()){
+   dualSwitchTable('table1');
+   setStatus(isIndependentTables()?'メイン卓を表示しました。独立した追加卓と山札は維持されています。':'メイン卓を表示しました。追加卓と共有山札は維持されています。');
+   return;
+  }
+  dualSave();dualSession=null;
+  const old=dualSingleBackup;dualSingleBackup=null;
+  if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
+  sync();render();dualRefreshControls();
+  setStatus('一組モードに戻りました。二組の作業状態は別に保存されています。');
+  return;
+ }
+ dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
+ try{
+  const raw=localStorage.getItem(DUAL_SESSION_KEY);
+  dualSession=raw?JSON.parse(raw):dualFresh();
+  dualSession.backColors={...DUAL_BACK_DEFAULTS,...(dualSession.backColors||{})};
+  dualSession.appearances={A:'standard',B:'standard',...(dualSession.appearances||{})};
+  TabulaMultiWorkspace.validate(dualSession);
+  dualRestoreView();dualSave();
+  setStatus('ダブルデッキモードを開始しました。');
+ }catch(e){dualSession=null;dualSingleBackup=null;setStatus('二組モードの開始に失敗しました：'+e.message)}
+}
+$('deckAppearance').onchange=e=>{
+ if(dualSession)return;
+ settings.deckAppearance=validAppearance(e.target.value);
+ render();saveLocal();setStatus('カード外観を '+APPEARANCE_LABELS[settings.deckAppearance]+' に変更しました。');
+};
+for(const [id,source] of Object.entries({dualAppearanceA:'A',dualAppearanceB:'B'})){
+ const select=$(id);select.replaceChildren(...APPEARANCES.map(a=>new Option(APPEARANCE_LABELS[a],a)));
+ select.onchange=e=>{
+  if(!dualSession)return;
+  dualSession.appearances??={A:'standard',B:'standard'};
+  dualSession.appearances[source]=validAppearance(e.target.value);
+  render();dualSave();setStatus('デッキ'+source+'の外観を '+APPEARANCE_LABELS[dualSession.appearances[source]]+' に変更しました。');
+ };
+}
+for(const [id,tone] of Object.entries({dualBackA:'A',dualBackB:'B'})){
+ const select=$(id);
+ select.replaceChildren(...Object.keys(TABULA_BACK_PALETTE).map(key=>new Option(BACK_COLOR_LABELS[key],key)));
+ select.onchange=e=>{if(!dualSession)return;dualSession.backColors[tone]=e.target.value;render();dualSave();setStatus('デッキ'+tone+'の裏面色を変更しました。')};
+}
+$('sharedTableAdd').onclick=beginSharedTable;
+$('independentTableAdd').onclick=beginIndependentTable;
+independentDeckChoices();
+$('dualToggle').onclick=dualToggle;
+$('dualReturnMain').onclick=()=>{if(dualSession&&!isSharedTables()&&!isIndependentTables())dualToggle();};
+$('dualResume').onclick=()=>{if(!dualSession)dualToggle()};
+$('sharedTableClear').onclick=()=>$('dualClear').click();
+$('dualClear').onclick=()=>{
+ if(dualBusy())return;
+ if(!dualSession&&!storedExtraWorkspace()){dualRefreshControls();return}
+ if(!confirm(isSharedTables()?'追加卓を片付け、追加卓にあるカードを共有山札に戻しますか？ メイン卓の配札と保存済みの占い記録は残ります。':isIndependentTables()?'追加卓の独立デッキと配札を片付けますか？ メイン卓の山札・配札と占い記録は残ります。':'追加卓Ⅰ・Ⅱの配札とデッキA・Bの保存状態をすべて片付けますか？ メイン卓と保存済みの占い記録は維持します。'))return;
+ // Restore the single-table view first; never delete its reading.
+ if(dualSession){
+  dualSave();
+  if(isSharedTables()||isIndependentTables()){
+   // The surviving main table and all remaining physical cards become
+   // the standalone reading. Nothing is duplicated or silently lost.
+   const main=dualSession.tables.table1,extra=dualSession.tables.table2;
+   const oldSettings=dualSingleBackup?.settings;
+   if(oldSettings)settings=dualClone(oldSettings);
+   const strip=c=>{const {instanceId,sourceDeck,...rest}=c;return rest};
+   state={deck:[...dualSession.piles.A,...(isSharedTables()?(extra?.placed||[]):[]),...(isSharedTables()?(extra?.removed||[]):[])].map(strip),
+    placed:(main.placed||[]).map(strip),removed:(main.removed||[]).map(strip),
+    cutStage:null,selected:main.selected??null,completionShown:!!main.completionShown,dealCheckpoint:null};
+   settings.spread=main.spread||settings.spread;
+   if(isIndependentTables()){settings.deckId=main.deckId||'builtin';settings.pool=main.pool||'all';}
+   settings.color=main.color??settings.color;
+   settings.altar=typeof main.altar==='boolean'?main.altar:settings.altar;
+   settings.candles=Array.isArray(main.candles)?dualClone(main.candles):settings.candles;
+   setCardSize(validCardSize(main.cardSize)?main.cardSize:spreadCardSize(settings.spread),false);
+  }else{
+   const old=dualSingleBackup;
+   if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
+  }
+  dualSession=null;dualSingleBackup=null;
+ }
+ try{localStorage.removeItem(DUAL_SESSION_KEY)}catch(e){setStatus('追加卓を片付けられませんでした：'+e.message);return}
+ sync();render();saveLocal();dualRefreshControls();
+ setStatus('追加卓を片付けました。メイン卓と残りのカードは維持されています。');
+};
+$('workspaceTable').onchange=e=>{
+ const target=e.target.value;
+ if(target==='main'){
+  if(isSharedTables()||isIndependentTables())dualSwitchTable('table1');
+  else if(dualSession)dualToggle();
+  else dualRefreshControls();
+ }else if(target==='table1'||target==='table2'){
+  if(!dualSession)dualToggle();
+  if(dualSession)dualSwitchTable(target);
+ }
+ dualRefreshControls();
+};
+$('dualPile').onchange=e=>dualSwitchPile(e.target.value);
+$('dualTable').onchange=e=>dualSwitchTable(e.target.value);
+$('dualTableName').onchange=e=>{
+ if(!dualSession)return;
+ const t=dualSession.tables[dualSession.activeTable];
+ const name=e.target.value.trim().slice(0,30);
+ t.name=name||(t.id==='table1'?'卓Ⅰ':'卓Ⅱ');
+ dualSave();
+};
+$('dualMix').onclick=()=>dualMixOrSeparate(false);
+$('dualSeparate').onclick=()=>dualMixOrSeparate(true);
+$('dualNew').onclick=()=>{
+ if(!dualSession||dualBusy()||!confirm('現在の二組の山札と両方の卓を初期化しますか？'))return;
+ dualSession=dualFresh();dualRestoreView();dualSave();setStatus('二組のデッキと卓を新しく用意しました。');
+};
+dualRefreshControls();
+
 installTableActionSettings();
+function positionDualDock(){
+ const bar=$('dualModeBar'),toolbar=document.querySelector('.main>.toolbar'),stageShell=document.querySelector('.main>.stage-shell');
+ if(!bar||!toolbar||!stageShell)return;
+ if(window.innerWidth>780){
+  if(bar.parentNode!==toolbar)toolbar.append(bar);
+ }else{
+  if(bar.parentNode!==stageShell.parentNode||bar.nextElementSibling!==stageShell)stageShell.before(bar);
+ }
+}
+positionDualDock();
+window.addEventListener('resize',positionDualDock);
 installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
-const initial=localStorage.getItem(KEY);if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()} })();
+const initial=localStorage.getItem(KEY);
+if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()}
+try{
+ const raw=localStorage.getItem(DUAL_SESSION_KEY);
+ if(raw){
+  const saved=JSON.parse(raw);
+  if(saved.workspaceKind==='single-shared'||saved.workspaceKind==='independent'){
+   TabulaMultiWorkspace.validate(saved);
+   dualSession=saved;
+   dualSession.appearances={A:'standard',B:'standard',...(saved.appearances||{})};
+   dualSession.backColors={...DUAL_BACK_DEFAULTS,...(saved.backColors||{})};
+   dualRestoreView();
+  }
+ }
+}catch(e){setStatus('共有卓の復元に失敗しました：'+e.message)}
+dualRefreshControls(); })();

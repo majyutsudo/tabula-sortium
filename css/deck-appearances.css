@@ -1,0 +1,100 @@
+/* TABULA physical deck appearances — v0.286
+   One clean rendering path per appearance. The original Standard artwork,
+   Pocket geometry, dual-deck identity, and move handles are preserved. */
+
+/* Pocket */
+#zone .card[data-appearance="pocket"]{width:calc(var(--cw) * .82);height:calc(var(--ch) * .82)}
+.table-surface .deck[data-appearance="pocket"]{
+  width:calc(var(--cw) * .82);height:calc(var(--ch) * .82);
+  box-shadow:3px 3px 0 #aaa49b,5px 5px 0 #53534f,6px 7px 7px #0008;
+}
+.deck-drag-preview[data-appearance="pocket"]{transform:translate(-50%,-50%) scale(.82)}
+.shuffle-card[data-appearance="pocket"]{transform-origin:center;width:calc(var(--cw,42px) * .82)}
+#dualControls [id^="dualAppearance"]{min-width:94px}
+
+/* Worn face: paper wear is part of the generated SVG for all 78 cards.
+   No extra full-card mask, inset border, or CSS patina is laid on top.
+   A subtle fallback remains for decks without TABULA artwork. */
+#zone .card[data-appearance="worn"]{filter:drop-shadow(1px 4px 3px #000b)}
+#zone .card[data-appearance="worn"]:not([data-worn-asset="true"]) .face.front{
+  filter:sepia(.15) saturate(.84) contrast(.96);
+}
+.table-card-view #tableCardArtFrame:not(.worn-artwork){display:contents}
+.table-card-view .worn-artwork{
+  display:block;flex:0 1 auto;position:relative;
+  width:min(41vw,420px);max-width:100%;aspect-ratio:2/3;
+  max-height:65vh;overflow:hidden;border-radius:8px;
+}
+.table-card-view .worn-artwork :is(img,svg.card-art){
+  display:block;width:100%;height:100%;max-width:none;max-height:none;
+  aspect-ratio:2/3;border-radius:8px;
+}
+.table-card-view .worn-artwork:not([data-worn-asset="true"]) :is(img,svg.card-art){
+  filter:sepia(.15) saturate(.84) contrast(.96);
+}
+@media(max-width:780px){.table-card-view .worn-artwork{width:min(78vw,400px)}}
+
+/* Worn back: one source WebP per chosen tone, one translucent weathering
+   overlay, and exactly the same color filter on dealt backs and stocks. */
+body[data-tabula-back="on"][data-tabula-back-tone="sepia"],
+body[data-tabula-back="on"] [data-back-tone="sepia"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/sepia.webp?v=0186");}
+body[data-tabula-back="on"][data-tabula-back-tone="green"],
+body[data-tabula-back="on"] [data-back-tone="green"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/green.webp?v=0186");}
+body[data-tabula-back="on"][data-tabula-back-tone="burgundy"],
+body[data-tabula-back="on"] [data-back-tone="burgundy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0186");}
+body[data-tabula-back="on"][data-tabula-back-tone="navy"],
+body[data-tabula-back="on"] [data-back-tone="navy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/navy.webp?v=0186");}
+body[data-tabula-back="on"][data-tabula-back-tone="purple"],
+body[data-tabula-back="on"] [data-back-tone="purple"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/purple.webp?v=0186");}
+body[data-tabula-back="on"][data-tabula-back-tone="black"],
+body[data-tabula-back="on"] [data-back-tone="black"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/black.webp?v=0186");}
+body[data-tabula-back="on"][data-tabula-back-tone="ivory"],
+body[data-tabula-back="on"] [data-back-tone="ivory"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/ivory.webp?v=0186");}
+body[data-tabula-back="on"] :is(
+  #zone .card[data-appearance="worn"] .face.back,
+  .table-surface .deck[data-appearance="worn"],
+  .deck-drag-preview[data-appearance="worn"] .face.back,
+  .shuffle-card[data-appearance="worn"],
+  #physicalCutOverlay .face.back[data-appearance="worn"]
+){
+  background-image:url("../images/ui/worn-back-weathering.svg"),var(--worn-back-image) !important;
+  background-size:100% 100%,100% 100% !important;
+  background-position:center,center !important;
+  background-repeat:no-repeat,no-repeat !important;
+  border:0 !important;
+  background-origin:border-box !important;
+  background-clip:border-box !important;
+}
+/* Double-deck per-color selectors in card-backs.css are more specific.
+   Override them explicitly rather than duplicating seven sets of rules. */
+body[data-tabula-back="on"].dual-enabled :is(
+  #zone .card[data-appearance="worn"][data-back-tone] .face.back,
+  .table-surface .deck[data-appearance="worn"][data-back-tone],
+  .deck-drag-preview[data-appearance="worn"][data-back-tone] .face.back,
+  .shuffle-card[data-appearance="worn"][data-back-tone],
+  #physicalCutOverlay .face.back[data-appearance="worn"][data-back-tone]
+){
+  background-image:url("../images/ui/worn-back-weathering.svg"),var(--worn-back-image) !important;
+  background-size:100% 100%,100% 100% !important;
+}
+body[data-tabula-back="on"] #zone .card[data-appearance="worn"] .face.back,
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
+  filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91) !important;
+}
+/* Retain dimensional stock edges; never add a second outlined paper rim. */
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
+  -webkit-mask-image:none !important;mask-image:none !important;
+  overflow:visible !important;
+  box-shadow:2px 2px 0 #dbc7a1,3px 3px 0 #8a7458,
+    4px 4px 0 #bda887,5px 6px 0 #745e48,
+    7px 7px 0 #bca687,8px 9px 0 #6d5846,
+    9px 11px 8px #000a !important;
+}
+body[data-tabula-back="on"] .table-surface .deck::before{
+  content:none !important;display:none !important;
+}
+body[data-tabula-back="on"] :is(
+ .deck-drag-preview[data-appearance="worn"] .face.back,
+ .shuffle-card[data-appearance="worn"],
+ #physicalCutOverlay .face.back[data-appearance="worn"]
+){filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91)}

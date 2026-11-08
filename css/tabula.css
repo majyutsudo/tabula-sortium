@@ -936,3 +936,281 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 /* Dragged cards use the same full-size back artwork as dealt cards. */
 .deck-drag-preview{display:block;box-sizing:border-box;border:0;background:none;overflow:visible}
 .deck-drag-preview>.face.back{position:absolute;inset:0;display:block;width:100%;height:100%;box-sizing:border-box;backface-visibility:visible}
+
+/* TABULA dual deck / multiple-table controls */
+.dual-mode-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 12px;border:1px solid #776b55;border-radius:8px;background:rgba(16,24,22,.89);color:#ecddbc;margin:8px auto;max-width:1140px}
+.dual-mode-bar button,.dual-mode-bar select{font:inherit;font-size:12px;min-height:30px;border:1px solid #998464;border-radius:5px;background:#27352f;color:#f1e4c9;padding:4px 8px}
+.dual-mode-bar button:hover{border-color:#d9be86}
+.dual-mode-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.dual-mode-controls[hidden]{display:none!important}
+.dual-mode-controls label{display:flex;align-items:center;gap:5px;font-size:12px}
+.dual-mode-summary{font-size:11px;opacity:.85}
+body.dual-enabled #dualToggle{background:#655338;border-color:#d5bb81}
+body.dual-enabled .table-zone .card[data-source-deck="B"]{outline:1px solid rgba(157,193,220,.7);outline-offset:2px}
+@media(max-width:780px){.dual-mode-bar{margin:4px 5px;padding:6px;gap:5px}.dual-mode-bar button,.dual-mode-bar select{font-size:11px;padding:4px 5px}.dual-mode-controls{gap:5px}.dual-mode-summary{flex-basis:100%}}
+
+/* Desktop: place the dual-deck dock in the spare left margin of the table.
+   It is out of document flow, so it never pushes the five main operations below the viewport. */
+@media(min-width:781px){
+ .main>.toolbar{position:sticky}
+ .main>.toolbar .dual-mode-bar{
+  position:absolute;top:calc(100% + 12px);left:12px;z-index:10;
+  display:flex;flex-direction:column;align-items:stretch;
+  width:min(270px,24vw);max-width:270px;box-sizing:border-box;
+  margin:0;padding:8px;gap:8px;box-shadow:0 8px 26px #0007;
+ }
+ .main>.toolbar .dual-mode-bar button{white-space:normal}
+ .main>.toolbar .dual-mode-controls{display:grid;grid-template-columns:1fr;gap:7px}
+ .main>.toolbar .dual-mode-controls[hidden]{display:none!important}
+ .main>.toolbar .dual-mode-controls label{display:flex;justify-content:space-between;gap:8px}
+ .main>.toolbar .dual-mode-controls select{min-width:95px}
+ .main>.toolbar .dual-mode-summary{font-size:11px;line-height:1.55}
+}
+
+/* Two independent physical stocks on the tabletop. The existing A pile keeps its
+   original position and move handle; B sits alongside it unless moved manually. */
+.dual-second-deck[hidden]{display:none!important}
+.dual-second-deck{left:calc(3% + var(--cw) + 24px);top:82%;z-index:5}
+.dual-deck-identity{display:none;position:absolute;left:50%;bottom:calc(100% + 7px);transform:translateX(-50%);pointer-events:none;white-space:nowrap;
+ font:600 11px/1.2 sans-serif;letter-spacing:.07em;color:#f0dfb9;background:#16251fe8;border:1px solid #9b8259;border-radius:5px;padding:3px 7px;box-shadow:0 3px 8px #0009}
+body.dual-enabled .dual-deck-identity{display:block}
+body.dual-enabled .deck.dual-selected{outline:2px solid #e0c485;outline-offset:4px}
+body.dual-enabled .dual-second-deck:not(.dual-selected){filter:brightness(.88)}
+@media(max-width:780px){.dual-second-deck{left:calc(3% + var(--cw) + 14px)}.dual-deck-identity{font-size:10px;padding:2px 5px}}
+
+/* v0.168: keep the two independent stock piles side by side by default.
+   Specificity must exceed the legacy .table-surface .deck positioning rules. */
+body.dual-enabled .table-surface .deck.dual-second-deck{
+ left:calc(6% + var(--cw) + 26px);
+ right:auto;top:auto;bottom:25px;
+}
+body.dual-enabled .table-surface .deck .deck-move-handle{display:grid!important}
+@media(max-width:780px){
+ body.dual-enabled .table-surface .deck.dual-second-deck{left:calc(5.7% + var(--cw) + 16px)}
+}
+
+/* v0.169: Both unmoved stocks share the same baseline. Previous B used 25px
+   while A inherited 5.5%, which caused a visible offset at some table sizes. */
+body.dual-enabled .table-surface .deck.dual-primary-deck,
+body.dual-enabled .table-surface .deck.dual-second-deck{
+  top:auto;bottom:5.5%;
+}
+@media(max-width:780px){
+ body.dual-enabled .table-surface .deck.dual-primary-deck,
+ body.dual-enabled .table-surface .deck.dual-second-deck{bottom:5.5%}
+}
+
+
+/* v0.289: visible identity for independently configured reading tables. */
+.dual-table-identity[hidden]{display:none!important}
+.dual-table-identity{
+ display:inline-flex;align-items:center;min-height:30px;
+ padding:5px 10px;border-left:5px solid #b69a65;
+ background:rgba(207,185,137,.10);border-radius:4px;
+ font:600 12px/1.3 Georgia,'Yu Mincho',serif;letter-spacing:.04em;
+ color:#f1e1c0;
+}
+#dualTableName{width:112px;max-width:100%;font-size:12px;padding:5px 7px;min-height:30px}
+
+
+/* v0.290: tables are selected separately from the physical deck controls. */
+.dual-mode-bar[hidden],.workspace-switcher[hidden],.dual-stored-controls[hidden]{display:none!important}
+.workspace-switcher{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#ddcda9;font-size:12px}
+.workspace-switcher select{min-width:94px;max-width:170px;font-size:12px;padding:6px 7px}
+.table-workspace-start{display:grid;gap:5px;padding:8px 0 12px}
+.table-workspace-start #dualToggle{width:100%;text-align:center}
+.dual-stored-controls{display:grid;gap:7px;width:100%;font-size:12px}
+.dual-stored-controls span{color:#e9d7b4}
+.dual-stored-controls button{width:100%}
+@media(max-width:780px){.workspace-switcher select{min-width:92px;max-width:132px}}
+
+
+/* v0.292: mobile table selector occupies its own row under the status;
+   the existing compact toolbar controls retain their original grid tracks. */
+@media(max-width:780px){
+ .toolbar #workspaceSwitcher:not([hidden]){
+  display:flex;grid-column:1/-1;grid-row:auto;
+  min-width:0;width:100%;box-sizing:border-box;
+  justify-content:flex-start;align-items:center;
+  padding:1px 0 3px;gap:8px;
+ }
+ .toolbar #workspaceSwitcher select{
+  width:min(100%,220px);max-width:220px;min-width:0;
+  min-height:36px;font-size:12px;
+ }
+}
+
+
+/* v0.293: hide deck-B-only controls in a one-deck shared workspace.
+   Existing display:flex form rules must not override the hidden attribute. */
+.dual-mode-controls label[hidden],
+.dual-mode-controls button[hidden],
+.table-workspace-start button[hidden]{display:none!important}
+
+/* v0.299: table management is separate from deck selection. */
+.table-workspace-start{display:grid;gap:10px;padding:8px 0 14px;min-width:0}
+.table-current-chip{display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0;border:1px solid #655e4a;border-radius:5px;background:rgba(22,31,27,.62);padding:9px 10px}
+.table-current-chip strong{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.table-cloth-swatch{display:inline-block;flex:none;width:23px;height:23px;border-radius:5px;border:1px solid #b8a681;box-shadow:inset 0 0 0 2px #ffffff15}
+.table-workspace-start button,.table-add-panel select{width:100%;min-width:0}
+.table-add-panel{display:grid;gap:10px;padding:10px;border:1px solid #665c49;border-radius:6px;background:rgba(8,13,12,.33);min-width:0}
+.table-add-panel[hidden],.table-shared-setup[hidden],.independent-deck-setup[hidden],#tableAddOpen[hidden],#dualDeckFieldsB[hidden]{display:none!important}
+.independent-deck-setup,.table-shared-setup{display:grid;gap:9px;min-width:0}
+.table-add-panel .field{display:grid;gap:4px;min-width:0}
+.table-add-panel select,.table-add-panel button{box-sizing:border-box;max-width:100%;width:100%;white-space:normal}
+.table-legacy-options{border-top:1px solid #514936;padding:7px 0 1px}
+.table-legacy-options summary{cursor:pointer;font-size:12px;color:#c7b58f}
+.table-legacy-inner{display:grid;gap:8px;margin-top:10px}
+.table-legacy-options button[hidden]{display:none!important}
+.dual-mode-controls{width:100%;min-width:0}
+.dual-table-setup,.dual-deck-settings{display:grid;gap:8px;width:100%;min-width:0}
+.dual-table-setup label,.dual-deck-fields label{display:grid;grid-template-columns:69px minmax(0,1fr);gap:8px;align-items:center;width:100%;min-width:0;font-size:12px}
+.dual-table-setup select,.dual-table-setup input,.dual-deck-fields select{min-width:0;max-width:100%;width:100%}
+.table-select-with-color{display:flex;align-items:center;gap:8px;min-width:0}
+.table-select-with-color select{flex:1;min-width:0}
+.dual-deck-fields{display:grid;gap:7px;min-width:0;padding-top:9px;border-top:1px solid rgba(189,163,116,.26)}
+.dual-deck-fields strong{font-size:12px;color:#dcc89f;font-weight:600}
+.dual-table-identity{display:none!important}
+@media(max-width:780px){.dual-table-setup,.dual-deck-settings{width:100%}.dual-table-setup label,.dual-deck-fields label{grid-template-columns:64px minmax(0,1fr)}}
+
+/* Respect a full-width name input within the compact table settings. */
+.dual-table-setup #dualTableName{width:100%;max-width:100%;min-width:0}
+.table-legacy-options[hidden]{display:none!important}
+
+/* v0.301 — the three mutually exclusive workspace modes share one entry point. */
+.table-double-setup{display:grid;gap:10px;min-width:0}
+.table-double-setup[hidden],.dual-return-main[hidden]{display:none!important}
+.table-mode-note{border-left:2px solid #887b64;padding-left:9px;line-height:1.55}
+.dual-mode-controls .dual-return-main{display:block;width:100%;text-align:center;background:#3b433b;border:1px solid #988361;color:#f0dfbb;font-weight:600;margin-bottom:3px}
+.dual-mode-controls .dual-return-main:hover{background:#4c5548}
+
+/* v0.304: compact table identity and balanced dropdown widths. */
+.dual-mode-controls>.dual-pile-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,100px);gap:8px;align-items:center;width:100%;min-width:0;padding:7px 0 10px;border-bottom:1px solid rgba(189,163,116,.26);font-size:12px}
+.dual-mode-controls>.dual-pile-field select{min-width:0;width:100%;max-width:100%}
+.dual-table-setup label{grid-template-columns:52px minmax(0,1fr)}
+.dual-deck-fields label{grid-template-columns:54px minmax(0,1fr);padding-right:9px}
+@media(max-width:780px){.dual-table-setup label{grid-template-columns:46px minmax(0,1fr)}.dual-deck-fields label{grid-template-columns:48px minmax(0,1fr);padding-right:8px}}
+
+/* v0.305: override the older flex-label layout at the desktop toolbar.
+   Without this specific selector, 外観 and 裏面 collapse vertically. */
+.main>.toolbar .dual-mode-controls .dual-table-setup label,
+.main>.toolbar .dual-mode-controls .dual-deck-fields label{
+  display:grid;align-items:center;justify-content:initial;
+  grid-template-columns:40px minmax(0,1fr);
+  column-gap:7px;min-width:0;width:100%;
+  white-space:nowrap;
+}
+.main>.toolbar .dual-mode-controls .dual-deck-fields label{
+  padding-right:7px;
+}
+.main>.toolbar .dual-mode-controls .dual-table-setup label{
+  grid-template-columns:36px minmax(0,1fr);
+}
+.main>.toolbar .dual-mode-controls .dual-table-setup label input,
+.main>.toolbar .dual-mode-controls .dual-table-setup label select,
+.main>.toolbar .dual-mode-controls .dual-deck-fields label select{
+  display:block;min-width:0;max-width:100%;width:100%;
+}
+.main>.toolbar .dual-mode-controls>.dual-pile-field{
+  display:grid;grid-template-columns:minmax(96px,1fr) minmax(0,110px);
+  align-items:center;justify-content:initial;column-gap:7px;
+  white-space:nowrap;
+}
+@media(max-width:780px){
+ .main>.toolbar .dual-mode-controls .dual-table-setup label{grid-template-columns:36px minmax(0,1fr)}
+ .main>.toolbar .dual-mode-controls .dual-deck-fields label{grid-template-columns:40px minmax(0,1fr)}
+}
+
+/* v0.306: mobile always uses the header table picker, while extended workspace
+   controls stay collapsed unless the user opens them explicitly. */
+#mobileWorkspaceSettingsToggle[hidden]{display:none!important}
+#mobileWorkspaceSettingsToggle{display:none}
+@media(max-width:780px){
+ #dualModeBar{width:auto;min-width:0;margin:4px 5px 6px;box-sizing:border-box}
+ #dualModeBar #mobileWorkspaceSettingsToggle:not([hidden]){
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;min-height:36px;padding:7px 12px;
+  color:#ead8b6;background:#25342e;border:1px solid #8d7a5c;
+  border-radius:5px;font-size:12px;text-align:left;
+ }
+ #dualModeBar #mobileWorkspaceSettingsToggle[aria-expanded="true"] span{transform:rotate(180deg)}
+ #dualModeBar #dualControls:not(.mobile-expanded){display:none!important}
+ #dualModeBar #dualControls.mobile-expanded{display:flex;flex-direction:column;align-items:stretch;width:100%;gap:8px}
+ #dualModeBar .dual-mode-summary{overflow-wrap:anywhere}
+}
+
+/* v0.307: the small-screen tabletop controls form a compact, readable sequence.
+   The existing JavaScript controls and desktop placement are unchanged. */
+@media(max-width:780px){
+ .main>.toolbar,.toolbar{
+  display:grid!important;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  align-items:center;gap:6px;padding:7px 10px;
+ }
+ .toolbar #workspaceSwitcher:not([hidden]){
+  order:0;grid-column:1/-1;grid-row:auto;
+  display:flex;align-items:center;gap:8px;
+  width:100%;min-width:0;padding:0 0 2px;
+  font-size:12px;
+ }
+ .toolbar #workspaceSwitcher select{
+  flex:1 1 auto;width:100%;max-width:none;min-width:0;
+  min-height:36px;
+ }
+ .toolbar #workspaceClothSwatch{
+  display:inline-block;flex:none;width:24px;height:24px;
+ }
+ .toolbar #mobileTableFit:not([hidden]){
+  order:1;grid-column:1/4;grid-row:auto;
+  width:100%;height:40px;min-height:40px;
+  padding:5px 2px!important;
+ }
+ .toolbar .toolbar-card-size{
+  order:1;grid-column:4/-1;grid-row:auto;
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;min-width:0;max-width:none;
+  min-height:40px;padding:2px 4px;gap:3px;
+ }
+ .toolbar:has(#mobileTableFit[hidden]) .toolbar-card-size{grid-column:1/-1}
+ .toolbar .toolbar-card-size button{flex:0 0 auto;min-width:27px;height:34px;padding:4px 5px!important}
+ .toolbar .toolbar-card-size #toolbarLabelToggle{min-width:46px;max-width:75px}
+ .toolbar .toolbar-card-size #zoomReset{min-width:42px}
+ .toolbar .toolbar-card-size #cardSizeQuickValue{min-width:34px}
+ .toolbar .mobile-cockpit-actions{
+  order:2;grid-column:1/-1;grid-row:auto;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 44px 44px;
+  grid-template-rows:44px 42px;
+  gap:6px;width:100%;min-width:0;align-items:stretch;
+ }
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut{
+  display:flex;grid-column:1;grid-row:1;
+  min-width:0;max-width:none;width:100%;align-items:stretch;
+ }
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut select{
+  width:100%;height:44px;min-height:44px;min-width:0;max-width:none;
+ }
+ .toolbar .mobile-cockpit-actions>#inspectCards{
+  grid-column:2;grid-row:1;width:100%!important;min-width:0!important;
+  height:44px!important;min-height:44px!important;
+ }
+ .toolbar .mobile-cockpit-actions>#spreadNotebook{
+  grid-column:3;grid-row:1;width:100%!important;min-width:0!important;
+  height:44px!important;min-height:44px!important;
+ }
+ .toolbar .mobile-cockpit-actions>#newSessionStandalone{
+  grid-column:1/-1;grid-row:2;
+  width:100%!important;min-width:0!important;
+  height:42px!important;min-height:42px!important;
+  margin:0!important;padding:7px!important;font-size:13px!important;
+  letter-spacing:.03em;
+ }
+ .toolbar>.status{
+  order:3;grid-column:1/-1;grid-row:auto;
+  min-width:0!important;min-height:14px;
+  max-height:28px;line-height:1.35;font-size:10px!important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  opacity:.82;margin:0!important;
+ }
+ .toolbar #desktopTableViews,.toolbar #tableZoomLabel{display:none!important}
+}
