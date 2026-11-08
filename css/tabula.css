@@ -1076,3 +1076,10 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 /* Respect a full-width name input within the compact table settings. */
 .dual-table-setup #dualTableName{width:100%;max-width:100%;min-width:0}
 .table-legacy-options[hidden]{display:none!important}
+
+/* v0.301 — the three mutually exclusive workspace modes share one entry point. */
+.table-double-setup{display:grid;gap:10px;min-width:0}
+.table-double-setup[hidden],.dual-return-main[hidden]{display:none!important}
+.table-mode-note{border-left:2px solid #887b64;padding-left:9px;line-height:1.55}
+.dual-mode-controls .dual-return-main{display:block;width:100%;text-align:center;background:#3b433b;border:1px solid #988361;color:#f0dfbb;font-weight:600;margin-bottom:3px}
+.dual-mode-controls .dual-return-main:hover{background:#4c5548}
