@@ -512,6 +512,7 @@ function syncTabulaBack(){
 let lastRenderedSpread=null;
 function render(){
  updateAppearanceControls();
+ refreshClothIndicators();
  if(lastRenderedSpread!==null&&lastRenderedSpread!==settings.spread){
   // A manually moved deck belongs to the current spread only.
   // Switching spreads restores the destination spread's default deck position.
@@ -1534,7 +1535,7 @@ function renderCandles(){const host=$('altar');host.replaceChildren();host.hidde
  const finish=()=>{if(gesture){gesture=null;saveLocal();}};node.onpointerup=finish;node.onpointercancel=finish;node.onclick=e=>{e.stopPropagation();selectedCandle=c.id;syncCandleControls();};node.onkeydown=e=>{const v={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(v){e.preventDefault();const pc=window.innerWidth>780;c.x=Math.max(pc?0:5,Math.min(pc?100:95,c.x+v[0]));c.y=Math.max(pc?5:23,Math.min(pc?100:96,c.y+v[1]));node.style.left=c.x+'%';node.style.top=c.y+'%';saveLocal();}};
  });syncCandleControls();}
 function syncCandleControls(){const list=altarCandles(),c=list.find(c=>c.id===selectedCandle);$('candleSelection').textContent=c?'選択中：キャンドル '+(list.indexOf(c)+1):'キャンドルをクリックして選択';for(const id of ['candleLength','candleSize','candleLit','candleRemove','candleDeselect'])$(id).disabled=!c;$('candleSwatches').querySelectorAll('button').forEach(b=>{b.disabled=!c;const active=!!c&&b.dataset.color===c.color;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});$('candleColorName').textContent=c?(candlePalette.find(p=>p[1]===c.color)?.[0]||''):'色を変更するキャンドルを選択';if(c){$('candleLength').value=c.length==='short'?'short':'long';$('candleSize').value=String([60,80,100,120,140,160,180].includes(Number(c.size))?Number(c.size):100);$('candleColor').value=c.color;$('candleLit').checked=c.lit;} }
-function installCandles(){const section=$('altarToggle').closest('section');section.querySelector('h2 .section-title').textContent='Ⅲ. アルター設定';const panel=document.createElement('div');panel.className='candle-settings stack';panel.innerHTML='<div class="row"><button type="button" id="candleAdd">キャンドルを追加</button></div><div class="mini" id="candleSelection"></div><label class="field">蝋燭の長さ<select id="candleLength"><option value="long">長</option><option value="short">短</option></select></label><label class="field">表示サイズ<select id="candleSize"><option value="60">60%（小）</option><option value="80">80%</option><option value="100">100%（標準）</option><option value="120">120%</option><option value="140">140%</option><option value="160">160%</option><option value="180">180%（最大）</option></select></label><span class="field" id="candleColorHeading">キャンドルの色を選ぶ</span><div class="swatches" id="candleSwatches" role="group" aria-labelledby="candleColorHeading"></div><div class="mini" id="candleColorName"></div><select id="candleColor" hidden aria-hidden="true">'+candlePalette.map(([name,color])=>'<option value="'+color+'">'+name+'</option>').join('')+'</select><label class="choice"><input type="checkbox" id="candleLit">火を灯す</label><button type="button" id="candleRemove">選択したキャンドルを取り除く</button><button type="button" id="candleDeselect">選択を解除</button><p class="mini">ドラッグで配置。テーブルの余白を押すと選択を解除できます。</p>';$('altarToggle').closest('label').after(panel);
+function installCandles(){const section=$('altarToggle').closest('section');section.querySelector('h2 .section-title').textContent='Ⅳ. アルター設定';const panel=document.createElement('div');panel.className='candle-settings stack';panel.innerHTML='<div class="row"><button type="button" id="candleAdd">キャンドルを追加</button></div><div class="mini" id="candleSelection"></div><label class="field">蝋燭の長さ<select id="candleLength"><option value="long">長</option><option value="short">短</option></select></label><label class="field">表示サイズ<select id="candleSize"><option value="60">60%（小）</option><option value="80">80%</option><option value="100">100%（標準）</option><option value="120">120%</option><option value="140">140%</option><option value="160">160%</option><option value="180">180%（最大）</option></select></label><span class="field" id="candleColorHeading">キャンドルの色を選ぶ</span><div class="swatches" id="candleSwatches" role="group" aria-labelledby="candleColorHeading"></div><div class="mini" id="candleColorName"></div><select id="candleColor" hidden aria-hidden="true">'+candlePalette.map(([name,color])=>'<option value="'+color+'">'+name+'</option>').join('')+'</select><label class="choice"><input type="checkbox" id="candleLit">火を灯す</label><button type="button" id="candleRemove">選択したキャンドルを取り除く</button><button type="button" id="candleDeselect">選択を解除</button><p class="mini">ドラッグで配置。テーブルの余白を押すと選択を解除できます。</p>';$('altarToggle').closest('label').after(panel);
  const clothHeading=document.createElement('div');clothHeading.className='field';clothHeading.id='clothColorHeading';clothHeading.textContent='クロスの色を選ぶ';$('swatches').before(clothHeading);$('swatches').setAttribute('role','group');$('swatches').setAttribute('aria-labelledby','clothColorHeading');
  const deselect=()=>{selectedCandle=null;$('altar').querySelectorAll('.altar-object').forEach(n=>n.setAttribute('aria-pressed','false'));syncCandleControls();};$('candleDeselect').onclick=deselect;
  $('stage').addEventListener('pointerdown',e=>{if(!e.target.closest('.altar-object'))deselect();},true);
@@ -1862,11 +1863,34 @@ function refreshWorkspaceSwitcher(){
   }catch(e){ /* Keep default names if the stored session is unreadable. */ }
  }
 }
+let tableAddExpanded=false;
+function updateTableAddPanel(){
+ const active=!!dualSession,stored=!active&&storedExtraWorkspace(),available=!active&&!stored;
+ const mode=$('tableAddMode').value;
+ $('tableAddOpen').hidden=!available;
+ $('tableAddOpen').setAttribute('aria-expanded',String(available&&tableAddExpanded));
+ $('tableAddPanel').hidden=!available||!tableAddExpanded;
+ const shared=mode==='shared';
+ document.querySelector('.table-shared-setup').hidden=!shared;
+ document.querySelector('.independent-deck-setup').hidden=shared;
+}
+$('tableAddOpen').onclick=()=>{tableAddExpanded=!tableAddExpanded;updateTableAddPanel();};
+$('tableAddMode').onchange=updateTableAddPanel;
+function refreshClothIndicators(){
+ const current=dualSession?.tables?.[dualSession.activeTable];
+ const currentName=current?.name||(dualSession?'現在の卓':'メイン卓');
+ const tone=colors[settings.color]?.[1]||'#b69a65';
+ $('tableMenuCurrent').textContent=currentName;
+ for(const id of ['tableMenuSwatch','dualClothSwatch']){
+  const el=$(id);if(el){el.style.backgroundColor=tone;el.title='クロス色：'+(colors[settings.color]?.[0]||'現在の色');}
+ }
+}
 function dualRefreshControls(){
  const controls=$('dualControls'),bar=$('dualModeBar');
  if(!controls||!bar)return;
  const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables(),independent=isIndependentTables();
- const setup=document.querySelector('.independent-deck-setup');if(setup)setup.hidden=active||stored;
+ updateTableAddPanel();
+ refreshClothIndicators();
  controls.hidden=!active;
  bar.hidden=!active&&!stored;
  const compact=$('dualStoredControls');
@@ -1876,7 +1900,7 @@ function dualRefreshControls(){
  $('dualToggle').hidden=shared||independent;
  const add=$('sharedTableAdd');
  if(add){add.hidden=(active&&!shared)||stored;add.textContent=shared?'追加卓Ⅰに切り替える':'卓を追加（1組の山札を共有）'}
- $('workspaceHelp').textContent=shared?'メイン卓と追加卓Ⅰは同じ山札を共有します。':'追加卓と二組デッキの作業状態は別途保存されます。';
+ $('workspaceHelp').textContent=shared?'メイン卓と追加卓は同じ山札を共有しています。':independent?'追加卓は独立した山札を使用しています。':active?'デッキA/Bと卓Ⅰ/Ⅱを管理しています。':'山札を共有する卓と、独立したデッキを持つ卓を追加できます。';
  document.body.classList.toggle('dual-enabled',active);
  if(!active){
   $('dualTableIdentity').hidden=true;
@@ -1886,15 +1910,12 @@ function dualRefreshControls(){
  for(const id of ['dualPile','dualAppearanceB','dualBackB']){
   const field=$(id)?.closest('label');if(field)field.hidden=shared||(independent&&id==='dualPile');
  }
- const appearanceBLabel=$('dualAppearanceB').closest('label');
- const backBLabel=$('dualBackB').closest('label');
- if(appearanceBLabel)appearanceBLabel.firstChild.textContent=independent?'追加デッキの外観 ':'外観B ';
- if(backBLabel)backBLabel.firstChild.textContent=independent?'追加デッキの裏面 ':'裏面B ';
  const appearanceALabel=$('dualAppearanceA').closest('label');
  const backALabel=$('dualBackA').closest('label');
  appearanceALabel.hidden=false;backALabel.hidden=false;
- appearanceALabel.firstChild.textContent=shared?'カードの外観 ':independent?'メインデッキの外観 ':'外観A ';
- backALabel.firstChild.textContent=shared?'裏面色 ':independent?'メインデッキの裏面 ':'裏面A ';
+ $('dualDeckHeadingA').textContent=shared?'共有デッキ':independent?'メインデッキ':'デッキA';
+ $('dualDeckHeadingB').textContent=independent?'追加デッキ':'デッキB';
+ $('dualDeckFieldsB').hidden=shared;
  $('dualNew').hidden=shared||independent;
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
@@ -1908,7 +1929,7 @@ function dualRefreshControls(){
  tableSelect.value=dualSession.activeTable;
  const current=dualSession.tables[dualSession.activeTable];
  const identity=$('dualTableIdentity');
- identity.hidden=false;
+ identity.hidden=true;
  identity.textContent=current?.name||'現在の卓';
  identity.style.borderLeftColor=colors[settings.color]?.[1]||'#b69a65';
  const nameField=$('dualTableName');
