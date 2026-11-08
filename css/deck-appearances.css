@@ -175,3 +175,54 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
 .table-card-view .worn-artwork::before {
   box-shadow:inset 0 0 4px 1px rgba(86,59,35,.24);
 }
+
+/* v0.174: A worn card is the original paper, not a second oversized backing.
+   Remove the independent irregular mask from the magnified viewer and let
+   the actual full-card SVG retain its own rounded paper silhouette. */
+.table-card-view .worn-artwork {
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+  -webkit-mask-size:auto;
+  mask-size:auto;
+  border-radius:8px;
+  background:transparent !important;
+  box-shadow:none !important;
+  overflow:hidden;
+}
+/* A faint paper overlay is limited to the white-card region. It no longer
+   paints a dark, artificial band at the card's outer edge. */
+.table-card-view .worn-artwork::after {
+  inset:2.1% 2.4%;
+  border-radius:7px;
+  background-image:url("../images/ui/worn-edge-abrasion.svg"),
+                   url("../images/ui/worn-microtexture.svg");
+  background-size:100% 100%,100% 100%;
+  background-position:center;
+  opacity:.48;
+  mix-blend-mode:multiply;
+}
+.table-card-view .worn-artwork::before {
+  content:none !important;
+  box-shadow:none !important;
+}
+.table-card-view .worn-artwork :is(img,svg.card-art) {
+  border-radius:8px;
+  filter:sepia(.09) saturate(.89) contrast(.97);
+}
+/* Tabletop wear uses the existing face outline without a second cut-out.
+   Localized edge abrasion remains, but the card cannot sprout a halo. */
+#zone .card[data-appearance="worn"] .face {
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+  border-radius:4px;
+}
+#zone .card[data-appearance="worn"] .face.front::after,
+#zone .card[data-appearance="worn"] .face.back::after {
+  inset:2.1% 2.4%;
+  border-radius:3px;
+  background-image:url("../images/ui/worn-edge-abrasion.svg"),
+                   url("../images/ui/worn-microtexture.svg");
+  background-size:100% 100%,100% 100%;
+  opacity:.49;
+  box-shadow:none;
+}
