@@ -1802,8 +1802,8 @@ function positionSecondDeck(){
    const py=Math.max(12,Math.min(move.y*sh/100,sh-deckB.offsetHeight-12));
    deckB.style.left=px+'px';deckB.style.top=py+'px';
  }
- labelA.textContent=isSharedTables()?'共有 '+dualSession.piles.A.length+'枚':dualSession.mixed?'混合 '+dualSession.piles.mixed.length+'枚':'A '+dualSession.piles.A.length+'枚';
- deck.classList.toggle('dual-selected',dualSession.activePile!=='B');
+ labelA.textContent=isSharedTables()?'共有 '+dualSession.piles.A.length+'枚':dualSession.mixed?'混合 '+dualSession.piles.mixed.length+'枚':isIndependentTables()?(dualSession.activePile==='B'?'B ':'A ')+state.deck.length+'枚':'A '+dualSession.piles.A.length+'枚';
+ deck.classList.toggle('dual-selected',isIndependentTables()||dualSession.activePile!=='B');
  deckB.classList.toggle('dual-selected',dualSession.activePile==='B');
  deckB.classList.toggle('empty',!dualSession.piles.B.length);
  labelB.textContent='B '+dualSession.piles.B.length+'枚';
@@ -1886,11 +1886,15 @@ function dualRefreshControls(){
  for(const id of ['dualPile','dualAppearanceB','dualBackB']){
   const field=$(id)?.closest('label');if(field)field.hidden=shared||(independent&&id==='dualPile');
  }
+ const appearanceBLabel=$('dualAppearanceB').closest('label');
+ const backBLabel=$('dualBackB').closest('label');
+ if(appearanceBLabel)appearanceBLabel.firstChild.textContent=independent?'追加デッキの外観 ':'外観B ';
+ if(backBLabel)backBLabel.firstChild.textContent=independent?'追加デッキの裏面 ':'裏面B ';
  const appearanceALabel=$('dualAppearanceA').closest('label');
  const backALabel=$('dualBackA').closest('label');
  appearanceALabel.hidden=false;backALabel.hidden=false;
- appearanceALabel.firstChild.textContent=shared?'カードの外観 ':independent?'メイン卓の外観 ':'外観A ';
- backALabel.firstChild.textContent=shared?'裏面色 ':independent?'メイン卓の裏面 ':'裏面A ';
+ appearanceALabel.firstChild.textContent=shared?'カードの外観 ':independent?'メインデッキの外観 ':'外観A ';
+ backALabel.firstChild.textContent=shared?'裏面色 ':independent?'メインデッキの裏面 ':'裏面A ';
  $('dualNew').hidden=shared||independent;
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
