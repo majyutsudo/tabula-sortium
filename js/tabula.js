@@ -1220,12 +1220,27 @@ const WORN_MATERIAL_ASSETS=Object.freeze({
  'major_11':'images/decks/tabula-tarot/worn/major_11.svg',
  'cups_04':'images/decks/tabula-tarot/worn/cups_04.svg'
 });
-function wornMaterialAvailable(id){return Object.hasOwn(WORN_MATERIAL_ASSETS,id)}
+/* Every built-in TABULA card has a stable, individual Worn material.
+   The three hand-authored prototypes remain unchanged. Other materials
+   are generated once per card identity, not at random on each render. */
+function wornMaterialAvailable(id){return Object.hasOwn(TABULA_TAROT_IMAGES,id)}
 function wornMaterialMarkup(id){
  if(!wornMaterialAvailable(id))return '';
- // The finish is an independent, transparent card-material asset.
- // It is composited before the live lettering, titles and numerals.
- return '<image class="worn-material-layer" href="'+WORN_MATERIAL_ASSETS[id]+'" x="0" y="0" width="300" height="450" preserveAspectRatio="none" pointer-events="none"/>';
+ if(Object.hasOwn(WORN_MATERIAL_ASSETS,id))
+  return '<image class="worn-material-layer" href="'+WORN_MATERIAL_ASSETS[id]+'" x="0" y="0" width="300" height="450" preserveAspectRatio="none" pointer-events="none"/>';
+ let seed=2166136261;
+ for(const ch of id)seed=Math.imul(seed^ch.charCodeAt(0),16777619)>>>0;
+ const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ const spots=[];
+ for(let i=0;i<40;i++){
+  const x=13+random()*274,y=13+random()*424;
+  const rx=1+random()*12,ry=.7+random()*7;
+  const opacity=(.025+random()*.10).toFixed(3);
+  spots.push('<ellipse cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" rx="'+rx.toFixed(1)+'" ry="'+ry.toFixed(1)+'" fill="#815b3a" opacity="'+opacity+'"/>');
+ }
+ return '<g class="worn-material-layer" pointer-events="none">'
+   +'<rect x="3" y="3" width="294" height="444" rx="4" fill="none" stroke="#7b5433" stroke-opacity=".13" stroke-width="5"/>'
+   +spots.join('')+'</g>';
 }
 function finishedCardSource(c,tabletop=false,appearance='standard'){
  c=displayCard(c);
