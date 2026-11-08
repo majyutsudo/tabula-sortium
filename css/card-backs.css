@@ -67,3 +67,19 @@ body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="navy
 body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="purple"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/purple.webp")!important;background-color:#3b2458!important}
 body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="black"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;background-color:#18191a!important}
 body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="ivory"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;background-color:#e6d6b1!important}
+
+/* A deck's individual backs stay visible while shuffling and cutting. */
+body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="sepia"],
+body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="sepia"]{background-image:url("../images/decks/tabula-tarot/backs/sepia.webp")!important;background-color:#55331d!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="green"],
+body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="green"]{background-image:url("../images/decks/tabula-tarot/backs/green.webp")!important;background-color:#0d3428!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="burgundy"],
+body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="burgundy"]{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp")!important;background-color:#651622!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="navy"],
+body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="navy"]{background-image:url("../images/decks/tabula-tarot/backs/navy.webp")!important;background-color:#11234b!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="purple"],
+body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="purple"]{background-image:url("../images/decks/tabula-tarot/backs/purple.webp")!important;background-color:#3b2458!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="black"],
+body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="black"]{background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;background-color:#18191a!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="ivory"],
+body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="ivory"]{background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;background-color:#e6d6b1!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
