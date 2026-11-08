@@ -1,0 +1,59 @@
+/* TABULA SORTIUM v0.170: independent physical-deck appearances.
+   The base card/stock dimensions and geometry remain unchanged for Standard.
+   Pocket applies local width/height only; Worn is a reversible CSS preview,
+   not the eventual hand-aged image asset collection. */
+#zone .card[data-appearance="pocket"] {
+  width:calc(var(--cw) * .82);
+  height:calc(var(--ch) * .82);
+}
+.table-surface .deck[data-appearance="pocket"] {
+  width:calc(var(--cw) * .82);
+  height:calc(var(--ch) * .82);
+  box-shadow:3px 3px 0 #aaa49b,5px 5px 0 #53534f,6px 7px 7px #0008;
+}
+.deck-drag-preview[data-appearance="pocket"] { transform:translate(-50%,-50%) scale(.82); }
+.shuffle-card[data-appearance="pocket"] { transform-origin:center; }
+/* On the table, the real card art stays sharp enough for magnification. */
+#zone .card[data-appearance="worn"] .front .tarot-face-art {
+  filter:sepia(.18) saturate(.80) contrast(.92) brightness(.98);
+}
+/* Layer foxing, edge darkening, subtle scratches and paper-toning on both faces.
+   Decorations do not intercept pointer input or change card identity. */
+#zone .card[data-appearance="worn"] .face.front::after,
+#zone .card[data-appearance="worn"] .face.back::after {
+  content:""!important;display:block!important;position:absolute;inset:0;
+  border-radius:inherit;pointer-events:none;z-index:9;
+  background:
+    radial-gradient(ellipse at 4% 6%,rgba(117,68,33,.40) 0,transparent 19%),
+    radial-gradient(ellipse at 97% 96%,rgba(87,49,23,.36) 0,transparent 18%),
+    radial-gradient(circle at 22% 66%,rgba(114,69,37,.17) 0 1%,transparent 8%),
+    radial-gradient(circle at 80% 21%,rgba(129,74,32,.16) 0 1%,transparent 9%),
+    repeating-linear-gradient(112deg,transparent 0 13px,rgba(67,39,15,.032) 14px,transparent 16px 31px),
+    linear-gradient(90deg,rgba(70,35,16,.20),transparent 13% 85%,rgba(75,38,14,.24)),
+    linear-gradient(0deg,rgba(70,35,16,.15),transparent 11% 89%,rgba(75,38,14,.23));
+  box-shadow:inset 0 0 4px 2px rgba(66,37,20,.38), inset 0 0 0 1px #b18c5e;
+}
+#zone .card[data-appearance="worn"] .face { border-color:#b19a76; }
+#zone .card[data-appearance="worn"] .face.back { filter:sepia(.28) saturate(.67) brightness(.88); }
+#zone .card[data-appearance="worn"] { filter:drop-shadow(1px 4px 3px #000b); }
+.table-surface .deck[data-appearance="worn"] {
+  filter:sepia(.20) saturate(.72) brightness(.91);
+  box-shadow:2px 2px 0 #b9a58b,4px 4px 0 #9c8062,5px 6px 0 #6c5947,6px 8px 6px #0009;
+  border-color:#b49b78;
+}
+.table-surface .deck[data-appearance="worn"]::before {
+  content:""!important;display:block!important;position:absolute;inset:0;
+  border:2px solid rgba(110,64,36,.65);box-shadow:inset 0 0 6px #38210a;
+  border-radius:4px;pointer-events:none;z-index:2;
+}
+.deck-drag-preview[data-appearance="worn"] .face.back,
+.shuffle-card[data-appearance="worn"],
+#physicalCutOverlay .face.back[data-appearance="worn"] {
+  filter:sepia(.26) saturate(.68) brightness(.91);
+  border-color:#baa080!important;
+  box-shadow:inset 0 0 6px rgba(60,38,19,.5),2px 3px 6px #0008;
+}
+/* A smaller silhouette is also visible while the physical cards are shuffled. */
+.shuffle-card[data-appearance="pocket"] { width:calc(var(--cw,42px) * .82); }
+/* Keep UI in the layout system instead of displaying a phantom duplicate panel. */
+#dualControls [id^="dualAppearance"] { min-width:94px; }
