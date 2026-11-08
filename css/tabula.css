@@ -948,3 +948,21 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 body.dual-enabled #dualToggle{background:#655338;border-color:#d5bb81}
 body.dual-enabled .table-zone .card[data-source-deck="B"]{outline:1px solid rgba(157,193,220,.7);outline-offset:2px}
 @media(max-width:780px){.dual-mode-bar{margin:4px 5px;padding:6px;gap:5px}.dual-mode-bar button,.dual-mode-bar select{font-size:11px;padding:4px 5px}.dual-mode-controls{gap:5px}.dual-mode-summary{flex-basis:100%}}
+
+/* Desktop: place the dual-deck dock in the spare left margin of the table.
+   It is out of document flow, so it never pushes the five main operations below the viewport. */
+@media(min-width:781px){
+ .main>.toolbar{position:sticky}
+ .main>.toolbar .dual-mode-bar{
+  position:absolute;top:calc(100% + 12px);left:12px;z-index:10;
+  display:flex;flex-direction:column;align-items:stretch;
+  width:min(270px,24vw);max-width:270px;box-sizing:border-box;
+  margin:0;padding:8px;gap:8px;box-shadow:0 8px 26px #0007;
+ }
+ .main>.toolbar .dual-mode-bar button{white-space:normal}
+ .main>.toolbar .dual-mode-controls{display:grid;grid-template-columns:1fr;gap:7px}
+ .main>.toolbar .dual-mode-controls[hidden]{display:none!important}
+ .main>.toolbar .dual-mode-controls label{display:flex;justify-content:space-between;gap:8px}
+ .main>.toolbar .dual-mode-controls select{min-width:95px}
+ .main>.toolbar .dual-mode-summary{font-size:11px;line-height:1.55}
+}
