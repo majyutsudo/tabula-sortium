@@ -1668,6 +1668,42 @@ function updateAppearanceControls(){
 }
 
 function dualBackTone(deck){const tone=dualSession?.backColors?.[deck]||DUAL_BACK_DEFAULTS[deck]||'sepia';return Object.hasOwn(TABULA_BACK_PALETTE,tone)?tone:'sepia'}
+function isSharedTables(){return !!dualSession&&dualSession.workspaceKind==='single-shared'}
+function sharedTableWorkspace(){
+ const physical=[...state.deck,...state.placed,...(state.removed||[])];
+ const ids=physical.map(c=>c.id);
+ if(!ids.length||ids.length!==new Set(ids).size)throw Error('共有できるカード構成ではありません。');
+ const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(ids,[],{spread:settings.spread}),'table2','追加卓Ⅰ');
+ const own=c=>({...c,instanceId:'A:'+c.id,sourceDeck:'A'});
+ w.workspaceKind='single-shared';
+ w.instances=ids.map(id=>({id,instanceId:'A:'+id,sourceDeck:'A',reversed:false}));
+ w.piles.A=state.deck.map(own);
+ w.tables.table1.name='メイン卓';w.tables.table1.placed=state.placed.map(own);
+ w.tables.table1.removed=(state.removed||[]).map(own);
+ w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
+ w.tables.table1.color=settings.color;w.tables.table1.altar=!!settings.altar;
+ w.tables.table1.candles=dualClone(altarCandles());
+ w.tables.table2.name='追加卓Ⅰ';w.tables.table2.spread='free';
+ w.tables.table2.cardSize=spreadCardSize('free');
+ w.tables.table2.color=colors.findIndex(([name])=>name==='ダークレッド');
+ w.tables.table2.altar=!!settings.altar;w.tables.table2.candles=dualClone(altarCandles());
+ w.appearances={A:validAppearance(settings.deckAppearance),B:'standard'};
+ w.backColors={A:settings.cardBackColor||'sepia',B:'navy'};
+ TabulaMultiWorkspace.validate(w);
+ return w;
+}
+function beginSharedTable(){
+ if(dualBusy())return;
+ if(dualSession){if(isSharedTables())dualSwitchTable('table2');else setStatus('二組のデッキを保管してから、共有卓を利用してください。');return}
+ if(storedExtraWorkspace()){setStatus('保存中の追加卓があります。再開するか片付けてください。');return}
+ try{
+  const next=sharedTableWorkspace();
+  dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
+  dualSession=next;
+  dualRestoreView();dualSave();dualSwitchTable('table2');
+  setStatus('追加卓Ⅰを用意しました。メイン卓と同じ山札から配札します。');
+ }catch(e){setStatus('追加卓を作れませんでした：'+e.message)}
+}
 function dualFresh(){
  const ids=selectedCards().map(c=>c.id);
  let w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(ids,ids,{spread:settings.spread}),'table2','卓Ⅱ');
@@ -1712,7 +1748,7 @@ function dualRestoreView(){
 
 function positionSecondDeck(){
  if(!deckB)return;
- deckB.hidden=!dualSession||dualSession.mixed;
+ deckB.hidden=!dualSession||dualSession.mixed||isSharedTables();
  deck.classList.toggle('dual-primary-deck',!!dualSession);
  if(!dualSession){return}
  const m=metrics();deckB.style.setProperty('--cw',m.w+'px');deckB.style.setProperty('--ch',m.h+'px');
@@ -1787,18 +1823,27 @@ function refreshWorkspaceSwitcher(){
 function dualRefreshControls(){
  const controls=$('dualControls'),bar=$('dualModeBar');
  if(!controls||!bar)return;
- const active=!!dualSession,stored=!active&&storedExtraWorkspace();
+ const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables();
  controls.hidden=!active;
  bar.hidden=!active&&!stored;
  const compact=$('dualStoredControls');
  if(compact)compact.hidden=!stored;
- $('dualToggle').textContent=active?'メイン卓に戻る':stored?'追加卓を再開':'追加卓を用意する';
+ $('dualToggle').textContent=active?(shared?'メイン卓を表示':'メイン卓に戻る'):stored?'二組の作業を再開':'二組のデッキを用意';
+ const add=$('sharedTableAdd');
+ if(add){add.hidden=(active&&!shared)||stored;add.textContent=shared?'追加卓Ⅰに切り替える':'卓を追加（1組の山札を共有）'}
+ $('workspaceHelp').textContent=shared?'メイン卓と追加卓Ⅰは同じ山札を共有します。':'追加卓と二組デッキの作業状態は別途保存されます。';
  document.body.classList.toggle('dual-enabled',active);
  if(!active){
   $('dualTableIdentity').hidden=true;
   refreshWorkspaceSwitcher();
   return;
  }
+ for(const id of ['dualPile','dualAppearanceB','dualBackB']){
+  const field=$(id)?.closest('label');if(field)field.hidden=shared;
+ }
+ $('dualAppearanceA').closest('label').hidden=false;
+ $('dualBackA').closest('label').hidden=false;
+ $('dualNew').hidden=shared;
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
  $('dualBackA').value=dualBackTone('A');$('dualBackB').value=dualBackTone('B');updateAppearanceControls();
@@ -1816,9 +1861,11 @@ function dualRefreshControls(){
  identity.style.borderLeftColor=colors[settings.color]?.[1]||'#b69a65';
  const nameField=$('dualTableName');
  if(nameField)nameField.value=current?.name||'';
- $('dualMix').hidden=dualSession.mixed;
- $('dualSeparate').hidden=!dualSession.mixed;
- $('dualSummary').textContent='山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
+ $('dualMix').hidden=shared||dualSession.mixed;
+ $('dualSeparate').hidden=shared||!dualSession.mixed;
+ $('dualSummary').textContent=shared
+ ?'共有山札 '+dualSession.piles.A.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓Ⅰ '+dualSession.tables.table2.placed.length+'枚'
+ :'山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
  refreshWorkspaceSwitcher();
 }
 function dualSave(){
@@ -1875,6 +1922,11 @@ function dualCollect(){
 function dualToggle(){
  if(dualBusy())return;
  if(dualSession){
+  if(isSharedTables()){
+   dualSwitchTable('table1');
+   setStatus('メイン卓を表示しました。追加卓と共有山札は維持されています。');
+   return;
+  }
   dualSave();dualSession=null;
   const old=dualSingleBackup;dualSingleBackup=null;
   if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
@@ -1912,6 +1964,7 @@ for(const [id,tone] of Object.entries({dualBackA:'A',dualBackB:'B'})){
  select.replaceChildren(...Object.keys(TABULA_BACK_PALETTE).map(key=>new Option(({sepia:'セピア',green:'緑',burgundy:'バーガンディ',navy:'紺',purple:'紫',black:'黒',ivory:'象牙色'})[key],key)));
  select.onchange=e=>{if(!dualSession)return;dualSession.backColors[tone]=e.target.value;render();dualSave();setStatus('デッキ'+tone+'の裏面色を変更しました。')};
 }
+$('sharedTableAdd').onclick=beginSharedTable;
 $('dualToggle').onclick=dualToggle;
 $('dualResume').onclick=()=>{if(!dualSession)dualToggle()};
 $('dualClear').onclick=()=>{
@@ -1932,7 +1985,8 @@ $('dualClear').onclick=()=>{
 $('workspaceTable').onchange=e=>{
  const target=e.target.value;
  if(target==='main'){
-  if(dualSession)dualToggle();
+  if(isSharedTables())dualSwitchTable('table1');
+  else if(dualSession)dualToggle();
   else dualRefreshControls();
  }else if(target==='table1'||target==='table2'){
   if(!dualSession)dualToggle();
