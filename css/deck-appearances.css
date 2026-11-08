@@ -356,3 +356,33 @@ body[data-tabula-back="on"] :is(
  background-origin:border-box !important;
  background-clip:border-box !important;
 }
+
+
+/* v0.182: The remaining dark/grey perimeter is in the back *artwork*,
+   not the CSS border. Keep the same physical card box on both sides.
+   Crop only the pre-rendered outer image margin by enlarging the back
+   artwork within its existing box. Never resize the card or front face. */
+body[data-tabula-back="on"] :is(
+  #zone .card .face.back,
+  .table-surface .deck,
+  .deck-drag-preview > .face.back,
+  .shuffle-card,
+  #physicalCutOverlay .face.back
+){
+  background-size:105% 104% !important;
+  background-position:50% 50% !important;
+  background-repeat:no-repeat !important;
+}
+/* Worn has two layers: keep weathering anchored to the actual paper size,
+   but crop the same pre-existing dark image margin below the texture. */
+body[data-tabula-back="on"] :is(
+  #zone .card[data-appearance="worn"] .face.back,
+  .table-surface .deck[data-appearance="worn"],
+  .deck-drag-preview[data-appearance="worn"] > .face.back,
+  .shuffle-card[data-appearance="worn"],
+  #physicalCutOverlay .face.back[data-appearance="worn"]
+){
+  background-size:100% 100%,105% 104% !important;
+  background-position:center,center !important;
+  background-repeat:no-repeat,no-repeat !important;
+}
