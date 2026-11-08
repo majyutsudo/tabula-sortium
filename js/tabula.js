@@ -546,7 +546,7 @@ function animateCardFromDeck(index,sourceRect){
  const cardsOnTable=Array.from(zone.children).filter(el=>el.classList.contains('card'));
  const card=cardsOnTable[index];if(!card||!sourceRect||!card.animate)return;
  const end=card.getBoundingClientRect();if(!end.width||!end.height)return;
- const ghost=card.cloneNode(true);ghost.style.cssText='position:fixed;pointer-events:none;margin:0;z-index:100000;left:'+end.left+'px;top:'+end.top+'px;width:'+end.width+'px;height:'+end.height+'px;transform:none;';
+ const ghost=card.cloneNode(true);ghost.classList.add('deal-flight');ghost.style.cssText='position:fixed;pointer-events:none;margin:0;z-index:100000;left:'+end.left+'px;top:'+end.top+'px;width:'+end.width+'px;height:'+end.height+'px;transform:none;';
  document.body.append(ghost);
  card.style.visibility='hidden';
  const dx=sourceRect.left+sourceRect.width/2-(end.left+end.width/2),dy=sourceRect.top+sourceRect.height/2-(end.top+end.height/2);
@@ -1226,21 +1226,32 @@ const WORN_MATERIAL_ASSETS=Object.freeze({
 function wornMaterialAvailable(id){return Object.hasOwn(TABULA_TAROT_IMAGES,id)}
 function wornMaterialMarkup(id){
  if(!wornMaterialAvailable(id))return '';
+ // Preserve the three original hand-authored material studies.
  if(Object.hasOwn(WORN_MATERIAL_ASSETS,id))
   return '<image class="worn-material-layer" href="'+WORN_MATERIAL_ASSETS[id]+'" x="0" y="0" width="300" height="450" preserveAspectRatio="none" pointer-events="none"/>';
+ // Stable per-card texture in the same paper-and-ink idiom as the prototypes.
  let seed=2166136261;
  for(const ch of id)seed=Math.imul(seed^ch.charCodeAt(0),16777619)>>>0;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  const spots=[];
- for(let i=0;i<40;i++){
-  const x=13+random()*274,y=13+random()*424;
-  const rx=1+random()*12,ry=.7+random()*7;
-  const opacity=(.025+random()*.10).toFixed(3);
-  spots.push('<ellipse cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" rx="'+rx.toFixed(1)+'" ry="'+ry.toFixed(1)+'" fill="#815b3a" opacity="'+opacity+'"/>');
+ for(let i=0;i<130;i++){
+  const x=(4+random()*292).toFixed(1),y=(4+random()*442).toFixed(1);
+  const rx=(1.5+random()*17).toFixed(1),ry=(1+random()*10).toFixed(1);
+  const color=i%3===0?'#c9a66d':'#765334';
+  spots.push('<ellipse cx="'+x+'" cy="'+y+'" rx="'+rx+'" ry="'+ry+'" fill="'+color+'" opacity="'+(.035+random()*.08).toFixed(3)+'" filter="url(#wornSpots)"/>');
  }
- return '<g class="worn-material-layer" pointer-events="none">'
-   +'<rect x="3" y="3" width="294" height="444" rx="4" fill="none" stroke="#7b5433" stroke-opacity=".13" stroke-width="5"/>'
-   +spots.join('')+'</g>';
+ const flecks=[];
+ for(let i=0;i<380;i++){
+  flecks.push('<ellipse cx="'+(6+random()*288).toFixed(1)+'" cy="'+(6+random()*438).toFixed(1)+'" rx="'+(.15+random()*1.5).toFixed(2)+'" ry="'+(.15+random()*.9).toFixed(2)+'" fill="'+(i%3===0?'#f6dec0':'#65452d')+'" opacity="'+(.05+random()*.18).toFixed(3)+'"/>');
+ }
+ return '<g class="worn-material-layer" pointer-events="none"><defs>'
+  +'<filter id="wornSpots"><feGaussianBlur stdDeviation="3.3"/></filter>'
+  +'<linearGradient id="wornEdgeX"><stop stop-color="#6a472c" stop-opacity=".22"/><stop offset=".055" stop-color="#987047" stop-opacity=".10"/><stop offset=".16" stop-color="#987047" stop-opacity="0"/><stop offset=".84" stop-color="#987047" stop-opacity="0"/><stop offset=".945" stop-color="#987047" stop-opacity=".10"/><stop offset="1" stop-color="#6a472c" stop-opacity=".21"/></linearGradient>'
+  +'<linearGradient id="wornEdgeY" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#694328" stop-opacity=".23"/><stop offset=".07" stop-color="#987047" stop-opacity=".06"/><stop offset=".93" stop-color="#987047" stop-opacity=".06"/><stop offset="1" stop-color="#694328" stop-opacity=".22"/></linearGradient>'
+  +'</defs><rect x="2" y="2" width="296" height="446" fill="#9b7247" opacity=".07"/>'
+  +'<rect x="2" y="2" width="296" height="446" fill="url(#wornEdgeX)"/>'
+  +'<rect x="2" y="2" width="296" height="446" fill="url(#wornEdgeY)"/>'
+  +spots.join('')+flecks.join('')+'</g>';
 }
 function finishedCardSource(c,tabletop=false,appearance='standard'){
  c=displayCard(c);
