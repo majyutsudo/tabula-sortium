@@ -814,7 +814,18 @@ function readExternalFile(file){
 }
 
 function freshName(){let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
-function captureSnapshot(name){if(!state.placed.length){setStatus('結果がありません。まずカードを配ってください。');return false}const obj=TabulaReadingHistory.createSnapshot({id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:name||freshName(),time:new Date().toISOString(),settings,state,slots:getSlots(),customIds,recipeId});if(dualSession){obj.multiTableReading=true;obj.tableName=dualSession.tables[dualSession.activeTable]?.name||dualSession.activeTable;obj.sourcePile=dualSession.activePile;}snapshots.unshift(obj);if(!storeSnapshots()){snapshots.shift();return false}setStatus('占い結果を記録しました。記録一覧から比較できます。');return true}
+function captureSnapshot(name){if(!state.placed.length){setStatus('結果がありません。まずカードを配ってください。');return false}const obj=TabulaReadingHistory.createSnapshot({id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:name||freshName(),time:new Date().toISOString(),settings,state,slots:getSlots(),customIds,recipeId});if(dualSession){
+ obj.multiTableReading=true;
+ obj.tableName=dualSession.tables[dualSession.activeTable]?.name||dualSession.activeTable;
+ obj.sourcePile=dualSession.activePile;
+ if(isIndependentTables()){
+  // A reading in an independent workspace owns exactly one physical pile.
+  // Save its table identity and the full inventory to restore ONLY that pile.
+  const source=dualSession.activeTable==='table2'?'B':'A';
+  obj.independentTable={tableId:dualSession.activeTable,source,
+   instanceIds:dualSession.instances.filter(c=>c.sourceDeck===source).map(c=>c.instanceId)};
+ }
+}snapshots.unshift(obj);if(!storeSnapshots()){snapshots.shift();return false}setStatus('占い結果を記録しました。記録一覧から比較できます。');return true}
 function saveSnapshotModal(){if(!state.placed.length){setStatus('保存する結果がありません。');return}modal('<h2>占い結果を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">結果を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
 function saveAndAgain(){if(captureSnapshot('')){initialize();setStatus('結果を保存し、同じ設定で新しい占いを開始しました。')}}
 const snapshotSummary=TabulaUiFormat.snapshotSummary;
@@ -833,8 +844,61 @@ function snapshotPanel(v){
  const rows=ordered.map((p,i)=>{let pos=p.slot!=null?v.slots?.[p.slot]:null;return `<div class="snapshot-row"><b>${pos?`${p.slot+1}. ${escapeHTML(pos.name)}`:`補助 ${i+1}`}</b><span>${p.faceUp?escapeHTML(snapshotFace(p)):'裏向き'}${p.reversed?'（逆）':''}</span></div>`}).join('');
  return `<div class="snapshot-board" style="--record-cloth:${cloth}">${altar}${pieces}</div><div class="snapshot-details">${rows}</div>`;
 }
+function restoreIndependentTableSnapshot(v){
+ if(!isIndependentTables()||!v.independentTable||dualBusy())return false;
+ const info=v.independentTable,tableId=info.tableId,source=info.source;
+ if(!['table1','table2'].includes(tableId)||source!==(tableId==='table1'?'A':'B')){
+  alert('記録の卓情報を確認できません。');return true;
+ }
+ if(!Array.isArray(info.instanceIds)||!Array.isArray(v.deck)||!Array.isArray(v.placed)||!Array.isArray(v.removed)){
+  alert('この記録には独立卓を復元するための山札情報がありません。');return true;
+ }
+ // Restore only to an independent workspace with the exact same physical
+ // stock. A different deck selection must never silently mix card identities.
+ const expected=dualSession.instances.filter(c=>c.sourceDeck===source).map(c=>c.instanceId);
+ if(expected.length!==info.instanceIds.length||expected.some(id=>!info.instanceIds.includes(id))){
+  alert('保存時と現在のデッキ構成が異なるため復元できません。同じカード構成の独立卓でお試しください。');return true;
+ }
+ const stock=[...v.deck,...v.placed,...v.removed];
+ const defined=new Map(dualSession.instances.filter(c=>c.sourceDeck===source).map(c=>[c.instanceId,c]));
+ const seen=new Set();
+ if(stock.length!==expected.length||stock.some(c=>{
+  if(!c||!defined.has(c.instanceId)||seen.has(c.instanceId))return true;
+  seen.add(c.instanceId);const d=defined.get(c.instanceId);
+  return c.id!==d.id||c.sourceDeck!==d.sourceDeck;
+ })){
+  alert('保存記録の山札構成に不整合があります。復元は行いませんでした。');return true;
+ }
+ if(!confirm('記録「'+v.name+'」を「'+(dualSession.tables[tableId]?.name||tableId)+'」へ復元しますか？ この卓の現在の配札と山札だけを置き換え、もう一方の卓は保持します。'))return true;
+ // Capture the current view first, then validate a complete candidate.
+ // Do not touch the live session until physical-card conservation succeeds.
+ dualCapture();
+ const candidate=dualClone(dualSession);
+ candidate.piles[source]=dualClone(v.deck);
+ const target=candidate.tables[tableId];
+ target.placed=dualClone(v.placed);target.removed=dualClone(v.removed);
+ target.spread=v.spread||v.settings?.spread||target.spread;
+ target.cardSize=validCardSize(v.settings?.cardSize)?v.settings.cardSize:spreadCardSize(target.spread);
+ target.color=Number.isInteger(v.settings?.color)?v.settings.color:target.color;
+ target.altar=typeof v.settings?.altar==='boolean'?v.settings.altar:target.altar;
+ if(Array.isArray(v.settings?.candles))target.candles=dualClone(v.settings.candles);
+ if(typeof v.settings?.deckId==='string')target.deckId=v.settings.deckId;
+ if(typeof v.settings?.pool==='string')target.pool=v.settings.pool;
+ target.selected=null;target.completionShown=false;target.dealCheckpoint=dualClone(v.dealCheckpoint||null);
+ target.cutStage=null;
+ candidate.activeTable=tableId;candidate.activePile=source;
+ try{TabulaMultiWorkspace.validate(candidate)}
+ catch(e){alert('復元前の検証に失敗しました。卓の状態は変更していません。');return true}
+ dualSession=candidate;
+ dualRestoreView();
+ dualSave();closeModal();
+ setStatus('「'+v.name+'」を'+(target.name||'指定の卓')+'へ復元しました。もう一方の卓は維持されています。');
+ window.scrollTo({top:0,behavior:'instant'});
+ return true;
+}
 function restoreSnapshot(v){
  if(!v)return;
+ if(v.independentTable&&isIndependentTables()){restoreIndependentTableSnapshot(v);return;}
  if(dualSession||v.multiTableReading){alert('複数卓モード中の記録は、現在のところ閲覧・比較・書き出しのみ対応しています。配札と山札の整合性を守るため、この記録を卓に直接復元することはできません。「全データをバックアップ」からは複数卓の作業状態を復元できます。');return;}
  if(!confirm('記録「'+v.name+'」をメインの卓に復元しますか？ 現在の未保存の作業状態は置き換わります。'))return;
  settings={...settings,...(v.settings||{})};
@@ -1237,7 +1301,7 @@ installPileInteraction(deck,'A');installPileInteraction(deckB,'B');
 window.addEventListener('resize',render);
 // Independent disclosure state; no navigation or form submission on toggle.
 if((Number(settings.dealSkipFirst)||0)||(settings.dealSkipSchedule||'').trim())$('dealRulesDetails').open=true;
-const HELP_CONTENT="\n<p class=\"mini\">TABULA SORTIUM v0.308 — 仮想の占術卓でカードを配り、複数の卓やデッキを使い分けるための操作説明です。画面の項目名に沿って、基本操作から順に説明します。</p>\n<h3>1. 最初の一回：デッキを選んで占う</h3>\n<p>「Ⅱ. 使用するカード」で使用デッキとカード群を選び、展開法を選択します。卓上の「新しい占い」を押すと、その山札を準備します。スプレッドは卓上の選択欄からも変更できます。「ディール」で自動配札するほか、山札をドラッグして好きな位置へ置けます。</p>\n<p>デッキ初期状態は「ランダム（標準）」または「新品（整列）」から選べます。シャッフル・カットは任意です。正逆位置を有効にすると、カードを用意する際に表裏の向きが決まります。</p>\n<h3>2. 左メニューの構成</h3>\n<p>「Ⅰ. 卓の管理」では卓の追加とモード選択、「Ⅱ. 使用するカード」ではデッキ・カード名・カード群・展開法、「Ⅲ. カード操作」ではウォッシュ・シャッフル・カットの設定、「Ⅳ. アルター設定」ではクロス色・キャンドル・演出、「Ⅴ. 保存・管理」ではJSONの入出力や初期化を扱います。各見出しは折りたたみ可能です。</p>\n<h3>3. 卓とデッキの違い</h3>\n<p><strong>卓</strong>は、カードを置く場所であり、配札、展開法、カードサイズ、クロスやアルターの状態を持ちます。<strong>デッキ（山札）</strong>は、実際にカードを引くためのカードの組です。同じカード名を収録していても、独立したデッキ同士なら別々のカードとして扱われます。卓を切り替えても、もう一方の卓の配札は維持されます。</p>\n<h3>4. 卓を追加する：3つの方式</h3>\n<p>「Ⅰ. 卓の管理」→「＋ 卓を追加」で、用途に合わせて次の方式を選びます。</p>\n<ul>\n<li><strong>山札を共有する卓：</strong>メイン卓と追加卓が一組の山札Aを共有します。すでに一方の卓にあるカードは、もう一方の卓では同時に引けません。</li>\n<li><strong>独立したデッキを持つ卓：</strong>メイン卓の山札Aとは別に、追加卓用の山札Bを作ります。追加時に標準・シンプル・登録デッキを選び、収録カードすべて／大アルカナ22枚／小アルカナ56枚／コートカード16枚などの構成を指定できます。登録デッキに含めた任意枚数のカード構成も使用できます。たとえばメイン卓78枚＋追加卓22枚が可能です。</li>\n<li><strong>ダブルデッキモード：</strong>専用の卓Ⅰ・卓Ⅱと山札A・Bを用意する方式です。操作対象の山札を選び、A＋Bを混合したり二組に分けたりできます。「メイン卓に戻る」では通常の卓に戻り、ダブルデッキの作業状態は保存されます。</li>\n</ul>\n<p>この3方式は同時には開始できません。別の方式へ移るには、現在の追加卓の片付けなどが必要です。誤って配札を失わないよう、片付ける前に確認が表示されます。通常の追加卓では、現在の卓に応じて操作する山札A／Bが自動的に切り替わります。</p>\n<h3>5. 卓の切り替え・名前・外観</h3>\n<p>上部の「卓」選択欄からメイン卓と追加卓を行き来できます。卓設定では名前の変更と、メイン／追加デッキそれぞれの外観・裏面色を設定できます。外観はStandard（標準）、Pocket（小型）、Worn（使い古し）から選択できます。クロス色は「Ⅳ. アルター設定」で変更します。卓の色とカードの裏面色は別の設定です。</p>\n<p>ダブルデッキモードでは、卓の選択に加えて「操作する山札」を選択できます。共有卓・独立卓では、デッキの取り違えを避けるため山札の操作対象を卓に合わせて管理します。</p>\n<h3>6. デッキの複製・編集</h3>\n<p>「Ⅱ. 使用するカード」→「デッキを複製・編集」から、TABULA TAROTを元にオリジナルデッキを登録できます。収録するカード、カード名・番号、言語、裏面色などを調整し、登録デッキとして選択できます。標準デッキそのもののカード画像を書き換える機能ではありません。登録したデッキは追加卓用にも選択できます。</p>\n<h3>7. スプレッドと自由配置</h3>\n<p>ワンカード、スリーカード、ケルト十字、生命の樹、ホロスコープ、フリースプレッドなどから選びます。「スプレッド図鑑」やスプレッド選択欄の情報ボタンから解説を確認できます。山札から卓へドラッグして自由に置くことも、空のポジションをタップしてカードを配ることもできます。基本の展開後に補助カードを追加することもできます。</p>\n<p>配札中に展開法を変更する場合、現在の卓のカードを回収する確認が表示されます。了承した場合、他の卓の配札は維持されます。「新しい占い」も現在操作している卓が対象です。</p>\n<h3>8. シャッフル・カット・配札・回収</h3>\n<p>卓上の「ウォッシュ」は「Ⅲ. カード操作」で指定した方向・巡回数を使います。「シャッフル」は選択した方式または登録済み手順を実行します。「カット」は山札を分割して積み直します。山札を整列したまま配札することもできます。「ディール」は選択したスプレッドに従ってカードを配ります。</p>\n<p>「回収」は現在の卓で配ったカードを山札へ戻す操作です。別の卓にあるカードはそのまま残ります。配札前の順番へ戻す「復元」と、次の占いを続けるためにカードを回収する操作は目的が異なります。</p>\n<h3>9. 表裏・移動・回転・札を見る</h3>\n<p>卓のカードをタップすると表裏が切り替わります。ドラッグで位置を変えられ、長押しで選択できます。カードの回転は配置角度だけを変更する操作で、占術上の正逆位置とは別に管理されます。札を拡大して意味を確認するには、卓上の虫眼鏡（カードを見る）を使います。ポジション名やカード名の表示も切り替えられます。</p>\n<h3>10. スプレッド手帖と占例</h3>\n<p>「手帖」では登録済みの展開法を呼び出し、編集・複製・削除できます。自作する際はフリースプレッドで位置を並べ、「現在の卓から作成」を利用します。登録されるのはカードそのものではなく位置の配置です。スプレッドの制作・編集は現状、単独の卓で行ってください。複数卓モード中は一時的に利用できません。</p>\n<p>「RESULTS」で卓の配札結果を確認できます。「結果を保存」で現在の占例を記録し、「記録一覧・比較」から過去の占例を参照できます。</p>\n<h3>11. スマートフォンとPCでの表示操作</h3>\n<p><strong>スマホ：</strong>上部の卓選択で卓を切り替えます。追加卓の細かい設定は「卓の設定を開く」で展開できます。卓は2本指でピンチ拡大・縮小でき、拡大後は空いている部分を1本指で移動できます。「全景」で元の見え方へ戻せます。表示操作とスプレッド・虫眼鏡・手帖は上部のコンパクトなツールバーにまとめています。</p>\n<p><strong>PC：</strong>卓を見る距離を切り替え、拡大した卓の余白をドラッグして表示位置を調整できます。カード自体の大きさの調整と、卓全体の拡大表示は別の操作です。</p>\n<h3>12. JSONの書き出し・読み込み</h3>\n<p>「現在の占例を書き出す（JSON）」は占例一件を書き出します。「全データをバックアップ（JSON）」は、通常の卓の設定・状態、占例の記録、登録スプレッド、登録デッキ、シャッフル手順などをまとめて書き出します。占例JSONの読み込みは記録一覧への追加、全データJSONの読み込みは確認後の既存データ置き換えです。</p>\n<p><strong>複数卓についての注意：</strong>「全データをバックアップ（JSON）」には共有卓・独立卓・ダブルデッキの山札、配札、卓設定を含みます。読み込み後は保存時に開いていた卓を復元します。使用していなかったダブルデッキの作業状態も保持され、必要なときに再開できます。</p>\n<h3>13. 保存場所と注意</h3>\n<p>作業状態はブラウザー・端末内に保存され、別端末とは自動同期されません。プライベートブラウズやサイトデータ削除、ブラウザー側の保存制限で失われる可能性があります。大切な記録や登録デッキは定期的にJSONファイルとして保管してください。表示や操作が不安定な場合は、初期化をする前に保存内容を確認してください。</p>\n";
+const HELP_CONTENT="\n<p class=\"mini\">TABULA SORTIUM v0.308 — 仮想の占術卓でカードを配り、複数の卓やデッキを使い分けるための操作説明です。画面の項目名に沿って、基本操作から順に説明します。</p>\n<h3>1. 最初の一回：デッキを選んで占う</h3>\n<p>「Ⅱ. 使用するカード」で使用デッキとカード群を選び、展開法を選択します。卓上の「新しい占い」を押すと、その山札を準備します。スプレッドは卓上の選択欄からも変更できます。「ディール」で自動配札するほか、山札をドラッグして好きな位置へ置けます。</p>\n<p>デッキ初期状態は「ランダム（標準）」または「新品（整列）」から選べます。シャッフル・カットは任意です。正逆位置を有効にすると、カードを用意する際に表裏の向きが決まります。</p>\n<h3>2. 左メニューの構成</h3>\n<p>「Ⅰ. 卓の管理」では卓の追加とモード選択、「Ⅱ. 使用するカード」ではデッキ・カード名・カード群・展開法、「Ⅲ. カード操作」ではウォッシュ・シャッフル・カットの設定、「Ⅳ. アルター設定」ではクロス色・キャンドル・演出、「Ⅴ. 保存・管理」ではJSONの入出力や初期化を扱います。各見出しは折りたたみ可能です。</p>\n<h3>3. 卓とデッキの違い</h3>\n<p><strong>卓</strong>は、カードを置く場所であり、配札、展開法、カードサイズ、クロスやアルターの状態を持ちます。<strong>デッキ（山札）</strong>は、実際にカードを引くためのカードの組です。同じカード名を収録していても、独立したデッキ同士なら別々のカードとして扱われます。卓を切り替えても、もう一方の卓の配札は維持されます。</p>\n<h3>4. 卓を追加する：3つの方式</h3>\n<p>「Ⅰ. 卓の管理」→「＋ 卓を追加」で、用途に合わせて次の方式を選びます。</p>\n<ul>\n<li><strong>山札を共有する卓：</strong>メイン卓と追加卓が一組の山札Aを共有します。すでに一方の卓にあるカードは、もう一方の卓では同時に引けません。</li>\n<li><strong>独立したデッキを持つ卓：</strong>メイン卓の山札Aとは別に、追加卓用の山札Bを作ります。追加時に標準・シンプル・登録デッキを選び、収録カードすべて／大アルカナ22枚／小アルカナ56枚／コートカード16枚などの構成を指定できます。登録デッキに含めた任意枚数のカード構成も使用できます。たとえばメイン卓78枚＋追加卓22枚が可能です。</li>\n<li><strong>ダブルデッキモード：</strong>専用の卓Ⅰ・卓Ⅱと山札A・Bを用意する方式です。操作対象の山札を選び、A＋Bを混合したり二組に分けたりできます。「メイン卓に戻る」では通常の卓に戻り、ダブルデッキの作業状態は保存されます。</li>\n</ul>\n<p>この3方式は同時には開始できません。別の方式へ移るには、現在の追加卓の片付けなどが必要です。誤って配札を失わないよう、片付ける前に確認が表示されます。通常の追加卓では、現在の卓に応じて操作する山札A／Bが自動的に切り替わります。</p>\n<h3>5. 卓の切り替え・名前・外観</h3>\n<p>上部の「卓」選択欄からメイン卓と追加卓を行き来できます。卓設定では名前の変更と、メイン／追加デッキそれぞれの外観・裏面色を設定できます。外観はStandard（標準）、Pocket（小型）、Worn（使い古し）から選択できます。クロス色は「Ⅳ. アルター設定」で変更します。卓の色とカードの裏面色は別の設定です。</p>\n<p>ダブルデッキモードでは、卓の選択に加えて「操作する山札」を選択できます。共有卓・独立卓では、デッキの取り違えを避けるため山札の操作対象を卓に合わせて管理します。</p>\n<h3>6. デッキの複製・編集</h3>\n<p>「Ⅱ. 使用するカード」→「デッキを複製・編集」から、TABULA TAROTを元にオリジナルデッキを登録できます。収録するカード、カード名・番号、言語、裏面色などを調整し、登録デッキとして選択できます。標準デッキそのもののカード画像を書き換える機能ではありません。登録したデッキは追加卓用にも選択できます。</p>\n<h3>7. スプレッドと自由配置</h3>\n<p>ワンカード、スリーカード、ケルト十字、生命の樹、ホロスコープ、フリースプレッドなどから選びます。「スプレッド図鑑」やスプレッド選択欄の情報ボタンから解説を確認できます。山札から卓へドラッグして自由に置くことも、空のポジションをタップしてカードを配ることもできます。基本の展開後に補助カードを追加することもできます。</p>\n<p>配札中に展開法を変更する場合、現在の卓のカードを回収する確認が表示されます。了承した場合、他の卓の配札は維持されます。「新しい占い」も現在操作している卓が対象です。</p>\n<h3>8. シャッフル・カット・配札・回収</h3>\n<p>卓上の「ウォッシュ」は「Ⅲ. カード操作」で指定した方向・巡回数を使います。「シャッフル」は選択した方式または登録済み手順を実行します。「カット」は山札を分割して積み直します。山札を整列したまま配札することもできます。「ディール」は選択したスプレッドに従ってカードを配ります。</p>\n<p>「回収」は現在の卓で配ったカードを山札へ戻す操作です。別の卓にあるカードはそのまま残ります。配札前の順番へ戻す「復元」と、次の占いを続けるためにカードを回収する操作は目的が異なります。</p>\n<h3>9. 表裏・移動・回転・札を見る</h3>\n<p>卓のカードをタップすると表裏が切り替わります。ドラッグで位置を変えられ、長押しで選択できます。カードの回転は配置角度だけを変更する操作で、占術上の正逆位置とは別に管理されます。札を拡大して意味を確認するには、卓上の虫眼鏡（カードを見る）を使います。ポジション名やカード名の表示も切り替えられます。</p>\n<h3>10. スプレッド手帖と占例</h3>\n<p>「手帖」では登録済みの展開法を呼び出し、編集・複製・削除できます。自作する際はフリースプレッドで位置を並べ、「現在の卓から作成」を利用します。登録されるのはカードそのものではなく位置の配置です。スプレッドの制作・編集は現状、単独の卓で行ってください。複数卓モード中は一時的に利用できません。</p>\n<p>「RESULTS」で卓の配札結果を確認できます。「結果を保存」で現在の占例を記録し、「記録一覧・比較」から過去の占例を参照できます。独立したデッキを持つ追加卓では、保存した占例を元の卓へ直接復元できます。復元されるのはその卓の配札・山札と設定で、もう一方の卓は維持されます。共有卓・ダブルデッキの占例は閲覧・比較・書き出しに対応しますが、直接復元はできません。</p>\n<h3>11. スマートフォンとPCでの表示操作</h3>\n<p><strong>スマホ：</strong>上部の卓選択で卓を切り替えます。追加卓の細かい設定は「卓の設定を開く」で展開できます。卓は2本指でピンチ拡大・縮小でき、拡大後は空いている部分を1本指で移動できます。「全景」で元の見え方へ戻せます。表示操作とスプレッド・虫眼鏡・手帖は上部のコンパクトなツールバーにまとめています。</p>\n<p><strong>PC：</strong>卓を見る距離を切り替え、拡大した卓の余白をドラッグして表示位置を調整できます。カード自体の大きさの調整と、卓全体の拡大表示は別の操作です。</p>\n<h3>12. JSONの書き出し・読み込み</h3>\n<p>「現在の占例を書き出す（JSON）」は占例一件を書き出します。「全データをバックアップ（JSON）」は、通常の卓の設定・状態、占例の記録、登録スプレッド、登録デッキ、シャッフル手順などをまとめて書き出します。占例JSONの読み込みは記録一覧への追加、全データJSONの読み込みは確認後の既存データ置き換えです。</p>\n<p><strong>複数卓についての注意：</strong>「全データをバックアップ（JSON）」には共有卓・独立卓・ダブルデッキの山札、配札、卓設定を含みます。読み込み後は保存時に開いていた卓を復元します。使用していなかったダブルデッキの作業状態も保持され、必要なときに再開できます。</p>\n<h3>13. 保存場所と注意</h3>\n<p>作業状態はブラウザー・端末内に保存され、別端末とは自動同期されません。プライベートブラウズやサイトデータ削除、ブラウザー側の保存制限で失われる可能性があります。大切な記録や登録デッキは定期的にJSONファイルとして保管してください。表示や操作が不安定な場合は、初期化をする前に保存内容を確認してください。</p>\n";
 
 $('openHelp').addEventListener('click',()=>{modal('<div class="help-popup-content"><h2>操作説明・仕様</h2>'+HELP_CONTENT+'</div>')});
 
