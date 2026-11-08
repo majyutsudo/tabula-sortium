@@ -883,7 +883,7 @@ function restoreIndependentTableSnapshot(v){
  current.spread=settings.spread;current.cardSize=zoom;current.color=settings.color;
  current.altar=!!settings.altar;current.candles=dualClone(altarCandles());
  current.dealCheckpoint=dualClone(state.dealCheckpoint);
- if(isIndependentTables()){current.deckId=settings.deckId;current.pool=settings.pool;}
+ if(isIndependentTables()){current.deckId=settings.deckId;current.pool=settings.pool;current.savedSettings=dualClone(settings);}
  // Only the chosen source is replaced; retain the other source and table.
  candidate.instances=candidate.instances.filter(c=>c.sourceDeck!==source).concat(stock.instances);
  candidate.piles[source]=stock.deck;
@@ -909,6 +909,7 @@ function restoreIndependentTableSnapshot(v){
  const nextSettings={...settings,...dualClone(v.settings||{}),spread:target.spread,
   deckId:target.deckId,pool:target.pool,color:target.color,altar:target.altar,
   candles:dualClone(target.candles||[]),cardSize:target.cardSize};
+ target.savedSettings=dualClone(nextSettings);
  dualSession=candidate;settings=nextSettings;
  if(Array.isArray(v.customIds))customIds=dualClone(v.customIds);
  if(v.recipeId&&recipes.some(r=>r.id===v.recipeId))recipeId=v.recipeId;
@@ -1992,7 +1993,7 @@ function dualCapture(){
  const t=dualSession.tables[dualSession.activeTable];
  t.placed=dualClone(state.placed);
  t.spread=settings.spread;t.cardSize=zoom;
- if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;}
+ if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;t.savedSettings=dualClone(settings);}
  t.color=settings.color;t.altar=!!settings.altar;t.candles=dualClone(altarCandles());
  t.selected=state.selected;t.completionShown=state.completionShown;
  t.dealCheckpoint=dualClone(state.dealCheckpoint);
@@ -2002,6 +2003,7 @@ function dualCapture(){
 function dualRestoreView(){
  if(isIndependentTables())dualSession.activePile=dualSession.activeTable==='table2'?'B':'A';
  const t=dualSession.tables[dualSession.activeTable];
+ if(isIndependentTables()&&t.savedSettings)settings={...settings,...dualClone(t.savedSettings)};
  state={deck:dualClone(dualSession.piles[dualSession.activePile]),placed:dualClone(t.placed||[]),cutStage:dualClone(t.cutStage||null),
  selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[])};
  settings.spread=t.spread||'free';
@@ -2301,7 +2303,7 @@ $('dualClear').onclick=()=>{
    // The surviving main table and all remaining physical cards become
    // the standalone reading. Nothing is duplicated or silently lost.
    const main=dualSession.tables.table1,extra=dualSession.tables.table2;
-   const oldSettings=dualSingleBackup?.settings;
+   const oldSettings=main.savedSettings||dualSingleBackup?.settings;
    if(oldSettings)settings=dualClone(oldSettings);
    const strip=c=>{const {instanceId,sourceDeck,...rest}=c;return rest};
    state={deck:[...dualSession.piles.A,...(isSharedTables()?(extra?.placed||[]):[]),...(isSharedTables()?(extra?.removed||[]):[])].map(strip),
