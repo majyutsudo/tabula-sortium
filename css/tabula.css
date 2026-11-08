@@ -988,3 +988,14 @@ body.dual-enabled .table-surface .deck .deck-move-handle{display:grid!important}
 @media(max-width:780px){
  body.dual-enabled .table-surface .deck.dual-second-deck{left:calc(5.7% + var(--cw) + 16px)}
 }
+
+/* v0.169: Both unmoved stocks share the same baseline. Previous B used 25px
+   while A inherited 5.5%, which caused a visible offset at some table sizes. */
+body.dual-enabled .table-surface .deck.dual-primary-deck,
+body.dual-enabled .table-surface .deck.dual-second-deck{
+  top:auto;bottom:5.5%;
+}
+@media(max-width:780px){
+ body.dual-enabled .table-surface .deck.dual-primary-deck,
+ body.dual-enabled .table-surface .deck.dual-second-deck{bottom:5.5%}
+}
