@@ -478,14 +478,14 @@ body[data-tabula-back="on"] .table-surface .deck::before{
  box-shadow:none !important;
  background:none !important;
 }
-/* Worn stock and dealt backs must use the same physical paper tint.
-   Match the image finish rather than maintaining conflicting stock overrides. */
+/* Worn stocks and dealt backs use the same tint and weathered image.
+   Move handles remain clickable and neither card geometry nor hit targets change. */
 body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
- filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91) !important;
- -webkit-mask-image:none !import
-
-/* The stock's own Worn background uses the same two layers as a dealt back.
-   Its move handle remains independently interactive (no masking/clipping). */
+  filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91) !important;
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+  overflow:visible !important;
+}
 body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before{
   content:none !important;
   display:none !important;
