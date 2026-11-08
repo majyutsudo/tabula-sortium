@@ -1090,3 +1090,33 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .dual-table-setup label{grid-template-columns:52px minmax(0,1fr)}
 .dual-deck-fields label{grid-template-columns:54px minmax(0,1fr);padding-right:9px}
 @media(max-width:780px){.dual-table-setup label{grid-template-columns:46px minmax(0,1fr)}.dual-deck-fields label{grid-template-columns:48px minmax(0,1fr);padding-right:8px}}
+
+/* v0.305: override the older flex-label layout at the desktop toolbar.
+   Without this specific selector, 外観 and 裏面 collapse vertically. */
+.main>.toolbar .dual-mode-controls .dual-table-setup label,
+.main>.toolbar .dual-mode-controls .dual-deck-fields label{
+  display:grid;align-items:center;justify-content:initial;
+  grid-template-columns:40px minmax(0,1fr);
+  column-gap:7px;min-width:0;width:100%;
+  white-space:nowrap;
+}
+.main>.toolbar .dual-mode-controls .dual-deck-fields label{
+  padding-right:7px;
+}
+.main>.toolbar .dual-mode-controls .dual-table-setup label{
+  grid-template-columns:36px minmax(0,1fr);
+}
+.main>.toolbar .dual-mode-controls .dual-table-setup label input,
+.main>.toolbar .dual-mode-controls .dual-table-setup label select,
+.main>.toolbar .dual-mode-controls .dual-deck-fields label select{
+  display:block;min-width:0;max-width:100%;width:100%;
+}
+.main>.toolbar .dual-mode-controls>.dual-pile-field{
+  display:grid;grid-template-columns:minmax(96px,1fr) minmax(0,110px);
+  align-items:center;justify-content:initial;column-gap:7px;
+  white-space:nowrap;
+}
+@media(max-width:780px){
+ .main>.toolbar .dual-mode-controls .dual-table-setup label{grid-template-columns:36px minmax(0,1fr)}
+ .main>.toolbar .dual-mode-controls .dual-deck-fields label{grid-template-columns:40px minmax(0,1fr)}
+}
