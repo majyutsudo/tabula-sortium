@@ -1023,3 +1023,19 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .dual-stored-controls span{color:#e9d7b4}
 .dual-stored-controls button{width:100%}
 @media(max-width:780px){.workspace-switcher select{min-width:92px;max-width:132px}}
+
+
+/* v0.292: mobile table selector occupies its own row under the status;
+   the existing compact toolbar controls retain their original grid tracks. */
+@media(max-width:780px){
+ .toolbar #workspaceSwitcher:not([hidden]){
+  display:flex;grid-column:1/-1;grid-row:auto;
+  min-width:0;width:100%;box-sizing:border-box;
+  justify-content:flex-start;align-items:center;
+  padding:1px 0 3px;gap:8px;
+ }
+ .toolbar #workspaceSwitcher select{
+  width:min(100%,220px);max-width:220px;min-width:0;
+  min-height:36px;font-size:12px;
+ }
+}
