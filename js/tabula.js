@@ -110,6 +110,7 @@ function openSpreadGuideEditor(id){
 
 function spreadCapture(){if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。一組モードで登録してください。');return}closeSpreadArchive();if(!state.placed.length){alert('フリースプレッドでカードを並べてから実行してください。');return}if(state.placed.length>52){alert('スプレッドに登録できるのは52位置までです。');return}if(spreadWorkbench)return;spreadWorkbench={previousCardSize:zoom,original:JSON.parse(JSON.stringify(state.placed)),chosen:[],names:{},title:'新しいスプレッド',circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};$('spreadSave').textContent='スプレッドを登録';document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;spreadSnap=true;$('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');$('zone').style.setProperty('--workgrid',($('spreadGridSize').value||24)+'px');refreshWorkbench();render();$('spreadWorkbench').scrollIntoView({block:'nearest',behavior:'smooth'});}
 function openStoredSpreadWorkbench(source){
+ if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。');return}
  if(spreadWorkbench)return;
  if(!source||!Array.isArray(source.slots)||!source.slots.length){alert('このスプレッドには編集できる配置がありません。');return}
  // Editing uses working copies of the registered positions, not the real deck or its cards.
