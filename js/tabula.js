@@ -1889,6 +1889,7 @@ function dualRefreshControls(){
  const controls=$('dualControls'),bar=$('dualModeBar');
  if(!controls||!bar)return;
  const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables(),independent=isIndependentTables();
+ const legacyOptions=document.querySelector('.table-legacy-options');if(legacyOptions)legacyOptions.hidden=shared||independent||stored;
  updateTableAddPanel();
  refreshClothIndicators();
  controls.hidden=!active;
