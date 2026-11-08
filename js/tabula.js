@@ -1631,7 +1631,7 @@ function dualRefreshControls(){
  $('dualSummary').textContent='山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
 }
 function dualSave(){
- if(!dualSession)return;
+ if(!dualSession||state.cutStage)return; // Never persist a temporarily split stock during a cut.
  try{
   dualCapture();
   if(!state.cutStage){
