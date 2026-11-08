@@ -36,7 +36,10 @@ test('built-in spread definitions preserve their positions and names',()=>{
   for(const id of ['fiveCross','pentagram','treeOfLife'])assert.ok(presets[id].every(p=>p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100));
   assert.ok(presets.treeOfLife[3].y-presets.treeOfLife[1].y>=18);
   assert.ok(presets.treeOfLife[6].y-presets.treeOfLife[3].y>=18);
-  assert.ok(presets.treeOfLife[9].y-presets.treeOfLife[8].y>=18);
+  assert.equal(presets.treeOfLife[0].y,5);
+  assert.equal(presets.treeOfLife[8].y,72);
+  assert.equal(presets.treeOfLife[9].y,94);
+  assert.ok(presets.treeOfLife[9].y-presets.treeOfLife[8].y>=22);
   assert.ok(presets.treeOfLife[0].y<presets.treeOfLife[1].y);
   assert.equal(builtinSpreadCardSizes.fiveCross.mobile,1.5);
   assert.equal(builtinSpreadCardSizes.pentagram.mobile,1.5);
