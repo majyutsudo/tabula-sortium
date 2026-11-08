@@ -1680,7 +1680,7 @@ function dualFresh(){
  // Give each physical table its own persistent visual identity.
  w.tables.table1.name='卓Ⅰ';w.tables.table1.color=settings.color;
  w.tables.table1.altar=!!settings.altar;w.tables.table1.candles=dualClone(altarCandles());
- w.tables.table2.name='卓Ⅱ';w.tables.table2.color=(settings.color+1)%colors.length;
+ w.tables.table2.name='卓Ⅱ';w.tables.table2.color=colors.findIndex(([name])=>name==='ダークレッド');
  w.tables.table2.altar=!!settings.altar;w.tables.table2.candles=dualClone(altarCandles());
  return w;
 }
