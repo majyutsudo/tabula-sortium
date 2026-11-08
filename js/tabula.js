@@ -1905,7 +1905,7 @@ function refreshClothIndicators(){
  const currentName=current?.name||(dualSession?'現在の卓':'メイン卓');
  const tone=colors[settings.color]?.[1]||'#b69a65';
  $('tableMenuCurrent').textContent=currentName;
- for(const id of ['tableMenuSwatch','dualClothSwatch']){
+ for(const id of ['tableMenuSwatch','dualClothSwatch','workspaceClothSwatch']){
   const el=$(id);if(el){el.style.backgroundColor=tone;el.title='クロス色：'+(colors[settings.color]?.[0]||'現在の色');}
  }
 }
@@ -2052,7 +2052,7 @@ function dualToggle(){
   dualSession.appearances={A:'standard',B:'standard',...(dualSession.appearances||{})};
   TabulaMultiWorkspace.validate(dualSession);
   dualRestoreView();dualSave();
-  setStatus('二組モード：デッキA/Bと卓Ⅰ/Ⅱを選択できます。');
+  setStatus('ダブルデッキモードを開始しました。');
  }catch(e){dualSession=null;dualSingleBackup=null;setStatus('二組モードの開始に失敗しました：'+e.message)}
 }
 $('deckAppearance').onchange=e=>{
