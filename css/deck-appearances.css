@@ -98,14 +98,3 @@ body[data-tabula-back="on"] :is(
  .shuffle-card[data-appearance="worn"],
  #physicalCutOverlay .face.back[data-appearance="worn"]
 ){filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91)}
-
-/* Deal-flight cards are appended to document.body during the movement
-   animation, so the #zone-scoped Worn rule does not reach them. */
-body[data-tabula-back="on"] .deal-flight[data-appearance="worn"] .face.back{
-  background-image:url("../images/ui/worn-back-weathering.svg"),var(--worn-back-image) !important;
-  background-size:100% 100%,100% 100% !important;
-  background-position:center,center !important;
-  background-repeat:no-repeat,no-repeat !important;
-  border:0 !important;
-  filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91) !important;
-}
