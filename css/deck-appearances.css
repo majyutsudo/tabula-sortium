@@ -230,3 +230,22 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
 /* v0.175 regression fix: the new art frame must not act as a flex item
    for Standard or Pocket. Restore the original direct-card viewer layout. */
 .table-card-view #tableCardArtFrame:not(.worn-artwork) { display:contents; }
+
+/* v0.176: first three image-material prototypes.
+   The finish is baked into each generated SVG under the separately managed
+   text; do not add the older offset CSS patina a second time. */
+#zone .card[data-appearance="worn"][data-worn-asset="true"] .face.front::after {
+  content:none !important;
+  display:none !important;
+}
+#zone .card[data-appearance="worn"][data-worn-asset="true"] .face.front .tarot-face-art {
+  filter:none !important;
+}
+.table-card-view .worn-artwork[data-worn-asset="true"]::after,
+.table-card-view .worn-artwork[data-worn-asset="true"]::before {
+  content:none !important;
+  display:none !important;
+}
+.table-card-view .worn-artwork[data-worn-asset="true"] :is(img,svg.card-art) {
+  filter:none !important;
+}
