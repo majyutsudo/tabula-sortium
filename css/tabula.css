@@ -1011,3 +1011,15 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  color:#f1e1c0;
 }
 #dualTableName{width:112px;max-width:100%;font-size:12px;padding:5px 7px;min-height:30px}
+
+
+/* v0.290: tables are selected separately from the physical deck controls. */
+.dual-mode-bar[hidden],.workspace-switcher[hidden],.dual-stored-controls[hidden]{display:none!important}
+.workspace-switcher{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#ddcda9;font-size:12px}
+.workspace-switcher select{min-width:94px;max-width:170px;font-size:12px;padding:6px 7px}
+.table-workspace-start{display:grid;gap:5px;padding:8px 0 12px}
+.table-workspace-start #dualToggle{width:100%;text-align:center}
+.dual-stored-controls{display:grid;gap:7px;width:100%;font-size:12px}
+.dual-stored-controls span{color:#e9d7b4}
+.dual-stored-controls button{width:100%}
+@media(max-width:780px){.workspace-switcher select{min-width:92px;max-width:132px}}
