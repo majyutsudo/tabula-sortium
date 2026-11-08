@@ -58,3 +58,12 @@ body[data-tabula-back="on"].dual-enabled .card[data-back-tone="black"] .face.bac
 body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="black"]{background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;background-color:#18191a!important}
 body[data-tabula-back="on"].dual-enabled .card[data-back-tone="ivory"] .face.back,
 body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="ivory"]{background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;background-color:#e6d6b1!important}
+
+/* The card dragged from B keeps B's color during the preview animation. */
+body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="sepia"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/sepia.webp")!important;background-color:#55331d!important}
+body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="green"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/green.webp")!important;background-color:#0d3428!important}
+body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="burgundy"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp")!important;background-color:#651622!important}
+body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="navy"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/navy.webp")!important;background-color:#11234b!important}
+body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="purple"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/purple.webp")!important;background-color:#3b2458!important}
+body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="black"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;background-color:#18191a!important}
+body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="ivory"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;background-color:#e6d6b1!important}
