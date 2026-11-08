@@ -1767,6 +1767,7 @@ function dualCapture(){
  t.cutStage=dualClone(state.cutStage);
 }
 function dualRestoreView(){
+ if(isIndependentTables())dualSession.activePile=dualSession.activeTable==='table2'?'B':'A';
  const t=dualSession.tables[dualSession.activeTable];
  state={deck:dualClone(dualSession.piles[dualSession.activePile]),placed:dualClone(t.placed||[]),cutStage:dualClone(t.cutStage||null),
  selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[])};
@@ -1888,8 +1889,8 @@ function dualRefreshControls(){
  const appearanceALabel=$('dualAppearanceA').closest('label');
  const backALabel=$('dualBackA').closest('label');
  appearanceALabel.hidden=false;backALabel.hidden=false;
- appearanceALabel.firstChild.textContent=shared?'カードの外観 ':'外観A ';
- backALabel.firstChild.textContent=shared?'裏面色 ':'裏面A ';
+ appearanceALabel.firstChild.textContent=shared?'カードの外観 ':independent?'メイン卓の外観 ':'外観A ';
+ backALabel.firstChild.textContent=shared?'裏面色 ':independent?'メイン卓の裏面 ':'裏面A ';
  $('dualNew').hidden=shared||independent;
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
@@ -1912,6 +1913,7 @@ function dualRefreshControls(){
  $('dualSeparate').hidden=shared||independent||!dualSession.mixed;
  $('dualSummary').textContent=shared
  ?'共有山札 '+dualSession.piles.A.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓Ⅰ '+dualSession.tables.table2.placed.length+'枚'
+ :independent?'メイン山札 '+dualSession.piles.A.length+'枚 / 追加山札 '+dualSession.piles.B.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓 '+dualSession.tables.table2.placed.length+'枚'
  :'山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
  refreshWorkspaceSwitcher();
 }
@@ -1934,14 +1936,15 @@ function dualSwitchPile(id){
  if(!dualSession||dualBusy()||id===dualSession.activePile)return;
  if(isIndependentTables()){setStatus('独立デッキは卓を切り替えることで選択します。');dualRefreshControls();return;}
  dualSave();
- try{const next=TabulaMultiWorkspace.selectPile(dualSession,id);dualSession=next;if(isIndependentTables())dualSession.activePile=id==='table2'?'B':'A';}
+ try{const next=TabulaMultiWorkspace.selectPile(dualSession,id);dualSession=next;}
  catch(e){setStatus(e.message);dualRefreshControls();return}
  dualRestoreView();dualSave();setStatus('操作する山札を '+(id==='mixed'?'混合':'デッキ'+id)+' に変更しました。');
 }
 function dualSwitchTable(id){
  if(!dualSession||dualBusy()||id===dualSession.activeTable)return;
  dualSave();
- try{dualSession=TabulaMultiWorkspace.selectTable(dualSession,id)}
+ try{dualSession=TabulaMultiWorkspace.selectTable(dualSession,id);
+  if(isIndependentTables())dualSession.activePile=id==='table2'?'B':'A';}
  catch(e){setStatus(e.message);dualRefreshControls();return}
  dualRestoreView();dualSave();setStatus((id==='table1'?'卓Ⅰ':'卓Ⅱ')+'へ切り替えました。もう一方の卓の配札は維持されています。');
 }
@@ -1972,7 +1975,7 @@ function dualToggle(){
  if(dualSession){
   if(isSharedTables()||isIndependentTables()){
    dualSwitchTable('table1');
-   setStatus('メイン卓を表示しました。追加卓と共有山札は維持されています。');
+   setStatus(isIndependentTables()?'メイン卓を表示しました。独立した追加卓と山札は維持されています。':'メイン卓を表示しました。追加卓と共有山札は維持されています。');
    return;
   }
   dualSave();dualSession=null;
