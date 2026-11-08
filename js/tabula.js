@@ -1806,7 +1806,9 @@ function refreshWorkspaceSwitcher(){
  const switcher=$('workspaceSwitcher'),selector=$('workspaceTable');
  if(switcher)switcher.hidden=!hasWorkspace;
  if(!selector)return;
- selector.value=dualSession?dualSession.activeTable:'main';
+ selector.value=dualSession?(isSharedTables()&&dualSession.activeTable==='table1'?'main':dualSession.activeTable):'main';
+ const standaloneTableOption=selector.querySelector('option[value="table1"]');
+ if(standaloneTableOption)standaloneTableOption.hidden=isSharedTables();
  if(dualSession){
   for(const option of selector.options){
    if(option.value!=='main')option.textContent=dualSession.tables[option.value]?.name||option.value;
@@ -1974,13 +1976,30 @@ $('dualClear').onclick=()=>{
  // Restore the single-table view first; never delete its reading.
  if(dualSession){
   dualSave();
-  dualSession=null;
-  const old=dualSingleBackup;dualSingleBackup=null;
-  if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
+  if(isSharedTables()){
+   // The surviving main table and all remaining physical cards become
+   // the standalone reading. Nothing is duplicated or silently lost.
+   const main=dualSession.tables.table1,extra=dualSession.tables.table2;
+   const oldSettings=dualSingleBackup?.settings;
+   if(oldSettings)settings=dualClone(oldSettings);
+   const strip=c=>{const {instanceId,sourceDeck,...rest}=c;return rest};
+   state={deck:[...dualSession.piles.A,...(extra?.placed||[]),...(extra?.removed||[])].map(strip),
+    placed:(main.placed||[]).map(strip),removed:(main.removed||[]).map(strip),
+    cutStage:null,selected:main.selected??null,completionShown:!!main.completionShown,dealCheckpoint:null};
+   settings.spread=main.spread||settings.spread;
+   settings.color=main.color??settings.color;
+   settings.altar=typeof main.altar==='boolean'?main.altar:settings.altar;
+   settings.candles=Array.isArray(main.candles)?dualClone(main.candles):settings.candles;
+   setCardSize(validCardSize(main.cardSize)?main.cardSize:spreadCardSize(settings.spread),false);
+  }else{
+   const old=dualSingleBackup;
+   if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
+  }
+  dualSession=null;dualSingleBackup=null;
  }
  try{localStorage.removeItem(DUAL_SESSION_KEY)}catch(e){setStatus('追加卓を片付けられませんでした：'+e.message);return}
- sync();render();dualRefreshControls();
- setStatus('追加卓と追加デッキを片付けました。メイン卓は維持されています。');
+ sync();render();saveLocal();dualRefreshControls();
+ setStatus('追加卓を片付けました。メイン卓と残りのカードは維持されています。');
 };
 $('workspaceTable').onchange=e=>{
  const target=e.target.value;
@@ -2025,4 +2044,19 @@ positionDualDock();
 window.addEventListener('resize',positionDualDock);
 installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
-const initial=localStorage.getItem(KEY);if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()}dualRefreshControls(); })();
+const initial=localStorage.getItem(KEY);
+if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()}
+try{
+ const raw=localStorage.getItem(DUAL_SESSION_KEY);
+ if(raw){
+  const saved=JSON.parse(raw);
+  if(saved.workspaceKind==='single-shared'){
+   TabulaMultiWorkspace.validate(saved);
+   dualSession=saved;
+   dualSession.appearances={A:'standard',B:'standard',...(saved.appearances||{})};
+   dualSession.backColors={...DUAL_BACK_DEFAULTS,...(saved.backColors||{})};
+   dualRestoreView();
+  }
+ }
+}catch(e){setStatus('共有卓の復元に失敗しました：'+e.message)}
+dualRefreshControls(); })();
