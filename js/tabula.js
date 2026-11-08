@@ -1871,9 +1871,9 @@ function updateTableAddPanel(){
  $('tableAddOpen').hidden=!available;
  $('tableAddOpen').setAttribute('aria-expanded',String(available&&tableAddExpanded));
  $('tableAddPanel').hidden=!available||!tableAddExpanded;
- const shared=mode==='shared';
- document.querySelector('.table-shared-setup').hidden=!shared;
- document.querySelector('.independent-deck-setup').hidden=shared;
+ document.querySelector('.table-shared-setup').hidden=mode!=='shared';
+ document.querySelector('.independent-deck-setup').hidden=mode!=='independent';
+ document.querySelector('.table-double-setup').hidden=mode!=='double';
 }
 $('tableAddOpen').onclick=()=>{tableAddExpanded=!tableAddExpanded;updateTableAddPanel();};
 $('tableAddMode').onchange=updateTableAddPanel;
@@ -1890,7 +1890,6 @@ function dualRefreshControls(){
  const controls=$('dualControls'),bar=$('dualModeBar');
  if(!controls||!bar)return;
  const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables(),independent=isIndependentTables();
- const legacyOptions=document.querySelector('.table-legacy-options');if(legacyOptions)legacyOptions.hidden=shared||independent||stored;
  updateTableAddPanel();
  refreshClothIndicators();
  controls.hidden=!active;
@@ -1898,11 +1897,11 @@ function dualRefreshControls(){
  const compact=$('dualStoredControls');
  if(compact)compact.hidden=!stored;
  $('sharedTableClear').hidden=!shared&&!independent;
- $('dualToggle').textContent=active?'メイン卓に戻る':stored?'二組の作業を再開':'二組のデッキを用意';
+ $('dualReturnMain').hidden=!active||shared||independent;
+ $('dualToggle').textContent='ダブルデッキモードを開始';
  $('dualToggle').hidden=shared||independent;
  const add=$('sharedTableAdd');
  if(add){add.hidden=(active&&!shared)||stored;add.textContent=shared?'追加卓Ⅰに切り替える':'卓を追加（1組の山札を共有）'}
- $('workspaceHelp').textContent=shared?'メイン卓と追加卓は同じ山札を共有しています。':independent?'追加卓は独立した山札を使用しています。':active?'デッキA/Bと卓Ⅰ/Ⅱを管理しています。':'山札を共有する卓と、独立したデッキを持つ卓を追加できます。';
  document.body.classList.toggle('dual-enabled',active);
  if(!active){
   $('dualTableIdentity').hidden=true;
@@ -2046,6 +2045,7 @@ $('sharedTableAdd').onclick=beginSharedTable;
 $('independentTableAdd').onclick=beginIndependentTable;
 independentDeckChoices();
 $('dualToggle').onclick=dualToggle;
+$('dualReturnMain').onclick=()=>{if(dualSession&&!isSharedTables()&&!isIndependentTables())dualToggle();};
 $('dualResume').onclick=()=>{if(!dualSession)dualToggle()};
 $('sharedTableClear').onclick=()=>$('dualClear').click();
 $('dualClear').onclick=()=>{
