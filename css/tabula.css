@@ -1046,3 +1046,29 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .dual-mode-controls label[hidden],
 .dual-mode-controls button[hidden],
 .table-workspace-start button[hidden]{display:none!important}
+
+/* v0.299: table management is separate from deck selection. */
+.table-workspace-start{display:grid;gap:10px;padding:8px 0 14px;min-width:0}
+.table-current-chip{display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0;border:1px solid #655e4a;border-radius:5px;background:rgba(22,31,27,.62);padding:9px 10px}
+.table-current-chip strong{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.table-cloth-swatch{display:inline-block;flex:none;width:23px;height:23px;border-radius:5px;border:1px solid #b8a681;box-shadow:inset 0 0 0 2px #ffffff15}
+.table-workspace-start button,.table-add-panel select{width:100%;min-width:0}
+.table-add-panel{display:grid;gap:10px;padding:10px;border:1px solid #665c49;border-radius:6px;background:rgba(8,13,12,.33);min-width:0}
+.table-add-panel[hidden],.table-shared-setup[hidden],.independent-deck-setup[hidden],#tableAddOpen[hidden],#dualDeckFieldsB[hidden]{display:none!important}
+.independent-deck-setup,.table-shared-setup{display:grid;gap:9px;min-width:0}
+.table-add-panel .field{display:grid;gap:4px;min-width:0}
+.table-add-panel select,.table-add-panel button{box-sizing:border-box;max-width:100%;width:100%;white-space:normal}
+.table-legacy-options{border-top:1px solid #514936;padding:7px 0 1px}
+.table-legacy-options summary{cursor:pointer;font-size:12px;color:#c7b58f}
+.table-legacy-inner{display:grid;gap:8px;margin-top:10px}
+.table-legacy-options button[hidden]{display:none!important}
+.dual-mode-controls{width:100%;min-width:0}
+.dual-table-setup,.dual-deck-settings{display:grid;gap:8px;width:100%;min-width:0}
+.dual-table-setup label,.dual-deck-fields label{display:grid;grid-template-columns:69px minmax(0,1fr);gap:8px;align-items:center;width:100%;min-width:0;font-size:12px}
+.dual-table-setup select,.dual-table-setup input,.dual-deck-fields select{min-width:0;max-width:100%;width:100%}
+.table-select-with-color{display:flex;align-items:center;gap:8px;min-width:0}
+.table-select-with-color select{flex:1;min-width:0}
+.dual-deck-fields{display:grid;gap:7px;min-width:0;padding-top:9px;border-top:1px solid rgba(189,163,116,.26)}
+.dual-deck-fields strong{font-size:12px;color:#dcc89f;font-weight:600}
+.dual-table-identity{display:none!important}
+@media(max-width:780px){.dual-table-setup,.dual-deck-settings{width:100%}.dual-table-setup label,.dual-deck-fields label{grid-template-columns:64px minmax(0,1fr)}}
