@@ -249,3 +249,59 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
 .table-card-view .worn-artwork[data-worn-asset="true"] :is(img,svg.card-art) {
   filter:none !important;
 }
+
+
+/* v0.179: physical Worn backs, using existing seven original TABULA colors.
+   A transparent patina is painted above the native back print, not as
+   a rectangular overlay inset from the edge. Physical provenance still
+   determines the palette in mixed 156-card mode. */
+body[data-tabula-back="on"][data-tabula-back-tone="sepia"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/sepia.webp")}
+body[data-tabula-back="on"] [data-back-tone="sepia"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/sepia.webp")}
+body[data-tabula-back="on"][data-tabula-back-tone="green"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/green.webp")}
+body[data-tabula-back="on"] [data-back-tone="green"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/green.webp")}
+body[data-tabula-back="on"][data-tabula-back-tone="burgundy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/burgundy.webp")}
+body[data-tabula-back="on"] [data-back-tone="burgundy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/burgundy.webp")}
+body[data-tabula-back="on"][data-tabula-back-tone="navy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/navy.webp")}
+body[data-tabula-back="on"] [data-back-tone="navy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/navy.webp")}
+body[data-tabula-back="on"][data-tabula-back-tone="purple"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/purple.webp")}
+body[data-tabula-back="on"] [data-back-tone="purple"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/purple.webp")}
+body[data-tabula-back="on"][data-tabula-back-tone="black"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/black.webp")}
+body[data-tabula-back="on"] [data-back-tone="black"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/black.webp")}
+body[data-tabula-back="on"][data-tabula-back-tone="ivory"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/ivory.webp")}
+body[data-tabula-back="on"] [data-back-tone="ivory"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/ivory.webp")}
+
+body[data-tabula-back="on"] :is(
+  .card[data-appearance="worn"] .face.back,
+  .table-surface .deck[data-appearance="worn"],
+  .deck-drag-preview[data-appearance="worn"] .face.back,
+  .shuffle-card[data-appearance="worn"],
+  #physicalCutOverlay .face.back[data-appearance="worn"]
+){
+ background-image:url("../images/ui/worn-back-weathering.svg"),var(--worn-back-image,url("../images/decks/tabula-tarot/backs/sepia.webp")) !important;
+ background-size:100% 100%,100% 100% !important;
+ background-position:center,center !important;
+ background-repeat:no-repeat,no-repeat !important;
+ border-color:#9e8261 !important;
+}
+body[data-tabula-back="on"] .card[data-appearance="worn"] .face.back {
+ filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91);
+}
+body[data-tabula-back="on"] .deck-drag-preview[data-appearance="worn"] .face.back,
+body[data-tabula-back="on"] .shuffle-card[data-appearance="worn"],
+body[data-tabula-back="on"] #physicalCutOverlay .face.back[data-appearance="worn"]{
+ filter:sepia(.24) saturate(.73) contrast(.94) brightness(.92);
+}
+/* Edge-on appearance of a repeatedly handled deck, with alternating layers
+   of yellowed, grey and warm-brown paper. No extra hit-target is introduced. */
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
+ filter:sepia(.26) saturate(.72) contrast(.95) brightness(.90);
+ box-shadow:
+   2px 2px 0 #dbc7a1,
+   3px 3px 0 #8a7458,
+   4px 4px 0 #bda887,
+   5px 6px 0 #745e48,
+   7px 7px 0 #bca687,
+   8px 9px 0 #6d5846,
+   9px 11px 8px #000a !important;
+ border-color:#a58c66 !important;
+}
