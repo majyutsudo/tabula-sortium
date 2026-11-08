@@ -1120,3 +1120,21 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  .main>.toolbar .dual-mode-controls .dual-table-setup label{grid-template-columns:36px minmax(0,1fr)}
  .main>.toolbar .dual-mode-controls .dual-deck-fields label{grid-template-columns:40px minmax(0,1fr)}
 }
+
+/* v0.306: mobile always uses the header table picker, while extended workspace
+   controls stay collapsed unless the user opens them explicitly. */
+#mobileWorkspaceSettingsToggle[hidden]{display:none!important}
+#mobileWorkspaceSettingsToggle{display:none}
+@media(max-width:780px){
+ #dualModeBar{width:auto;min-width:0;margin:4px 5px 6px;box-sizing:border-box}
+ #dualModeBar #mobileWorkspaceSettingsToggle:not([hidden]){
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;min-height:36px;padding:7px 12px;
+  color:#ead8b6;background:#25342e;border:1px solid #8d7a5c;
+  border-radius:5px;font-size:12px;text-align:left;
+ }
+ #dualModeBar #mobileWorkspaceSettingsToggle[aria-expanded="true"] span{transform:rotate(180deg)}
+ #dualModeBar #dualControls:not(.mobile-expanded){display:none!important}
+ #dualModeBar #dualControls.mobile-expanded{display:flex;flex-direction:column;align-items:stretch;width:100%;gap:8px}
+ #dualModeBar .dual-mode-summary{overflow-wrap:anywhere}
+}
