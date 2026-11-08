@@ -386,3 +386,76 @@ body[data-tabula-back="on"] :is(
   background-position:center,center !important;
   background-repeat:no-repeat,no-repeat !important;
 }
+
+
+/* v0.184: Stop expanding the back art. Keep physical fronts and backs at the
+   same dimensions and replace only the problematic outermost print edge
+   with a subtle paper-colored physical card rim. */
+body[data-tabula-back="on"] :is(
+  #zone .card .face.back,
+  .table-surface .deck,
+  .deck-drag-preview > .face.back,
+  .shuffle-card,
+  #physicalCutOverlay .face.back
+) {
+  background-size:100% 100% !important;
+  background-position:center !important;
+}
+body[data-tabula-back="on"] :is(
+  #zone .card[data-appearance="worn"] .face.back,
+  .table-surface .deck[data-appearance="worn"],
+  .deck-drag-preview[data-appearance="worn"] > .face.back,
+  .shuffle-card[data-appearance="worn"],
+  #physicalCutOverlay .face.back[data-appearance="worn"]
+){
+  background-size:100% 100%,100% 100% !important;
+  background-position:center,center !important;
+}
+/* A narrow cardstock rim covers the pre-rendered black/gold edge without
+   shrinking or scaling the illustration. The back and front outer box match. */
+body[data-tabula-back="on"] :is(
+  #zone .card .face.back,
+  .deck-drag-preview > .face.back,
+  #physicalCutOverlay .face.back
+){
+  box-shadow:inset 0 0 0 3px #c6aa7b, inset 0 0 5px 3px #92724f66 !important;
+}
+body[data-tabula-back="on"] #zone .card[data-appearance="worn"] .face.back,
+body[data-tabula-back="on"] .deck-drag-preview[data-appearance="worn"] > .face.back,
+body[data-tabula-back="on"] #physicalCutOverlay .face.back[data-appearance="worn"] {
+  box-shadow:inset 0 0 0 3px #947c5c, inset 0 0 7px 3px #5a432f88 !important;
+}
+/* A CSS mask on the STOCK itself was clipping its independently positioned
+   move handle outside the card rectangle. Never mask the stock container. */
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+  overflow:visible !important;
+}
+/* Unlike the cut-down artwork, the stock is an interactive container. Its
+   visible paper rim goes in a noninteractive overlay below the move handle. */
+body[data-tabula-back="on"] .table-surface .deck::before {
+  content:"" !important;
+  display:block !important;
+  position:absolute;
+  inset:0;
+  z-index:1;
+  box-sizing:border-box;
+  pointer-events:none;
+  border:3px solid #c6aa7b;
+  border-radius:4px;
+  box-shadow:inset 0 0 4px #92724f77;
+  background:none !important;
+}
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before {
+  border-color:#947c5c;
+  box-shadow:inset 0 0 6px #49352399;
+}
+body[data-tabula-back="on"] .table-surface .deck .deck-move-handle{
+  z-index:20;
+  display:grid !important;
+}
+body:not(.dual-enabled)[data-tabula-back="on"] .table-surface .deck .deck-move-handle {
+  /* Respect the normal single-deck visibility behavior. */
+  display:none !important;
+}
