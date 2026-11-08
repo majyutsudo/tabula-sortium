@@ -517,7 +517,7 @@ function render(){
   settings.deckPosition=null;
  }
  lastRenderedSpread=settings.spread;
- syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');updateLiveResults();const m=metrics(),zone=$('zone');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set(state.placed.map(p=>p.slot).filter(s=>s!==null));getSlots().forEach((p,i)=>{if(assigned.has(i))return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}updateCardSelection();const deck=$('deck');if(dualSession){deck.dataset.backTone=dualSession.mixed?'sepia':dualBackTone(dualSession.activePile)}else delete deck.dataset.backTone;deck.classList.toggle('empty',state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyDeckPosition();$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=cards.find(c=>c.id===p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
+ syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');updateLiveResults();const m=metrics(),zone=$('zone');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set(state.placed.map(p=>p.slot).filter(s=>s!==null));getSlots().forEach((p,i)=>{if(assigned.has(i))return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}updateCardSelection();const deck=$('deck');if(dualSession){deck.dataset.backTone=dualSession.mixed?'sepia':dualBackTone(dualSession.activePile)}else delete deck.dataset.backTone;deck.classList.toggle('empty',state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyDeckPosition();positionSecondDeck();$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=cards.find(c=>c.id===p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
  const plan=new Map(),raw=String(value||'').trim();if(!raw)return plan;
  for(const token of raw.split(/[,，、;；\n]+/)){
   const t=token.trim();if(!t)continue;
@@ -620,7 +620,7 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.leng
  const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
  if(duplicate){setStatus('同じカードが重複しています（'+duplicate.id+'）。新しい占いを始めるかバックアップを確認してください。');return}
  if(!applyDealRemoval())return;
- const sourceRect=$('deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:false});play('deal');render();if(animateArrival)animateCardFromDeck(state.placed.length-1,sourceRect);setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);saveLocal()}function dealAuto(){if(!dualSession&&dealWorkbenchController?.executeSelected())return;if(!state.deck.length)return;if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}const slots=getSlots();const unfilled=getDealOrder().filter(i=>!state.placed.some(p=>p.slot===i));if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}if(dualSession){dualDealBusy=true;unfilled.forEach((s,i)=>setTimeout(()=>{drawAt(s);if(i===unfilled.length-1)dualDealBusy=false},i*340));return}unfilled.forEach((s,i)=>setTimeout(()=>drawAt(s),i*340))}let shuffleBusy=false;
+ const sourceRect=$(dualSession&&dualSession.activePile==='B'?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:false});play('deal');render();if(animateArrival)animateCardFromDeck(state.placed.length-1,sourceRect);setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);saveLocal()}function dealAuto(){if(!dualSession&&dealWorkbenchController?.executeSelected())return;if(!state.deck.length)return;if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}const slots=getSlots();const unfilled=getDealOrder().filter(i=>!state.placed.some(p=>p.slot===i));if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}if(dualSession){dualDealBusy=true;unfilled.forEach((s,i)=>setTimeout(()=>{drawAt(s);if(i===unfilled.length-1)dualDealBusy=false},i*340));return}unfilled.forEach((s,i)=>setTimeout(()=>drawAt(s),i*340))}let shuffleBusy=false;
 const riffleSequence=TabulaShuffle.riffleSequence;
 const overhandSequence=TabulaShuffle.overhandSequence;
 const pileSequence=TabulaShuffle.pileSequence;
@@ -971,6 +971,9 @@ function changeDesktopCardSize(delta,reset=false){setCardSize(reset?spreadCardSi
 $('zoomIn').onclick=()=>changeDesktopCardSize(.1);
 $('zoomOut').onclick=()=>changeDesktopCardSize(-.1);
 $('zoomReset').onclick=()=>changeDesktopCardSize(0,true);const deck=$('deck');
+const deckB=document.createElement('div');deckB.id='deckB';deckB.className='deck dual-second-deck';deckB.title='デッキB：クリックで配札、ドラッグで配札';deckB.hidden=true;
+const labelA=document.createElement('span');labelA.className='dual-deck-identity';labelA.textContent='A';deck.append(labelA);
+const labelB=document.createElement('span');labelB.className='dual-deck-identity';labelB.textContent='B';deckB.append(labelB);deck.after(deckB);
 // The move handle is separate from deck dragging, which still deals a card.
 // Coordinates are relative to the table surface and persist with the workspace.
 const deckMoveHandle=document.createElement('button');
@@ -981,7 +984,7 @@ deckMoveHandle.title='ここをドラッグして山札を移動';
 deckMoveHandle.setAttribute('aria-label','山札を移動する（ドラッグ）');
 deck.append(deckMoveHandle);
 function applyDeckPosition(){
-  const position=settings.deckPosition;
+  const position=dualSession?(dualSession.deckPositions?.[dualSession.mixed?'mixed':'A']||null):settings.deckPosition;
   const pile=$('deck'),label=$('deckCount'),surface=$('surface');
   if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.y)){
     for(const prop of ['left','top','right','bottom'])pile.style.removeProperty(prop);
@@ -1018,7 +1021,7 @@ deckMoveHandle.addEventListener('pointermove',e=>{
   const surface=$('surface'),sw=surface.offsetWidth||1,sh=surface.offsetHeight||1;
   const x=Math.max(0,Math.min(sw-deck.offsetWidth,deckMove.x+(e.clientX-deckMove.startX)/(deckMove.scaleX||1)));
   const y=Math.max(0,Math.min(sh-deck.offsetHeight,deckMove.y+(e.clientY-deckMove.startY)/(deckMove.scaleY||1)));
-  settings.deckPosition={x:100*x/sw,y:100*y/sh};
+  if(dualSession){dualSession.deckPositions??={};dualSession.deckPositions[dualSession.mixed?'mixed':'A']={x:100*x/sw,y:100*y/sh}}else settings.deckPosition={x:100*x/sw,y:100*y/sh};
   applyDeckPosition();
 });
 function finishDeckMove(e){
@@ -1041,22 +1044,26 @@ function beginDeckPreview(e){
   deckPreview.className='deck-drag-preview';
   deckPreview.style.width=m.w*tableCamera.scale+'px';deckPreview.style.height=m.h*tableCamera.scale+'px';
   deckPreview.innerHTML='<span class="face back" aria-hidden="true"></span>';
+  if(dualSession)deckPreview.dataset.backTone=dualSession.activePile==='mixed'?'sepia':dualBackTone(dualSession.activePile);
   document.body.append(deckPreview);moveDeckPreview(e);
 }
-deck.addEventListener('pointerdown',e=>{
-  if(e.button!==0||!state.deck.length)return;
+function installPileInteraction(pile,source){
+pile.addEventListener('pointerdown',e=>{
+  if(e.button!==0)return;
+  if(dualSession&&source!==dualSession.activePile){if(dualBusy())return;dualSwitchPile(source)}
+  if(!state.deck.length)return;
   drag={type:'deck',startX:e.clientX,startY:e.clientY,pointerId:e.pointerId};recordTiltSample(drag,e);
   dragMoved=false;
-  deck.setPointerCapture(e.pointerId);
+  pile.setPointerCapture(e.pointerId);
 });
-deck.addEventListener('pointermove',e=>{
+pile.addEventListener('pointermove',e=>{
   if(drag?.type!=='deck'||drag.pointerId!==e.pointerId)return;
   if(!dragMoved&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>8){
     dragMoved=true;beginDeckPreview(e);
   }
   if(dragMoved){recordTiltSample(drag,e);moveDeckPreview(e);}
 });
-deck.addEventListener('pointerup',e=>{
+pile.addEventListener('pointerup',e=>{
   if(drag?.type!=='deck'||drag.pointerId!==e.pointerId)return;
   const finishingTilt=dragMoved?gestureTilt(drag):0;
   drag=null;clearDeckPreview();
@@ -1071,8 +1078,10 @@ deck.addEventListener('pointerup',e=>{
     if(nearest)drawAt(nearest.i,null,null,false);
   }
 });
-deck.addEventListener('pointercancel',()=>{if(drag?.type==='deck')drag=null;clearDeckPreview()});
-deck.addEventListener('lostpointercapture',()=>{clearDeckPreview();if(drag?.type==='deck')drag=null});
+pile.addEventListener('pointercancel',()=>{if(drag?.type==='deck')drag=null;clearDeckPreview()});
+pile.addEventListener('lostpointercapture',()=>{clearDeckPreview();if(drag?.type==='deck')drag=null});
+}
+installPileInteraction(deck,'A');installPileInteraction(deckB,'B');
 window.addEventListener('resize',render);
 // Independent disclosure state; no navigation or form submission on toggle.
 if((Number(settings.dealSkipFirst)||0)||(settings.dealSkipSchedule||'').trim())$('dealRulesDetails').open=true;
@@ -1618,6 +1627,57 @@ function dualRestoreView(){
  setCardSize(validCardSize(t.cardSize)?t.cardSize:spreadCardSize(settings.spread),false);
  sync();render();dualRefreshControls();
 }
+
+function positionSecondDeck(){
+ if(!deckB)return;
+ deckB.hidden=!dualSession||dualSession.mixed;
+ deck.classList.toggle('dual-primary-deck',!!dualSession);
+ if(!dualSession){return}
+ const m=metrics();deckB.style.setProperty('--cw',m.w+'px');deckB.style.setProperty('--ch',m.h+'px');
+ deck.dataset.dualSource=dualSession.mixed?'mixed':'A';
+ deckB.dataset.backTone=dualBackTone('B');
+ const move=dualSession.deckPositions?.B;
+ for(const prop of ['left','top','right','bottom'])deckB.style.removeProperty(prop);
+ if(move&&Number.isFinite(move.x)&&Number.isFinite(move.y)){
+   const surface=$('surface'),sw=surface.offsetWidth||1,sh=surface.offsetHeight||1;
+   const px=Math.max(12,Math.min(move.x*sw/100,sw-deckB.offsetWidth-12));
+   const py=Math.max(12,Math.min(move.y*sh/100,sh-deckB.offsetHeight-12));
+   deckB.style.left=px+'px';deckB.style.top=py+'px';
+ }
+ labelA.textContent=dualSession.mixed?'156':'A';
+ deck.classList.toggle('dual-selected',dualSession.activePile!=='B');
+ deckB.classList.toggle('dual-selected',dualSession.activePile==='B');
+ deckB.classList.toggle('empty',!dualSession.piles.B.length);
+ labelB.textContent='B';
+}
+const deckMoveHandleB=document.createElement('button');deckMoveHandleB.type='button';
+deckMoveHandleB.className='deck-move-handle';deckMoveHandleB.textContent='✥';
+deckMoveHandleB.title='デッキBを移動';deckMoveHandleB.setAttribute('aria-label','デッキBを移動');
+deckB.append(deckMoveHandleB);
+let secondDeckMove=null;
+deckMoveHandleB.addEventListener('pointerdown',e=>{
+ if(!dualSession||dualSession.mixed||e.button!==0)return;
+ e.preventDefault();e.stopPropagation();
+ const surface=$('surface'),r=surface.getBoundingClientRect();
+ secondDeckMove={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,x:deckB.offsetLeft,y:deckB.offsetTop,
+ scaleX:r.width/(surface.offsetWidth||1),scaleY:r.height/(surface.offsetHeight||1)};
+ deckMoveHandleB.setPointerCapture(e.pointerId);
+});
+deckMoveHandleB.addEventListener('pointermove',e=>{
+ if(!secondDeckMove||secondDeckMove.pointerId!==e.pointerId)return;
+ e.preventDefault();e.stopPropagation();
+ const surface=$('surface'),sw=surface.offsetWidth||1,sh=surface.offsetHeight||1;
+ const x=Math.max(0,Math.min(sw-deckB.offsetWidth,secondDeckMove.x+(e.clientX-secondDeckMove.startX)/(secondDeckMove.scaleX||1)));
+ const y=Math.max(0,Math.min(sh-deckB.offsetHeight,secondDeckMove.y+(e.clientY-secondDeckMove.startY)/(secondDeckMove.scaleY||1)));
+ dualSession.deckPositions??={};dualSession.deckPositions.B={x:100*x/sw,y:100*y/sh};
+ positionSecondDeck();
+});
+function endSecondDeckMove(e){if(!secondDeckMove||e.pointerId!==secondDeckMove.pointerId)return;e.stopPropagation();secondDeckMove=null;dualSave()}
+deckMoveHandleB.addEventListener('pointerup',endSecondDeckMove);
+deckMoveHandleB.addEventListener('pointercancel',endSecondDeckMove);
+deckMoveHandleB.addEventListener('lostpointercapture',()=>{if(secondDeckMove){secondDeckMove=null;dualSave()}});
+deckMoveHandleB.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
+
 function dualRefreshControls(){
  const controls=$('dualControls');
  if(!controls)return;
