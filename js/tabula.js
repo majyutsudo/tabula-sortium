@@ -1830,7 +1830,8 @@ function dualRefreshControls(){
  bar.hidden=!active&&!stored;
  const compact=$('dualStoredControls');
  if(compact)compact.hidden=!stored;
- $('dualToggle').textContent=active?(shared?'メイン卓を表示':'メイン卓に戻る'):stored?'二組の作業を再開':'二組のデッキを用意';
+ $('dualToggle').textContent=active?'メイン卓に戻る':stored?'二組の作業を再開':'二組のデッキを用意';
+ $('dualToggle').hidden=shared;
  const add=$('sharedTableAdd');
  if(add){add.hidden=(active&&!shared)||stored;add.textContent=shared?'追加卓Ⅰに切り替える':'卓を追加（1組の山札を共有）'}
  $('workspaceHelp').textContent=shared?'メイン卓と追加卓Ⅰは同じ山札を共有します。':'追加卓と二組デッキの作業状態は別途保存されます。';
