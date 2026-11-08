@@ -323,7 +323,7 @@ function effectivePipBackground(){return activeDeck()?.pipBackground||settings.p
 function displayCard(c){const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
 function tableCardName(c){const lang=settings.tableCardLanguage||'linked';return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
-function refreshDeckPicker(){const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));picker.value=activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
+function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));picker.value=activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
 const randomize=TabulaShuffle.randomize;function selectedCards(){
  const d=activeDeck();
@@ -1668,6 +1668,39 @@ function updateAppearanceControls(){
 }
 
 function dualBackTone(deck){const tone=dualSession?.backColors?.[deck]||DUAL_BACK_DEFAULTS[deck]||'sepia';return Object.hasOwn(TABULA_BACK_PALETTE,tone)?tone:'sepia'}
+
+function isIndependentTables(){return !!dualSession&&dualSession.workspaceKind==='independent'}
+function independentDeckChoices(){
+ const p=$('independentDeckSelect');if(!p)return;const old=p.value;
+ p.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));
+ for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
+ p.value=Array.from(p.options).some(o=>o.value===old)?old:'builtin';
+}
+function independentTableWorkspace(){
+ const deckId=$('independentDeckSelect').value,pool=$('independentDeckPool').value;
+ const registered=deckLibrary.find(d=>d.id===deckId),allowed=new Set(registered?registered.included:cards.map(c=>c.id));
+ const idsB=TabulaCardRules.selectCards(cards,pool==='included'?'all':pool,cards.map(c=>c.id)).filter(c=>allowed.has(c.id)).map(c=>c.id);
+ const physical=[...state.deck,...state.placed,...(state.removed||[])],idsA=physical.map(c=>c.id);
+ if(!idsB.length||!idsA.length||new Set(idsA).size!==idsA.length)throw Error('山札のカード構成を確認してください。');
+ const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(idsA,idsB,{spread:settings.spread}),'table2','追加卓Ⅰ');
+ const own=c=>({...c,instanceId:'A:'+c.id,sourceDeck:'A'});
+ w.workspaceKind='independent';w.piles.A=state.deck.map(own);
+ Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),spread:settings.spread,cardSize:zoom,deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles())});
+ Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),deckId,pool:pool==='included'?'all':pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles())});
+ w.piles.B=randomize(w.piles.B.map(c=>({...c,reversed:settings.reversals?Math.random()<.5:false})));
+ w.appearances={A:validAppearance(settings.deckAppearance),B:'standard'};
+ w.backColors={A:settings.cardBackColor||'sepia',B:registered?.backColor||'navy'};
+ TabulaMultiWorkspace.validate(w);return w;
+}
+function beginIndependentTable(){
+ if(dualBusy())return;
+ if(dualSession||storedExtraWorkspace()){setStatus('保存済みの追加卓を片付けてから操作してください。');return}
+ try{
+  const w=independentTableWorkspace();dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
+  dualSession=w;dualRestoreView();dualSave();dualSwitchTable('table2');
+  setStatus('追加卓Ⅰに独立した'+w.piles.B.length+'枚の山札を用意しました。');
+ }catch(e){setStatus('追加卓を作れませんでした：'+e.message)}
+}
 function isSharedTables(){return !!dualSession&&dualSession.workspaceKind==='single-shared'}
 function sharedTableWorkspace(){
  const physical=[...state.deck,...state.placed,...(state.removed||[])];
@@ -1726,6 +1759,7 @@ function dualCapture(){
  const t=dualSession.tables[dualSession.activeTable];
  t.placed=dualClone(state.placed);
  t.spread=settings.spread;t.cardSize=zoom;
+ if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;}
  t.color=settings.color;t.altar=!!settings.altar;t.candles=dualClone(altarCandles());
  t.selected=state.selected;t.completionShown=state.completionShown;
  t.dealCheckpoint=dualClone(state.dealCheckpoint);
@@ -1737,6 +1771,11 @@ function dualRestoreView(){
  state={deck:dualClone(dualSession.piles[dualSession.activePile]),placed:dualClone(t.placed||[]),cutStage:dualClone(t.cutStage||null),
  selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[])};
  settings.spread=t.spread||'free';
+ if(isIndependentTables()){
+  settings.deckId=t.deckId||'builtin';settings.pool=t.pool||'all';
+  const d=deckLibrary.find(x=>x.id===settings.deckId);
+  settings.cardDesign=d?.faceStyle||(settings.deckId==='simple'?'simple':'standard');
+ }
  settings.color=Number.isInteger(t.color)&&t.color>=0&&t.color<colors.length?t.color:0;
  settings.altar=typeof t.altar==='boolean'?t.altar:!!settings.altar;
  settings.candles=Array.isArray(t.candles)?dualClone(t.candles):dualClone(altarCandles());
@@ -1806,7 +1845,7 @@ function refreshWorkspaceSwitcher(){
  const switcher=$('workspaceSwitcher'),selector=$('workspaceTable');
  if(switcher)switcher.hidden=!hasWorkspace;
  if(!selector)return;
- selector.value=dualSession?(isSharedTables()&&dualSession.activeTable==='table1'?'main':dualSession.activeTable):'main';
+ selector.value=dualSession?((isSharedTables()||isIndependentTables())&&dualSession.activeTable==='table1'?'main':dualSession.activeTable):'main';
  const standaloneTableOption=selector.querySelector('option[value="table1"]');
  if(standaloneTableOption)standaloneTableOption.hidden=isSharedTables();
  if(dualSession){
@@ -1825,14 +1864,15 @@ function refreshWorkspaceSwitcher(){
 function dualRefreshControls(){
  const controls=$('dualControls'),bar=$('dualModeBar');
  if(!controls||!bar)return;
- const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables();
+ const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables(),independent=isIndependentTables();
+ const setup=document.querySelector('.independent-deck-setup');if(setup)setup.hidden=active||stored;
  controls.hidden=!active;
  bar.hidden=!active&&!stored;
  const compact=$('dualStoredControls');
  if(compact)compact.hidden=!stored;
- $('sharedTableClear').hidden=!shared;
+ $('sharedTableClear').hidden=!shared&&!independent;
  $('dualToggle').textContent=active?'メイン卓に戻る':stored?'二組の作業を再開':'二組のデッキを用意';
- $('dualToggle').hidden=shared;
+ $('dualToggle').hidden=shared||independent;
  const add=$('sharedTableAdd');
  if(add){add.hidden=(active&&!shared)||stored;add.textContent=shared?'追加卓Ⅰに切り替える':'卓を追加（1組の山札を共有）'}
  $('workspaceHelp').textContent=shared?'メイン卓と追加卓Ⅰは同じ山札を共有します。':'追加卓と二組デッキの作業状態は別途保存されます。';
@@ -1850,7 +1890,7 @@ function dualRefreshControls(){
  appearanceALabel.hidden=false;backALabel.hidden=false;
  appearanceALabel.firstChild.textContent=shared?'カードの外観 ':'外観A ';
  backALabel.firstChild.textContent=shared?'裏面色 ':'裏面A ';
- $('dualNew').hidden=shared;
+ $('dualNew').hidden=shared||independent;
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
  $('dualBackA').value=dualBackTone('A');$('dualBackB').value=dualBackTone('B');updateAppearanceControls();
@@ -1868,8 +1908,8 @@ function dualRefreshControls(){
  identity.style.borderLeftColor=colors[settings.color]?.[1]||'#b69a65';
  const nameField=$('dualTableName');
  if(nameField)nameField.value=current?.name||'';
- $('dualMix').hidden=shared||dualSession.mixed;
- $('dualSeparate').hidden=shared||!dualSession.mixed;
+ $('dualMix').hidden=shared||independent||dualSession.mixed;
+ $('dualSeparate').hidden=shared||independent||!dualSession.mixed;
  $('dualSummary').textContent=shared
  ?'共有山札 '+dualSession.piles.A.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓Ⅰ '+dualSession.tables.table2.placed.length+'枚'
  :'山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
@@ -1893,7 +1933,7 @@ function dualBusy(){
 function dualSwitchPile(id){
  if(!dualSession||dualBusy()||id===dualSession.activePile)return;
  dualSave();
- try{const next=TabulaMultiWorkspace.selectPile(dualSession,id);dualSession=next;}
+ try{const next=TabulaMultiWorkspace.selectPile(dualSession,id);dualSession=next;if(isIndependentTables())dualSession.activePile=id==='table2'?'B':'A';}
  catch(e){setStatus(e.message);dualRefreshControls();return}
  dualRestoreView();dualSave();setStatus('操作する山札を '+(id==='mixed'?'混合':'デッキ'+id)+' に変更しました。');
 }
@@ -1929,7 +1969,7 @@ function dualCollect(){
 function dualToggle(){
  if(dualBusy())return;
  if(dualSession){
-  if(isSharedTables()){
+  if(isSharedTables()||isIndependentTables()){
    dualSwitchTable('table1');
    setStatus('メイン卓を表示しました。追加卓と共有山札は維持されています。');
    return;
@@ -1972,27 +2012,30 @@ for(const [id,tone] of Object.entries({dualBackA:'A',dualBackB:'B'})){
  select.onchange=e=>{if(!dualSession)return;dualSession.backColors[tone]=e.target.value;render();dualSave();setStatus('デッキ'+tone+'の裏面色を変更しました。')};
 }
 $('sharedTableAdd').onclick=beginSharedTable;
+$('independentTableAdd').onclick=beginIndependentTable;
+independentDeckChoices();
 $('dualToggle').onclick=dualToggle;
 $('dualResume').onclick=()=>{if(!dualSession)dualToggle()};
 $('sharedTableClear').onclick=()=>$('dualClear').click();
 $('dualClear').onclick=()=>{
  if(dualBusy())return;
  if(!dualSession&&!storedExtraWorkspace()){dualRefreshControls();return}
- if(!confirm(isSharedTables()?'追加卓を片付け、追加卓にあるカードを共有山札に戻しますか？ メイン卓の配札と保存済みの占い記録は残ります。':'追加卓Ⅰ・Ⅱの配札とデッキA・Bの保存状態をすべて片付けますか？ メイン卓と保存済みの占い記録は維持します。'))return;
+ if(!confirm(isSharedTables()?'追加卓を片付け、追加卓にあるカードを共有山札に戻しますか？ メイン卓の配札と保存済みの占い記録は残ります。':isIndependentTables()?'追加卓の独立デッキと配札を片付けますか？ メイン卓の山札・配札と占い記録は残ります。':'追加卓Ⅰ・Ⅱの配札とデッキA・Bの保存状態をすべて片付けますか？ メイン卓と保存済みの占い記録は維持します。'))return;
  // Restore the single-table view first; never delete its reading.
  if(dualSession){
   dualSave();
-  if(isSharedTables()){
+  if(isSharedTables()||isIndependentTables()){
    // The surviving main table and all remaining physical cards become
    // the standalone reading. Nothing is duplicated or silently lost.
    const main=dualSession.tables.table1,extra=dualSession.tables.table2;
    const oldSettings=dualSingleBackup?.settings;
    if(oldSettings)settings=dualClone(oldSettings);
    const strip=c=>{const {instanceId,sourceDeck,...rest}=c;return rest};
-   state={deck:[...dualSession.piles.A,...(extra?.placed||[]),...(extra?.removed||[])].map(strip),
+   state={deck:[...dualSession.piles.A,...(isSharedTables()?(extra?.placed||[]):[]),...(isSharedTables()?(extra?.removed||[]):[])].map(strip),
     placed:(main.placed||[]).map(strip),removed:(main.removed||[]).map(strip),
     cutStage:null,selected:main.selected??null,completionShown:!!main.completionShown,dealCheckpoint:null};
    settings.spread=main.spread||settings.spread;
+   if(isIndependentTables()){settings.deckId=main.deckId||'builtin';settings.pool=main.pool||'all';}
    settings.color=main.color??settings.color;
    settings.altar=typeof main.altar==='boolean'?main.altar:settings.altar;
    settings.candles=Array.isArray(main.candles)?dualClone(main.candles):settings.candles;
@@ -2010,7 +2053,7 @@ $('dualClear').onclick=()=>{
 $('workspaceTable').onchange=e=>{
  const target=e.target.value;
  if(target==='main'){
-  if(isSharedTables())dualSwitchTable('table1');
+  if(isSharedTables()||isIndependentTables())dualSwitchTable('table1');
   else if(dualSession)dualToggle();
   else dualRefreshControls();
  }else if(target==='table1'||target==='table2'){
@@ -2056,7 +2099,7 @@ try{
  const raw=localStorage.getItem(DUAL_SESSION_KEY);
  if(raw){
   const saved=JSON.parse(raw);
-  if(saved.workspaceKind==='single-shared'){
+  if(saved.workspaceKind==='single-shared'||saved.workspaceKind==='independent'){
    TabulaMultiWorkspace.validate(saved);
    dualSession=saved;
    dualSession.appearances={A:'standard',B:'standard',...(saved.appearances||{})};
