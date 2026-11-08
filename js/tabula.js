@@ -1830,6 +1830,7 @@ function dualRefreshControls(){
  bar.hidden=!active&&!stored;
  const compact=$('dualStoredControls');
  if(compact)compact.hidden=!stored;
+ $('sharedTableClear').hidden=!shared;
  $('dualToggle').textContent=active?'メイン卓に戻る':stored?'二組の作業を再開':'二組のデッキを用意';
  $('dualToggle').hidden=shared;
  const add=$('sharedTableAdd');
@@ -1973,10 +1974,11 @@ for(const [id,tone] of Object.entries({dualBackA:'A',dualBackB:'B'})){
 $('sharedTableAdd').onclick=beginSharedTable;
 $('dualToggle').onclick=dualToggle;
 $('dualResume').onclick=()=>{if(!dualSession)dualToggle()};
+$('sharedTableClear').onclick=()=>$('dualClear').click();
 $('dualClear').onclick=()=>{
  if(dualBusy())return;
  if(!dualSession&&!storedExtraWorkspace()){dualRefreshControls();return}
- if(!confirm('追加卓Ⅰ・Ⅱの配札とデッキA・Bの保存状態をすべて片付けますか？ メイン卓と保存済みの占い記録は維持します。'))return;
+ if(!confirm(isSharedTables()?'追加卓を片付け、追加卓にあるカードを共有山札に戻しますか？ メイン卓の配札と保存済みの占い記録は残ります。':'追加卓Ⅰ・Ⅱの配札とデッキA・Bの保存状態をすべて片付けますか？ メイン卓と保存済みの占い記録は維持します。'))return;
  // Restore the single-table view first; never delete its reading.
  if(dualSession){
   dualSave();
