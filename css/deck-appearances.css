@@ -226,3 +226,7 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before
   opacity:.49;
   box-shadow:none;
 }
+
+/* v0.175 regression fix: the new art frame must not act as a flex item
+   for Standard or Pocket. Restore the original direct-card viewer layout. */
+.table-card-view #tableCardArtFrame:not(.worn-artwork) { display:contents; }
