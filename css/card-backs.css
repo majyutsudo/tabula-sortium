@@ -83,3 +83,10 @@ body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="black"],
 body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="black"]{background-image:url("../images/decks/tabula-tarot/backs/black.webp")!important;background-color:#18191a!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
 body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="ivory"],
 body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="ivory"]{background-image:url("../images/decks/tabula-tarot/backs/ivory.webp")!important;background-color:#e6d6b1!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+
+/* TABULA back artwork already contains its ornamental border.
+   Avoid a second CSS border consuming pixels around that artwork.
+   Keep card selection outlines and deck-stack shadows intact. */
+body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card){
+  border:0!important;
+}
