@@ -1633,7 +1633,7 @@ function dualSave(){
  if(!dualSession)return;
  try{
   dualCapture();
-  if(!(state.removed||[]).length&&!state.cutStage&&Object.values(dualSession.tables).every(t=>!(t.removed||[]).length)){
+  if(!state.cutStage){
    TabulaMultiWorkspace.validate(dualSession);
   }
   localStorage.setItem(DUAL_SESSION_KEY,JSON.stringify(dualSession));
