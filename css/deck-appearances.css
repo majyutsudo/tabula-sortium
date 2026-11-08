@@ -486,3 +486,28 @@ body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]{
  mask-image:none !important;
  overflow:visible !important;
 }
+
+
+/* Keep Worn stock artwork and dealt-card backs at the same finish.
+   Filter an isolated, noninteractive artwork layer instead of the stock
+   container, so the move handle and A/B markers remain untouched. */
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  border:0 !important;
+  border-radius:inherit;
+  box-shadow:none !important;
+  background-image:url("../images/ui/worn-back-weathering.svg"),var(--worn-back-image) !important;
+  background-position:center,center !important;
+  background-size:100% 100%,100% 100% !important;
+  background-repeat:no-repeat,no-repeat !important;
+  filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91);
+}
+body[data-tabula-back="on"]:not(.dual-enabled)[data-tabula-back-tone] .table-surface .deck[data-appearance="worn"],
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone][data-appearance="worn"]{
+  background-image:none !important;
+}
