@@ -515,6 +515,7 @@ if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position
 function syncResultsVisibility(){const panel=$('liveResults'),button=$('toggleResults');if(!panel||!button)return;panel.hidden=!resultsVisible;button.textContent=resultsVisible?'RESULTSを閉じる ▴':'RESULTSを表示 ▾';button.setAttribute('aria-expanded',String(resultsVisible))}
 function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:item.significator?'シグニフィケイター':`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(cards.find(c=>c.id===item.id)||cards[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${all.filter(p=>p.faceUp&&!p.significator).length} / ${all.filter(p=>!p.significator).length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
 $('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
+const BACK_COLOR_LABELS={"sepia":"セピア","green":"緑","burgundy":"深紅","navy":"紺","purple":"紫","black":"黒","ivory":"象牙色"};
 const TABULA_BACK_PALETTE={green:'#0d3428',burgundy:'#651622',navy:'#11234b',purple:'#3b2458',black:'#18191a',sepia:'#55331d',ivory:'#e6d6b1'};
 function syncTabulaBack(){
  const tone=Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'sepia';
@@ -873,7 +874,7 @@ function openDeckEditor(createCopy=false){
   draft.name=source?source.name+'（複製）':'新しいデッキ';
   if(!source){draft.language=effectiveCardLanguage();draft.pipBackground=effectivePipBackground();draft.backColor=settings.cardBackColor||'sepia';draft.faceStyle=settings.cardDesign==='simple'?'simple':'standard'}
  }
- const colorNames={sepia:'Sepia',green:'Green',burgundy:'Burgundy',navy:'Navy',purple:'Purple',black:'Black',ivory:'Ivory'};
+ 
  const groups=[['major','大アルカナ'],...suitDefs.map(([id,name])=>[id,name])];
  let html='<h2>デッキの編集</h2><p class="note">原版のカード画像はそのままに、番号・名称・背景・収録カードを編集します。番号の変更は相手のカードと自動交換されます。</p>';
  html+='<label class="field">デッキ名<input id="deckEditorName" maxlength="80" value="'+escapeHTML(draft.name)+'"></label>';
@@ -881,7 +882,7 @@ function openDeckEditor(createCopy=false){
  html+='<label class="field">カード名の言語<select id="deckEditorLanguage">'+TabulaDeckStore.LANGUAGES.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('')+'</select></label>';
  html+='<div class="row deck-editor-shortcuts"><button type="button" id="deckEditorSwap">力 VIII ↔ 正義 XI</button><button type="button" id="deckEditorUnnumbered">愚者を番号なしに</button></div>';
  html+='<label class="field">小アルカナ数札の図像<select id="deckEditorPip"><option value="landscape">背景あり（風景とスート）</option><option value="none">背景なし（スートを全面に大きく配置）</option></select></label>';
- html+='<label class="field">裏面色<select id="deckEditorBack">'+TabulaDeckStore.COLORS.map(color=>'<option value="'+color+'">'+colorNames[color]+'</option>').join('')+'</select></label>';
+ html+='<label class="field">裏面色<select id="deckEditorBack">'+TabulaDeckStore.COLORS.map(color=>'<option value="'+color+'">'+BACK_COLOR_LABELS[color]+'</option>').join('')+'</select></label>';
  html+='<p class="note">使用するカードをチェックし、必要な番号と名前を変更してください。</p>';
  for(const [group,label] of groups){
   const items=cards.filter(c=>group==='major'?c.group==='major':c.suit===group);
@@ -1666,7 +1667,7 @@ function installTableActionSettings(){
 function dualClone(v){return JSON.parse(JSON.stringify(v))}
 const DUAL_BACK_DEFAULTS={A:'sepia',B:'navy'};
 const APPEARANCES=['standard','pocket','worn'];
-const APPEARANCE_LABELS={standard:'Standard（標準）',pocket:'Pocket（小型）',worn:'Worn（使い古し・試作）'};
+const APPEARANCE_LABELS={standard:'Standard（標準）',pocket:'Pocket（小型）',worn:'Worn（使い古し）'};
 function validAppearance(value){return APPEARANCES.includes(value)?value:'standard'}
 function appearanceForPile(source){
  if(!dualSession)return validAppearance(settings.deckAppearance);
@@ -2060,7 +2061,7 @@ for(const [id,source] of Object.entries({dualAppearanceA:'A',dualAppearanceB:'B'
 }
 for(const [id,tone] of Object.entries({dualBackA:'A',dualBackB:'B'})){
  const select=$(id);
- select.replaceChildren(...Object.keys(TABULA_BACK_PALETTE).map(key=>new Option(({sepia:'セピア',green:'緑',burgundy:'バーガンディ',navy:'紺',purple:'紫',black:'黒',ivory:'象牙色'})[key],key)));
+ select.replaceChildren(...Object.keys(TABULA_BACK_PALETTE).map(key=>new Option(BACK_COLOR_LABELS[key],key)));
  select.onchange=e=>{if(!dualSession)return;dualSession.backColors[tone]=e.target.value;render();dualSave();setStatus('デッキ'+tone+'の裏面色を変更しました。')};
 }
 $('sharedTableAdd').onclick=beginSharedTable;
