@@ -455,7 +455,3 @@ body[data-tabula-back="on"] .table-surface .deck .deck-move-handle{
   z-index:20;
   display:grid !important;
 }
-body:not(.dual-enabled)[data-tabula-back="on"] .table-surface .deck .deck-move-handle {
-  /* Respect the normal single-deck visibility behavior. */
-  display:none !important;
-}
