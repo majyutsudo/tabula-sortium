@@ -24,6 +24,7 @@
   content:""!important;display:block!important;position:absolute;inset:0;
   border-radius:inherit;pointer-events:none;z-index:9;
   background:
+    url("../images/ui/worn-patina.svg") center / 100% 100% no-repeat,
     radial-gradient(ellipse at 4% 6%,rgba(117,68,33,.40) 0,transparent 19%),
     radial-gradient(ellipse at 97% 96%,rgba(87,49,23,.36) 0,transparent 18%),
     radial-gradient(circle at 22% 66%,rgba(114,69,37,.17) 0 1%,transparent 8%),
@@ -57,3 +58,11 @@
 .shuffle-card[data-appearance="pocket"] { width:calc(var(--cw,42px) * .82); }
 /* Keep UI in the layout system instead of displaying a phantom duplicate panel. */
 #dualControls [id^="dualAppearance"] { min-width:94px; }
+
+/* Worn pile edges echo the same patina; the surface image remains replaceable. */
+body[data-tabula-back="on"] .table-surface .deck[data-appearance="worn"]::before {
+ content:""!important;display:block!important;position:absolute;inset:0;
+ background:url("../images/ui/worn-patina.svg") center / 100% 100% no-repeat!important;
+ border:2px solid rgba(105,62,36,.40);box-shadow:inset 0 0 9px #352012;
+ pointer-events:none;z-index:2;
+}
