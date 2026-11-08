@@ -1083,3 +1083,10 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .table-mode-note{border-left:2px solid #887b64;padding-left:9px;line-height:1.55}
 .dual-mode-controls .dual-return-main{display:block;width:100%;text-align:center;background:#3b433b;border:1px solid #988361;color:#f0dfbb;font-weight:600;margin-bottom:3px}
 .dual-mode-controls .dual-return-main:hover{background:#4c5548}
+
+/* v0.304: compact table identity and balanced dropdown widths. */
+.dual-mode-controls>.dual-pile-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,100px);gap:8px;align-items:center;width:100%;min-width:0;padding:7px 0 10px;border-bottom:1px solid rgba(189,163,116,.26);font-size:12px}
+.dual-mode-controls>.dual-pile-field select{min-width:0;width:100%;max-width:100%}
+.dual-table-setup label{grid-template-columns:52px minmax(0,1fr)}
+.dual-deck-fields label{grid-template-columns:54px minmax(0,1fr);padding-right:9px}
+@media(max-width:780px){.dual-table-setup label{grid-template-columns:46px minmax(0,1fr)}.dual-deck-fields label{grid-template-columns:48px minmax(0,1fr);padding-right:8px}}
