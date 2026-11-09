@@ -639,6 +639,16 @@ function startFreeSlide(item,node,track){
     }
     target.vx=Math.max(-4.2,Math.min(4.2,target.vx+incoming.vx*transfer));
     target.vy=Math.max(-4.2,Math.min(4.2,target.vy+incoming.vy*transfer));
+    // A glancing blow adds a small, persistent tilt to the struck card.
+    // A centered impact has almost no torque; the effect is bounded so
+    // collision does not upset ordinary card orientation.
+    const sideOffset=(incoming.vx*axisY-incoming.vy*axisX)/
+      (Math.max(speed,0.001)*Math.max(1,Math.min(cr.width,cr.height)));
+    const turn=Math.max(-12,Math.min(12,sideOffset*10*Math.min(1,impactSpeed/1.5)));
+    if(Math.abs(turn)>=0.8){
+     target.item.angle=Math.round(((Number(target.item.angle)||0)+turn)*10)/10;
+     target.node.style.setProperty('--rotation',cardDisplayRotation(target.item)+'deg');
+    }
     // Once the cards meet, transfer momentum to the target. Do not let
     // the incoming card continue through the target on the next frame.
     incoming.vx=0;incoming.vy=0;
