@@ -1613,10 +1613,16 @@ function refreshTableLabels(){
  const slots=getSlots(),m=metrics();
  function add(item,slot,i){
   const t=document.createElement('span');t.className='zone-label unified-label';
-  const num=item?.slot==null&&item?'＋':String(i+1);
+  // Free-spread cards have no numbered slots, so display the card name alone.
+  // Outside free spread, a + still identifies an auxiliary (unslotted) card.
+  const num=item?.slot==null&&item?(settings.spread==='free'?'':'＋'):String(i+1);
   let text=num;
   if(labelMode==='position'&&slot)text+=' · '+slot.name;
-  if(labelMode==='card'&&item?.faceUp){const c=cards.find(c=>c.id===item.id);text+=' · '+(c?tableCardName(c):'カード')+(item.reversed?'〈逆〉':'');}
+  if(labelMode==='card'&&item?.faceUp){
+   const c=cards.find(c=>c.id===item.id);
+   text+=(text?' · ':'')+(c?tableCardName(c):'カード')+(item.reversed?'〈逆〉':'');
+  }
+  if(!text)return;
   t.textContent=text;t.title=text;
   // Card names follow the card; position names remain anchored to the spread.
   const follow=labelMode==='card'&&item;
