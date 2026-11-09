@@ -1312,3 +1312,23 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 /* Sliding cards must track physics positions immediately; the normal .48s
    left/top transition otherwise makes impacts appear to occur at a distance. */
 .card.sliding{transition:none!important}
+
+
+/* Compact simple-deck typography: the desktop 90x135 title dimensions
+   otherwise overlap on narrow mobile tabletop cards. */
+@media (max-width:780px){
+ .card .front .simple-major-number{
+  top:5%;height:22%;font-size:clamp(14px,4.2vw,19px);
+ }
+ .card .front .simple-major-name{
+  top:31%;bottom:14%;left:2px;right:2px;
+  font-size:clamp(9px,2.55vw,11.5px)!important;
+  line-height:1.12;gap:0;overflow-wrap:anywhere;
+ }
+ .card .front .simple-major-flourish{
+  bottom:5%;font-size:8px;
+ }
+ .card .front .simple-minor-rank{
+  font-size:clamp(16px,4.8vw,22px);
+ }
+}
