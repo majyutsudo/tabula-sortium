@@ -226,7 +226,15 @@ function installTableCamera(){
  landscapeEscape.className='landscape-scroll-controls';
  landscapeEscape.textContent='操作へ ↓';
  landscapeEscape.setAttribute('aria-label','卓の下の操作ボタンへ移動');
- landscapeEscape.onclick=()=>document.querySelector('.table-shortcuts')?.scrollIntoView({behavior:'smooth',block:'start'});
+ landscapeEscape.onclick=()=>{
+  const actions=document.querySelector('.table-shortcuts');
+  if(!actions)return;
+  // Reveal the entire five-button row near the bottom of the viewport,
+  // keeping as much of the tabletop visible above it as possible.
+  const bottom=actions.getBoundingClientRect().bottom+window.scrollY;
+  const viewportHeight=window.visualViewport?.height||window.innerHeight;
+  window.scrollTo({top:Math.max(0,bottom-viewportHeight+16),behavior:'smooth'});
+ };
  stage.closest('.stage-shell').append(landscapeEscape);
  $('zoomReset').textContent='全体';$('zoomReset').title='卓全体を表示';$('zoomIn').title='卓を拡大';$('zoomOut').title='卓を縮小';
  const label=document.createElement('output');label.id='tableZoomLabel';label.setAttribute('aria-label','卓の表示倍率');$('zoomReset').after(label);
