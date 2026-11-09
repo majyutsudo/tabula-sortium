@@ -1272,3 +1272,39 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  /* Swipe here to scroll normally; it is outside the stage pointer handlers. */
  .shell>.main>.stage-shell .landscape-scroll-controls:active{background:#576344}
 }
+
+/* v0.317 — separate gallery deck selection; table settings are not modified. */
+.gallery-controls #cardGalleryDeck{max-width:min(270px,78vw);min-width:145px}
+@media(max-width:600px){.gallery-controls #cardGalleryDeck{max-width:100%;min-width:0;width:100%}}
+
+
+/* v0.319 — faithfully enlarge the actual tabletop simple face. */
+.gallery-tile>.gallery-simple-face,
+.gallery-lightbox-view>.gallery-simple-face{
+ position:relative;box-sizing:border-box;display:block;
+ aspect-ratio:2/3;background:transparent;border:0;border-radius:4px;
+ overflow:hidden;flex:none;
+}
+.gallery-tile>.gallery-simple-face{width:100%;height:auto;max-width:210px;box-shadow:0 7px 13px #0009}
+.gallery-lightbox-view>.gallery-simple-face{width:min(76vw,440px,calc(70dvh * 2 / 3));height:auto;max-height:100%;box-shadow:0 8px 30px #000a}
+.gallery-simple-face>.gallery-simple-inner{
+ position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;
+ box-sizing:border-box;width:90px!important;height:135px!important;
+ transform-origin:top left!important;backface-visibility:visible!important;
+ margin:0!important;
+}
+.gallery-tile:focus-visible>.gallery-simple-face{outline:3px solid #dbbf7c;outline-offset:3px}
+@media(max-width:500px){.gallery-lightbox-view>.gallery-simple-face{width:min(76vw,calc(62dvh * 2 / 3))}}
+
+/* v0.320 — redesigned simple face. All geometry is based on the original
+   tabletop face (90 × 135); the gallery scales this same face uniformly. */
+.front .simple-card{position:relative;box-sizing:border-box;width:100%;height:100%;flex:1 1 auto;min-height:0;font-family:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;color:#3b3025}
+.front .simple-major-number{position:absolute;left:3px;right:3px;top:12%;height:24%;display:flex;align-items:center;justify-content:center;font:700 23px/1 Georgia,serif;color:#56432b}
+.front .simple-major-number:empty{display:none}
+.front .simple-major-name{position:absolute;top:43%;bottom:24%;left:4px;right:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;font-weight:700;line-height:1.17;overflow-wrap:anywhere;text-align:center}
+.front .simple-major-name span{display:block;max-width:100%}
+.front .simple-major-flourish{position:absolute;bottom:10%;left:0;right:0;text-align:center;font:10px/1 Georgia,serif;color:#987c54}
+.front .simple-minor-symbol{position:absolute;top:13%;left:9%;right:9%;height:55%;display:flex;align-items:center;justify-content:center}
+.front .simple-minor-symbol svg{display:block;width:100%;height:100%;max-width:60px}
+.front .simple-minor-rule{position:absolute;top:73%;left:23%;right:23%;height:1px;background:#b5a27f}
+.front .simple-minor-rank{position:absolute;left:3px;right:3px;bottom:7%;height:18%;display:flex;align-items:center;justify-content:center;font:700 25px/1 Georgia,serif;color:#3b3025}
