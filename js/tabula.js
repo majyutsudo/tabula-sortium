@@ -2231,7 +2231,7 @@ const APPEARANCE_LABELS={standard:'Standard（標準）',pocket:'Pocket（小型
 function validAppearance(value){return APPEARANCES.includes(value)?value:'standard'}
 function appearanceUsesSimpleDeck(source){
  if(!dualSession||!isIndependentTables())
-  return settings.deckId==='simple'||settings.cardDesign==='simple'||activeDeck()?.faceStyle==='simple';
+  return settings.deckId==='simple'||activeDeck()?.faceStyle==='simple';
  const table=source==='B'?dualSession.tables?.table2:dualSession.tables?.table1;
  const deckId=table?.deckId||((source||'A')===dualSession.activePile?settings.deckId:'builtin');
  const storedFace=deckLibrary.find(deck=>deck.id===deckId)?.faceStyle;
