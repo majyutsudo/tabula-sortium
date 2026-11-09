@@ -1308,3 +1308,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .front .simple-minor-symbol svg{display:block;width:100%;height:100%;max-width:60px}
 .front .simple-minor-rule{position:absolute;top:73%;left:23%;right:23%;height:1px;background:#b5a27f}
 .front .simple-minor-rank{position:absolute;left:3px;right:3px;bottom:7%;height:18%;display:flex;align-items:center;justify-content:center;font:700 25px/1 Georgia,serif;color:#3b3025}
+
+/* Sliding cards must track physics positions immediately; the normal .48s
+   left/top transition otherwise makes impacts appear to occur at a distance. */
+.card.sliding{transition:none!important}
