@@ -499,18 +499,23 @@ function stopFreeSlide(){
  saveLocal();
 }
 function handGlideVector(track){
- if(!naturalTilt||!track?.samples?.length||!track.lastMotionAt||
-    performance.now()-track.lastMotionAt>115)return null;
+ if(!naturalTilt||!track?.samples?.length||!track.lastMotionAt)return null;
  const pts=track.samples,last=pts[pts.length-1];
+ // Use the final actual motion even if release follows a brief pause.
+ // Keep the same v0.343 speed-to-distance response for immediate releases.
  const first=[...pts].reverse().find(p=>last.t-p.t>=65&&last.t-p.t<=135)
-           ||pts.find(p=>last.t-p.t>=18);
- if(!first)return null;
- const dt=last.t-first.t,dx=last.x-first.x,dy=last.y-first.y;
- if(dt<8||Math.hypot(dx,dy)<0.5)return null;
- const speed=Math.hypot(dx,dy)/dt;
- // Diagnostic long travel, with collision behavior unchanged.
- const length=Math.min(150,speed*75);
+           ||pts.find(p=>last.t-p.t>=8)
+           ||pts[0];
+ if(first===last)return null;
+ const dt=Math.max(8,last.t-first.t),dx=last.x-first.x,dy=last.y-first.y;
  const norm=Math.hypot(dx,dy);
+ if(norm<0.3)return null;
+ const speed=norm/dt;
+ const age=Math.max(0,performance.now()-track.lastMotionAt);
+ // Instead of a hard 115ms cutoff, fade the remaining momentum smoothly
+ // after a short pause. Immediate throws retain exactly their old range.
+ const releaseFade=Math.exp(-Math.max(0,age-60)/140);
+ const length=Math.min(150,speed*75)*releaseFade;
  return {dx:dx/norm*length,dy:dy/norm*length};
 }
 function startHandGlide(item,node,track){
