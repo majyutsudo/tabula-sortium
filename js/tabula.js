@@ -1458,18 +1458,30 @@ pile.addEventListener('pointermove',e=>{
 });
 pile.addEventListener('pointerup',e=>{
   if(drag?.type!=='deck'||drag.pointerId!==e.pointerId)return;
-  const finishingTilt=dragMoved?gestureTilt(drag):0;
+  recordTiltSample(drag,e);
+  const releasedDrag=drag,finishingTilt=dragMoved?gestureTilt(drag):0;
   drag=null;clearDeckPreview();
   if(!dragMoved){drawAt();return}
   const r=$('zone').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
   if(x<0||x>100||y<0||y>100)return;
-  if(settings.spread==='free'||getSlots().every((_,i)=>state.placed.some(p=>p.slot===i)))
-    {const p=snapFreePosition(x,y);drawAt(null,p.x,p.y,false);if(finishingTilt&&state.placed.length){const card=state.placed[state.placed.length-1];card.angle=Math.round(finishingTilt*10)/10;render();saveLocal();}}
-  else{
+  const before=state.placed.length;
+  if(settings.spread==='free'||getSlots().every((_,i)=>state.placed.some(p=>p.slot===i))){
+    const p=snapFreePosition(x,y);
+    drawAt(null,p.x,p.y,false);
+  }else{
     const slots=getSlots(),available=slots.map((s,i)=>({...s,i})).filter(s=>!state.placed.some(p=>p.slot===s.i));
     const nearest=available.sort((a,b)=>(a.x-x)**2+(a.y-y)**2-(b.x-x)**2-(b.y-y)**2)[0];
     if(nearest)drawAt(nearest.i,null,null,false);
   }
+  if(state.placed.length!==before+1)return;
+  const card=state.placed[state.placed.length-1];
+  if(finishingTilt){
+    card.angle=Math.round((card.angle+finishingTilt)*10)/10;
+    render();
+  }
+  const cardNode=$('zone').querySelector('.card[data-index="'+(state.placed.length-1)+'"]');
+  startHandGlide(card,cardNode,releasedDrag);
+  saveLocal();
 });
 pile.addEventListener('pointercancel',()=>{if(drag?.type==='deck')drag=null;clearDeckPreview()});
 pile.addEventListener('lostpointercapture',()=>{clearDeckPreview();if(drag?.type==='deck')drag=null});
