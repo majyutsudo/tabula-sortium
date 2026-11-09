@@ -591,11 +591,22 @@ function startFreeSlide(item,node,track){
     const cr=incoming.node.getBoundingClientRect(),tr=target.node.getBoundingClientRect();
     const axisX=(tr.left+tr.width/2)-(cr.left+cr.width/2);
     const axisY=(tr.top+tr.height/2)-(cr.top+cr.height/2);
-    if(incoming.vx*axisX+incoming.vy*axisY<=0)continue;
-    const transfer=0.67;
-    target.vx=Math.max(-3.6,Math.min(3.6,target.vx+incoming.vx*transfer));
-    target.vy=Math.max(-3.6,Math.min(3.6,target.vy+incoming.vy*transfer));
-    incoming.vx*=0.42;incoming.vy*=0.42;
+    const axisLength=Math.hypot(axisX,axisY);
+    if(axisLength<0.001)continue;
+    // Only the velocity directed into the other card contributes to impact.
+    // Light or glancing contact should not launch the resting card.
+    const impactSpeed=(incoming.vx*axisX+incoming.vy*axisY)/axisLength;
+    if(impactSpeed<=0)continue;
+    const transfer=Math.min(1.05,Math.max(0,(impactSpeed-0.7)/1.35)*1.05);
+    if(transfer===0){
+     // A gentle impact arrests the incoming card without disturbing its target.
+     incoming.vx*=0.08;incoming.vy*=0.08;
+     continue;
+    }
+    target.vx=Math.max(-4.2,Math.min(4.2,target.vx+incoming.vx*transfer));
+    target.vy=Math.max(-4.2,Math.min(4.2,target.vy+incoming.vy*transfer));
+    const retained=Math.max(0.12,0.62-transfer*0.46);
+    incoming.vx*=retained;incoming.vy*=retained;
     target.node.classList.add('sliding');
    }
    const friction=Math.exp(-tick/165);
