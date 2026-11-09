@@ -1475,7 +1475,15 @@ function gallerySelection(){
   if(v==='pip')return c.group==='minor';
   if(v==='court')return c.group==='court';
   return c.suit===v;
- }).filter(c=>!!TABULA_TAROT_IMAGES[c.id]);
+ }).filter(c=>!!TABULA_TAROT_IMAGES[c.id]).sort((a,b)=>{
+  // The encyclopedia follows this deck's assigned Major Arcana numbers,
+  // not the fixed catalog IDs. Keep the original order of minor cards.
+  if(a.group!=='major'||b.group!=='major')return 0;
+  const na=galleryCard(a).number,nb=galleryCard(b).number;
+  const va=na===null?Number.POSITIVE_INFINITY:na;
+  const vb=nb===null?Number.POSITIVE_INFINITY:nb;
+  return va-vb;
+ });
 }
 function galleryCloseLarge(){
  $('cardGalleryLightbox').hidden=true;
