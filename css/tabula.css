@@ -1277,25 +1277,21 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .gallery-controls #cardGalleryDeck{max-width:min(270px,78vw);min-width:145px}
 @media(max-width:600px){.gallery-controls #cardGalleryDeck{max-width:100%;min-width:0;width:100%}}
 
-/* v0.318 — the gallery uses exactly the tabletop's simple-card inner markup. */
+
+/* v0.319 — faithfully enlarge the actual tabletop simple face. */
 .gallery-tile>.gallery-simple-face,
 .gallery-lightbox-view>.gallery-simple-face{
- position:relative;box-sizing:border-box;display:flex;flex-direction:column;
- align-items:center;justify-content:space-evenly;gap:0;
- aspect-ratio:2/3;padding:3px;
- background:#eee1c3;color:#342a23;border:5px double #756444;
- border-radius:4px;text-align:center;
+ position:relative;box-sizing:border-box;display:block;
+ aspect-ratio:2/3;background:transparent;border:0;border-radius:4px;
+ overflow:hidden;flex:none;
 }
-.gallery-simple-face:before{content:'';position:absolute;inset:4px;border:1px solid #897252;pointer-events:none}
-.gallery-simple-face .suit-icon{width:76%;height:63%;display:flex;align-items:center;justify-content:center;flex:none}
-.gallery-simple-face .suit-icon svg{width:100%;height:100%;max-width:120px}
-.gallery-simple-face .rank-value{font:700 clamp(22px,3vw,36px)/1 Georgia,serif;color:#35271f}
-.gallery-simple-face .major-rank{font:700 clamp(22px,3vw,36px)/1 Georgia,serif;color:#56432b}
-.gallery-simple-face .major-name{font:700 clamp(13px,1.8vw,23px)/1.15 Georgia,'Yu Mincho',serif;overflow-wrap:anywhere}
 .gallery-tile>.gallery-simple-face{width:100%;height:auto;max-width:210px;box-shadow:0 7px 13px #0009}
-.gallery-lightbox-view>.gallery-simple-face{height:min(70dvh,660px);width:auto;max-height:100%;max-width:min(76vw,500px);box-shadow:0 8px 30px #000a}
-.gallery-tile:focus-visible>.gallery-simple-face{outline:3px solid #dbbf7c;outline-offset:3px}
-@media(max-width:500px){
- .gallery-lightbox-view>.gallery-simple-face{height:min(62dvh,500px)}
- .gallery-simple-face .major-name{font-size:clamp(12px,3vw,20px)}
+.gallery-lightbox-view>.gallery-simple-face{width:min(76vw,440px,calc(70dvh * 2 / 3));height:auto;max-height:100%;box-shadow:0 8px 30px #000a}
+.gallery-simple-face>.gallery-simple-inner{
+ position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;
+ box-sizing:border-box;width:90px!important;height:135px!important;
+ transform-origin:top left!important;backface-visibility:visible!important;
+ margin:0!important;
 }
+.gallery-tile:focus-visible>.gallery-simple-face{outline:3px solid #dbbf7c;outline-offset:3px}
+@media(max-width:500px){.gallery-lightbox-view>.gallery-simple-face{width:min(76vw,calc(62dvh * 2 / 3))}}
