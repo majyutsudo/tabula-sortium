@@ -378,11 +378,11 @@ function cardMark(c,appearance='standard'){c=displayCard(c);
 // One compact, fixed-proportion design for tabletop and encyclopedia.
 // Long names occupy the SAME reserved area, with adaptive type size only.
 function simpleMajorTitle(name){
- const value=String(name||'').trim(),wide=(value.match(/[\\u3000-\\u9fff\\uf900-\\ufaff\\u3040-\\u30ff]/g)||[]).length;
+ const value=String(name||'').trim(),wide=(value.match(/[\u3000-\u9fff\uf900-\ufaff\u3040-\u30ff]/g)||[]).length;
  const units=wide?wide*1.75+(value.length-wide)*.95:value.length;
  let lines=[value];
- if(!wide&&units>15&&/\\s/.test(value)){
-  const words=value.split(/\\s+/),a=[],b=[];
+ if(!wide&&units>15&&/\s/.test(value)){
+  const words=value.split(/\s+/),a=[],b=[];
   let count=0;const half=value.length/2;
   for(const w of words){if(!b.length&&count<half){a.push(w);count+=w.length+1}else b.push(w)}
   if(a.length&&b.length)lines=[a.join(' '),b.join(' ')];
