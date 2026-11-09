@@ -399,11 +399,11 @@ function simpleCardMarkup(c){
   // Keep the numeral in the upper register and the name in a stable central
   // text field. Ornamental divider echoes the printed border.
   return '<div class="simple-card simple-major"><div class="simple-major-number">'+
-   escapeHTML(c.number===null?'':String(c.number))+
+   escapeHTML(faceNumber(c.number,'major'))+
    '</div><div class="simple-major-name" style="font-size:'+title.size+'px">'+lines+
    '</div><div class="simple-major-flourish" aria-hidden="true">✦</div></div>';
  }
- const rank=c.number<=10?String(c.number):['P','Kn','Q','K'][c.number-11];
+ const rank=c.number<=10?faceNumber(c.number,'pip'):['P','Kn','Q','K'][c.number-11];
  const symbols={
  wands:'<svg viewBox="0 0 48 70" aria-hidden="true"><path d="M10 63 L37 7" stroke="#54361f" stroke-width="7" stroke-linecap="round"/><path d="M10 63 L37 7" stroke="#ad8550" stroke-width="3" stroke-linecap="round"/><path d="M27 28 Q12 11 14 10 Q27 13 30 24 M24 34 Q38 30 42 21 Q30 22 24 34" fill="#608052" stroke="#35533d" stroke-width="1.5"/></svg>',
  cups:'<svg viewBox="0 0 48 70" aria-hidden="true"><path d="M7 11 Q4 42 24 44 Q44 42 41 11 Z M24 44 V59 M13 61 H35" fill="#c6a158" stroke="#72552b" stroke-width="3" stroke-linejoin="round"/><path d="M12 17 H36" stroke="#f2d792" stroke-width="3"/></svg>',
