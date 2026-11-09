@@ -549,11 +549,29 @@ function startFreeSlide(item,node,track){
  if(!origin)return false;
  origin.vx=dx/distance*launchSpeed;
  origin.vy=dy/distance*launchSpeed;
- const touched=new Set();
+ const touched=new Set(),preexisting=new Set();
  const key=(i,j)=>i<j?i+':'+j:j+':'+i;
- // Avoid imparting impulses to cards deliberately overlapped before the throw.
+ // Cards already overlapped before the throw may remain stacked deliberately.
  for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
-  if(slideCardsTouch(bodies[i].node,bodies[j].node))touched.add(key(i,j));
+  if(slideCardsTouch(bodies[i].node,bodies[j].node))preexisting.add(key(i,j));
+ }
+ function placeBody(body,x,y){
+  body.item.x=x;body.item.y=y;
+  body.node.style.left=x+'%';body.node.style.top=y+'%';
+ }
+ // Find the last non-overlapping point along both cards' movements this tick.
+ function rewindToContact(one,two,oldOne,oldTwo){
+  const newOne={x:one.item.x,y:one.item.y},newTwo={x:two.item.x,y:two.item.y};
+  let clear=0,colliding=1;
+  for(let k=0;k<10;k++){
+   const mid=(clear+colliding)/2;
+   placeBody(one,oldOne.x+(newOne.x-oldOne.x)*mid,oldOne.y+(newOne.y-oldOne.y)*mid);
+   placeBody(two,oldTwo.x+(newTwo.x-oldTwo.x)*mid,oldTwo.y+(newTwo.y-oldTwo.y)*mid);
+   if(slideCardsTouch(one.node,two.node))colliding=mid;
+   else clear=mid;
+  }
+  placeBody(one,oldOne.x+(newOne.x-oldOne.x)*clear,oldOne.y+(newOne.y-oldOne.y)*clear);
+  placeBody(two,oldTwo.x+(newTwo.x-oldTwo.x)*clear,oldTwo.y+(newTwo.y-oldTwo.y)*clear);
  }
  let previous=performance.now(),elapsed=0;
  const slide={bodies,frame:0};
@@ -566,6 +584,7 @@ function startFreeSlide(item,node,track){
   // Smaller simulation steps prevent a fast-moving card from jumping over another.
   const steps=Math.max(1,Math.ceil(dt/8)),tick=dt/steps;
   for(let sub=0;sub<steps;sub++){
+   const previousPositions=new Map(bodies.map(body=>[body,{x:body.item.x,y:body.item.y}]));
    for(const body of bodies){
     if(Math.hypot(body.vx,body.vy)<0.012)continue;
     const nx=Math.max(0,Math.min(100,body.item.x+body.vx*tick/rect.width*100));
@@ -577,15 +596,34 @@ function startFreeSlide(item,node,track){
    }
    for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
     const one=bodies[i],two=bodies[j],pair=key(i,j);
-    if(!slideCardsTouch(one.node,two.node)){touched.delete(pair);continue}
-    if(touched.has(pair))continue;
-    touched.add(pair);
-    // The incoming card gives some momentum to the stationary (or slower)
-    // card. Its own motion is damped, keeping collisions predictable.
+    if(!slideCardsTouch(one.node,two.node)){
+     touched.delete(pair);preexisting.delete(pair);continue;
+    }
+    if(preexisting.has(pair))continue;
+    // Do not permit a new overlap: rewind both moving cards to first contact.
+    // This keeps a card stopped by a gentle collision outside the target.
+    rewindToContact(one,two,previousPositions.get(one),previousPositions.get(two));
     let incoming=one,target=two;
     if(Math.hypot(two.vx,two.vy)>Math.hypot(one.vx,one.vy)){
      incoming=two;target=one;
     }
+    if(touched.has(pair)){
+     // A pair still touching must not receive a second collision impulse.
+     // Match its inward velocity to that of the card being pushed.
+     const ir=incoming.node.getBoundingClientRect(),tr=target.node.getBoundingClientRect();
+     const nx=tr.left+tr.width/2-ir.left-ir.width/2;
+     const ny=tr.top+tr.height/2-ir.top-ir.height/2;
+     const len=Math.hypot(nx,ny);
+     if(len>0.001){
+      const ux=nx/len,uy=ny/len;
+      const closing=(incoming.vx-target.vx)*ux+(incoming.vy-target.vy)*uy;
+      if(closing>0){incoming.vx-=closing*ux;incoming.vy-=closing*uy}
+     }
+     continue;
+    }
+    touched.add(pair);
+    // The incoming card gives some momentum to the stationary (or slower)
+    // card. Its own motion is damped, keeping collisions predictable.
     const speed=Math.hypot(incoming.vx,incoming.vy);
     if(speed<0.12)continue;
     const cr=incoming.node.getBoundingClientRect(),tr=target.node.getBoundingClientRect();
