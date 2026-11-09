@@ -1272,3 +1272,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  /* Swipe here to scroll normally; it is outside the stage pointer handlers. */
  .shell>.main>.stage-shell .landscape-scroll-controls:active{background:#576344}
 }
+
+/* v0.317 — separate gallery deck selection; table settings are not modified. */
+.gallery-controls #cardGalleryDeck{max-width:min(270px,78vw);min-width:145px}
+@media(max-width:600px){.gallery-controls #cardGalleryDeck{max-width:100%;min-width:0;width:100%}}
