@@ -478,7 +478,7 @@ function updateNaturalTiltButton(){
   document.getElementById('placementToolsContent').append(button);
  }
  button.textContent=naturalTilt?'◌ 手置き ON':'◌ 手置き OFF';
- button.title='ドラッグ終端の微細な傾きと、最大30pxの短い滑り（長押し回転とは独立）';
+ button.title='ドラッグ終端の微細な傾きと、最大48pxの短い滑り（長押し回転とは独立）';
  button.setAttribute('aria-pressed',String(naturalTilt));
 }
 function recordTiltSample(track,e){
@@ -501,7 +501,9 @@ function stopFreeSlide(){
  if(!activeHandGlide)return;
  const glide=activeHandGlide;activeHandGlide=null;
  cancelAnimationFrame(glide.frame);
- if(glide.node.isConnected)glide.node.classList.remove('sliding');
+ for(const body of glide.bodies){
+  if(body.node.isConnected)body.node.classList.remove('sliding');
+ }
  saveLocal();
 }
 function handGlideVector(track){
@@ -514,8 +516,8 @@ function handGlideVector(track){
  const dt=last.t-first.t,dx=last.x-first.x,dy=last.y-first.y;
  if(dt<8||Math.hypot(dx,dy)<0.5)return null;
  const speed=Math.hypot(dx,dy)/dt;
- // No abrupt on/off throw threshold: a continuous 0..30px follow-through.
- const length=Math.min(30,speed*17);
+ // A little more follow-through than v0.339, still only 0..48px.
+ const length=Math.min(48,speed*23);
  const norm=Math.hypot(dx,dy);
  return {dx:dx/norm*length,dy:dy/norm*length};
 }
@@ -527,21 +529,82 @@ function startHandGlide(item,node,track){
  const zone=$('zone'),w=zone.offsetWidth,h=zone.offsetHeight;
  if(!w||!h)return false;
  stopFreeSlide();
- const x0=item.x,y0=item.y,desktop=window.innerWidth>780;
- const lower=desktop?-50:0,upper=desktop?150:100;
- const x1=Math.max(lower,Math.min(upper,x0+motion.dx/w*100));
- const y1=Math.max(lower,Math.min(upper,y0+motion.dy/h*100));
- const glide={node,item,frame:0};activeHandGlide=glide;
- node.classList.add('sliding');
- const started=performance.now(),duration=190;
- function step(t){
+ const bodies=state.placed.map((card,i)=>({
+  item:card,node:zone.querySelector('.card[data-index="'+i+'"]'),vx:0,vy:0
+ })).filter(body=>body.node);
+ const origin=bodies.find(body=>body.item===item);
+ if(!origin)return false;
+ // Screen pixels per millisecond; damping governs the short travel.
+ origin.vx=motion.dx/125;origin.vy=motion.dy/125;
+ const rects=new Map(bodies.map(body=>[body,{
+  w:body.node.offsetWidth/w*100,h:body.node.offsetHeight/h*100
+ }]));
+ const pairKey=(i,j)=>i<j?i+':'+j:j+':'+i;
+ const stacked=new Set();
+ function overlaps(a,b){
+  const sa=rects.get(a),sb=rects.get(b);
+  return Math.abs(a.item.x-b.item.x)<(sa.w+sb.w)/2-0.05 &&
+         Math.abs(a.item.y-b.item.y)<(sa.h+sb.h)/2-0.05;
+ }
+ for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
+  if(overlaps(bodies[i],bodies[j]))stacked.add(pairKey(i,j));
+ }
+ const desktop=window.innerWidth>780,lower=desktop?-50:0,upper=desktop?150:100;
+ function place(body,x,y){
+  body.item.x=Math.max(lower,Math.min(upper,x));
+  body.item.y=Math.max(lower,Math.min(upper,y));
+  body.node.style.left=body.item.x+'%';
+  body.node.style.top=body.item.y+'%';
+ }
+ const glide={bodies,frame:0};activeHandGlide=glide;
+ origin.node.classList.add('sliding');
+ let previous=performance.now(),elapsed=0;
+ function step(now){
   if(activeHandGlide!==glide)return;
-  if(!node.isConnected||!state.placed.includes(item)){stopFreeSlide();return}
-  const q=Math.min(1,Math.max(0,(t-started)/duration));
-  const eased=1-Math.pow(1-q,3);
-  item.x=x0+(x1-x0)*eased;item.y=y0+(y1-y0)*eased;
-  node.style.left=item.x+'%';node.style.top=item.y+'%';
-  if(q>=1){stopFreeSlide();refreshDraggedSlotLabel(item);return}
+  if(!origin.node.isConnected||!state.placed.includes(item)){stopFreeSlide();return}
+  const dt=Math.min(32,Math.max(0,now-previous));previous=now;elapsed+=dt;
+  const steps=Math.max(1,Math.ceil(dt/6)),tick=dt/steps;
+  for(let sub=0;sub<steps;sub++){
+   for(let i=0;i<bodies.length;i++){
+    const body=bodies[i];
+    if(Math.hypot(body.vx,body.vy)<0.006)continue;
+    const oldX=body.item.x,oldY=body.item.y;
+    place(body,oldX+body.vx*tick/w*100,oldY+body.vy*tick/h*100);
+    // Resolve collisions before advancing to the next card. Already stacked
+    // cards are exempt, so deliberate cross-spread overlaps remain possible.
+    for(let j=0;j<bodies.length;j++){
+     if(i===j)continue;
+     const other=bodies[j],pair=pairKey(i,j);
+     if(!overlaps(body,other)){stacked.delete(pair);continue}
+     if(stacked.has(pair))continue;
+     const hitX=body.item.x,hitY=body.item.y;
+     let clear=0,hit=1;
+     for(let k=0;k<10;k++){
+      const mid=(clear+hit)/2;
+      place(body,oldX+(hitX-oldX)*mid,oldY+(hitY-oldY)*mid);
+      if(overlaps(body,other))hit=mid;else clear=mid;
+     }
+     place(body,oldX+(hitX-oldX)*clear,oldY+(hitY-oldY)*clear);
+     // A small nudge only on a deliberate impact; slow touches stop.
+     const ux=other.item.x-body.item.x,uy=other.item.y-body.item.y;
+     const n=Math.hypot(ux,uy)||1;
+     const toward=(body.vx*ux+body.vy*uy)/n;
+     if(toward>0.15){
+      const gain=Math.min(0.65,(toward-0.15)*2.6);
+      other.vx=Math.max(-0.45,Math.min(0.45,other.vx+body.vx*gain));
+      other.vy=Math.max(-0.45,Math.min(0.45,other.vy+body.vy*gain));
+      other.node.classList.add('sliding');
+     }
+     body.vx=0;body.vy=0;
+     break;
+    }
+   }
+   const damping=Math.exp(-tick/125);
+   for(const body of bodies){body.vx*=damping;body.vy*=damping}
+  }
+  if(bodies.every(body=>Math.hypot(body.vx,body.vy)<0.006)||elapsed>550){
+   stopFreeSlide();refreshDraggedSlotLabel(item);return;
+  }
   glide.frame=requestAnimationFrame(step);
  }
  glide.frame=requestAnimationFrame(step);
