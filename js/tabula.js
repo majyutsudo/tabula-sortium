@@ -549,25 +549,35 @@ function startFreeSlide(item,node,track){
  if(!origin)return false;
  origin.vx=dx/distance*launchSpeed;
  origin.vy=dy/distance*launchSpeed;
- const touched=new Set(),preexisting=new Set();
+ // Collision geometry follows the card's model coordinates, rather than
+ // reading a potentially animated/transformed DOM rect every simulation tick.
+ const sizes=new Map(bodies.map(body=>{
+  const r=body.node.getBoundingClientRect();
+  return [body,{w:r.width/rect.width*100,h:r.height/rect.height*100}];
+ }));
  const key=(i,j)=>i<j?i+':'+j:j+':'+i;
- // Cards already overlapped before the throw may remain stacked deliberately.
+ const preexisting=new Set();
+ function overlap(one,two){
+  const a=sizes.get(one),b=sizes.get(two);
+  return Math.abs(one.item.x-two.item.x)<(a.w+b.w)/2-0.05
+      && Math.abs(one.item.y-two.item.y)<(a.h+b.h)/2-0.05;
+ }
  for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
-  if(slideCardsTouch(bodies[i].node,bodies[j].node))preexisting.add(key(i,j));
+  if(overlap(bodies[i],bodies[j]))preexisting.add(key(i,j));
  }
  function placeBody(body,x,y){
   body.item.x=x;body.item.y=y;
   body.node.style.left=x+'%';body.node.style.top=y+'%';
  }
- // Find the last non-overlapping point along both cards' movements this tick.
+ // Binary-search the first touching position between two known positions.
  function rewindToContact(one,two,oldOne,oldTwo){
   const newOne={x:one.item.x,y:one.item.y},newTwo={x:two.item.x,y:two.item.y};
   let clear=0,colliding=1;
-  for(let k=0;k<10;k++){
+  for(let k=0;k<14;k++){
    const mid=(clear+colliding)/2;
    placeBody(one,oldOne.x+(newOne.x-oldOne.x)*mid,oldOne.y+(newOne.y-oldOne.y)*mid);
    placeBody(two,oldTwo.x+(newTwo.x-oldTwo.x)*mid,oldTwo.y+(newTwo.y-oldTwo.y)*mid);
-   if(slideCardsTouch(one.node,two.node))colliding=mid;
+   if(overlap(one,two))colliding=mid;
    else clear=mid;
   }
   placeBody(one,oldOne.x+(newOne.x-oldOne.x)*clear,oldOne.y+(newOne.y-oldOne.y)*clear);
@@ -596,32 +606,17 @@ function startFreeSlide(item,node,track){
    }
    for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
     const one=bodies[i],two=bodies[j],pair=key(i,j);
-    if(!slideCardsTouch(one.node,two.node)){
-     touched.delete(pair);preexisting.delete(pair);continue;
+    if(!overlap(one,two)){
+     // Deliberately stacked pairs can start interacting once separated.
+     preexisting.delete(pair);
+     continue;
     }
     if(preexisting.has(pair))continue;
-    // Do not permit a new overlap: rewind both moving cards to first contact.
-    // This keeps a card stopped by a gentle collision outside the target.
     rewindToContact(one,two,previousPositions.get(one),previousPositions.get(two));
     let incoming=one,target=two;
     if(Math.hypot(two.vx,two.vy)>Math.hypot(one.vx,one.vy)){
      incoming=two;target=one;
     }
-    if(touched.has(pair)){
-     // A pair still touching must not receive a second collision impulse.
-     // Match its inward velocity to that of the card being pushed.
-     const ir=incoming.node.getBoundingClientRect(),tr=target.node.getBoundingClientRect();
-     const nx=tr.left+tr.width/2-ir.left-ir.width/2;
-     const ny=tr.top+tr.height/2-ir.top-ir.height/2;
-     const len=Math.hypot(nx,ny);
-     if(len>0.001){
-      const ux=nx/len,uy=ny/len;
-      const closing=(incoming.vx-target.vx)*ux+(incoming.vy-target.vy)*uy;
-      if(closing>0){incoming.vx-=closing*ux;incoming.vy-=closing*uy}
-     }
-     continue;
-    }
-    touched.add(pair);
     // The incoming card gives some momentum to the stationary (or slower)
     // card. Its own motion is damped, keeping collisions predictable.
     const speed=Math.hypot(incoming.vx,incoming.vy);
@@ -638,13 +633,14 @@ function startFreeSlide(item,node,track){
     const transfer=Math.min(1.05,Math.max(0,(impactSpeed-0.7)/1.35)*1.05);
     if(transfer===0){
      // A gentle impact arrests the incoming card without disturbing its target.
-     incoming.vx*=0.08;incoming.vy*=0.08;
+     incoming.vx=0;incoming.vy=0;
      continue;
     }
     target.vx=Math.max(-4.2,Math.min(4.2,target.vx+incoming.vx*transfer));
     target.vy=Math.max(-4.2,Math.min(4.2,target.vy+incoming.vy*transfer));
-    const retained=Math.max(0.12,0.62-transfer*0.46);
-    incoming.vx*=retained;incoming.vy*=retained;
+    // Once the cards meet, transfer momentum to the target. Do not let
+    // the incoming card continue through the target on the next frame.
+    incoming.vx=0;incoming.vy=0;
     target.node.classList.add('sliding');
    }
    const friction=Math.exp(-tick/165);
