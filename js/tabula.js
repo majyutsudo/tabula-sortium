@@ -1412,8 +1412,13 @@ function gallerySimpleSource(card){
  const rank=major?(c.number===null?'':faceNumber(c.number,'major')):
   pip?faceNumber(c.number,'pip'):['P','N','Q','K'][c.number-11];
  const suitNames={wands:'WANDS',cups:'CUPS',swords:'SWORDS',pentacles:'PENTACLES'};
- const suitGlyphs={wands:'♣',cups:'♜',swords:'⚔',pentacles:'✦'};
- const title=escapeHTML(c.name),symbol=major?'✧':suitGlyphs[c.suit]||'✦';
+ const suitArt={
+  wands:'<path d="M135 300L178 156" stroke="#76522e" stroke-width="17" stroke-linecap="round"/><path d="M135 300L178 156" stroke="#c5a169" stroke-width="6" stroke-linecap="round"/><path d="M155 245Q113 208 116 192Q151 205 165 235M167 205Q216 192 223 166Q191 168 171 201" fill="#778f5f" stroke="#456242" stroke-width="3"/>',
+  cups:'<path d="M91 160H209Q202 251 150 257Q99 251 91 160Z" fill="#c6a05b" stroke="#72572d" stroke-width="5"/><path d="M150 257V304M115 305H185M105 175H195" fill="none" stroke="#72572d" stroke-width="9" stroke-linecap="round"/><path d="M106 184Q150 195 194 184" fill="none" stroke="#f1dfab" stroke-width="4"/>',
+  swords:'<path d="M150 129L163 270L150 291L137 270Z" fill="#b9c2c1" stroke="#45575b" stroke-width="5"/><path d="M150 144V272" stroke="#eef4ed" stroke-width="3"/><path d="M111 291H189M150 287V329" stroke="#927446" stroke-width="12" stroke-linecap="round"/>',
+  pentacles:'<circle cx="150" cy="224" r="72" fill="#c4a05b" stroke="#6a4f30" stroke-width="6"/><circle cx="150" cy="224" r="60" fill="none" stroke="#ead49e" stroke-width="4"/><path d="M150 168L183 269L96 206H204L117 269Z" fill="none" stroke="#5a442d" stroke-width="6" stroke-linejoin="round"/>'
+ };
+ const title=escapeHTML(c.name),symbol=major?'<text x="150" y="251" text-anchor="middle" font-family="Georgia,serif" font-size="108" fill="#755939">✧</text>':suitArt[c.suit]||'';
  const description=major?'MAJOR ARCANA':(pip?'MINOR ARCANA':'COURT CARD');
  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 300 450">
  <defs><linearGradient id="simplePaper" x2="1" y2="1"><stop stop-color="#f4e8c9"/><stop offset="1" stop-color="#e0ca9e"/></linearGradient></defs>
@@ -1422,7 +1427,7 @@ function gallerySimpleSource(card){
  <rect x="19" y="19" width="262" height="412" rx="2" fill="none" stroke="#ae9466" stroke-width=".8"/>
  <text x="150" y="70" text-anchor="middle" font-family="Georgia,serif" font-size="30" fill="#4e3728">${escapeHTML(rank)}</text>
  <path d="M55 88H245M55 359H245" fill="none" stroke="#b29763" stroke-width="1"/>
- <text x="150" y="227" text-anchor="middle" font-family="Georgia,serif" font-size="98" fill="#755939">${symbol}</text>
+ <g>${symbol}</g>
  <text x="150" y="330" text-anchor="middle" font-family="Georgia,serif" font-size="13" letter-spacing="2.2" fill="#826643">${major?'ARCANA':suitNames[c.suit]||'TAROT'}</text>
  <text x="150" y="389" text-anchor="middle" font-family="'Yu Mincho','Hiragino Mincho ProN',serif" font-size="${c.name.length>17?11:c.name.length>11?13:16}" fill="#3e3026">${title}</text>
  <text x="150" y="415" text-anchor="middle" font-family="Georgia,serif" font-size="9" letter-spacing="1.3" fill="#826643">${description}</text></svg>`;
