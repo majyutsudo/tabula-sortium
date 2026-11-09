@@ -1389,28 +1389,120 @@ function setCardArtwork(target,source){
  target.replaceWith(node);return node;
 }
 
-const GALLERY={visible:false,listed:[],focus:null,index:0};
-function gallerySelection(){const v=$('cardGalleryFilter').value;return cards.filter(c=>{
- if(v==='all')return true;
- if(v==='major')return c.group==='major';
- if(v==='minor')return c.group!=='major';
- if(v==='pip')return c.group==='minor';
- if(v==='court')return c.group==='court';
- return c.suit===v;
-}).filter(c=>!!TABULA_TAROT_IMAGES[c.id]);}
-function galleryCloseLarge(){ $('cardGalleryLightbox').hidden=true;$('cardGalleryLarge').removeAttribute('src');if(GALLERY.focus)GALLERY.focus.focus();}
-function galleryShowLarge(index,origin){const all=GALLERY.listed;if(!all.length)return;GALLERY.index=(index+all.length)%all.length;if(origin)GALLERY.focus=origin;const c=all[GALLERY.index];setCardArtwork($('cardGalleryLarge'),finishedCardSource(c));renderDetailText($('galleryCardText'),c);$('cardGalleryLarge').alt=displayCard(c).name;$('cardGalleryLabel').textContent=displayCard(c).name+'  ·  '+(GALLERY.index+1)+' / '+all.length;$('cardGalleryLightbox').hidden=false;}
-function galleryRender(){GALLERY.listed=gallerySelection();$('cardGalleryCount').textContent=GALLERY.listed.length+' / 78枚';const root=$('cardGalleryGrid');root.replaceChildren();for(const [i,c] of GALLERY.listed.entries()){const btn=document.createElement('button');btn.type='button';btn.className='gallery-tile';btn.setAttribute('aria-label',displayCard(c).name+'を拡大する');let img=document.createElement('img');img=setCardArtwork(img,finishedCardSource(c));img.loading='lazy';img.decoding='async';img.alt='';const txt=document.createElement('span');txt.textContent=displayCard(c).name;btn.append(img,txt);btn.addEventListener('click',()=>galleryShowLarge(i,btn));root.append(btn)}$('cardGalleryScroll').scrollTop=0;}
-function galleryOpen(){if(GALLERY.visible)return;GALLERY.visible=true;$('cardGallery').hidden=false;document.body.classList.add('gallery-open');$('cardGalleryLightbox').hidden=true;galleryRender();$('cardGalleryClose').focus()}
-function galleryClose(){if(!GALLERY.visible)return;if(!$('cardGalleryLightbox').hidden)galleryCloseLarge();GALLERY.visible=false;$('cardGallery').hidden=true;document.body.classList.remove('gallery-open');$('cardGalleryOpen').focus()}
+const GALLERY={visible:false,listed:[],focus:null,index:0,deckId:'builtin'};
+function galleryDeck(){return deckLibrary.find(d=>d.id===GALLERY.deckId)||null}
+function gallerySimple(){return GALLERY.deckId==='simple'||!!galleryDeck()&&galleryDeck().faceStyle==='simple'}
+function galleryCard(c){
+ const d=galleryDeck();
+ const language=d?.language||'original';
+ return {...c,name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,language),
+  number:c.group==='major'&&d&&Object.hasOwn(d.majorNumbers,c.id)?d.majorNumbers[c.id]:c.number};
+}
+function galleryDeckOptions(){
+ const picker=$('cardGalleryDeck'),previous=GALLERY.deckId;
+ picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));
+ for(const deck of deckLibrary)picker.add(new Option(deck.name,deck.id));
+ if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
+ picker.value=GALLERY.deckId;
+}
+function gallerySimpleSource(card){
+ // Standalone SVG (rather than foreignObject) renders reliably in Safari.
+ const c=galleryCard(card),major=c.group==='major';
+ const pip=c.group==='minor';
+ const rank=major?(c.number===null?'':faceNumber(c.number,'major')):
+  pip?faceNumber(c.number,'pip'):['P','N','Q','K'][c.number-11];
+ const suitNames={wands:'WANDS',cups:'CUPS',swords:'SWORDS',pentacles:'PENTACLES'};
+ const suitGlyphs={wands:'♣',cups:'♜',swords:'⚔',pentacles:'✦'};
+ const title=escapeHTML(c.name),symbol=major?'✧':suitGlyphs[c.suit]||'✦';
+ const description=major?'MAJOR ARCANA':(pip?'MINOR ARCANA':'COURT CARD');
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 300 450">
+ <defs><linearGradient id="simplePaper" x2="1" y2="1"><stop stop-color="#f4e8c9"/><stop offset="1" stop-color="#e0ca9e"/></linearGradient></defs>
+ <rect x="2" y="2" width="296" height="446" rx="8" fill="url(#simplePaper)" stroke="#604d34" stroke-width="3"/>
+ <rect x="11" y="11" width="278" height="428" rx="4" fill="none" stroke="#917047" stroke-width="1.5"/>
+ <rect x="19" y="19" width="262" height="412" rx="2" fill="none" stroke="#ae9466" stroke-width=".8"/>
+ <text x="150" y="70" text-anchor="middle" font-family="Georgia,serif" font-size="30" fill="#4e3728">${escapeHTML(rank)}</text>
+ <path d="M55 88H245M55 359H245" fill="none" stroke="#b29763" stroke-width="1"/>
+ <text x="150" y="227" text-anchor="middle" font-family="Georgia,serif" font-size="98" fill="#755939">${symbol}</text>
+ <text x="150" y="330" text-anchor="middle" font-family="Georgia,serif" font-size="13" letter-spacing="2.2" fill="#826643">${major?'ARCANA':suitNames[c.suit]||'TAROT'}</text>
+ <text x="150" y="389" text-anchor="middle" font-family="'Yu Mincho','Hiragino Mincho ProN',serif" font-size="${c.name.length>17?11:c.name.length>11?13:16}" fill="#3e3026">${title}</text>
+ <text x="150" y="415" text-anchor="middle" font-family="Georgia,serif" font-size="9" letter-spacing="1.3" fill="#826643">${description}</text></svg>`;
+ return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+function galleryImageSource(c){return gallerySimple()?gallerySimpleSource(c):finishedCardSource(c,false,'standard',galleryDeck())}
+function gallerySelection(){
+ const v=$('cardGalleryFilter').value,d=galleryDeck();
+ return cards.filter(c=>{
+  if(d&&!d.included.includes(c.id))return false;
+  if(v==='all')return true;
+  if(v==='major')return c.group==='major';
+  if(v==='minor')return c.group!=='major';
+  if(v==='pip')return c.group==='minor';
+  if(v==='court')return c.group==='court';
+  return c.suit===v;
+ }).filter(c=>!!TABULA_TAROT_IMAGES[c.id]);
+}
+function galleryCloseLarge(){
+ $('cardGalleryLightbox').hidden=true;
+ const art=$('cardGalleryLarge');if(art)art.removeAttribute('src');
+ if(GALLERY.focus?.isConnected)GALLERY.focus.focus();
+}
+function galleryShowLarge(index,origin){
+ const all=GALLERY.listed;if(!all.length)return;
+ GALLERY.index=(index+all.length)%all.length;if(origin)GALLERY.focus=origin;
+ const c=all[GALLERY.index],name=galleryCard(c).name;
+ const art=$('cardGalleryLarge');
+ const next=setCardArtwork(art,galleryImageSource(c));
+ next.id='cardGalleryLarge';next.alt=name;next.setAttribute('aria-label',name);
+ renderDetailText($('galleryCardText'),c);
+ $('cardGalleryLabel').textContent=name+'  ·  '+(GALLERY.index+1)+' / '+all.length;
+ $('cardGalleryLightbox').hidden=false;
+}
+function galleryRender(){
+ GALLERY.listed=gallerySelection();
+ const total=galleryDeck()?.included.length||78;
+ $('cardGalleryCount').textContent=GALLERY.listed.length+' / '+total+'枚';
+ const root=$('cardGalleryGrid');root.replaceChildren();
+ for(const [i,c] of GALLERY.listed.entries()){
+  const name=galleryCard(c).name,btn=document.createElement('button');
+  btn.type='button';btn.className='gallery-tile';
+  btn.setAttribute('aria-label',name+'を拡大する');
+  let img=document.createElement('img');
+  img=setCardArtwork(img,galleryImageSource(c));
+  img.loading='lazy';img.decoding='async';img.alt='';
+  const txt=document.createElement('span');txt.textContent=name;
+  btn.append(img,txt);
+  btn.addEventListener('click',()=>galleryShowLarge(i,btn));root.append(btn);
+ }
+ $('cardGalleryScroll').scrollTop=0;
+}
+function galleryOpen(){
+ if(GALLERY.visible)return;GALLERY.visible=true;
+ // On first opening, use the active deck as a convenient initial selection.
+ GALLERY.deckId=activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin');
+ galleryDeckOptions();
+ $('cardGallery').hidden=false;document.body.classList.add('gallery-open');
+ $('cardGalleryLightbox').hidden=true;galleryRender();$('cardGalleryClose').focus();
+}
+function galleryClose(){
+ if(!GALLERY.visible)return;
+ if(!$('cardGalleryLightbox').hidden)galleryCloseLarge();
+ GALLERY.visible=false;$('cardGallery').hidden=true;document.body.classList.remove('gallery-open');$('cardGalleryOpen').focus();
+}
 $('cardGalleryOpen').addEventListener('click',galleryOpen);
 $('cardGalleryClose').addEventListener('click',galleryClose);
+$('cardGalleryDeck').addEventListener('change',()=>{
+ GALLERY.deckId=$('cardGalleryDeck').value;galleryCloseLarge();galleryRender();
+});
 $('cardGalleryFilter').addEventListener('change',()=>{galleryCloseLarge();galleryRender()});
 $('cardGalleryBack').addEventListener('click',galleryCloseLarge);
 $('cardGalleryPrev').addEventListener('click',()=>galleryShowLarge(GALLERY.index-1));
 $('cardGalleryNext').addEventListener('click',()=>galleryShowLarge(GALLERY.index+1));
-document.addEventListener('keydown',e=>{if(!GALLERY.visible)return;if(e.key==='Escape'){e.preventDefault();if(!$('cardGalleryLightbox').hidden)galleryCloseLarge();else galleryClose()}else if(!$('cardGalleryLightbox').hidden&&e.key==='ArrowLeft'){e.preventDefault();galleryShowLarge(GALLERY.index-1)}else if(!$('cardGalleryLightbox').hidden&&e.key==='ArrowRight'){e.preventDefault();galleryShowLarge(GALLERY.index+1)}});
-
+document.addEventListener('keydown',e=>{
+ if(!GALLERY.visible)return;
+ if(e.key==='Escape'){e.preventDefault();if(!$('cardGalleryLightbox').hidden)galleryCloseLarge();else galleryClose()}
+ else if(!$('cardGalleryLightbox').hidden&&e.key==='ArrowLeft'){e.preventDefault();galleryShowLarge(GALLERY.index-1)}
+ else if(!$('cardGalleryLightbox').hidden&&e.key==='ArrowRight'){e.preventDefault();galleryShowLarge(GALLERY.index+1)}
+});
 
 $('cardBackColor').addEventListener('change',()=>{settings.cardBackColor=$('cardBackColor').value;const d=activeDeck();if(d){d.backColor=settings.cardBackColor;storeDeckLibrary()}syncTabulaBack();saveLocal();setStatus('TABULA TAROTの裏面色を変更しました。')});
 
@@ -1488,14 +1580,20 @@ function wornMaterialMarkup(id){
  if(!wornMaterialAvailable(id))return '';
  return '<image class="worn-material-layer" href="'+WORN_MATERIAL_ASSETS[id]+'" x="0" y="0" width="300" height="450" preserveAspectRatio="none" pointer-events="none"/>';
 }
-function finishedCardSource(c,tabletop=false,appearance='standard'){
- c=displayCard(c);
- const d=activeDeck(),pipPlain=effectivePipBackground()==='none';
+function finishedCardSource(c,tabletop=false,appearance='standard',deckOverride=undefined){
+ // A gallery-only deck is passed explicitly. Never change settings or the
+ // active deck merely to render an illustration in the encyclopedia.
+ const d=deckOverride===undefined?activeDeck():deckOverride;
+ const language=deckOverride===undefined?effectiveCardLanguage():(d?.language||'original');
+ c=deckOverride===undefined?displayCard(c):{...c,
+  name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,language),
+  number:c.group==='major'&&d&&Object.hasOwn(d.majorNumbers,c.id)?d.majorNumbers[c.id]:c.number};
+ const pipPlain=(deckOverride===undefined?effectivePipBackground():d?.pipBackground||'landscape')==='none';
  const wornMaterial=appearance==='worn'&&wornMaterialAvailable(c.id);
  const finishOverlay=wornMaterial?wornMaterialMarkup(c.id):'';
  const wornInk=wornMaterial?'#795a40':null;
  const wornPrintFilter=wornMaterial?'<filter id="wornPrint" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values=".58"/><feComponentTransfer><feFuncR type="linear" slope=".89" intercept=".065"/><feFuncG type="linear" slope=".89" intercept=".065"/><feFuncB type="linear" slope=".89" intercept=".065"/></feComponentTransfer></filter>':'';
- const key=(d?.id||'builtin')+':'+c.id+':'+c.name+':'+c.number+':'+effectiveCardLanguage()+':'+(pipPlain?'plain':'landscape')+':'+facePrefs.major+':'+facePrefs.pip+':'+(tabletop?'tabletop':'full')+(wornMaterial?':worn-material':'');if(finishedCache.has(key))return finishedCache.get(key);
+ const key=(d?.id||'builtin')+':'+c.id+':'+c.name+':'+c.number+':'+language+':'+(pipPlain?'plain':'landscape')+':'+facePrefs.major+':'+facePrefs.pip+':'+(tabletop?'tabletop':'full')+(wornMaterial?':worn-material':'');if(finishedCache.has(key))return finishedCache.get(key);
  const pip=c.group==='minor';
  const rank=c.group==='major'?faceNumber(c.number,'major'):pip?faceNumber(c.number,'pip'):['PAGE','KNIGHT','QUEEN','KING'][c.number-11];
  // A secondary caption is complementary to the main title, never a duplicate.
@@ -1530,7 +1628,7 @@ function finishedCardSource(c,tabletop=false,appearance='standard'){
  // The table uses a compact frame; galleries and the card inspector keep the full design.
  if(tabletop){
   const numberNames=['ACE','TWO','THREE','FOUR','FIVE','SIX','SEVEN','EIGHT','NINE','TEN'];
-  const title=(effectiveCardLanguage()!=='original'||d)?c.name:(c.group==='major'?majorEnglish[Number(c.id.slice(-2))]:(pip?numberNames[c.number-1]:['PAGE','KNIGHT','QUEEN','KING'][c.number-11])+' OF '+c.suit.toUpperCase());
+  const title=(language!=='original'||d)?c.name:(c.group==='major'?majorEnglish[Number(c.id.slice(-2))]:(pip?numberNames[c.number-1]:['PAGE','KNIGHT','QUEEN','KING'][c.number-11])+' OF '+c.suit.toUpperCase());
   let tableArt='';
   if(!pip){
    tableArt=`<image href="${RESTORED_CARD_IMAGES[c.id]||TABULA_TAROT_IMAGES[c.id]}" x="9" y="25" width="282" height="400" preserveAspectRatio="xMidYMid slice"/>`;
