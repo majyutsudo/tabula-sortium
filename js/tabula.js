@@ -372,6 +372,10 @@ function getSlots(){return presets[settings.spread]||[];
 }function metrics(){const rect=$('zone').getBoundingClientRect();const z={width:$('zone').offsetWidth,height:$('zone').offsetHeight};const scale=zoom;const pc=window.innerWidth>780;const w=Math.min(z.width*(pc?.129:.12),z.height*(pc?.268:.25),pc?92:85)*scale;return{w,h:w*1.52,z:rect}}function shortName(c){c=displayCard(c);if(activeDeck()&&activeDeck().names[c.id])return c.name;if(c.group==='major')return c.name;const nm={wands:'ワンド',cups:'カップ',swords:'ソード',pentacles:'ペンタクル'}[c.suit]||'';const rank=c.number<=10?(c.number===1?'A':String(c.number)):['ペイジ','ナイト','クイーン','キング'][c.number-11];return nm+(c.number<=10?rank:'の'+rank)}const TABULA_TAROT_IMAGES={"major_00":"images/decks/tabula-tarot/base/major_00.webp","major_01":"images/decks/tabula-tarot/base/major_01.webp","major_02":"images/decks/tabula-tarot/base/major_02.webp","major_03":"images/decks/tabula-tarot/base/major_03.webp","major_04":"images/decks/tabula-tarot/base/major_04.webp","major_05":"images/decks/tabula-tarot/base/major_05.webp","major_06":"images/decks/tabula-tarot/base/major_06.webp","major_07":"images/decks/tabula-tarot/base/major_07.webp","major_08":"images/decks/tabula-tarot/base/major_08.webp","major_09":"images/decks/tabula-tarot/base/major_09.webp","major_10":"images/decks/tabula-tarot/base/major_10.webp","major_11":"images/decks/tabula-tarot/base/major_11.webp","major_12":"images/decks/tabula-tarot/base/major_12.webp","major_13":"images/decks/tabula-tarot/base/major_13.webp","major_14":"images/decks/tabula-tarot/base/major_14.webp","major_15":"images/decks/tabula-tarot/base/major_15.webp","major_16":"images/decks/tabula-tarot/base/major_16.webp","major_17":"images/decks/tabula-tarot/base/major_17.webp","major_18":"images/decks/tabula-tarot/base/major_18.webp","major_19":"images/decks/tabula-tarot/base/major_19.webp","major_20":"images/decks/tabula-tarot/base/major_20.webp","major_21":"images/decks/tabula-tarot/base/major_21.webp","wands_14":"images/decks/tabula-tarot/base/wands_14.webp","wands_13":"images/decks/tabula-tarot/base/wands_13.webp","wands_12":"images/decks/tabula-tarot/base/wands_12.webp","wands_11":"images/decks/tabula-tarot/base/wands_11.webp","cups_14":"images/decks/tabula-tarot/base/cups_14.webp","cups_13":"images/decks/tabula-tarot/base/cups_13.webp","cups_12":"images/decks/tabula-tarot/base/cups_12.webp","cups_11":"images/decks/tabula-tarot/base/cups_11.webp","swords_14":"images/decks/tabula-tarot/base/swords_14.webp","swords_13":"images/decks/tabula-tarot/base/swords_13.webp","swords_12":"images/decks/tabula-tarot/base/swords_12.webp","swords_11":"images/decks/tabula-tarot/base/swords_11.webp","pentacles_14":"images/decks/tabula-tarot/base/pentacles_14.webp","pentacles_13":"images/decks/tabula-tarot/base/pentacles_13.webp","pentacles_12":"images/decks/tabula-tarot/base/pentacles_12.webp","pentacles_11":"images/decks/tabula-tarot/base/pentacles_11.webp","wands_01":"images/decks/tabula-tarot/base/wands_01.webp","wands_02":"images/decks/tabula-tarot/base/wands_02.webp","wands_03":"images/decks/tabula-tarot/base/wands_03.webp","wands_04":"images/decks/tabula-tarot/base/wands_04.webp","wands_05":"images/decks/tabula-tarot/base/wands_05.webp","wands_06":"images/decks/tabula-tarot/base/wands_06.webp","wands_07":"images/decks/tabula-tarot/base/wands_07.webp","wands_08":"images/decks/tabula-tarot/base/wands_08.webp","wands_09":"images/decks/tabula-tarot/base/wands_09.webp","wands_10":"images/decks/tabula-tarot/base/wands_10.webp","cups_01":"images/decks/tabula-tarot/base/cups_01.webp","cups_02":"images/decks/tabula-tarot/base/cups_02.webp","cups_03":"images/decks/tabula-tarot/base/cups_03.webp","cups_04":"images/decks/tabula-tarot/base/cups_04.webp","cups_05":"images/decks/tabula-tarot/base/cups_05.webp","cups_06":"images/decks/tabula-tarot/base/cups_06.webp","cups_07":"images/decks/tabula-tarot/base/cups_07.webp","cups_08":"images/decks/tabula-tarot/base/cups_08.webp","cups_09":"images/decks/tabula-tarot/base/cups_09.webp","cups_10":"images/decks/tabula-tarot/base/cups_10.webp","swords_01":"images/decks/tabula-tarot/base/swords_01.webp","swords_02":"images/decks/tabula-tarot/base/swords_02.webp","swords_03":"images/decks/tabula-tarot/base/swords_03.webp","swords_04":"images/decks/tabula-tarot/base/swords_04.webp","swords_05":"images/decks/tabula-tarot/base/swords_05.webp","swords_06":"images/decks/tabula-tarot/base/swords_06.webp","swords_07":"images/decks/tabula-tarot/base/swords_07.webp","swords_08":"images/decks/tabula-tarot/base/swords_08.webp","swords_09":"images/decks/tabula-tarot/base/swords_09.webp","swords_10":"images/decks/tabula-tarot/base/swords_10.webp","pentacles_01":"images/decks/tabula-tarot/base/pentacles_01.webp","pentacles_02":"images/decks/tabula-tarot/base/pentacles_02.webp","pentacles_03":"images/decks/tabula-tarot/base/pentacles_03.webp","pentacles_04":"images/decks/tabula-tarot/base/pentacles_04.webp","pentacles_05":"images/decks/tabula-tarot/base/pentacles_05.webp","pentacles_06":"images/decks/tabula-tarot/base/pentacles_06.webp","pentacles_07":"images/decks/tabula-tarot/base/pentacles_07.webp","pentacles_08":"images/decks/tabula-tarot/base/pentacles_08.webp","pentacles_09":"images/decks/tabula-tarot/base/pentacles_09.webp","pentacles_10":"images/decks/tabula-tarot/base/pentacles_10.webp"};
 function cardMark(c,appearance='standard'){c=displayCard(c);
  if(settings.cardDesign==='standard' && TABULA_TAROT_IMAGES[c.id])return cardArtworkMarkup(finishedCardSource(c,true,appearance)).replace('class="card-art"','class="card-art tarot-face-art"');
+ return simpleCardMarkup(c);
+}
+/* Shared by the actual table cards and the simple-deck gallery. */
+function simpleCardMarkup(c){
  if(c.group==='major')return `<div class="major-rank">${c.number===null?'':c.number}</div><div class="major-name">${escapeHTML(c.name)}</div>`;
  const rank=c.number<=10?String(c.number):['P','N','Q','K'][c.number-11];
  const symbols={
@@ -1405,35 +1409,21 @@ function galleryDeckOptions(){
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
  picker.value=GALLERY.deckId;
 }
-function gallerySimpleSource(card){
- // Standalone SVG (rather than foreignObject) renders reliably in Safari.
- const c=galleryCard(card),major=c.group==='major';
- const pip=c.group==='minor';
- const rank=major?(c.number===null?'':faceNumber(c.number,'major')):
-  pip?faceNumber(c.number,'pip'):['P','N','Q','K'][c.number-11];
- const suitNames={wands:'WANDS',cups:'CUPS',swords:'SWORDS',pentacles:'PENTACLES'};
- const suitArt={
-  wands:'<path d="M135 300L178 156" stroke="#76522e" stroke-width="17" stroke-linecap="round"/><path d="M135 300L178 156" stroke="#c5a169" stroke-width="6" stroke-linecap="round"/><path d="M155 245Q113 208 116 192Q151 205 165 235M167 205Q216 192 223 166Q191 168 171 201" fill="#778f5f" stroke="#456242" stroke-width="3"/>',
-  cups:'<path d="M91 160H209Q202 251 150 257Q99 251 91 160Z" fill="#c6a05b" stroke="#72572d" stroke-width="5"/><path d="M150 257V304M115 305H185M105 175H195" fill="none" stroke="#72572d" stroke-width="9" stroke-linecap="round"/><path d="M106 184Q150 195 194 184" fill="none" stroke="#f1dfab" stroke-width="4"/>',
-  swords:'<path d="M150 129L163 270L150 291L137 270Z" fill="#b9c2c1" stroke="#45575b" stroke-width="5"/><path d="M150 144V272" stroke="#eef4ed" stroke-width="3"/><path d="M111 291H189M150 287V329" stroke="#927446" stroke-width="12" stroke-linecap="round"/>',
-  pentacles:'<circle cx="150" cy="224" r="72" fill="#c4a05b" stroke="#6a4f30" stroke-width="6"/><circle cx="150" cy="224" r="60" fill="none" stroke="#ead49e" stroke-width="4"/><path d="M150 168L183 269L96 206H204L117 269Z" fill="none" stroke="#5a442d" stroke-width="6" stroke-linejoin="round"/>'
- };
- const title=escapeHTML(c.name),symbol=major?'<text x="150" y="251" text-anchor="middle" font-family="Georgia,serif" font-size="108" fill="#755939">✧</text>':suitArt[c.suit]||'';
- const description=major?'MAJOR ARCANA':(pip?'MINOR ARCANA':'COURT CARD');
- const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 300 450">
- <defs><linearGradient id="simplePaper" x2="1" y2="1"><stop stop-color="#f4e8c9"/><stop offset="1" stop-color="#e0ca9e"/></linearGradient></defs>
- <rect x="2" y="2" width="296" height="446" rx="8" fill="url(#simplePaper)" stroke="#604d34" stroke-width="3"/>
- <rect x="11" y="11" width="278" height="428" rx="4" fill="none" stroke="#917047" stroke-width="1.5"/>
- <rect x="19" y="19" width="262" height="412" rx="2" fill="none" stroke="#ae9466" stroke-width=".8"/>
- <text x="150" y="70" text-anchor="middle" font-family="Georgia,serif" font-size="30" fill="#4e3728">${escapeHTML(rank)}</text>
- <path d="M55 88H245M55 359H245" fill="none" stroke="#b29763" stroke-width="1"/>
- <g>${symbol}</g>
- <text x="150" y="330" text-anchor="middle" font-family="Georgia,serif" font-size="13" letter-spacing="2.2" fill="#826643">${major?'ARCANA':suitNames[c.suit]||'TAROT'}</text>
- <text x="150" y="389" text-anchor="middle" font-family="'Yu Mincho','Hiragino Mincho ProN',serif" font-size="${c.name.length>17?11:c.name.length>11?13:16}" fill="#3e3026">${title}</text>
- <text x="150" y="415" text-anchor="middle" font-family="Georgia,serif" font-size="9" letter-spacing="1.3" fill="#826643">${description}</text></svg>`;
- return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+function gallerySimpleArtwork(c){
+ // Use the very same HTML that the tabletop card's front uses.
+ // No independently redrawn illustration or separate label hierarchy.
+ const div=document.createElement('div');
+ div.className='card-art gallery-simple-face';
+ div.innerHTML=simpleCardMarkup(galleryCard(c));
+ div.setAttribute('role','img');
+ div.setAttribute('aria-label',galleryCard(c).name);
+ return div;
 }
-function galleryImageSource(c){return gallerySimple()?gallerySimpleSource(c):finishedCardSource(c,false,'standard',galleryDeck())}
+function galleryArtwork(c){
+ if(gallerySimple())return gallerySimpleArtwork(c);
+ const img=document.createElement('img');
+ return setCardArtwork(img,finishedCardSource(c,false,'standard',galleryDeck()));
+}
 function gallerySelection(){
  const v=$('cardGalleryFilter').value,d=galleryDeck();
  return cards.filter(c=>{
@@ -1448,16 +1438,18 @@ function gallerySelection(){
 }
 function galleryCloseLarge(){
  $('cardGalleryLightbox').hidden=true;
- const art=$('cardGalleryLarge');if(art)art.removeAttribute('src');
+ const art=$('cardGalleryLarge');if(art?.tagName==='IMG')art.removeAttribute('src');
  if(GALLERY.focus?.isConnected)GALLERY.focus.focus();
 }
 function galleryShowLarge(index,origin){
  const all=GALLERY.listed;if(!all.length)return;
  GALLERY.index=(index+all.length)%all.length;if(origin)GALLERY.focus=origin;
  const c=all[GALLERY.index],name=galleryCard(c).name;
- const art=$('cardGalleryLarge');
- const next=setCardArtwork(art,galleryImageSource(c));
- next.id='cardGalleryLarge';next.alt=name;next.setAttribute('aria-label',name);
+ const next=galleryArtwork(c);
+ const current=$('cardGalleryLarge');
+ current.replaceWith(next);
+ next.id='cardGalleryLarge';next.setAttribute('aria-label',name);
+ if(next.tagName==='IMG')next.alt=name;
  renderDetailText($('galleryCardText'),c);
  $('cardGalleryLabel').textContent=name+'  ·  '+(GALLERY.index+1)+' / '+all.length;
  $('cardGalleryLightbox').hidden=false;
@@ -1471,9 +1463,8 @@ function galleryRender(){
   const name=galleryCard(c).name,btn=document.createElement('button');
   btn.type='button';btn.className='gallery-tile';
   btn.setAttribute('aria-label',name+'を拡大する');
-  let img=document.createElement('img');
-  img=setCardArtwork(img,galleryImageSource(c));
-  img.loading='lazy';img.decoding='async';img.alt='';
+  const img=galleryArtwork(c);
+  if(img.tagName==='IMG'){img.loading='lazy';img.decoding='async';img.alt='';}
   const txt=document.createElement('span');txt.textContent=name;
   btn.append(img,txt);
   btn.addEventListener('click',()=>galleryShowLarge(i,btn));root.append(btn);
