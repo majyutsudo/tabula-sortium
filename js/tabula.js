@@ -588,8 +588,9 @@ function startHandGlide(item,node,track){
      if((dx===0&&Math.abs(rx)>=halfX)||(dy===0&&Math.abs(ry)>=halfY))continue;
      const enterX=Math.min(tx1,tx2),exitX=Math.max(tx1,tx2);
      const enterY=Math.min(ty1,ty2),exitY=Math.max(ty1,ty2);
-     const enter=Math.max(enterX,enterY,0),exit=Math.min(exitX,exitY,1);
-     if(enter>exit||enter>1||exit<0)continue;
+     const firstContact=Math.max(enterX,enterY);
+     const enter=Math.max(firstContact,0),exit=Math.min(exitX,exitY,1);
+     if(firstContact<0||enter>exit||enter>1||exit<=0)continue;
      if(!best||enter<best.t){
       const normalX=enterX>enterY?(dx>0?1:-1):0;
       const normalY=enterY>=enterX?(dy>0?1:-1):0;
