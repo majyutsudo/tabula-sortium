@@ -488,6 +488,60 @@ function recordTiltSample(track,e){
  track.samples.push({x:e.clientX,y:e.clientY,t:now});
  track.samples=track.samples.filter(p=>now-p.t<160).slice(-12);
 }
+
+let freeSlideEnabled=true,activeSlide=null;
+function stopFreeSlide(){
+ if(!activeSlide)return;
+ cancelAnimationFrame(activeSlide.frame);
+ const previous=activeSlide;activeSlide=null;
+ if(previous.node.isConnected)previous.node.classList.remove('sliding');
+ saveLocal();
+}
+function startFreeSlide(item,node,track){
+ if(!freeSlideEnabled||settings.spread!=='free'||freeSnapMode!=='off'||spreadWorkbench||!track.samples?.length)return false;
+ const samples=track.samples,last=samples[samples.length-1];
+ if(performance.now()-last.t>90)return false;
+ const first=[...samples].reverse().find(p=>last.t-p.t>=45&&last.t-p.t<=125);
+ if(!first)return false;
+ const dt=last.t-first.t;
+ if(dt<25)return false;
+ let vx=(last.x-first.x)/dt,vy=(last.y-first.y)/dt;
+ if(Math.hypot(vx,vy)<0.62)return false;
+ const rect=$('zone').getBoundingClientRect();
+ if(rect.width<=0||rect.height<=0)return false;
+ stopFreeSlide();
+ vx=Math.max(-2.4,Math.min(2.4,vx));vy=Math.max(-2.4,Math.min(2.4,vy));
+ let previous=performance.now(),elapsed=0;
+ const slide={item,node,frame:0};activeSlide=slide;node.classList.add('sliding');
+ function step(now){
+  if(activeSlide!==slide)return;
+  if(!node.isConnected||!state.placed.includes(item)||settings.spread!=='free'){stopFreeSlide();return}
+  const dt=Math.min(32,Math.max(0,now-previous));previous=now;elapsed+=dt;
+  const nx=Math.max(0,Math.min(100,item.x+vx*dt/rect.width*100));
+  const ny=Math.max(0,Math.min(100,item.y+vy*dt/rect.height*100));
+  if(nx===0||nx===100)vx=0;if(ny===0||ny===100)vy=0;
+  item.x=nx;item.y=ny;node.style.left=nx+'%';node.style.top=ny+'%';
+  const friction=Math.exp(-dt/190);vx*=friction;vy*=friction;
+  if(Math.hypot(vx,vy)<0.035||elapsed>1400){stopFreeSlide();refreshDraggedSlotLabel(item);return}
+  slide.frame=requestAnimationFrame(step);
+ }
+ slide.frame=requestAnimationFrame(step);
+ return true;
+}
+function syncFreeSlideButton(){
+ let button=document.getElementById('freeSlideToggle');
+ if(!button){
+  button=document.createElement('button');button.id='freeSlideToggle';button.type='button';
+  button.style.cssText='padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621;color:#d6c6a5;font-size:11px;cursor:pointer;';
+  button.onclick=()=>{freeSlideEnabled=!freeSlideEnabled;if(!freeSlideEnabled)stopFreeSlide();syncFreeSlideButton();setStatus('カードの慣性移動：'+(freeSlideEnabled?'ON':'OFF'))};
+  document.getElementById('placementToolsContent').append(button);
+ }
+ const visible=settings.spread==='free'&&!spreadWorkbench;
+ button.hidden=!visible;button.style.display=visible?'block':'none';
+ button.textContent='⇢ 滑走 '+(freeSlideEnabled?'ON':'OFF');
+ button.title='素早くドラッグして離すと、カードが卓上を滑ります（自由配置のみ）';
+ button.setAttribute('aria-pressed',String(freeSlideEnabled));
+}
 let freeSnapMode='off';
 function snapFreePosition(x,y,excludeId=null){
  if(settings.spread!=='free'||freeSnapMode==='off')return {x,y};
@@ -514,7 +568,7 @@ function snapFreePosition(x,y,excludeId=null){
  return {x:bestX,y:bestY};
 }
 function syncFreeSnapButton(){
- updateNaturalTiltButton();
+ updateNaturalTiltButton();syncFreeSlideButton();
  let button=document.getElementById('freeSnapButton');
  if(!button){
   button=document.createElement('button');button.id='freeSnapButton';button.type='button';
@@ -534,7 +588,7 @@ function syncFreeSnapButton(){
 function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;node.dataset.appearance=appearanceForCard(item);if(node.dataset.appearance==='worn'){node.dataset.wearVariant=wearVariant(item);if(wornMaterialAvailable(item.id))node.dataset.wornAsset='true'}if(item.sourceDeck){node.dataset.sourceDeck=item.sourceDeck;node.dataset.backTone=dualBackTone(item.sourceDeck)}if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
- node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;drag.rotating=true;
+ node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;drag.rotating=true;
 const bounds=node.getBoundingClientRect();
 drag.rotateCenterX=bounds.left+bounds.width/2;drag.rotateCenterY=bounds.top+bounds.height/2;
 drag.rotateStart=Math.atan2(drag.startY-drag.rotateCenterY,drag.startX-drag.rotateCenterX);
@@ -550,7 +604,7 @@ node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!dra
  item.angle=Math.round((drag.rotateAngle+diff)*10)/10;
  node.style.setProperty('--rotation',cardDisplayRotation(item)+'deg');
  return;
-}const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){recordTiltSample(drag,e);cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';const wasLong=!!drag.longSelected;const wasRotating=!!drag.rotating;const finishingTilt=dragMoved&&!wasRotating&&!spreadWorkbench?gestureTilt(drag):0;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(finishingTilt){item.angle=Math.round((item.angle+finishingTilt)*10)/10;}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
+}const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){recordTiltSample(drag,e);cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';const wasLong=!!drag.longSelected;const wasRotating=!!drag.rotating;const finishingTilt=dragMoved&&!wasRotating&&!spreadWorkbench?gestureTilt(drag):0;const releasedDrag=drag;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(finishingTilt){item.angle=Math.round((item.angle+finishingTilt)*10)/10;}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
 node.classList.toggle('faceup',item.faceUp);
@@ -560,7 +614,7 @@ node.style.top=`calc(${item.y}% + ${moveCross}px)`;
 node.classList.toggle('no-reversal-spin',!!item.reversed);node.style.setProperty('--rotation',cardDisplayRotation(item)+'deg');refreshDraggedSlotLabel(item);
 const cardData=cards.find(c=>c.id===item.id),position=item.slot!=null?getSlots()[item.slot]:null;
 $('infoText').textContent=`${cardData.name}（${item.reversed?'逆位置':'正位置'}）${position?` — ${item.slot+1}. ${position.name}：${position.detail}`:' — 自由配置'}`;
-if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position.name:'');updateLiveResults();maybeTriggerCompletionEffect();saveLocal()});node.addEventListener('pointercancel',()=>{cancelCardLongPress();node.classList.remove('dragging');drag=null});node.addEventListener('contextmenu',e=>{e.preventDefault();if(inspectionEnabled()||e.pointerType==='touch')return;item.angle=(item.angle+90)%360;render();saveLocal()});if(inspectionEnabled()){node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',item.faceUp?c.name+'を拡大する':'伏せ札');}node.addEventListener('click',()=>{if(inspectionEnabled())inspectTableCard(index,node)});node.addEventListener('keydown',e=>{if(inspectionEnabled()&&(e.key==='Enter'||e.key===' ')){e.preventDefault();inspectTableCard(index,node)}});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
+if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position.name:'');updateLiveResults();maybeTriggerCompletionEffect();saveLocal();if(dragMoved&&!wasRotating)startFreeSlide(item,node,releasedDrag)});node.addEventListener('pointercancel',()=>{cancelCardLongPress();node.classList.remove('dragging');drag=null});node.addEventListener('contextmenu',e=>{e.preventDefault();if(inspectionEnabled()||e.pointerType==='touch')return;item.angle=(item.angle+90)%360;render();saveLocal()});if(inspectionEnabled()){node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',item.faceUp?c.name+'を拡大する':'伏せ札');}node.addEventListener('click',()=>{if(inspectionEnabled())inspectTableCard(index,node)});node.addEventListener('keydown',e=>{if(inspectionEnabled()&&(e.key==='Enter'||e.key===' ')){e.preventDefault();inspectTableCard(index,node)}});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
 function syncResultsVisibility(){const panel=$('liveResults'),button=$('toggleResults');if(!panel||!button)return;panel.hidden=!resultsVisible;button.textContent=resultsVisible?'RESULTSを閉じる ▴':'RESULTSを表示 ▾';button.setAttribute('aria-expanded',String(resultsVisible))}
 function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:item.significator?'シグニフィケイター':`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(cards.find(c=>c.id===item.id)||cards[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${all.filter(p=>p.faceUp&&!p.significator).length} / ${all.filter(p=>!p.significator).length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
 $('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
@@ -578,6 +632,7 @@ function syncTabulaBack(){
 }
 let lastRenderedSpread=null;
 function render(){
+ stopFreeSlide();
  updateAppearanceControls();
  refreshClothIndicators();
  if(lastRenderedSpread!==null&&lastRenderedSpread!==settings.spread){
