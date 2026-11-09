@@ -2531,7 +2531,12 @@ function dualRefreshControls(){
  }
  const appearanceALabel=$('dualAppearanceA').closest('label');
  const backALabel=$('dualBackA').closest('label');
- appearanceALabel.hidden=false;backALabel.hidden=false;
+ appearanceALabel.hidden=false;
+ // Simple decks have a fixed back: don't offer a color picker that cannot
+ // change their appearance. Keep full choices for TABULA TAROT decks.
+ backALabel.hidden=appearanceUsesSimpleDeck('A');
+ const backBLabel=$('dualBackB').closest('label');
+ if(backBLabel&&!shared)backBLabel.hidden=appearanceUsesSimpleDeck('B');
  $('dualDeckHeadingA').textContent=shared?'共有デッキ':independent?'メインデッキ':'デッキA';
  $('dualDeckHeadingB').textContent=independent?'追加デッキ':'デッキB';
  $('dualDeckFieldsB').hidden=shared;
