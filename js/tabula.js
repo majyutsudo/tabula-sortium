@@ -711,7 +711,7 @@ function syncTabulaBack(){
  const tone=Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'sepia';
  settings.cardBackColor=tone;
  const field=$('cardBackColorField'),input=$('cardBackColor');
- if(field)field.hidden=settings.cardDesign!=='standard';
+ if(field)field.hidden=!deckCapabilities(dualSession?dualSession.activePile:null).backColor;
  if(input)input.value=tone;
  document.body.dataset.tabulaBack=settings.cardDesign==='standard'?'on':'off';
  document.body.dataset.tabulaBackTone=tone;
@@ -1400,7 +1400,7 @@ $('cardLanguage').addEventListener('change',e=>{
 });
 $('tableCardLanguage').addEventListener('change',e=>{settings.tableCardLanguage=e.target.value;refreshTableLabels();saveLocal();setStatus('卓上カード名ラベルの言語を変更しました。')});
 $('pipBackground').addEventListener('change',e=>{
- if(appearanceUsesSimpleDeck(dualSession?dualSession.activePile:null))return;
+ if(!deckCapabilities(dualSession?dualSession.activePile:null).pipBackground)return;
  const pip=e.target.value,d=activeDeck();
  if(d){d.pipBackground=pip;if(!storeDeckLibrary())return}
  else settings.pipBackground=pip;
@@ -2230,17 +2230,37 @@ const DUAL_BACK_DEFAULTS={A:'sepia',B:'navy'};
 const APPEARANCES=['standard','pocket','worn'];
 const APPEARANCE_LABELS={standard:'Standard（標準）',pocket:'Pocket（小型）',worn:'Worn（使い古し）'};
 function validAppearance(value){return APPEARANCES.includes(value)?value:'standard'}
-function appearanceUsesSimpleDeck(source){
- if(!dualSession||!isIndependentTables())
-  return settings.deckId==='simple'||activeDeck()?.faceStyle==='simple';
- const table=source==='B'?dualSession.tables?.table2:dualSession.tables?.table1;
- const deckId=table?.deckId||((source||'A')===dualSession.activePile?settings.deckId:'builtin');
- const storedFace=deckLibrary.find(deck=>deck.id===deckId)?.faceStyle;
- return deckId==='simple'||storedFace==='simple'||table?.savedSettings?.cardDesign==='simple';
+// All deck-specific UI support is decided here. New registered decks inherit
+// defaults from faceStyle and may override individual capabilities in their
+// definition without adding deck-name checks throughout the application.
+const DECK_CAPABILITY_DEFAULTS=Object.freeze({
+ standard:{appearances:['standard','pocket','worn'],pipBackground:true,backColor:true},
+ simple:{appearances:['standard','pocket'],pipBackground:false,backColor:false}
+});
+function deckCapabilities(source=null){
+ let deckId=settings.deckId,faceStyle=settings.cardDesign;
+ if(dualSession&&isIndependentTables()){
+  const table=source==='B'?dualSession.tables?.table2:
+    source==='A'?dualSession.tables?.table1:dualSession.tables?.[dualSession.activeTable];
+  deckId=table?.deckId||deckId;
+  faceStyle=table?.savedSettings?.cardDesign||faceStyle;
+ }
+ const deck=deckLibrary.find(d=>d.id===deckId)||null;
+ faceStyle=deck?.faceStyle||(deckId==='simple'?'simple':deckId==='builtin'?'standard':faceStyle);
+ const defaults=DECK_CAPABILITY_DEFAULTS[faceStyle]||DECK_CAPABILITY_DEFAULTS.standard;
+ const overrides=deck?.capabilities||{};
+ const appearances=Array.isArray(overrides.appearances)
+  ?overrides.appearances.filter(a=>APPEARANCES.includes(a)):defaults.appearances;
+ return {
+  appearances:appearances.length?appearances:defaults.appearances,
+  pipBackground:typeof overrides.pipBackground==='boolean'?overrides.pipBackground:defaults.pipBackground,
+  backColor:typeof overrides.backColor==='boolean'?overrides.backColor:defaults.backColor
+ };
 }
 function allowedAppearance(value,source){
+ const available=deckCapabilities(source).appearances;
  const choice=validAppearance(value);
- return choice==='worn'&&appearanceUsesSimpleDeck(source)?'standard':choice;
+ return available.includes(choice)?choice:available[0];
 }
 function appearanceForPile(source){
  if(!dualSession)return allowedAppearance(settings.deckAppearance);
@@ -2257,25 +2277,25 @@ function wearVariant(card){
  return 'abcd'[hash%4];
 }
 function updateAppearanceControls(){
- // Pip background art is configurable for TABULA Tarot, not the fixed
- // typography/suit-symbol design of a simple deck.
+ const activeSource=dualSession?dualSession.activePile:null;
+ const caps=deckCapabilities(activeSource);
  const pipField=$('pipBackground')?.closest('label');
- if(pipField)pipField.hidden=appearanceUsesSimpleDeck(dualSession?dualSession.activePile:null);
+ if(pipField)pipField.hidden=!caps.pipBackground;
+ const backField=$('cardBackColorField');
+ if(backField)backField.hidden=!caps.backColor;
  const field=$('deckAppearance');
  if(field){
-  const simple=appearanceUsesSimpleDeck(dualSession?dualSession.activePile:null);
-  const desired=allowedAppearance(settings.deckAppearance,dualSession?dualSession.activePile:null);
-  field.replaceChildren(...APPEARANCES.filter(a=>a!=='worn'||!simple).map(a=>new Option(APPEARANCE_LABELS[a],a)));
+  const desired=allowedAppearance(settings.deckAppearance,activeSource);
+  field.replaceChildren(...caps.appearances.map(a=>new Option(APPEARANCE_LABELS[a],a)));
   field.value=desired;
   field.disabled=!!dualSession;
  }
  if(dualSession){
   for(const source of ['A','B']){
    const select=$('dualAppearance'+source);
-   const simple=appearanceUsesSimpleDeck(source);
-   const desired=appearanceForPile(source);
-   select.replaceChildren(...APPEARANCES.filter(a=>a!=='worn'||!simple).map(a=>new Option(APPEARANCE_LABELS[a],a)));
-   select.value=desired;
+   const sourceCaps=deckCapabilities(source);
+   select.replaceChildren(...sourceCaps.appearances.map(a=>new Option(APPEARANCE_LABELS[a],a)));
+   select.value=appearanceForPile(source);
   }
  }
 }
@@ -2539,9 +2559,9 @@ function dualRefreshControls(){
  appearanceALabel.hidden=false;
  // Simple decks have a fixed back: don't offer a color picker that cannot
  // change their appearance. Keep full choices for TABULA TAROT decks.
- backALabel.hidden=appearanceUsesSimpleDeck('A');
+ backALabel.hidden=!deckCapabilities('A').backColor;
  const backBLabel=$('dualBackB').closest('label');
- if(backBLabel&&!shared)backBLabel.hidden=appearanceUsesSimpleDeck('B');
+ if(backBLabel&&!shared)backBLabel.hidden=!deckCapabilities('B').backColor;
  $('dualDeckHeadingA').textContent=shared?'共有デッキ':independent?'メインデッキ':'デッキA';
  $('dualDeckHeadingB').textContent=independent?'追加デッキ':'デッキB';
  $('dualDeckFieldsB').hidden=shared;
