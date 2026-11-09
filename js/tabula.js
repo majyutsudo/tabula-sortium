@@ -2259,8 +2259,9 @@ function updateAppearanceControls(){
  const field=$('deckAppearance');
  if(field){
   const simple=appearanceUsesSimpleDeck(dualSession?dualSession.activePile:null);
-  field.querySelector('option[value="worn"]').hidden=simple;
-  field.value=allowedAppearance(settings.deckAppearance,dualSession?dualSession.activePile:null);
+  const desired=allowedAppearance(settings.deckAppearance,dualSession?dualSession.activePile:null);
+  field.replaceChildren(...APPEARANCES.filter(a=>a!=='worn'||!simple).map(a=>new Option(APPEARANCE_LABELS[a],a)));
+  field.value=desired;
   field.disabled=!!dualSession;
  }
  if(dualSession){
