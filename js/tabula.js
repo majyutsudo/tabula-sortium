@@ -219,6 +219,15 @@ function zoomTableBy(ratio){const r=$('stage').getBoundingClientRect();zoomTable
 function resetTableCamera(){tableCamera={scale:1,x:0,y:0};applyTableCamera();saveTableCamera()}
 function installTableCamera(){
  const stage=$('stage');
+ // The tabletop itself captures touch gestures; this separate button
+ // remains accessible even when the tabletop fills a landscape phone.
+ const landscapeEscape=document.createElement('button');
+ landscapeEscape.type='button';landscapeEscape.id='landscapeScrollControls';
+ landscapeEscape.className='landscape-scroll-controls';
+ landscapeEscape.textContent='操作へ ↓';
+ landscapeEscape.setAttribute('aria-label','卓の下の操作ボタンへ移動');
+ landscapeEscape.onclick=()=>document.querySelector('.table-shortcuts')?.scrollIntoView({behavior:'smooth',block:'start'});
+ stage.closest('.stage-shell').append(landscapeEscape);
  $('zoomReset').textContent='全体';$('zoomReset').title='卓全体を表示';$('zoomIn').title='卓を拡大';$('zoomOut').title='卓を縮小';
  const label=document.createElement('output');label.id='tableZoomLabel';label.setAttribute('aria-label','卓の表示倍率');$('zoomReset').after(label);
  const pan=document.createElement('button');pan.id='tablePanToggle';pan.type='button';pan.textContent='卓を移動';pan.setAttribute('aria-pressed','false');pan.title='ONにしてドラッグすると卓全体を移動';label.after(pan);
@@ -2364,7 +2373,7 @@ installTableActionSettings();
 function positionDualDock(){
  const bar=$('dualModeBar'),toolbar=document.querySelector('.main>.toolbar'),stageShell=document.querySelector('.main>.stage-shell');
  if(!bar||!toolbar||!stageShell)return;
- if(window.innerWidth>780){
+ if(!mobileCameraEnabled()&&window.innerWidth>780){
   if(bar.parentNode!==toolbar)toolbar.append(bar);
  }else{
   if(bar.parentNode!==stageShell.parentNode||bar.nextElementSibling!==stageShell)stageShell.before(bar);
