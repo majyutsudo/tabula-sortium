@@ -470,7 +470,7 @@ function updateNaturalTiltButton(){
   document.getElementById('placementToolsContent').append(button);
  }
  button.textContent=naturalTilt?'◌ 手置き ON':'◌ 手置き OFF';
- button.title='手を離した方向へ最大48pxの短い滑りと軽い衝突（自動傾きなし）';
+ button.title='テスト用：手を離した方向へ最大150pxの滑りと軽い衝突（自動傾きなし）';
  button.setAttribute('aria-pressed',String(naturalTilt));
 }
 function recordTiltSample(track,e){
@@ -508,8 +508,8 @@ function handGlideVector(track){
  const dt=last.t-first.t,dx=last.x-first.x,dy=last.y-first.y;
  if(dt<8||Math.hypot(dx,dy)<0.5)return null;
  const speed=Math.hypot(dx,dy)/dt;
- // A little more follow-through than v0.339, still only 0..48px.
- const length=Math.min(48,speed*23);
+ // Diagnostic long travel, with collision behavior unchanged.
+ const length=Math.min(150,speed*75);
  const norm=Math.hypot(dx,dy);
  return {dx:dx/norm*length,dy:dy/norm*length};
 }
