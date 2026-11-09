@@ -612,8 +612,8 @@ function animateCardFromDeck(index,sourceRect){
  const zone=$('zone');
  // Locate the actual placed card by its data position rather than relying on slot counts.
  const cardsOnTable=Array.from(zone.children).filter(el=>el.classList.contains('card'));
- const card=cardsOnTable[index];if(!card||!sourceRect||!card.animate)return;
- const end=card.getBoundingClientRect();if(!end.width||!end.height)return;
+ const card=cardsOnTable[index];if(!card||!sourceRect||!card.animate)return Promise.resolve();
+ const end=card.getBoundingClientRect();if(!end.width||!end.height)return Promise.resolve();
  const ghost=card.cloneNode(true);ghost.style.cssText='position:fixed;pointer-events:none;margin:0;z-index:100000;left:'+end.left+'px;top:'+end.top+'px;width:'+end.width+'px;height:'+end.height+'px;transform:none;';
  // A cloned card leaves #zone, losing zone-scoped Worn rules. Copy the
  // rendered back directly to the flying face instead of adding new CSS.
@@ -631,7 +631,7 @@ function animateCardFromDeck(index,sourceRect){
  card.style.visibility='hidden';
  const dx=sourceRect.left+sourceRect.width/2-(end.left+end.width/2),dy=sourceRect.top+sourceRect.height/2-(end.top+end.height/2);
  const animation=ghost.animate([{transform:'translate('+dx+'px,'+dy+'px) scale(.96)',filter:'brightness(1.08)'},{offset:.16,transform:'translate('+(dx*.85)+'px,'+(dy*.85-7)+'px) rotate(-3deg) scale(1.025)'},{transform:'translate(0px,0px) rotate(0deg) scale(1)',filter:'brightness(1)'}],{duration:320,easing:'cubic-bezier(.22,.72,.25,1)'});
- animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility=''});
+ return animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility=''});
 }
 // Select a physical card from the current deck and place it at an exact table point.
 let chosenPhysicalCardId=null;
@@ -701,7 +701,41 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.leng
  const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
  if(duplicate){setStatus('同じカードが重複しています（'+duplicate.id+'）。新しい占いを始めるかバックアップを確認してください。');return}
  if(!applyDealRemoval())return;
- const sourceRect=$(dualSession&&dualSession.activePile==='B'&&!isIndependentTables()?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:false});play('deal');render();if(animateArrival)animateCardFromDeck(state.placed.length-1,sourceRect);setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);saveLocal()}function dealAuto(){if(!dualSession&&dealWorkbenchController?.executeSelected())return;if(!state.deck.length)return;if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}const slots=getSlots();const unfilled=getDealOrder().filter(i=>!state.placed.some(p=>p.slot===i));if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}if(dualSession){dualDealBusy=true;unfilled.forEach((s,i)=>setTimeout(()=>{drawAt(s);if(i===unfilled.length-1)dualDealBusy=false},i*340));return}unfilled.forEach((s,i)=>setTimeout(()=>drawAt(s),i*340))}let shuffleBusy=false;
+ const sourceRect=$(dualSession&&dualSession.activePile==='B'&&!isIndependentTables()?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:false});play('deal');render();
+ const arrival=animateArrival?animateCardFromDeck(state.placed.length-1,sourceRect):Promise.resolve();
+ setStatus(`配札しました（${state.placed.length}枚）。カードをクリックして開いてください。`);
+ saveLocal();return arrival;
+}
+// Previous fixed setTimeout(i*340) starts could pile up after a slow render,
+// especially on the first deal after a spread switch. Wait for each flying
+// card to complete before scheduling the next one.
+let autoDealBusy=false;
+async function dealAuto(){
+ if(autoDealBusy)return;
+ if(!dualSession&&dealWorkbenchController?.executeSelected())return;
+ if(!state.deck.length)return;
+ if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}
+ const unfilled=getDealOrder().filter(i=>!state.placed.some(p=>p.slot===i));
+ if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}
+ const startingSpread=settings.spread,startingSession=dualSession;
+ autoDealBusy=true;
+ if(dualSession)dualDealBusy=true;
+ try{
+  // Let the new spread's DOM/layout paint before launching the first card.
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  for(const slot of unfilled){
+   if(settings.spread!==startingSpread||dualSession!==startingSession||!state.deck.length)break;
+   await drawAt(slot);
+   // Maintain approximately the old deliberate 340-ms rhythm, while
+   // preventing work on a blocked main thread from bunching card arrivals.
+   await new Promise(resolve=>setTimeout(resolve,20));
+  }
+ }finally{
+  autoDealBusy=false;
+  if(startingSession)dualDealBusy=false;
+ }
+}
+let shuffleBusy=false;
 const riffleSequence=TabulaShuffle.riffleSequence;
 const overhandSequence=TabulaShuffle.overhandSequence;
 const pileSequence=TabulaShuffle.pileSequence;
