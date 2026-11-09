@@ -551,10 +551,10 @@ function startFreeSlide(item,node,track){
  origin.vy=dy/distance*launchSpeed;
  // Collision geometry follows the card's model coordinates, rather than
  // reading a potentially animated/transformed DOM rect every simulation tick.
- const sizes=new Map(bodies.map(body=>{
-  const r=body.node.getBoundingClientRect();
-  return [body,{w:r.width/rect.width*100,h:r.height/rect.height*100}];
- }));
+ const sizes=new Map(bodies.map(body=>[body,{
+  w:body.node.offsetWidth/$('zone').offsetWidth*100,
+  h:body.node.offsetHeight/$('zone').offsetHeight*100
+ }]));
  const key=(i,j)=>i<j?i+':'+j:j+':'+i;
  const preexisting=new Set();
  function overlap(one,two){
