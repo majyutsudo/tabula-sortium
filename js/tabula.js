@@ -558,37 +558,58 @@ function startHandGlide(item,node,track){
   const steps=Math.max(1,Math.ceil(dt/6)),tick=dt/steps;
   for(let sub=0;sub<steps;sub++){
    for(let i=0;i<bodies.length;i++){
-    const body=bodies[i];
-    if(Math.hypot(body.vx,body.vy)<0.006)continue;
+    const body=bodies[i],speed=Math.hypot(body.vx,body.vy);
+    if(speed<0.006)continue;
     const oldX=body.item.x,oldY=body.item.y;
-    place(body,oldX+body.vx*tick/w*100,oldY+body.vy*tick/h*100);
-    // Resolve collisions before advancing to the next card. Already stacked
-    // cards are exempt, so deliberate cross-spread overlaps remain possible.
+    const moveX=body.vx*tick/w*100,moveY=body.vy*tick/h*100;
+    const endX=Math.max(lower,Math.min(upper,oldX+moveX));
+    const endY=Math.max(lower,Math.min(upper,oldY+moveY));
+    const dx=endX-oldX,dy=endY-oldY;
+    if(!dx&&!dy){body.vx=0;body.vy=0;continue}
+    let best=null;
     for(let j=0;j<bodies.length;j++){
      if(i===j)continue;
      const other=bodies[j],pair=pairKey(i,j);
-     if(!overlaps(body,other)){stacked.delete(pair);continue}
-     if(stacked.has(pair))continue;
-     const hitX=body.item.x,hitY=body.item.y;
-     let clear=0,hit=1;
-     for(let k=0;k<10;k++){
-      const mid=(clear+hit)/2;
-      place(body,oldX+(hitX-oldX)*mid,oldY+(hitY-oldY)*mid);
-      if(overlaps(body,other))hit=mid;else clear=mid;
+     const halfX=(rects.get(body).w+rects.get(other).w)/2-0.05;
+     const halfY=(rects.get(body).h+rects.get(other).h)/2-0.05;
+     const rx=oldX-other.item.x,ry=oldY-other.item.y;
+     const initiallyOverlapped=Math.abs(rx)<halfX&&Math.abs(ry)<halfY;
+     if(stacked.has(pair)){
+      if(!initiallyOverlapped)stacked.delete(pair);
+      else continue;
      }
-     place(body,oldX+(hitX-oldX)*clear,oldY+(hitY-oldY)*clear);
-     // A small nudge only on a deliberate impact; slow touches stop.
-     const ux=other.item.x-body.item.x,uy=other.item.y-body.item.y;
-     const n=Math.hypot(ux,uy)||1;
-     const toward=(body.vx*ux+body.vy*uy)/n;
+     // Swept AABB: check the entire segment, not just the end of a frame.
+     // This prevents fast movements from tunneling through thin overlaps.
+     if(initiallyOverlapped)continue;
+     const tx1=dx===0?-Infinity:(-halfX-rx)/dx;
+     const tx2=dx===0?Infinity:(halfX-rx)/dx;
+     const ty1=dy===0?-Infinity:(-halfY-ry)/dy;
+     const ty2=dy===0?Infinity:(halfY-ry)/dy;
+     if((dx===0&&Math.abs(rx)>=halfX)||(dy===0&&Math.abs(ry)>=halfY))continue;
+     const enterX=Math.min(tx1,tx2),exitX=Math.max(tx1,tx2);
+     const enterY=Math.min(ty1,ty2),exitY=Math.max(ty1,ty2);
+     const enter=Math.max(enterX,enterY,0),exit=Math.min(exitX,exitY,1);
+     if(enter>exit||enter>1||exit<0)continue;
+     if(!best||enter<best.t){
+      const normalX=enterX>enterY?(dx>0?1:-1):0;
+      const normalY=enterY>=enterX?(dy>0?1:-1):0;
+      best={t:enter,other,normalX,normalY};
+     }
+    }
+    if(best){
+     const t=Math.max(0,best.t-0.0001);
+     place(body,oldX+dx*t,oldY+dy*t);
+     // Only the component travelling into the contacted edge transfers.
+     const toward=body.vx*best.normalX+body.vy*best.normalY;
      if(toward>0.15){
       const gain=Math.min(0.65,(toward-0.15)*2.6);
-      other.vx=Math.max(-0.45,Math.min(0.45,other.vx+body.vx*gain));
-      other.vy=Math.max(-0.45,Math.min(0.45,other.vy+body.vy*gain));
-      other.node.classList.add('sliding');
+      best.other.vx=Math.max(-0.45,Math.min(0.45,best.other.vx+body.vx*gain));
+      best.other.vy=Math.max(-0.45,Math.min(0.45,best.other.vy+body.vy*gain));
+      best.other.node.classList.add('sliding');
      }
      body.vx=0;body.vy=0;
-     break;
+    }else{
+     place(body,endX,endY);
     }
    }
    const damping=Math.exp(-tick/125);
