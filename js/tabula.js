@@ -486,11 +486,12 @@ function recordTiltSample(track,e){
  const now=performance.now(),x=e.clientX,y=e.clientY;
  if(!track.samples)track.samples=[];
  const previous=track.samples[track.samples.length-1];
- // Remember actual pointer movement separately from the timing of pointerup.
- // Repeated stationary events must not reset the time of the last movement.
- if(previous&&Math.hypot(x-previous.x,y-previous.y)>0.2)track.lastMotionAt=now;
+ // Store actual movements only. In particular, a stationary pointerup must
+ // never dilute the estimated velocity with an extra zero-motion interval.
+ if(previous&&Math.hypot(x-previous.x,y-previous.y)<0.3)return;
+ if(previous)track.lastMotionAt=now;
  track.samples.push({x,y,t:now});
- track.samples=track.samples.filter(p=>now-p.t<180).slice(-20);
+ track.samples=track.samples.filter(p=>now-p.t<180).slice(-24);
 }
 
 let freeSlideEnabled=true,activeSlide=null;
@@ -504,20 +505,20 @@ function stopFreeSlide(){
 function startFreeSlide(item,node,track){
  if(!freeSlideEnabled||settings.spread!=='free'||freeSnapMode!=='off'||spreadWorkbench||!track.samples?.length)return false;
  const samples=track.samples,last=samples[samples.length-1];
- // Classify the gesture from the release event itself. A brief movement is
- // enough to glide; a pointer held stationary for ~0.1s stays in place.
- if(!track.lastMotionAt||last.t-track.lastMotionAt>110)return false;
- const recent=samples.filter(p=>last.t-p.t<=110);
- if(recent.length<2)return false;
- // Measure velocity across the complete recent window rather than demanding
- // a sample in a narrow time interval (which varied with pointer event rate).
- const first=recent[0],dt=Math.max(1,last.t-first.t);
+ // Use the last actual movement, not the mouseup time, to determine velocity.
+ // Pointerup is recorded only when its coordinate differs from the preceding
+ // move event; this prevents event-timing jitter from changing throw range.
+ if(!track.lastMotionAt||performance.now()-track.lastMotionAt>105)return false;
+ const first=[...samples].reverse().find(p=>last.t-p.t>=70&&last.t-p.t<=135)
+             ||samples.find(p=>last.t-p.t>=24);
+ if(!first)return false;
+ const dt=last.t-first.t;
+ if(dt<8)return false;
  const dx=last.x-first.x,dy=last.y-first.y;
  const distance=Math.hypot(dx,dy);
- if(distance<0.25)return false;
+ if(distance<0.3)return false;
  const measuredSpeed=distance/dt;
- // Very slow moving releases still produce a short visible glide.
- const launchSpeed=Math.min(2.25,Math.max(0.12,measuredSpeed*0.92));
+ const launchSpeed=Math.min(2.25,Math.max(0.1,measuredSpeed*0.92));
  let vx=dx/distance*launchSpeed,vy=dy/distance*launchSpeed;
  const rect=$('zone').getBoundingClientRect();
  if(rect.width<=0||rect.height<=0)return false;
@@ -538,6 +539,7 @@ function startFreeSlide(item,node,track){
   slide.frame=requestAnimationFrame(step);
  }
  slide.frame=requestAnimationFrame(step);
+ setStatus('滑走：離した時の速度 約'+Math.round(launchSpeed*1000)+'px/秒・推定滑走距離 約'+Math.round(launchSpeed*165)+'px');
  return true;
 }
 function syncFreeSlideButton(){
