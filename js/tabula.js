@@ -500,13 +500,18 @@ function stopFreeSlide(){
 function startFreeSlide(item,node,track){
  if(!freeSlideEnabled||settings.spread!=='free'||freeSnapMode!=='off'||spreadWorkbench||!track.samples?.length)return false;
  const samples=track.samples,last=samples[samples.length-1];
- if(performance.now()-last.t>90)return false;
- const first=[...samples].reverse().find(p=>last.t-p.t>=45&&last.t-p.t<=125);
+ // A release after the pointer has rested stays put. No minimum flick speed:
+ // motion just before release controls the momentum, even if it is gentle.
+ if(performance.now()-last.t>65)return false;
+ const first=[...samples].reverse().find(p=>last.t-p.t>=55&&last.t-p.t<=145)
+             ||samples.find(p=>last.t-p.t>=20);
  if(!first)return false;
  const dt=last.t-first.t;
- if(dt<25)return false;
- let vx=(last.x-first.x)/dt,vy=(last.y-first.y)/dt;
- if(Math.hypot(vx,vy)<0.62)return false;
+ if(dt<20)return false;
+ const dx=last.x-first.x,dy=last.y-first.y;
+ // Ignore subpixel pointer noise without imposing a deliberate flick threshold.
+ if(Math.hypot(dx,dy)<1.5)return false;
+ let vx=dx/dt*1.12,vy=dy/dt*1.12;
  const rect=$('zone').getBoundingClientRect();
  if(rect.width<=0||rect.height<=0)return false;
  stopFreeSlide();
@@ -521,8 +526,8 @@ function startFreeSlide(item,node,track){
   const ny=Math.max(0,Math.min(100,item.y+vy*dt/rect.height*100));
   if(nx===0||nx===100)vx=0;if(ny===0||ny===100)vy=0;
   item.x=nx;item.y=ny;node.style.left=nx+'%';node.style.top=ny+'%';
-  const friction=Math.exp(-dt/190);vx*=friction;vy*=friction;
-  if(Math.hypot(vx,vy)<0.035||elapsed>1400){stopFreeSlide();refreshDraggedSlotLabel(item);return}
+  const friction=Math.exp(-dt/290);vx*=friction;vy*=friction;
+  if(Math.hypot(vx,vy)<0.018||elapsed>1800){stopFreeSlide();refreshDraggedSlotLabel(item);return}
   slide.frame=requestAnimationFrame(step);
  }
  slide.frame=requestAnimationFrame(step);
@@ -539,7 +544,7 @@ function syncFreeSlideButton(){
  const visible=settings.spread==='free'&&!spreadWorkbench;
  button.hidden=!visible;button.style.display=visible?'block':'none';
  button.textContent='⇢ 滑走 '+(freeSlideEnabled?'ON':'OFF');
- button.title='素早くドラッグして離すと、カードが卓上を滑ります（自由配置のみ）';
+ button.title='移動中に離すと滑走し、止めてから離すとその場で止まります（自由配置のみ）';
  button.setAttribute('aria-pressed',String(freeSlideEnabled));
 }
 let freeSnapMode='off';
