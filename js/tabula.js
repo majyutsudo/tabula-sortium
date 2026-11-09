@@ -483,10 +483,14 @@ function updateNaturalTiltButton(){
 }
 function recordTiltSample(track,e){
  if(!track)return;
- const now=performance.now();
+ const now=performance.now(),x=e.clientX,y=e.clientY;
  if(!track.samples)track.samples=[];
- track.samples.push({x:e.clientX,y:e.clientY,t:now});
- track.samples=track.samples.filter(p=>now-p.t<160).slice(-12);
+ const previous=track.samples[track.samples.length-1];
+ // Remember actual pointer movement separately from the timing of pointerup.
+ // Repeated stationary events must not reset the time of the last movement.
+ if(previous&&Math.hypot(x-previous.x,y-previous.y)>0.2)track.lastMotionAt=now;
+ track.samples.push({x,y,t:now});
+ track.samples=track.samples.filter(p=>now-p.t<180).slice(-20);
 }
 
 let freeSlideEnabled=true,activeSlide=null;
@@ -500,22 +504,20 @@ function stopFreeSlide(){
 function startFreeSlide(item,node,track){
  if(!freeSlideEnabled||settings.spread!=='free'||freeSnapMode!=='off'||spreadWorkbench||!track.samples?.length)return false;
  const samples=track.samples,last=samples[samples.length-1];
- // Sliding is triggered by a moving release, not a deliberate flick.
- // The recent cursor displacement determines both direction and range.
- // If the pointer rests for a moment before release, leave the card in place.
- if(performance.now()-last.t>55)return false;
- const first=[...samples].reverse().find(p=>last.t-p.t>=45&&last.t-p.t<=115)
-             ||samples.find(p=>last.t-p.t>=12);
- if(!first)return false;
- const dt=last.t-first.t;
- if(dt<12)return false;
+ // Classify the gesture from the release event itself. A brief movement is
+ // enough to glide; a pointer held stationary for ~0.1s stays in place.
+ if(!track.lastMotionAt||last.t-track.lastMotionAt>110)return false;
+ const recent=samples.filter(p=>last.t-p.t<=110);
+ if(recent.length<2)return false;
+ // Measure velocity across the complete recent window rather than demanding
+ // a sample in a narrow time interval (which varied with pointer event rate).
+ const first=recent[0],dt=Math.max(1,last.t-first.t);
  const dx=last.x-first.x,dy=last.y-first.y;
- // Reject only tiny coordinate jitter, not slow intentional movements.
  const distance=Math.hypot(dx,dy);
- if(distance<0.65)return false;
+ if(distance<0.25)return false;
  const measuredSpeed=distance/dt;
- // No fixed launch impulse: gentle releases travel a little, fast ones farther.
- const launchSpeed=Math.min(2.25,measuredSpeed*0.92);
+ // Very slow moving releases still produce a short visible glide.
+ const launchSpeed=Math.min(2.25,Math.max(0.12,measuredSpeed*0.92));
  let vx=dx/distance*launchSpeed,vy=dy/distance*launchSpeed;
  const rect=$('zone').getBoundingClientRect();
  if(rect.width<=0||rect.height<=0)return false;
@@ -614,7 +616,7 @@ node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!dra
  item.angle=Math.round((drag.rotateAngle+diff)*10)/10;
  node.style.setProperty('--rotation',cardDisplayRotation(item)+'deg');
  return;
-}const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){recordTiltSample(drag,e);cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';const wasLong=!!drag.longSelected;const wasRotating=!!drag.rotating;const finishingTilt=dragMoved&&!wasRotating&&!spreadWorkbench?gestureTilt(drag):0;const releasedDrag=drag;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(finishingTilt){item.angle=Math.round((item.angle+finishingTilt)*10)/10;}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
+}recordTiltSample(drag,e);const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item)}});node.addEventListener('pointerup',e=>{if(!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';const wasLong=!!drag.longSelected;const wasRotating=!!drag.rotating;const finishingTilt=dragMoved&&!wasRotating&&!spreadWorkbench?gestureTilt(drag):0;recordTiltSample(drag,e);const releasedDrag=drag;cancelCardLongPress();drag=null;if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(finishingTilt){item.angle=Math.round((item.angle+finishingTilt)*10)/10;}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
 node.classList.toggle('faceup',item.faceUp);
