@@ -1409,15 +1409,28 @@ function galleryDeckOptions(){
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
  picker.value=GALLERY.deckId;
 }
+// Render the exact tabletop face at a fixed reference card size, then
+// uniformly scale it. No gallery-specific typography, icons or spacing.
+const GALLERY_SIMPLE_WIDTH=90;
+const gallerySimpleObserver=typeof ResizeObserver==='function'?new ResizeObserver(entries=>{
+ for(const entry of entries){
+  const frame=entry.target,face=frame.firstElementChild;
+  if(face)face.style.transform='scale('+(entry.contentRect.width/GALLERY_SIMPLE_WIDTH)+')';
+ }
+}):null;
 function gallerySimpleArtwork(c){
- // Use the very same HTML that the tabletop card's front uses.
- // No independently redrawn illustration or separate label hierarchy.
- const div=document.createElement('div');
- div.className='card-art gallery-simple-face';
- div.innerHTML=simpleCardMarkup(galleryCard(c));
- div.setAttribute('role','img');
- div.setAttribute('aria-label',galleryCard(c).name);
- return div;
+ const frame=document.createElement('div');
+ frame.className='card-art gallery-simple-face';
+ const face=document.createElement('div');
+ face.className='face front gallery-simple-inner';
+ face.innerHTML=simpleCardMarkup(galleryCard(c));
+ frame.append(face);
+ frame.setAttribute('role','img');
+ frame.setAttribute('aria-label',galleryCard(c).name);
+ // Initialize for environments without ResizeObserver; refresh when attached.
+ face.style.transform='scale(1)';
+ gallerySimpleObserver?.observe(frame);
+ return frame;
 }
 function galleryArtwork(c){
  if(gallerySimple())return gallerySimpleArtwork(c);
