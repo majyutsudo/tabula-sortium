@@ -495,11 +495,23 @@ function recordTiltSample(track,e){
 }
 
 let freeSlideEnabled=true,activeSlide=null;
+// Use a slightly inset visual rectangle so cards may overlap at the edges.
+// Existing overlaps are ignored until the cards have separated.
+function slideCardBounds(node){
+ const r=node.getBoundingClientRect(),w=r.width*0.88,h=r.height*0.88;
+ return {x:r.left+r.width/2-w/2,y:r.top+r.height/2-h/2,w,h};
+}
+function slideCardsTouch(a,b){
+ const x=slideCardBounds(a),y=slideCardBounds(b);
+ return x.x<y.x+y.w&&x.x+x.w>y.x&&x.y<y.y+y.h&&x.y+x.h>y.y;
+}
 function stopFreeSlide(){
  if(!activeSlide)return;
  cancelAnimationFrame(activeSlide.frame);
  const previous=activeSlide;activeSlide=null;
- if(previous.node.isConnected)previous.node.classList.remove('sliding');
+ for(const body of previous.bodies){
+  if(body.node.isConnected)body.node.classList.remove('sliding');
+ }
  saveLocal();
 }
 function startFreeSlide(item,node,track){
@@ -527,23 +539,75 @@ function startFreeSlide(item,node,track){
  const rect=$('zone').getBoundingClientRect();
  if(rect.width<=0||rect.height<=0)return false;
  stopFreeSlide();
- vx=Math.max(-3.6,Math.min(3.6,vx));vy=Math.max(-3.6,Math.min(3.6,vy));
+ // Positions remain in percent, velocities in screen pixels/ms.
+ const bodies=state.placed.map((card,i)=>({
+  item:card,
+  node:$('zone').querySelector('.card[data-index="'+i+'"]'),
+  vx:0,vy:0
+ })).filter(b=>b.node);
+ const origin=bodies.find(b=>b.item===item);
+ if(!origin)return false;
+ origin.vx=dx/distance*launchSpeed;
+ origin.vy=dy/distance*launchSpeed;
+ const touched=new Set();
+ const key=(i,j)=>i<j?i+':'+j:j+':'+i;
+ // Avoid imparting impulses to cards deliberately overlapped before the throw.
+ for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
+  if(slideCardsTouch(bodies[i].node,bodies[j].node))touched.add(key(i,j));
+ }
  let previous=performance.now(),elapsed=0;
- const slide={item,node,frame:0};activeSlide=slide;node.classList.add('sliding');
+ const slide={bodies,frame:0};
+ activeSlide=slide;
+ origin.node.classList.add('sliding');
  function step(now){
   if(activeSlide!==slide)return;
-  if(!node.isConnected||!state.placed.includes(item)||settings.spread!=='free'){stopFreeSlide();return}
+  if(settings.spread!=='free'||!origin.node.isConnected||!state.placed.includes(item)){stopFreeSlide();return}
   const dt=Math.min(32,Math.max(0,now-previous));previous=now;elapsed+=dt;
-  const nx=Math.max(0,Math.min(100,item.x+vx*dt/rect.width*100));
-  const ny=Math.max(0,Math.min(100,item.y+vy*dt/rect.height*100));
-  if(nx===0||nx===100)vx=0;if(ny===0||ny===100)vy=0;
-  item.x=nx;item.y=ny;node.style.left=nx+'%';node.style.top=ny+'%';
-  const friction=Math.exp(-dt/165);vx*=friction;vy*=friction;
-  if(Math.hypot(vx,vy)<0.012||elapsed>1400){stopFreeSlide();refreshDraggedSlotLabel(item);return}
+  // Smaller simulation steps prevent a fast-moving card from jumping over another.
+  const steps=Math.max(1,Math.ceil(dt/8)),tick=dt/steps;
+  for(let sub=0;sub<steps;sub++){
+   for(const body of bodies){
+    if(Math.hypot(body.vx,body.vy)<0.012)continue;
+    const nx=Math.max(0,Math.min(100,body.item.x+body.vx*tick/rect.width*100));
+    const ny=Math.max(0,Math.min(100,body.item.y+body.vy*tick/rect.height*100));
+    if(nx===0||nx===100)body.vx=0;
+    if(ny===0||ny===100)body.vy=0;
+    body.item.x=nx;body.item.y=ny;
+    body.node.style.left=nx+'%';body.node.style.top=ny+'%';
+   }
+   for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
+    const one=bodies[i],two=bodies[j],pair=key(i,j);
+    if(!slideCardsTouch(one.node,two.node)){touched.delete(pair);continue}
+    if(touched.has(pair))continue;
+    touched.add(pair);
+    // The incoming card gives some momentum to the stationary (or slower)
+    // card. Its own motion is damped, keeping collisions predictable.
+    let incoming=one,target=two;
+    if(Math.hypot(two.vx,two.vy)>Math.hypot(one.vx,one.vy)){
+     incoming=two;target=one;
+    }
+    const speed=Math.hypot(incoming.vx,incoming.vy);
+    if(speed<0.12)continue;
+    const cr=incoming.node.getBoundingClientRect(),tr=target.node.getBoundingClientRect();
+    const axisX=(tr.left+tr.width/2)-(cr.left+cr.width/2);
+    const axisY=(tr.top+tr.height/2)-(cr.top+cr.height/2);
+    if(incoming.vx*axisX+incoming.vy*axisY<=0)continue;
+    const transfer=0.67;
+    target.vx=Math.max(-3.6,Math.min(3.6,target.vx+incoming.vx*transfer));
+    target.vy=Math.max(-3.6,Math.min(3.6,target.vy+incoming.vy*transfer));
+    incoming.vx*=0.42;incoming.vy*=0.42;
+    target.node.classList.add('sliding');
+   }
+   const friction=Math.exp(-tick/165);
+   for(const body of bodies){body.vx*=friction;body.vy*=friction}
+  }
+  if(bodies.every(b=>Math.hypot(b.vx,b.vy)<0.012)||elapsed>1800){
+   stopFreeSlide();refreshDraggedSlotLabel(item);return;
+  }
   slide.frame=requestAnimationFrame(step);
  }
  slide.frame=requestAnimationFrame(step);
- setStatus('滑走：離した時の速度 約'+Math.round(launchSpeed*1000)+'px/秒・推定滑走距離 約'+Math.round(launchSpeed*165)+'px');
+ setStatus('滑走：離した時の速度 約'+Math.round(launchSpeed*1000)+'px/秒・推定滑走距離 約'+Math.round(launchSpeed*165)+'px（衝突あり）');
  return true;
 }
 function syncFreeSlideButton(){
