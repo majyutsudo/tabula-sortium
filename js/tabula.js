@@ -1400,6 +1400,7 @@ $('cardLanguage').addEventListener('change',e=>{
 });
 $('tableCardLanguage').addEventListener('change',e=>{settings.tableCardLanguage=e.target.value;refreshTableLabels();saveLocal();setStatus('卓上カード名ラベルの言語を変更しました。')});
 $('pipBackground').addEventListener('change',e=>{
+ if(appearanceUsesSimpleDeck(dualSession?dualSession.activePile:null))return;
  const pip=e.target.value,d=activeDeck();
  if(d){d.pipBackground=pip;if(!storeDeckLibrary())return}
  else settings.pipBackground=pip;
@@ -2256,6 +2257,10 @@ function wearVariant(card){
  return 'abcd'[hash%4];
 }
 function updateAppearanceControls(){
+ // Pip background art is configurable for TABULA Tarot, not the fixed
+ // typography/suit-symbol design of a simple deck.
+ const pipField=$('pipBackground')?.closest('label');
+ if(pipField)pipField.hidden=appearanceUsesSimpleDeck(dualSession?dualSession.activePile:null);
  const field=$('deckAppearance');
  if(field){
   const simple=appearanceUsesSimpleDeck(dualSession?dualSession.activePile:null);
