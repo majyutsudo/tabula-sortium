@@ -219,6 +219,23 @@ function zoomTableBy(ratio){const r=$('stage').getBoundingClientRect();zoomTable
 function resetTableCamera(){tableCamera={scale:1,x:0,y:0};applyTableCamera();saveTableCamera()}
 function installTableCamera(){
  const stage=$('stage');
+ // The tabletop itself captures touch gestures; this separate button
+ // remains accessible even when the tabletop fills a landscape phone.
+ const landscapeEscape=document.createElement('button');
+ landscapeEscape.type='button';landscapeEscape.id='landscapeScrollControls';
+ landscapeEscape.className='landscape-scroll-controls';
+ landscapeEscape.textContent='操作へ ↓';
+ landscapeEscape.setAttribute('aria-label','卓の下の操作ボタンへ移動');
+ landscapeEscape.onclick=()=>{
+  const actions=document.querySelector('.table-shortcuts');
+  if(!actions)return;
+  // Reveal the entire five-button row near the bottom of the viewport,
+  // keeping as much of the tabletop visible above it as possible.
+  const bottom=actions.getBoundingClientRect().bottom+window.scrollY;
+  const viewportHeight=window.visualViewport?.height||window.innerHeight;
+  window.scrollTo({top:Math.max(0,bottom-viewportHeight+16),behavior:'smooth'});
+ };
+ stage.closest('.stage-shell').append(landscapeEscape);
  $('zoomReset').textContent='全体';$('zoomReset').title='卓全体を表示';$('zoomIn').title='卓を拡大';$('zoomOut').title='卓を縮小';
  const label=document.createElement('output');label.id='tableZoomLabel';label.setAttribute('aria-label','卓の表示倍率');$('zoomReset').after(label);
  const pan=document.createElement('button');pan.id='tablePanToggle';pan.type='button';pan.textContent='卓を移動';pan.setAttribute('aria-pressed','false');pan.title='ONにしてドラッグすると卓全体を移動';label.after(pan);
@@ -1339,7 +1356,7 @@ const HELP_CONTENT="\n<p class=\"mini\">TABULA SORTIUM v0.308 — 仮想の占�
 
 $('openHelp').addEventListener('click',()=>{modal('<div class="help-popup-content"><h2>操作説明・仕様</h2>'+HELP_CONTENT+'</div>')});
 
-const ABOUT_MARKUP='<div class="about-panel"><img class="about-icon" src="images/ui/icon-00.png" alt="TABULA SORTIUM アイコン"><h2>TABULA SORTIUM</h2><p class="about-subtitle">THE VIRTUAL DIVINATION TABLE</p><hr class="about-divider"><p class="about-credits">Created by <a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><p class="about-meta">Version 0.9.96</p><p class="about-meta">© 2026 Majyutsudo</p><button type="button" id="aboutLegal" class="about-license">License &amp; Disclaimer</button></div>';
+const ABOUT_MARKUP='<div class="about-panel"><img class="about-icon" src="images/ui/icon-00.png" alt="TABULA SORTIUM アイコン"><h2>TABULA SORTIUM</h2><p class="about-subtitle">THE VIRTUAL DIVINATION TABLE</p><hr class="about-divider"><p class="about-credits">Created by <a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><p class="about-meta">Version 0.9</p><p class="about-meta">© 2026 Majyutsudo</p><button type="button" id="aboutLegal" class="about-license">License &amp; Disclaimer</button></div>';
 function openAbout(){modal(ABOUT_MARKUP);$('aboutLegal').onclick=showAboutLegal}
 function showAboutLegal(){
  modal('<div class="about-legal"><h2>License &amp; Disclaimer</h2><p>© 2026 Majyutsudo. TABULA SORTIUM の名称、独自のプログラムおよび図像の権利については、それぞれの権利者に帰属します。この表示自体は、プログラムやカード画像の複製・改変・再配布を許可するライセンスではありません。</p><p>本アプリは占術の実践・研究・創作のための道具です。カードの解釈や占断の結果は、使用する方の判断によるものです。</p><p>お問い合わせ先：<a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><button type="button" id="aboutBack" class="about-back">Aboutに戻る</button></div>');
@@ -2364,7 +2381,7 @@ installTableActionSettings();
 function positionDualDock(){
  const bar=$('dualModeBar'),toolbar=document.querySelector('.main>.toolbar'),stageShell=document.querySelector('.main>.stage-shell');
  if(!bar||!toolbar||!stageShell)return;
- if(window.innerWidth>780){
+ if(!mobileCameraEnabled()&&window.innerWidth>780){
   if(bar.parentNode!==toolbar)toolbar.append(bar);
  }else{
   if(bar.parentNode!==stageShell.parentNode||bar.nextElementSibling!==stageShell)stageShell.before(bar);
