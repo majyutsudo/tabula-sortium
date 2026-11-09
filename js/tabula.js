@@ -630,7 +630,8 @@ function startFreeSlide(item,node,track){
     // Light or glancing contact should not launch the resting card.
     const impactSpeed=(incoming.vx*axisX+incoming.vy*axisY)/axisLength;
     if(impactSpeed<=0)continue;
-    const transfer=Math.min(1.05,Math.max(0,(impactSpeed-0.7)/1.35)*1.05);
+    // Keep gentle touches stationary, but soften the exaggerated high-speed kick.
+    const transfer=Math.min(0.72,Math.max(0,(impactSpeed-0.8)/1.6)*0.72);
     if(transfer===0){
      // A gentle impact arrests the incoming card without disturbing its target.
      incoming.vx=0;incoming.vy=0;
