@@ -375,15 +375,43 @@ function cardMark(c,appearance='standard'){c=displayCard(c);
  return simpleCardMarkup(c);
 }
 /* Shared by the actual table cards and the simple-deck gallery. */
+// One compact, fixed-proportion design for tabletop and encyclopedia.
+// Long names occupy the SAME reserved area, with adaptive type size only.
+function simpleMajorTitle(name){
+ const value=String(name||'').trim(),wide=(value.match(/[\\u3000-\\u9fff\\uf900-\\ufaff\\u3040-\\u30ff]/g)||[]).length;
+ const units=wide?wide*1.75+(value.length-wide)*.95:value.length;
+ let lines=[value];
+ if(!wide&&units>15&&/\\s/.test(value)){
+  const words=value.split(/\\s+/),a=[],b=[];
+  let count=0;const half=value.length/2;
+  for(const w of words){if(!b.length&&count<half){a.push(w);count+=w.length+1}else b.push(w)}
+  if(a.length&&b.length)lines=[a.join(' '),b.join(' ')];
+ }
+ const max=Math.max(...lines.map(line=>line.length));
+ const size=wide?(units<=7?17:units<=10?14.5:units<=13?12.5:10.5):
+  (lines.length>1?(max<=12?12:10):units<=8?16:units<=12?13:units<=17?11:9);
+ return {lines,size};
+}
 function simpleCardMarkup(c){
- if(c.group==='major')return `<div class="major-rank">${c.number===null?'':c.number}</div><div class="major-name">${escapeHTML(c.name)}</div>`;
- const rank=c.number<=10?String(c.number):['P','N','Q','K'][c.number-11];
+ if(c.group==='major'){
+  const title=simpleMajorTitle(c.name);
+  const lines=title.lines.map(line=>'<span>'+escapeHTML(line)+'</span>').join('');
+  // Keep the numeral in the upper register and the name in a stable central
+  // text field. Ornamental divider echoes the printed border.
+  return '<div class="simple-card simple-major"><div class="simple-major-number">'+
+   escapeHTML(c.number===null?'':String(c.number))+
+   '</div><div class="simple-major-name" style="font-size:'+title.size+'px">'+lines+
+   '</div><div class="simple-major-flourish" aria-hidden="true">✦</div></div>';
+ }
+ const rank=c.number<=10?String(c.number):['P','Kn','Q','K'][c.number-11];
  const symbols={
  wands:'<svg viewBox="0 0 48 70" aria-hidden="true"><path d="M10 63 L37 7" stroke="#54361f" stroke-width="7" stroke-linecap="round"/><path d="M10 63 L37 7" stroke="#ad8550" stroke-width="3" stroke-linecap="round"/><path d="M27 28 Q12 11 14 10 Q27 13 30 24 M24 34 Q38 30 42 21 Q30 22 24 34" fill="#608052" stroke="#35533d" stroke-width="1.5"/></svg>',
  cups:'<svg viewBox="0 0 48 70" aria-hidden="true"><path d="M7 11 Q4 42 24 44 Q44 42 41 11 Z M24 44 V59 M13 61 H35" fill="#c6a158" stroke="#72552b" stroke-width="3" stroke-linejoin="round"/><path d="M12 17 H36" stroke="#f2d792" stroke-width="3"/></svg>',
  swords:'<svg viewBox="0 0 48 70" aria-hidden="true"><path d="M24 4 L29 49 L24 57 L19 49Z" fill="#b9c2c1" stroke="#45575b" stroke-width="2"/><path d="M24 6 V50" stroke="#eef4ed" stroke-width="2"/><path d="M9 51 H39 M24 52 V65" stroke="#927446" stroke-width="5" stroke-linecap="round"/><circle cx="24" cy="65" r="3" fill="#b89553"/></svg>',
  pentacles:'<svg viewBox="0 0 70 70" aria-hidden="true"><circle cx="35" cy="35" r="28" fill="#c4a05b" stroke="#6a4f30" stroke-width="3"/><circle cx="35" cy="35" r="23" fill="none" stroke="#ead49e" stroke-width="2"/><path d="M35 12 L48.5 53 L13.5 27 H56.5 L21.5 53 Z" fill="none" stroke="#5a442d" stroke-width="3" stroke-linejoin="round"/></svg>'};
- return `<div class="suit-icon">${symbols[c.suit]}</div><div class="rank-value">${rank}</div>`;
+ return '<div class="simple-card simple-minor"><div class="simple-minor-symbol">'+
+  (symbols[c.suit]||'')+'</div><div class="simple-minor-rule" aria-hidden="true"></div>'+
+  '<div class="simple-minor-rank">'+escapeHTML(rank)+'</div></div>';
 }
 function celticCrossShift(){return window.innerWidth<=780?Math.round(Math.min(30,metrics().h*.32)):76}
 function cardDisplayLiftPx(item){return settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved?celticCrossShift():0}
