@@ -518,16 +518,16 @@ function startFreeSlide(item,node,track){
  const distance=Math.hypot(dx,dy);
  if(distance<0.3)return false;
  const measuredSpeed=distance/dt;
- // Preserve the controllable short glide, but progressively extend strong
- // throws. The additional distance comes from launch velocity, not less friction.
- const baseSpeed=measuredSpeed*0.92;
- const strongThrowBoost=Math.max(0,measuredSpeed-0.5)*0.85;
- const launchSpeed=Math.min(3.6,Math.max(0.1,baseSpeed+strongThrowBoost));
+ // Light-touch experiment: small, quick mouse movements can propel cards.
+ // Keep release detection and tabletop friction unchanged for comparison.
+ const baseSpeed=measuredSpeed*1.35;
+ const strongThrowBoost=Math.max(0,measuredSpeed-0.35)*1.1;
+ const launchSpeed=Math.min(4.4,Math.max(0.14,baseSpeed+strongThrowBoost));
  let vx=dx/distance*launchSpeed,vy=dy/distance*launchSpeed;
  const rect=$('zone').getBoundingClientRect();
  if(rect.width<=0||rect.height<=0)return false;
  stopFreeSlide();
- vx=Math.max(-3.6,Math.min(3.6,vx));vy=Math.max(-3.6,Math.min(3.6,vy));
+ vx=Math.max(-4.4,Math.min(4.4,vx));vy=Math.max(-4.4,Math.min(4.4,vy));
  let previous=performance.now(),elapsed=0;
  const slide={item,node,frame:0};activeSlide=slide;node.classList.add('sliding');
  function step(now){
