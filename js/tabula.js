@@ -500,22 +500,27 @@ function stopFreeSlide(){
 function startFreeSlide(item,node,track){
  if(!freeSlideEnabled||settings.spread!=='free'||freeSnapMode!=='off'||spreadWorkbench||!track.samples?.length)return false;
  const samples=track.samples,last=samples[samples.length-1];
- // A release after the pointer has rested stays put. No minimum flick speed:
- // motion just before release controls the momentum, even if it is gentle.
- if(performance.now()-last.t>65)return false;
- const first=[...samples].reverse().find(p=>last.t-p.t>=55&&last.t-p.t<=145)
-             ||samples.find(p=>last.t-p.t>=20);
+ // Sliding is triggered by a moving release, not a deliberate flick.
+ // The recent cursor displacement determines both direction and range.
+ // If the pointer rests for a moment before release, leave the card in place.
+ if(performance.now()-last.t>55)return false;
+ const first=[...samples].reverse().find(p=>last.t-p.t>=45&&last.t-p.t<=115)
+             ||samples.find(p=>last.t-p.t>=12);
  if(!first)return false;
  const dt=last.t-first.t;
- if(dt<20)return false;
+ if(dt<12)return false;
  const dx=last.x-first.x,dy=last.y-first.y;
- // Ignore subpixel pointer noise without imposing a deliberate flick threshold.
- if(Math.hypot(dx,dy)<1.5)return false;
- let vx=dx/dt*1.12,vy=dy/dt*1.12;
+ // Reject only tiny coordinate jitter, not slow intentional movements.
+ const distance=Math.hypot(dx,dy);
+ if(distance<0.65)return false;
+ const measuredSpeed=distance/dt;
+ // No fixed launch impulse: gentle releases travel a little, fast ones farther.
+ const launchSpeed=Math.min(2.25,measuredSpeed*0.92);
+ let vx=dx/distance*launchSpeed,vy=dy/distance*launchSpeed;
  const rect=$('zone').getBoundingClientRect();
  if(rect.width<=0||rect.height<=0)return false;
  stopFreeSlide();
- vx=Math.max(-2.4,Math.min(2.4,vx));vy=Math.max(-2.4,Math.min(2.4,vy));
+ vx=Math.max(-2.25,Math.min(2.25,vx));vy=Math.max(-2.25,Math.min(2.25,vy));
  let previous=performance.now(),elapsed=0;
  const slide={item,node,frame:0};activeSlide=slide;node.classList.add('sliding');
  function step(now){
@@ -526,8 +531,8 @@ function startFreeSlide(item,node,track){
   const ny=Math.max(0,Math.min(100,item.y+vy*dt/rect.height*100));
   if(nx===0||nx===100)vx=0;if(ny===0||ny===100)vy=0;
   item.x=nx;item.y=ny;node.style.left=nx+'%';node.style.top=ny+'%';
-  const friction=Math.exp(-dt/290);vx*=friction;vy*=friction;
-  if(Math.hypot(vx,vy)<0.018||elapsed>1800){stopFreeSlide();refreshDraggedSlotLabel(item);return}
+  const friction=Math.exp(-dt/165);vx*=friction;vy*=friction;
+  if(Math.hypot(vx,vy)<0.012||elapsed>1400){stopFreeSlide();refreshDraggedSlotLabel(item);return}
   slide.frame=requestAnimationFrame(step);
  }
  slide.frame=requestAnimationFrame(step);
