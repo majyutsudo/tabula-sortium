@@ -2229,9 +2229,21 @@ const DUAL_BACK_DEFAULTS={A:'sepia',B:'navy'};
 const APPEARANCES=['standard','pocket','worn'];
 const APPEARANCE_LABELS={standard:'Standard（標準）',pocket:'Pocket（小型）',worn:'Worn（使い古し）'};
 function validAppearance(value){return APPEARANCES.includes(value)?value:'standard'}
+function appearanceUsesSimpleDeck(source){
+ if(!dualSession||!isIndependentTables())
+  return settings.deckId==='simple'||settings.cardDesign==='simple'||activeDeck()?.faceStyle==='simple';
+ const table=source==='B'?dualSession.tables?.table2:dualSession.tables?.table1;
+ const deckId=table?.deckId||((source||'A')===dualSession.activePile?settings.deckId:'builtin');
+ const storedFace=deckLibrary.find(deck=>deck.id===deckId)?.faceStyle;
+ return deckId==='simple'||storedFace==='simple'||table?.savedSettings?.cardDesign==='simple';
+}
+function allowedAppearance(value,source){
+ const choice=validAppearance(value);
+ return choice==='worn'&&appearanceUsesSimpleDeck(source)?'standard':choice;
+}
 function appearanceForPile(source){
- if(!dualSession)return validAppearance(settings.deckAppearance);
- return validAppearance(dualSession.appearances?.[source]||dualSession.appearances?.A);
+ if(!dualSession)return allowedAppearance(settings.deckAppearance);
+ return allowedAppearance(dualSession.appearances?.[source]||dualSession.appearances?.A,source);
 }
 function appearanceForCard(card){
  return appearanceForPile(dualSession?(card?.sourceDeck||dualSession.activePile):null);
@@ -2244,10 +2256,21 @@ function wearVariant(card){
  return 'abcd'[hash%4];
 }
 function updateAppearanceControls(){
- const field=$('deckAppearance');if(field){field.value=validAppearance(settings.deckAppearance);field.disabled=!!dualSession}
+ const field=$('deckAppearance');
+ if(field){
+  const simple=appearanceUsesSimpleDeck(dualSession?dualSession.activePile:null);
+  field.querySelector('option[value="worn"]').hidden=simple;
+  field.value=allowedAppearance(settings.deckAppearance,dualSession?dualSession.activePile:null);
+  field.disabled=!!dualSession;
+ }
  if(dualSession){
-  $('dualAppearanceA').value=appearanceForPile('A');
-  $('dualAppearanceB').value=appearanceForPile('B');
+  for(const source of ['A','B']){
+   const select=$('dualAppearance'+source);
+   const simple=appearanceUsesSimpleDeck(source);
+   const desired=appearanceForPile(source);
+   select.replaceChildren(...APPEARANCES.filter(a=>a!=='worn'||!simple).map(a=>new Option(APPEARANCE_LABELS[a],a)));
+   select.value=desired;
+  }
  }
 }
 
@@ -2618,7 +2641,7 @@ function dualToggle(){
 }
 $('deckAppearance').onchange=e=>{
  if(dualSession)return;
- settings.deckAppearance=validAppearance(e.target.value);
+ settings.deckAppearance=allowedAppearance(e.target.value);
  render();saveLocal();setStatus('カード外観を '+APPEARANCE_LABELS[settings.deckAppearance]+' に変更しました。');
 };
 for(const [id,source] of Object.entries({dualAppearanceA:'A',dualAppearanceB:'B'})){
@@ -2626,7 +2649,7 @@ for(const [id,source] of Object.entries({dualAppearanceA:'A',dualAppearanceB:'B'
  select.onchange=e=>{
   if(!dualSession)return;
   dualSession.appearances??={A:'standard',B:'standard'};
-  dualSession.appearances[source]=validAppearance(e.target.value);
+  dualSession.appearances[source]=allowedAppearance(e.target.value,source);
   render();dualSave();setStatus('デッキ'+source+'の外観を '+APPEARANCE_LABELS[dualSession.appearances[source]]+' に変更しました。');
  };
 }
