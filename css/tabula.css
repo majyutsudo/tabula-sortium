@@ -1295,3 +1295,16 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 }
 .gallery-tile:focus-visible>.gallery-simple-face{outline:3px solid #dbbf7c;outline-offset:3px}
 @media(max-width:500px){.gallery-lightbox-view>.gallery-simple-face{width:min(76vw,calc(62dvh * 2 / 3))}}
+
+/* v0.320 — redesigned simple face. All geometry is based on the original
+   tabletop face (90 × 135); the gallery scales this same face uniformly. */
+.front .simple-card{position:relative;box-sizing:border-box;width:100%;height:100%;flex:1 1 auto;min-height:0;font-family:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;color:#3b3025}
+.front .simple-major-number{position:absolute;left:3px;right:3px;top:12%;height:24%;display:flex;align-items:center;justify-content:center;font:700 23px/1 Georgia,serif;color:#56432b}
+.front .simple-major-number:empty{display:none}
+.front .simple-major-name{position:absolute;top:43%;bottom:24%;left:4px;right:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;font-weight:700;line-height:1.17;overflow-wrap:anywhere;text-align:center}
+.front .simple-major-name span{display:block;max-width:100%}
+.front .simple-major-flourish{position:absolute;bottom:10%;left:0;right:0;text-align:center;font:10px/1 Georgia,serif;color:#987c54}
+.front .simple-minor-symbol{position:absolute;top:13%;left:9%;right:9%;height:55%;display:flex;align-items:center;justify-content:center}
+.front .simple-minor-symbol svg{display:block;width:100%;height:100%;max-width:60px}
+.front .simple-minor-rule{position:absolute;top:73%;left:23%;right:23%;height:1px;background:#b5a27f}
+.front .simple-minor-rank{position:absolute;left:3px;right:3px;bottom:7%;height:18%;display:flex;align-items:center;justify-content:center;font:700 25px/1 Georgia,serif;color:#3b3025}
