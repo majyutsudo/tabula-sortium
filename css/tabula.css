@@ -1332,3 +1332,6 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
   font-size:clamp(16px,4.8vw,22px);
  }
 }
+
+/* Deck capability-controlled fields must stay hidden even if grid styles apply. */
+#pipBackgroundField[hidden]{display:none!important}
