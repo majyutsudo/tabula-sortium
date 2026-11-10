@@ -14,7 +14,13 @@ function playingCards(id=newBlueprintId(),name='プレイングカード（52枚
  const ranks=Array.from({length:13},(_,i)=>({id:'r'+(i+1),order:i+1,label:['A','2','3','4','5','6','7','8','9','10','J','Q','K'][i],name:['エース','2','3','4','5','6','7','8','9','10','ジャック','クイーン','キング'][i]}));
  return {id,name,suits,ranks,cards:[],nameSets:[{id:'primary',label:'基本名称'}],version:1};
 }
+// Two distinct physical cards sharing one approved artwork. A Joker belongs to
+// the built-in deck's catalogue, but not to any reduced historic rank preset.
 const builtInPlaying=playingCards('playing-cards','TABULA PLAYING CARDS');
+builtInPlaying.cards.push(
+ {id:'playing-joker-1',name:'ジョーカーⅠ',number:'JOKER',rankId:null,suitId:null,kind:'joker'},
+ {id:'playing-joker-2',name:'ジョーカーⅡ',number:'JOKER',rankId:null,suitId:null,kind:'joker'}
+);
 function blank(){
  return {id:newBlueprintId(),name:'新しいデッキ',suits:[],ranks:[],cards:[],nameSets:[{id:'primary',label:'基本名称'}],version:1};
 }
