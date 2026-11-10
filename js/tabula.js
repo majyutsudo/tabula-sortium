@@ -335,25 +335,24 @@ function installDesktopTableViews(){
 let customIds=cards.map(c=>c.id);
 let deckLibrary=TabulaDeckStore.read(localStorage,cards);
 function activeDeck(){return deckLibrary.find(d=>d.id===settings.deckId)||null}
-function activeBlueprint(){
- if(!settings.deckId?.startsWith('blueprint_')||!globalThis.TabulaDeckBlueprint)return null;
- return TabulaDeckBlueprint.load().find(d=>d.id===settings.deckId)||null;
-}
-function activeBlueprintNameSet(){
- const blueprint=activeBlueprint();
+const BUILTIN_PLAYING=TabulaDeckBlueprint.builtInPlaying;
+function activeBlueprint(){return blueprintFor(settings.deckId)}
+function activeBlueprintNameSet(blueprint=activeBlueprint()){
  if(!blueprint)return 'primary';
  const selected=settings.blueprintNameSets?.[blueprint.id]||'primary';
  return TabulaDeckBlueprint.nameSets(blueprint).some(s=>s.id===selected)?selected:'primary';
 }
 function workingCards(){
  const blueprint=activeBlueprint();
- if(!blueprint)return cards;
+ return blueprint?blueprintCards(blueprint):cards;
+}
+function blueprintCards(blueprint){
  const suits=new Map(blueprint.suits.map(s=>[s.id,s]));
  const ranks=new Map(blueprint.ranks.map(r=>[r.id,r]));
- const nameSet=activeBlueprintNameSet();
+ const nameSet=activeBlueprintNameSet(blueprint);
  return TabulaDeckBlueprint.generate(blueprint).map(c=>{
   const suit=suits.get(c.suitId),rank=ranks.get(c.rankId);
-  return {...c,name:TabulaDeckBlueprint.nameOf(c,nameSet),group:'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
+  return {...c,name:TabulaDeckBlueprint.nameOf(c,nameSet),group:TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
    number:rank?.order||0,rankLabel:c.number??rank?.label??'',cardColor:suit?.color||'black'};
  });
 }
@@ -363,7 +362,7 @@ function effectivePipBackground(){return activeDeck()?.pipBackground||settings.p
 function displayCard(c){if(activeBlueprint())return workingCard(c.id)||c;const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
 function tableCardName(c){if(activeBlueprint())return displayCard(c).name;const lang=settings.tableCardLanguage||'linked';return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
-function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+'（設計室）',d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
+function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+'（設計室）',d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
 const randomize=TabulaShuffle.randomize;function selectedCards(){
  if(activeBlueprint())return workingCards();
@@ -399,8 +398,8 @@ function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint()
  return simpleCardMarkup(c);
 }
 function blueprintCardMarkup(c){
- const pips=TabulaDeckBlueprint.pipFaceMarkup(c,c.symbol,c.cardColor,c.rankLabel);
- if(pips)return pips;
+ const artwork=TabulaDeckBlueprint.playingFaceMarkup(c,c.symbol,c.cardColor,c.rankLabel);
+ if(artwork)return artwork;
  return '<div class="blueprint-card-face '+(c.cardColor==='red'?'red':'')+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span><span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span></div>';
 }
 /* Shared by the actual table cards and the simple-deck gallery. */
@@ -997,11 +996,13 @@ function exportAllData(){
  }catch(e){setStatus('バックアップを作成できませんでした：'+e.message)}
 }
 const validateReading=v=>TabulaStorage.validateReading(v);
-function blueprintFor(deckId,library=TabulaDeckBlueprint.load()){
- return typeof deckId==='string'&&deckId.startsWith('blueprint_')?library.find(d=>d.id===deckId):null;
+function isBlueprintId(deckId){return deckId===BUILTIN_PLAYING.id||typeof deckId==='string'&&deckId.startsWith('blueprint_')}
+function blueprintFor(deckId,library){
+ if(deckId===BUILTIN_PLAYING.id)return BUILTIN_PLAYING;
+ return isBlueprintId(deckId)?(library??TabulaDeckBlueprint.load()).find(d=>d.id===deckId)||null:null;
 }
 function catalogueFor(deckId,library){
- if(typeof deckId!=='string'||!deckId.startsWith('blueprint_'))return cards;
+ if(!isBlueprintId(deckId))return cards;
  const blueprint=blueprintFor(deckId,library);
  return blueprint?TabulaDeckBlueprint.generate(blueprint):null;
 }
@@ -1310,7 +1311,7 @@ function updateStandaloneAvailability(){const noWash=settings.quickWashDirection
 function activateDeck(id,ask=true){
  if(dualSession){setStatus('二組モードのデッキ定義はこの試作では共通です。一組モードで変更してください。');refreshDeckPicker();return false}
  const deck=deckLibrary.find(d=>d.id===id)||null;
- const blueprint=globalThis.TabulaDeckBlueprint?.load().find(d=>d.id===id)||null;
+ const blueprint=blueprintFor(id);
  if(ask&&(state.placed.length||(state.removed||[]).length)&&!confirm('デッキを変更すると、現在の配札を片付けて新しい山札を作ります。続けますか？')){refreshDeckPicker();return false}
  settings.deckId=blueprint?.id||deck?.id||(id==='simple'?'simple':'builtin');
  settings.pool='all';
@@ -1323,7 +1324,7 @@ function activateDeck(id,ask=true){
  return true;
 }
 function openDeckEditor(createCopy=false){
- if(activeBlueprint()){window.location.href='deck-designer.html'+(createCopy?'':'?deck='+encodeURIComponent(settings.deckId));return;}
+ if(activeBlueprint()){window.location.href='deck-designer.html'+(createCopy||settings.deckId===BUILTIN_PLAYING.id?'':'?deck='+encodeURIComponent(settings.deckId));return;}
  const existing=createCopy?null:activeDeck();
  const source=activeDeck();
  const draft=existing?structuredClone(existing):source?structuredClone(source):TabulaDeckStore.fresh(cards,'deck_temp','新しいデッキ');
@@ -1599,11 +1600,11 @@ installPileInteraction(deck,'A');installPileInteraction(deckB,'B');
 window.addEventListener('resize',render);
 // Independent disclosure state; no navigation or form submission on toggle.
 if((Number(settings.dealSkipFirst)||0)||(settings.dealSkipSchedule||'').trim())$('dealRulesDetails').open=true;
-const HELP_CONTENT="\n<p class=\"mini\">TABULA SORTIUM v0.357 — 仮想の占術卓でカードを配り、複数の卓やデッキを使い分けるための操作説明です。画面の項目名に沿って、基本操作から順に説明します。</p>\n<h3>1. 最初の一回：デッキを選んで占う</h3>\n<p>「Ⅱ. 使用するカード」で使用デッキとカード群を選び、展開法を選択します。卓上の「新しい占い」を押すと、その山札を準備します。スプレッドは卓上の選択欄からも変更できます。「ディール」で自動配札するほか、山札をドラッグして好きな位置へ置けます。</p>\n<p>デッキ初期状態は「ランダム（標準）」または「新品（整列）」から選べます。シャッフル・カットは任意です。正逆位置を有効にすると、カードを用意する際に表裏の向きが決まります。</p>\n<h3>2. 左メニューの構成</h3>\n<p>「Ⅰ. 卓の管理」では卓の追加とモード選択、「Ⅱ. 使用するカード」ではデッキ・カード名・カード群・展開法、「Ⅲ. カード操作」ではウォッシュ・シャッフル・カットの設定、「Ⅳ. アルター設定」ではクロス色・キャンドル・演出、「Ⅴ. 保存・管理」ではJSONの入出力や初期化を扱います。各見出しは折りたたみ可能です。</p>\n<h3>3. 卓とデッキの違い</h3>\n<p><strong>卓</strong>は、カードを置く場所であり、配札、展開法、カードサイズ、クロスやアルターの状態を持ちます。<strong>デッキ（山札）</strong>は、実際にカードを引くためのカードの組です。同じカード名を収録していても、独立したデッキ同士なら別々のカードとして扱われます。卓を切り替えても、もう一方の卓の配札は維持されます。</p>\n<h3>4. 卓を追加する：3つの方式</h3>\n<p>「Ⅰ. 卓の管理」→「＋ 卓を追加」で、用途に合わせて次の方式を選びます。</p>\n<ul>\n<li><strong>山札を共有する卓：</strong>メイン卓と追加卓が一組の山札Aを共有します。すでに一方の卓にあるカードは、もう一方の卓では同時に引けません。</li>\n<li><strong>独立したデッキを持つ卓：</strong>メイン卓の山札Aとは別に、追加卓用の山札Bを作ります。追加時に標準・シンプル・登録デッキを選び、収録カードすべて／大アルカナ22枚／小アルカナ56枚／コートカード16枚などの構成を指定できます。登録デッキに含めた任意枚数のカード構成も使用できます。たとえばメイン卓78枚＋追加卓22枚が可能です。</li>\n<li><strong>ダブルデッキモード：</strong>専用の卓Ⅰ・卓Ⅱと山札A・Bを用意する方式です。操作対象の山札を選び、A＋Bを混合したり二組に分けたりできます。「メイン卓に戻る」では通常の卓に戻り、ダブルデッキの作業状態は保存されます。</li>\n</ul>\n<p>この3方式は同時には開始できません。別の方式へ移るには、現在の追加卓の片付けなどが必要です。誤って配札を失わないよう、片付ける前に確認が表示されます。通常の追加卓では、現在の卓に応じて操作する山札A／Bが自動的に切り替わります。</p>\n<h3>5. 卓の切り替え・名前・外観</h3>\n<p>上部の「卓」選択欄からメイン卓と追加卓を行き来できます。卓設定では名前の変更と、メイン／追加デッキそれぞれの外観・裏面色を設定できます。外観はStandard（標準）、Pocket（小型）、Worn（使い古し）から選択できます。クロス色は「Ⅳ. アルター設定」で変更します。卓の色とカードの裏面色は別の設定です。</p>\n<p>ダブルデッキモードでは、卓の選択に加えて「操作する山札」を選択できます。共有卓・独立卓では、デッキの取り違えを避けるため山札の操作対象を卓に合わせて管理します。</p>\n<h3>6. デッキの複製・編集</h3>\n<p>「Ⅱ. 使用するカード」→「デッキを複製・編集」から、TABULA TAROTを元にオリジナルデッキを登録できます。収録するカード、カード名・番号、言語、裏面色などを調整し、登録デッキとして選択できます。標準デッキそのもののカード画像を書き換える機能ではありません。登録したデッキは追加卓用にも選択できます。</p>\n<h3>7. スプレッドと自由配置</h3>\n<p>ワンカード、スリーカード、ケルト十字、生命の樹、ホロスコープ、フリースプレッドなどから選びます。「スプレッド図鑑」やスプレッド選択欄の情報ボタンから解説を確認できます。山札から卓へドラッグして自由に置くことも、空のポジションをタップしてカードを配ることもできます。基本の展開後に補助カードを追加することもできます。</p>\n<p>配札中に展開法を変更する場合、現在の卓のカードを回収する確認が表示されます。了承した場合、他の卓の配札は維持されます。「新しい占い」も現在操作している卓が対象です。</p>\n<h3>8. シャッフル・カット・配札・回収</h3>\n<p>卓上の「ウォッシュ」は「Ⅲ. カード操作」で指定した方向・巡回数を使います。「シャッフル」は選択した方式または登録済み手順を実行します。「カット」は山札を分割して積み直します。山札を整列したまま配札することもできます。「ディール」は選択したスプレッドに従ってカードを配ります。</p>\n<p>「回収」は現在の卓で配ったカードを山札へ戻す操作です。別の卓にあるカードはそのまま残ります。配札前の順番へ戻す「復元」と、次の占いを続けるためにカードを回収する操作は目的が異なります。</p>\n<h3>9. 表裏・移動・回転・札を見る</h3>\n<p>卓のカードをタップすると表裏が切り替わります。ドラッグで位置を変えられ、長押しで選択できます。カードの回転は配置角度だけを変更する操作で、占術上の正逆位置とは別に管理されます。札を拡大して意味を確認するには、卓上の虫眼鏡（カードを見る）を使います。ポジション名やカード名の表示も切り替えられます。</p>\n<h3>10. スプレッド手帖と占例</h3>\n<p>「手帖」では登録済みの展開法を呼び出し、編集・複製・削除できます。自作する際はフリースプレッドで位置を並べ、「現在の卓から作成」を利用します。登録されるのはカードそのものではなく位置の配置です。スプレッドの制作・編集は現状、単独の卓で行ってください。複数卓モード中は一時的に利用できません。</p>\n<p>「RESULTS」で卓の配札結果を確認できます。「結果を保存」で現在の占例を記録し、「記録一覧・比較」から過去の占例を参照できます。独立したデッキを持つ卓では、保存した占例を現在表示中のメイン卓または追加卓に復元できます。復元先の配札・山札・卓の設定が保存時の状態に戻り、もう一方の卓は維持されます。追加卓を片付けた後でも、通常のメイン卓に記録を復元できます。記録には保存時の札名が残ります。卓へ復元できるのは、使用中のデッキと記録の札構成が一致する場合です。復元した卓には使用中のデッキの札名と外観が反映されます。共有卓・ダブルデッキの占例は閲覧・比較・書き出しに対応しますが、直接復元はできません。</p>\n<h3>11. スマートフォンとPCでの表示操作</h3>\n<p><strong>スマホ：</strong>上部の卓選択で卓を切り替えます。追加卓の細かい設定は「卓の設定を開く」で展開できます。卓は2本指でピンチ拡大・縮小でき、拡大後は空いている部分を1本指で移動できます。「全景」で元の見え方へ戻せます。表示操作とスプレッド・虫眼鏡・手帖は上部のコンパクトなツールバーにまとめています。</p>\n<p><strong>PC：</strong>卓を見る距離を切り替え、拡大した卓の余白をドラッグして表示位置を調整できます。カード自体の大きさの調整と、卓全体の拡大表示は別の操作です。</p>\n<h3>12. JSONの書き出し・読み込み</h3>\n<p>「現在の占例を書き出す（JSON）」は占例一件を書き出します。「全データをバックアップ（JSON）」は、通常の卓の設定・状態、占例の記録、登録スプレッド、登録デッキ、シャッフル手順などをまとめて書き出します。占例JSONの読み込みは記録一覧への追加、全データJSONの読み込みは確認後の既存データ置き換えです。</p>\n<p><strong>複数卓についての注意：</strong>「全データをバックアップ（JSON）」には共有卓・独立卓・ダブルデッキの山札、配札、卓設定を含みます。読み込み後は保存時に開いていた卓を復元します。使用していなかったダブルデッキの作業状態も保持され、必要なときに再開できます。</p>\n<h3>13. 保存場所と注意</h3>\n<p>作業状態はブラウザー・端末内に保存され、別端末とは自動同期されません。プライベートブラウズやサイトデータ削除、ブラウザー側の保存制限で失われる可能性があります。大切な記録や登録デッキは定期的にJSONファイルとして保管してください。表示や操作が不安定な場合は、初期化をする前に保存内容を確認してください。</p>\n";
+const HELP_CONTENT="\n<p class=\"mini\">TABULA SORTIUM v0.358 — 仮想の占術卓でカードを配り、複数の卓やデッキを使い分けるための操作説明です。画面の項目名に沿って、基本操作から順に説明します。</p>\n<h3>1. 最初の一回：デッキを選んで占う</h3>\n<p>「Ⅱ. 使用するカード」で使用デッキとカード群を選び、展開法を選択します。卓上の「新しい占い」を押すと、その山札を準備します。スプレッドは卓上の選択欄からも変更できます。「ディール」で自動配札するほか、山札をドラッグして好きな位置へ置けます。</p>\n<p>デッキ初期状態は「ランダム（標準）」または「新品（整列）」から選べます。シャッフル・カットは任意です。正逆位置を有効にすると、カードを用意する際に表裏の向きが決まります。</p>\n<h3>2. 左メニューの構成</h3>\n<p>「Ⅰ. 卓の管理」では卓の追加とモード選択、「Ⅱ. 使用するカード」ではデッキ・カード名・カード群・展開法、「Ⅲ. カード操作」ではウォッシュ・シャッフル・カットの設定、「Ⅳ. アルター設定」ではクロス色・キャンドル・演出、「Ⅴ. 保存・管理」ではJSONの入出力や初期化を扱います。各見出しは折りたたみ可能です。</p>\n<h3>3. 卓とデッキの違い</h3>\n<p><strong>卓</strong>は、カードを置く場所であり、配札、展開法、カードサイズ、クロスやアルターの状態を持ちます。<strong>デッキ（山札）</strong>は、実際にカードを引くためのカードの組です。同じカード名を収録していても、独立したデッキ同士なら別々のカードとして扱われます。卓を切り替えても、もう一方の卓の配札は維持されます。</p>\n<h3>4. 卓を追加する：3つの方式</h3>\n<p>「Ⅰ. 卓の管理」→「＋ 卓を追加」で、用途に合わせて次の方式を選びます。</p>\n<ul>\n<li><strong>山札を共有する卓：</strong>メイン卓と追加卓が一組の山札Aを共有します。すでに一方の卓にあるカードは、もう一方の卓では同時に引けません。</li>\n<li><strong>独立したデッキを持つ卓：</strong>メイン卓の山札Aとは別に、追加卓用の山札Bを作ります。追加時に標準・シンプル・登録デッキを選び、収録カードすべて／大アルカナ22枚／小アルカナ56枚／コートカード16枚などの構成を指定できます。登録デッキに含めた任意枚数のカード構成も使用できます。たとえばメイン卓78枚＋追加卓22枚が可能です。</li>\n<li><strong>ダブルデッキモード：</strong>専用の卓Ⅰ・卓Ⅱと山札A・Bを用意する方式です。操作対象の山札を選び、A＋Bを混合したり二組に分けたりできます。「メイン卓に戻る」では通常の卓に戻り、ダブルデッキの作業状態は保存されます。</li>\n</ul>\n<p>この3方式は同時には開始できません。別の方式へ移るには、現在の追加卓の片付けなどが必要です。誤って配札を失わないよう、片付ける前に確認が表示されます。通常の追加卓では、現在の卓に応じて操作する山札A／Bが自動的に切り替わります。</p>\n<h3>5. 卓の切り替え・名前・外観</h3>\n<p>上部の「卓」選択欄からメイン卓と追加卓を行き来できます。卓設定では名前の変更と、メイン／追加デッキそれぞれの外観・裏面色を設定できます。外観はStandard（標準）、Pocket（小型）、Worn（使い古し）から選択できます。クロス色は「Ⅳ. アルター設定」で変更します。卓の色とカードの裏面色は別の設定です。</p>\n<p>ダブルデッキモードでは、卓の選択に加えて「操作する山札」を選択できます。共有卓・独立卓では、デッキの取り違えを避けるため山札の操作対象を卓に合わせて管理します。</p>\n<h3>6. デッキの複製・編集</h3>\n<p>「Ⅱ. 使用するカード」→「デッキを複製・編集」から、TABULA TAROTを元にオリジナルデッキを登録できます。収録するカード、カード名・番号、言語、裏面色などを調整し、登録デッキとして選択できます。標準デッキそのもののカード画像を書き換える機能ではありません。登録したデッキは追加卓用にも選択できます。</p>\n<h3>7. スプレッドと自由配置</h3>\n<p>ワンカード、スリーカード、ケルト十字、生命の樹、ホロスコープ、フリースプレッドなどから選びます。「スプレッド図鑑」やスプレッド選択欄の情報ボタンから解説を確認できます。山札から卓へドラッグして自由に置くことも、空のポジションをタップしてカードを配ることもできます。基本の展開後に補助カードを追加することもできます。</p>\n<p>配札中に展開法を変更する場合、現在の卓のカードを回収する確認が表示されます。了承した場合、他の卓の配札は維持されます。「新しい占い」も現在操作している卓が対象です。</p>\n<h3>8. シャッフル・カット・配札・回収</h3>\n<p>卓上の「ウォッシュ」は「Ⅲ. カード操作」で指定した方向・巡回数を使います。「シャッフル」は選択した方式または登録済み手順を実行します。「カット」は山札を分割して積み直します。山札を整列したまま配札することもできます。「ディール」は選択したスプレッドに従ってカードを配ります。</p>\n<p>「回収」は現在の卓で配ったカードを山札へ戻す操作です。別の卓にあるカードはそのまま残ります。配札前の順番へ戻す「復元」と、次の占いを続けるためにカードを回収する操作は目的が異なります。</p>\n<h3>9. 表裏・移動・回転・札を見る</h3>\n<p>卓のカードをタップすると表裏が切り替わります。ドラッグで位置を変えられ、長押しで選択できます。カードの回転は配置角度だけを変更する操作で、占術上の正逆位置とは別に管理されます。札を拡大して意味を確認するには、卓上の虫眼鏡（カードを見る）を使います。ポジション名やカード名の表示も切り替えられます。</p>\n<h3>10. スプレッド手帖と占例</h3>\n<p>「手帖」では登録済みの展開法を呼び出し、編集・複製・削除できます。自作する際はフリースプレッドで位置を並べ、「現在の卓から作成」を利用します。登録されるのはカードそのものではなく位置の配置です。スプレッドの制作・編集は現状、単独の卓で行ってください。複数卓モード中は一時的に利用できません。</p>\n<p>「RESULTS」で卓の配札結果を確認できます。「結果を保存」で現在の占例を記録し、「記録一覧・比較」から過去の占例を参照できます。独立したデッキを持つ卓では、保存した占例を現在表示中のメイン卓または追加卓に復元できます。復元先の配札・山札・卓の設定が保存時の状態に戻り、もう一方の卓は維持されます。追加卓を片付けた後でも、通常のメイン卓に記録を復元できます。記録には保存時の札名が残ります。卓へ復元できるのは、使用中のデッキと記録の札構成が一致する場合です。復元した卓には使用中のデッキの札名と外観が反映されます。共有卓・ダブルデッキの占例は閲覧・比較・書き出しに対応しますが、直接復元はできません。</p>\n<h3>11. スマートフォンとPCでの表示操作</h3>\n<p><strong>スマホ：</strong>上部の卓選択で卓を切り替えます。追加卓の細かい設定は「卓の設定を開く」で展開できます。卓は2本指でピンチ拡大・縮小でき、拡大後は空いている部分を1本指で移動できます。「全景」で元の見え方へ戻せます。表示操作とスプレッド・虫眼鏡・手帖は上部のコンパクトなツールバーにまとめています。</p>\n<p><strong>PC：</strong>卓を見る距離を切り替え、拡大した卓の余白をドラッグして表示位置を調整できます。カード自体の大きさの調整と、卓全体の拡大表示は別の操作です。</p>\n<h3>12. JSONの書き出し・読み込み</h3>\n<p>「現在の占例を書き出す（JSON）」は占例一件を書き出します。「全データをバックアップ（JSON）」は、通常の卓の設定・状態、占例の記録、登録スプレッド、登録デッキ、シャッフル手順などをまとめて書き出します。占例JSONの読み込みは記録一覧への追加、全データJSONの読み込みは確認後の既存データ置き換えです。</p>\n<p><strong>複数卓についての注意：</strong>「全データをバックアップ（JSON）」には共有卓・独立卓・ダブルデッキの山札、配札、卓設定を含みます。読み込み後は保存時に開いていた卓を復元します。使用していなかったダブルデッキの作業状態も保持され、必要なときに再開できます。</p>\n<h3>13. 保存場所と注意</h3>\n<p>作業状態はブラウザー・端末内に保存され、別端末とは自動同期されません。プライベートブラウズやサイトデータ削除、ブラウザー側の保存制限で失われる可能性があります。大切な記録や登録デッキは定期的にJSONファイルとして保管してください。表示や操作が不安定な場合は、初期化をする前に保存内容を確認してください。</p>\n";
 
 $('openHelp').addEventListener('click',()=>{modal('<div class="help-popup-content"><h2>操作説明・仕様</h2>'+HELP_CONTENT+'</div>')});
 
-const ABOUT_MARKUP='<div class="about-panel"><img class="about-icon" src="images/ui/icon-00.png" alt="TABULA SORTIUM アイコン"><h2>TABULA SORTIUM</h2><p class="about-subtitle">THE VIRTUAL DIVINATION TABLE</p><hr class="about-divider"><p class="about-credits">Created by <a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><p class="about-meta">Version 0.357</p><p class="about-meta">© 2026 Majyutsudo</p><button type="button" id="aboutLegal" class="about-license">License &amp; Disclaimer</button></div>';
+const ABOUT_MARKUP='<div class="about-panel"><img class="about-icon" src="images/ui/icon-00.png" alt="TABULA SORTIUM アイコン"><h2>TABULA SORTIUM</h2><p class="about-subtitle">THE VIRTUAL DIVINATION TABLE</p><hr class="about-divider"><p class="about-credits">Created by <a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><p class="about-meta">Version 0.358</p><p class="about-meta">© 2026 Majyutsudo</p><button type="button" id="aboutLegal" class="about-license">License &amp; Disclaimer</button></div>';
 function openAbout(){modal(ABOUT_MARKUP);$('aboutLegal').onclick=showAboutLegal}
 function showAboutLegal(){
  modal('<div class="about-legal"><h2>License &amp; Disclaimer</h2><p>© 2026 Majyutsudo. TABULA SORTIUM の名称、独自のプログラムおよび図像の権利については、それぞれの権利者に帰属します。この表示自体は、プログラムやカード画像の複製・改変・再配布を許可するライセンスではありません。</p><p>本アプリは占術の実践・研究・創作のための道具です。カードの解釈や占断の結果は、使用する方の判断によるものです。</p><p>お問い合わせ先：<a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><button type="button" id="aboutBack" class="about-back">Aboutに戻る</button></div>');
@@ -1637,9 +1638,24 @@ function setCardArtwork(target,source){
 }
 
 const GALLERY={visible:false,listed:[],focus:null,index:0,deckId:'builtin'};
+const tarotGalleryFilters=Array.from($('cardGalleryFilter').options,o=>[o.value,o.text]);
+const playingGalleryFilters=[['all','全52枚'],['pip','数札40枚'],['court','人物札12枚'],
+ ...BUILTIN_PLAYING.suits.map(s=>[s.id,s.name+'13枚'])];
+function galleryPlaying(){return GALLERY.deckId===BUILTIN_PLAYING.id}
+function galleryFilters(){
+ const picker=$('cardGalleryFilter'),filters=galleryPlaying()?playingGalleryFilters:tarotGalleryFilters;
+ const old=picker.value;
+ if(picker.options.length!==filters.length)picker.replaceChildren(...filters.map(([value,label])=>new Option(label,value)));
+ picker.value=filters.some(([value])=>value===old)?old:'all';
+ const gallery=$('cardGallery');
+ gallery.querySelector('.gallery-brand').textContent=galleryPlaying()?BUILTIN_PLAYING.name:'TABULA TAROT';
+ gallery.querySelector('.gallery-head small').textContent=galleryPlaying()?'THE CARDS · 52枚の図鑑':'THE CARDS · 78枚の図鑑';
+ gallery.querySelector('.face-preferences').style.display=galleryPlaying()?'none':'';
+}
 function galleryDeck(){return deckLibrary.find(d=>d.id===GALLERY.deckId)||null}
 function gallerySimple(){return GALLERY.deckId==='simple'||!!galleryDeck()&&galleryDeck().faceStyle==='simple'}
 function galleryCard(c){
+ if(galleryPlaying())return c;
  const d=galleryDeck();
  const language=d?.language||'original';
  return {...c,name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,language),
@@ -1647,7 +1663,7 @@ function galleryCard(c){
 }
 function galleryDeckOptions(){
  const picker=$('cardGalleryDeck'),previous=GALLERY.deckId;
- picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));
+ picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option('シンプル','simple'));
  for(const deck of deckLibrary)picker.add(new Option(deck.name,deck.id));
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
  picker.value=GALLERY.deckId;
@@ -1676,12 +1692,21 @@ function gallerySimpleArtwork(c){
  return frame;
 }
 function galleryArtwork(c){
+ if(galleryPlaying()){
+  const template=document.createElement('template');
+  template.innerHTML=blueprintCardMarkup(c);
+  const artwork=template.content.firstElementChild;
+  artwork.classList.add('card-art');
+  return artwork;
+ }
  if(gallerySimple())return gallerySimpleArtwork(c);
  const img=document.createElement('img');
  return setCardArtwork(img,finishedCardSource(c,false,'standard',galleryDeck()));
 }
 function gallerySelection(){
  const v=$('cardGalleryFilter').value,d=galleryDeck();
+ if(galleryPlaying())return blueprintCards(BUILTIN_PLAYING).filter(c=>
+  v==='all'||v==='pip'&&c.group==='minor'||v==='court'&&c.group==='court'||c.suit===v);
  return cards.filter(c=>{
   if(d&&!d.included.includes(c.id))return false;
   if(v==='all')return true;
@@ -1714,13 +1739,14 @@ function galleryShowLarge(index,origin){
  current.replaceWith(next);
  next.id='cardGalleryLarge';next.setAttribute('aria-label',name);
  if(next.tagName==='IMG')next.alt=name;
+ textToggle.hidden=galleryPlaying();textEdit.hidden=galleryPlaying();
  renderDetailText($('galleryCardText'),c);
  $('cardGalleryLabel').textContent=name+'  ·  '+(GALLERY.index+1)+' / '+all.length;
  $('cardGalleryLightbox').hidden=false;
 }
 function galleryRender(){
- GALLERY.listed=gallerySelection();
- const total=galleryDeck()?.included.length||78;
+ galleryFilters();GALLERY.listed=gallerySelection();
+ const total=galleryPlaying()?52:galleryDeck()?.included.length||78;
  $('cardGalleryCount').textContent=GALLERY.listed.length+' / '+total+'枚';
  const root=$('cardGalleryGrid');root.replaceChildren();
  for(const [i,c] of GALLERY.listed.entries()){
@@ -1738,7 +1764,7 @@ function galleryRender(){
 function galleryOpen(){
  if(GALLERY.visible)return;GALLERY.visible=true;
  // On first opening, use the active deck as a convenient initial selection.
- GALLERY.deckId=activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin');
+ GALLERY.deckId=settings.deckId===BUILTIN_PLAYING.id?BUILTIN_PLAYING.id:activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin');
  galleryDeckOptions();
  $('cardGallery').hidden=false;document.body.classList.add('gallery-open');
  $('cardGalleryLightbox').hidden=true;galleryRender();$('cardGalleryClose').focus();
@@ -2283,7 +2309,7 @@ function deckCapabilities(source=null){
   faceStyle=table?.savedSettings?.cardDesign||faceStyle;
  }
  const deck=deckLibrary.find(d=>d.id===deckId)||null;
- faceStyle=deck?.faceStyle||(deckId==='simple'||deckId?.startsWith('blueprint_')?'simple':faceStyle);
+ faceStyle=deck?.faceStyle||(deckId==='simple'||isBlueprintId(deckId)?'simple':faceStyle);
  const defaults=DECK_CAPABILITY_DEFAULTS[faceStyle]||DECK_CAPABILITY_DEFAULTS.standard;
  const overrides=deck?.capabilities||{};
  const appearances=Array.isArray(overrides.appearances)
@@ -2359,7 +2385,7 @@ function dualBackTone(deck){const tone=dualSession?.backColors?.[deck]||DUAL_BAC
 function isIndependentTables(){return !!dualSession&&dualSession.workspaceKind==='independent'}
 function independentDeckChoices(){
  const p=$('independentDeckSelect');if(!p)return;const old=p.value;
- p.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option('シンプル','simple'));
+ p.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option('シンプル','simple'));
  for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
  for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+'（設計室）',d.id));
  p.value=Array.from(p.options).some(o=>o.value===old)?old:'builtin';
