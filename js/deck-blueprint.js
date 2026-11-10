@@ -62,8 +62,9 @@ let courtSerial=0;
 function courtArtwork(card){
  const file='images/decks/tabula-playing-cards/courts/'+card.suitId+'-'+courtRanks.get(card.rankId)+'.webp';
  const clip='tabula-court-'+(++courtSerial);
- const half=`<g clip-path="url(#${clip})"><image href="${file}" x="4" y="5" width="112" height="93" preserveAspectRatio="none"/></g>`;
- return `<defs><clipPath id="${clip}"><path d="M0 0H120V80L0 100Z"/></clipPath></defs><g class="playing-card-court">${half}<g transform="rotate(180 60 90)">${half}</g></g>`;
+ // Extend the cloak to the diagonal and overlap the two clip edges to avoid an antialiasing gap.
+ const half=`<g clip-path="url(#${clip})"><image href="${file}" x="4" y="5" width="112" height="97" preserveAspectRatio="none"/></g>`;
+ return `<defs><clipPath id="${clip}"><path d="M0 0H120V80.45L0 100.45Z"/></clipPath></defs><g class="playing-card-court">${half}<g transform="rotate(180 60 90)">${half}</g></g>`;
 }
 function playingFaceMarkup(card,symbol,color,rankLabel=card.number){
  const count=pipRanks.get(card.rankId);
