@@ -70,3 +70,16 @@
 .playing-deck-editor-active #modalContent{display:flex;flex:1;min-height:0;overflow:hidden}
 #playingDeckEditorFrame{display:block;width:100%;height:100%;min-height:0;border:0;background:#17211c;border-radius:5px}
 @media(max-width:600px){.playing-deck-editor-active{padding:4px}.playing-deck-editor-active>.modal{width:100%;max-width:100%;height:calc(100dvh - 8px);max-height:calc(100dvh - 8px);padding:5px}}
+
+/* v0.389 — PLAYING CARD uses the exact same direct modal container as TAROT. */
+.playing-direct-editor-active .playing-editor-heading{font:600 14px sans-serif;margin:16px 0 9px;color:#e4d3ae}
+.playing-direct-editor-active .playing-editor-heading span{font-weight:normal;color:#bdb29b}
+.playing-direct-editor-active .playing-editor-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.playing-direct-editor-active .playing-editor-tabs button{font:12px sans-serif;padding:7px 9px}
+.playing-direct-editor-active .playing-editor-tabs button.selected{background:#78623d;border-color:#c5a46d}
+.playing-direct-editor-active .playing-editor-rows{display:grid;gap:6px}
+.playing-direct-editor-active .playing-editor-row{display:grid;grid-template-columns:24px 66px minmax(0,1fr);align-items:center;gap:7px}
+.playing-direct-editor-active .playing-editor-mark{text-align:center;font-size:20px;background:#f7f1e5;border-radius:3px}
+.playing-direct-editor-active .playing-editor-row input{width:100%;min-width:0;padding:7px 6px}
+.playing-direct-editor-active #playingEditorDelete[hidden]{display:none}
+@media(max-width:600px){.playing-direct-editor-active .playing-editor-row{grid-template-columns:22px 55px minmax(0,1fr);gap:5px}.playing-direct-editor-active .playing-editor-row input{font-size:16px}}

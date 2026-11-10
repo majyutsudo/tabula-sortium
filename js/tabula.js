@@ -1404,14 +1404,90 @@ window.addEventListener('message',e=>{
  if(e.data?.type==='tabula-playing-editor-saved'){refreshDeckPicker();setStatus('PLAYING CARDデッキを保存しました。デッキ一覧から選択できます。')}
  if(e.data?.type==='tabula-playing-editor-deleted'){refreshDeckPicker();setStatus('PLAYING CARDデッキを削除しました。')}
 });
+function openPlayingDeckEditor(source=BUILTIN_PLAYING,createCopy=false){
+ const API=TabulaDeckBlueprint,original=source.id===BUILTIN_PLAYING.id;
+ const existing=!createCopy&&!original&&source.playingFamily===true;
+ const clone=x=>JSON.parse(JSON.stringify(x));
+ const makeDraft=(from=BUILTIN_PLAYING)=>{
+  const copy=clone(from);
+  copy.id='blueprint_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  copy.playingFamily=true;
+  copy.name=from.id===BUILTIN_PLAYING.id?'新しいPLAYING CARD':from.name+'（複製）';
+  copy.nameSets=clone(API.nameSets(BUILTIN_PLAYING));
+  return copy;
+ };
+ let draft=existing?clone(source):makeDraft(createCopy?source:BUILTIN_PLAYING);
+ let saved=existing,dirty=false,language='primary',group='all';
+ const languages=API.nameSets(BUILTIN_PLAYING);
+ const getName=(card,lang=language)=>card.names?.[lang]||(lang==='primary'?card.name:API.playingName(card,lang));
+ const getOverride=(card)=>{
+  let item=draft.cards.find(c=>c.id===card.id);
+  if(!item){item=clone(card);draft.cards.push(item)}
+  return item;
+ };
+ const status=message=>{const el=$('playingEditorStatus');if(el)el.textContent=message};
+ const dirtyMark=()=>{dirty=true;status('未保存の変更があります。')};
+ function groups(){
+  return [['all','全54枚'],...BUILTIN_PLAYING.suits.map(s=>[s.id,s.symbol+' '+s.name]),['joker','ジョーカー']];
+ }
+ function renderCards(){
+  const target=$('playingEditorCards');if(!target)return;
+  const selected=API.generate(draft).filter(c=>group==='all'||group==='joker'&&c.kind==='joker'||c.suitId===group);
+  $('playingEditorCount').textContent='（'+selected.length+'枚）';
+  $('playingEditorTabs').replaceChildren(...groups().map(([id,label])=>{
+   const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.className=id===group?'selected':'';btn.onclick=()=>{group=id;renderCards()};return btn;
+  }));
+  target.replaceChildren(...selected.map(card=>{
+   const suit=draft.suits.find(s=>s.id===card.suitId),row=document.createElement('div');row.className='playing-editor-row';
+   const mark=document.createElement('span');mark.className='playing-editor-mark';mark.textContent=suit?.symbol||'✦';mark.style.color=API.inkColor(suit?.color||'black');
+   const number=document.createElement('input');number.type='text';number.value=card.number??'';number.maxLength=12;number.setAttribute('aria-label',card.id+' の表示番号');number.oninput=()=>{getOverride(card).number=number.value;dirtyMark()};
+   const name=document.createElement('input');name.type='text';name.maxLength=120;name.value=getName(card);name.setAttribute('aria-label',card.id+' のカード名称');
+   name.oninput=()=>{const edit=getOverride(card);if(language==='primary')edit.name=name.value;else{edit.names??={};edit.names[language]=name.value}dirtyMark()};
+   row.append(mark,number,name);return row;
+  }));
+ }
+ function render(){
+  $('playingEditorName').value=draft.name;
+  $('playingEditorLanguage').replaceChildren(...languages.map(v=>new Option(v.label,v.id)));
+  $('playingEditorLanguage').value=language;
+  $('playingEditorDelete').hidden=!saved;
+  renderCards();
+ }
+ let markup='<h2>PLAYING CARDS — デッキ編集</h2><p class="note">標準54枚体系を元にカード名称と表示を編集できます。標準デッキは変更しません。</p>';
+ markup+='<nav class="editor-nav tarot-editor-nav" aria-label="編集画面の移動"><button type="button" id="playingEditorBack">← TABULAへ戻る</button><a href="deck-designer.html" id="playingEditorDesigner">デッキ設計室</a></nav>';
+ markup+='<div class="tarot-edit-manage"><div class="tarot-edit-actions"><button type="button" id="playingEditorStandard">標準から新規作成</button><button type="button" id="playingEditorCopy">現在の内容を複製</button></div><p class="note">新規作成は標準54枚から、複製は現在の編集内容を引き継ぎます。</p></div>';
+ markup+='<label class="field">デッキ名<input id="playingEditorName" maxlength="80"></label>';
+ markup+='<label class="field">カード名の言語<select id="playingEditorLanguage"></select></label>';
+ markup+='<h3 class="playing-editor-heading">カードの名称と表示 <span id="playingEditorCount"></span></h3><div class="playing-editor-tabs" id="playingEditorTabs"></div>';
+ markup+='<div class="playing-editor-rows" id="playingEditorCards"></div>';
+ markup+='<p class="note">スート・ランクの構成と標準図像は維持されます。自由なカード体系はデッキ設計室で作れます。</p>';
+ markup+='<div class="row deck-editor-footer"><button type="button" id="playingEditorCancel">キャンセル</button><button type="button" id="playingEditorDelete">このデッキを削除</button><button type="button" class="primary" id="playingEditorSave">デッキを保存</button></div><p class="note" id="playingEditorStatus" role="status"></p>';
+ modal(markup);$('modalBg').classList.add('tarot-deck-editor-active','playing-direct-editor-active');
+ $('playingEditorBack').onclick=closeModal;$('playingEditorCancel').onclick=closeModal;
+ $('playingEditorDesigner').onclick=e=>{if(dirty&&!confirm('未保存の変更を破棄してデッキ設計室へ移動しますか？'))e.preventDefault()};
+ $('playingEditorName').oninput=e=>{draft.name=e.target.value;dirtyMark()};
+ $('playingEditorLanguage').onchange=e=>{language=e.target.value;renderCards()};
+ $('playingEditorStandard').onclick=()=>{if(dirty&&!confirm('未保存の変更を破棄して標準54枚から始めますか？'))return;draft=makeDraft();saved=false;dirty=false;group='all';render();status('標準54枚から新しいデッキを作成します。')};
+ $('playingEditorCopy').onclick=()=>{draft=makeDraft(draft);saved=false;dirty=true;render();status('現在の内容を複製しました。')};
+ $('playingEditorSave').onclick=()=>{
+  draft.name=$('playingEditorName').value.trim();
+  if(!draft.name){status('デッキ名を入力してください。');return}
+  try{
+   API.save(draft);saved=true;dirty=false;
+   refreshDeckPicker();render();status('「'+draft.name+'」を保存しました。デッキ一覧から選べます。');
+  }catch(err){status('保存できませんでした：'+err.message)}
+ };
+ $('playingEditorDelete').onclick=()=>{
+  if(!saved||!confirm('「'+draft.name+'」を削除しますか？'))return;
+  API.remove(draft.id);saved=false;draft=makeDraft();dirty=false;
+  refreshDeckPicker();render();status('保存済みデッキを削除しました。');
+ };
+ render();
+}
 function openDeckEditor(createCopy=false,fromStandard=false){
  if(activeBlueprint()){
  const b=activeBlueprint();
- if(isPlayingBlueprint(b)){
-  const src='playing-card-editor.html?embedded=1'+(createCopy||b.id===BUILTIN_PLAYING.id?'':'&deck='+encodeURIComponent(b.id));
-  modal('<iframe id="playingDeckEditorFrame" title="PLAYING CARDS — デッキ編集" src="'+src+'"></iframe>');
-  $('modalBg').classList.add('playing-deck-editor-active');return;
- }
+ if(isPlayingBlueprint(b)){openPlayingDeckEditor(b,createCopy);return;}
  window.location.href='deck-designer.html'+(createCopy?'':'?deck='+encodeURIComponent(b.id));return;
 }
  const existing=createCopy||fromStandard?null:activeDeck();
