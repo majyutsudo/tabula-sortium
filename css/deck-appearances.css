@@ -108,9 +108,9 @@ body:has(#surface) :is(
  [data-playing-back][data-appearance="worn"]
 ){
  background-image:url("../images/ui/worn-back-weathering.svg"),
-   var(--playing-worn-art),url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
- background-position:center,center,center!important;
- background-size:100% 100%,100% 100%,100% 100%!important;
+   var(--playing-worn-art,none)!important;
+ background-position:center,center!important;
+ background-size:100% 100%,100% 100%!important;
  background-repeat:no-repeat!important;
  filter:sepia(.25) saturate(.73) contrast(.94) brightness(.94);
 }

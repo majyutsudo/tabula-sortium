@@ -91,36 +91,40 @@ body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-
   border:0!important;
 }
 
-/* PLAYING CARD back palette. The historic SVG stays as a fail-safe base layer
-   until the high-resolution Victorian Arabesque artwork is deployed. */
+/* PLAYING CARD: seven independent Victorian Arabesque WebP backs.
+   While a different tone downloads, reveal its solid background only.
+   The retired geometric SVG is deliberately not used as a fallback. */
 body:has(#surface) [data-playing-back]{
  background-color:var(--playing-back-base)!important;
- background-image:url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
+ background-image:none!important;
  background-position:center!important;
  background-size:100% 100%!important;
  background-repeat:no-repeat!important;
  border:0!important;
 }
 body:has(#surface) [data-playing-back][data-playing-back-tone="sepia"]{
- background-image:url("../images/decks/tabula-playing-cards/backs/sepia.webp?v=0364"),url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
+ background-image:url("../images/decks/tabula-playing-cards/backs/sepia.webp?v=0364")!important;
 }
 body:has(#surface) [data-playing-back][data-playing-back-tone="green"]{
- background-image:url("../images/decks/tabula-playing-cards/backs/green.webp?v=0364"),url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
+ background-image:url("../images/decks/tabula-playing-cards/backs/green.webp?v=0364")!important;
 }
 body:has(#surface) [data-playing-back][data-playing-back-tone="burgundy"]{
- background-image:url("../images/decks/tabula-playing-cards/backs/burgundy.webp?v=0364"),url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
+ background-image:url("../images/decks/tabula-playing-cards/backs/burgundy.webp?v=0364")!important;
 }
 body:has(#surface) [data-playing-back][data-playing-back-tone="navy"]{
- background-image:url("../images/decks/tabula-playing-cards/backs/navy.webp?v=0364"),url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
+ background-image:url("../images/decks/tabula-playing-cards/backs/navy.webp?v=0364")!important;
 }
 body:has(#surface) [data-playing-back][data-playing-back-tone="purple"]{
- background-image:url("../images/decks/tabula-playing-cards/backs/purple.webp?v=0364"),url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
+ background-image:url("../images/decks/tabula-playing-cards/backs/purple.webp?v=0364")!important;
 }
 body:has(#surface) [data-playing-back][data-playing-back-tone="black"]{
- background-image:url("../images/decks/tabula-playing-cards/backs/black.webp?v=0364"),url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
+ background-image:url("../images/decks/tabula-playing-cards/backs/black.webp?v=0364")!important;
 }
 body:has(#surface) [data-playing-back][data-playing-back-tone="ivory"]{
- background-image:url("../images/decks/tabula-playing-cards/backs/ivory.webp?v=0364"),url("../images/decks/tabula-playing-cards/back.svg?v=0363")!important;
+ background-image:url("../images/decks/tabula-playing-cards/backs/ivory.webp?v=0364")!important;
 }
 body:has(#surface) [data-playing-back]::before,
-body:has(#surface) [data-playing-back]::after{content:none!important;display:none!important}
+body:has(#surface) [data-playing-back]::after{
+ content:none!important;
+ display:none!important;
+}
