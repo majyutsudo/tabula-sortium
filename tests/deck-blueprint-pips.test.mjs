@@ -76,3 +76,24 @@ test('the built-in deck preserves all 52 template IDs and ships twelve symmetric
     clips.add(clip);
   }
 });
+
+test('orientation dots are opt-in and appear once on faces that are rotationally symmetric',()=>{
+  const cards=deck.generate(faces);
+  const marked=[];
+  for(const card of cards){
+    const suit=suits.get(card.suitId);
+    assert.doesNotMatch(draw(card),/playing-card-orientation-mark/);
+    const face=deck.playingFaceMarkup(card,suit.symbol,suit.color,card.number,true);
+    const dots=[...face.matchAll(/class="playing-card-orientation-mark"/g)];
+    if(dots.length){
+      assert.equal(dots.length,1);
+      assert.match(face,/<circle class="playing-card-orientation-mark" cx="107" cy="13"/);
+      marked.push(card.id);
+    }
+  }
+  const expected=faces.suits.flatMap(suit=>{
+    const ranks=suit.id==='diamonds'?[1,2,3,4,5,6,8,9,10,11,12,13]:[2,4,6,8,10,11,12,13];
+    return ranks.map(rank=>'c_'+suit.id+'_r'+rank);
+  });
+  assert.deepEqual(marked,Array.from(expected));
+});

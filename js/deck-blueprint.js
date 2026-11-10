@@ -66,7 +66,14 @@ function courtArtwork(card){
  const half=`<g clip-path="url(#${clip})"><image href="${file}" x="4" y="5" width="112" height="97" preserveAspectRatio="none"/></g>`;
  return `<defs><clipPath id="${clip}"><path d="M0 0H120V80.45L0 100.45Z"/></clipPath></defs><g class="playing-card-court">${half}<g transform="rotate(180 60 90)">${half}</g></g>`;
 }
-function playingFaceMarkup(card,symbol,color,rankLabel=card.number){
+function needsOrientationMark(card,symbol){
+ if(!playingSuitIds.has(card.suitId))return false;
+ if(isPlayingCourt(card))return true;
+ const count=pipRanks.get(card.rankId);
+ // Seven is asymmetric in its placement, even with a symmetric suit glyph.
+ return !!count&&count!==7&&(count%2===0||symbol==='♦'||!suitPaths.has(symbol));
+}
+function playingFaceMarkup(card,symbol,color,rankLabel=card.number,showOrientationMark=false){
  const count=pipRanks.get(card.rankId);
  const court=isPlayingCourt(card);
  if(!playingSuitIds.has(card.suitId)||(!count&&!court))return '';
@@ -82,7 +89,9 @@ function playingFaceMarkup(card,symbol,color,rankLabel=card.number){
   const size=count===1?' scale(2)':'';
   return `<g class="playing-card-pip" transform="translate(${x} ${y})${orientation}${size}">${glyph}</g>`;
  }).join('');
- return `<svg class="playing-card-face-svg" viewBox="0 0 120 180" aria-hidden="true" focusable="false"><rect x=".75" y=".75" width="118.5" height="178.5" rx="6" fill="#faf5e9" stroke="#c6b79e" stroke-width="1.5"/><g fill="${ink}" text-anchor="middle" font-family="Georgia, serif">${design}<g class="playing-card-index">${index}</g><g class="playing-card-index" transform="rotate(180 60 90)">${index}</g></g></svg>`;
+ const mark=showOrientationMark&&needsOrientationMark(card,symbol)
+  ?'<circle class="playing-card-orientation-mark" cx="107" cy="13" r="2.35" fill="#514940"/>':'';
+ return `<svg class="playing-card-face-svg" viewBox="0 0 120 180" aria-hidden="true" focusable="false"><rect x=".75" y=".75" width="118.5" height="178.5" rx="6" fill="#faf5e9" stroke="#c6b79e" stroke-width="1.5"/><g fill="${ink}" text-anchor="middle" font-family="Georgia, serif">${design}${mark}<g class="playing-card-index">${index}</g><g class="playing-card-index" transform="rotate(180 60 90)">${index}</g></g></svg>`;
 }
 function nameSets(def){
  const raw=Array.isArray(def.nameSets)?def.nameSets:[];
@@ -108,5 +117,5 @@ function validate(def){
 function load(){try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}}
 function save(def){validate(def);const all=load().filter(item=>item.id!==def.id);all.push(clone(def));localStorage.setItem(KEY,JSON.stringify(all));return all}
 function remove(id){localStorage.setItem(KEY,JSON.stringify(load().filter(d=>d.id!==id)))}
-root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,nameSets,nameOf,validate,load,save,remove,clone});
+root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,needsOrientationMark,nameSets,nameOf,validate,load,save,remove,clone});
 })(globalThis);
