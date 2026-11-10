@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TABULA デッキ設計室（試作）</title>
+<style>
+:root{font-family:Georgia,"Hiragino Mincho ProN","Yu Mincho",serif;background:#191b20;color:#eae2d2}*{box-sizing:border-box}body{margin:0}header{padding:20px max(16px,calc((100vw - 1260px)/2));background:#24252a;border-bottom:1px solid #6c5942}h1{font-size:24px;letter-spacing:.1em;margin:6px 0}h2{font-size:17px;color:#e1ccab}p{line-height:1.6}small,.hint{color:#bbb3a9}a{color:#e4c69d}button,input,select{font:inherit}button{border:1px solid #867259;color:#f3e3cb;background:#353131;padding:8px 12px;border-radius:7px;cursor:pointer}button:hover{background:#584a3b}input,select{background:#222227;color:#f5eee3;border:1px solid #77664e;border-radius:5px;padding:8px;min-width:0}label{display:grid;gap:4px;font-size:13px}main{max-width:1280px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(280px,370px) 1fr;gap:20px}.panel{background:#24252a;border:1px solid #504b47;border-radius:10px;padding:16px;margin-bottom:14px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.line{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end;margin:7px 0}.line.rank{grid-template-columns:1fr 1fr auto}.line input{width:100%}.line button{padding:7px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:12px}.playing-card{aspect-ratio:2/3;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:#eee5d3;color:#29211b;border:5px double #8c7356;border-radius:6px;padding:7px 4px;text-align:center;min-width:0;box-shadow:0 3px 9px #0006}.playing-card.red{color:#9a2828}.playing-card .corner{align-self:flex-start;font:700 17px/1 Georgia}.playing-card .mark{font:32px/1 Georgia}.playing-card .card-title{font-size:11px;overflow-wrap:anywhere}.playing-card button{border:0;background:#0001;color:inherit;padding:3px;font:10px sans-serif}#cardCount{font-weight:bold;color:#f0d2a3}#status{min-height:22px;color:#d9bc88}.card-list-title{display:flex;align-items:center;justify-content:space-between;gap:8px}@media(max-width:800px){main{display:block;padding:10px}.panel{padding:12px}.cards{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}.playing-card .mark{font-size:25px}}
+</style></head><body>
+<header><a href="index.html">← TABULA の卓へ戻る</a><h1>デッキ設計室 <small>試作</small></h1><p>スートとランクからカードを生成し、一枚ずつ名称や番号を編集できます。まだ既存の占い卓には読み込めません。</p></header>
+<main><section>
+<div class="panel"><h2>デッキ</h2><label>保存済みデッキ<select id="saved"></select></label><div class="actions"><button id="newPlaying">トランプ52枚の雛形</button><button id="newBlank">白紙から作成</button></div><label>デッキ名<input id="deckName" maxlength="80"></label><div class="actions"><button id="save">保存</button><button id="export">JSONを書き出し</button><button id="delete">保存済みを削除</button></div><div id="status" role="status"></div><p class="hint">この段階の保存先は使用中のブラウザーです。別端末で使うにはJSONの書き出しをご利用ください。</p></div>
+<div class="panel"><h2>スート（独立定義）</h2><div id="suits"></div><button id="addSuit">＋ スート</button><p class="hint">スートIDはカードの識別に使用します。名称と記号は自由に変更できます。</p></div>
+<div class="panel"><h2>ランク（独立定義）</h2><div id="ranks"></div><button id="addRank">＋ ランク</button></div>
+<div class="panel"><h2>単独カード</h2><p class="hint">スート×ランクに当てはまらないカードも一枚ずつ追加できます。</p><button id="addCard">＋ カードを一枚追加</button></div>
+</section><section><div class="panel"><div class="card-list-title"><h2>カード一覧 <span id="cardCount"></span></h2><span class="hint">カードを押して個別編集</span></div><div id="cards" class="cards"></div></div></section></main>
+<script src="js/deck-blueprint.js?v=0350"></script>
+<script>
+(()=>{'use strict';
+const API=TabulaDeckBlueprint,$=id=>document.getElementById(id);
+let def=API.playingCards(),savedId=null,dirty=false;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function alertStatus(message){$('status').textContent=message}
+function setDirty(){dirty=true;alertStatus('未保存の変更があります')}
+function refreshSaved(){const list=API.load();$('saved').replaceChildren(new Option('現在のデッキ',''));for(const d of list)$('saved').add(new Option(d.name,d.id));$('saved').value=savedId||''}
+function render(){
+ $('deckName').value=def.name;refreshSaved();
+ for(const [kind,items] of [['suits',def.suits],['ranks',def.ranks]]){
+  $(kind).innerHTML=items.map((item,i)=>{
+   const columns=kind==='suits'?
+     '<label>名称<input data-kind="suits" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>記号<input data-kind="suits" data-i="'+i+'" data-prop="symbol" value="'+esc(item.symbol)+'"></label><label>色<select data-kind="suits" data-i="'+i+'" data-prop="color"><option value="black" '+(item.color==='black'?'selected':'')+'>黒</option><option value="red" '+(item.color==='red'?'selected':'')+'>赤</option></select></label>':
+     '<label>表示<input data-kind="ranks" data-i="'+i+'" data-prop="label" value="'+esc(item.label)+'"></label><label>名称<input data-kind="ranks" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label>';
+   return '<div class="line '+(kind==='ranks'?'rank':'')+'">'+columns+'<button data-remove="'+kind+'" data-i="'+i+'" title="削除">×</button></div>';
+  }).join('');
+ }
+ renderCards();
+}
+function renderCards(){
+ const cards=API.generate(def);$('cardCount').textContent=cards.length+'枚';
+ const suits=new Map(def.suits.map(s=>[s.id,s]));
+ $('cards').innerHTML=cards.map(c=>{
+  const suit=suits.get(c.suitId),symbol=suit?.symbol||'✦',color=suit?.color==='red'?'red':'';
+  return '<div class="playing-card '+color+'"><span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span><span class="card-title">'+esc(c.name)+'</span><button data-card="'+esc(c.id)+'">編集</button></div>';
+ }).join('');
+}
+function updateField(e){
+ const t=e.target,kind=t.dataset.kind,i=Number(t.dataset.i),key=t.dataset.prop;
+ if(!key||!def[kind]?.[i])return;
+ def[kind][i][key]=t.value;
+ setDirty();renderCards();
+}
+document.addEventListener('change',e=>{
+ if(e.target.dataset.prop)updateField(e);
+});
+document.addEventListener('click',e=>{
+ const remove=e.target.closest('[data-remove]');if(remove){const k=remove.dataset.remove,i=Number(remove.dataset.i);def[k].splice(i,1);setDirty();render();return}
+ const card=e.target.closest('[data-card]');if(!card)return;
+ const c=API.generate(def).find(v=>v.id===card.dataset.card);if(!c)return;
+ const name=prompt('カードの名前',c.name);if(name===null)return;
+ const number=prompt('カードの番号・表示',c.number);if(number===null)return;
+ const previous=def.cards.findIndex(v=>v.id===c.id);
+ const update={...c,name:name.trim()||c.name,number:number.trim(),names:{...(c.names||{})}};
+ if(previous<0)def.cards.push(update);else def.cards[previous]=update;
+ setDirty();renderCards();
+});
+$('deckName').addEventListener('change',e=>{def.name=e.target.value;setDirty()});
+$('newPlaying').onclick=()=>{if(dirty&&!confirm('未保存の変更を破棄しますか？'))return;def=API.playingCards();savedId=null;dirty=false;render();alertStatus('トランプ52枚の雛形を作成しました')};
+$('newBlank').onclick=()=>{if(dirty&&!confirm('未保存の変更を破棄しますか？'))return;def=API.blank();savedId=null;dirty=false;render();alertStatus('白紙のデッキを用意しました')};
+$('addSuit').onclick=()=>{const i=def.suits.length+1;def.suits.push({id:'s'+Date.now().toString(36),name:'新しいスート'+i,symbol:'✦',color:'black'});setDirty();render()};
+$('addRank').onclick=()=>{const i=def.ranks.length+1;def.ranks.push({id:'r'+Date.now().toString(36),order:i,label:String(i),name:String(i)});setDirty();render()};
+$('addCard').onclick=()=>{const i=def.cards.length+1;def.cards.push({id:'single_'+Date.now().toString(36)+'_'+i,suitId:null,rankId:null,number:String(i),name:'新しいカード',image:null,names:{}});setDirty();render()};
+$('save').onclick=()=>{def.name=$('deckName').value.trim();try{API.save(def);savedId=def.id;dirty=false;refreshSaved();alertStatus('デッキを保存しました（'+API.generate(def).length+'枚）')}catch(e){alertStatus(e.message)}};
+$('saved').onchange=e=>{const id=e.target.value;if(!id)return;if(dirty&&!confirm('未保存の変更を破棄しますか？')){refreshSaved();return}const found=API.load().find(d=>d.id===id);if(found){def=API.clone(found);savedId=id;dirty=false;render();alertStatus('保存済みデッキを読み込みました')}};
+$('delete').onclick=()=>{if(!savedId)return alertStatus('保存済みのデッキを選んでください');if(!confirm('このデッキを削除しますか？'))return;API.remove(savedId);savedId=null;def=API.blank();dirty=false;render();alertStatus('保存済みのデッキを削除しました')};
+$('export').onclick=()=>{def.name=$('deckName').value.trim();try{API.validate(def)}catch(e){return alertStatus(e.message)}const blob=new Blob([JSON.stringify(def,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='tabula-deck-'+def.id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);alertStatus('JSONを書き出しました')};
+render();
+})();
+</script></body></html>
