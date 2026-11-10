@@ -1412,7 +1412,8 @@ function openDeckEditor(createCopy=false,fromStandard=false){
  }
  
  const groups=[['major','大アルカナ'],...suitDefs.map(([id,name])=>[id,name])];
- let html='<h2>TABULA TAROT — デッキ編集</h2><p class="note">'+(existing?'保存済みデッキを編集しています。':source?'現在のデッキの内容を複製しています。':'標準78枚を元に新規作成しています。')+' 原版は変更せず、名称・番号・図像設定・収録カードを編集できます。番号の変更は相手のカードと自動交換されます。</p>';
+ let html='<div class="tarot-edit-header"><small>TABULA / TAROT EDITOR</small><h2>TABULA TAROT — デッキ編集</h2><p>原版の78枚体系を元に、デッキ名称・番号・カード図像などを編集します。標準デッキは変更しません。</p><button type="button" id="deckEditorBack" class="tarot-editor-back">← TABULAへ戻る</button></div>';
+ html+='<div class="tarot-edit-manage"><div class="tarot-edit-actions"><button type="button" id="deckEditorStandard">標準から新規作成</button><button type="button" id="deckEditorCopy">現在の内容を複製</button></div><p class="note">'+(existing?'保存済みデッキを編集中。':source?'選択中のデッキを元に複製を作成中。':'標準78枚から新しいデッキを作成中。')+' 新規作成は標準78枚から、複製は現在の設定を引き継ぎます。</p></div>';
  html+='<label class="field">デッキ名<input id="deckEditorName" maxlength="80" value="'+escapeHTML(draft.name)+'"></label>';
  html+='<label class="field">表面デザイン<select id="deckEditorFaceStyle"><option value="standard">TABULA TAROT</option><option value="simple">シンプル</option></select></label>';
  html+='<label class="field">カード名の言語<select id="deckEditorLanguage">'+TabulaDeckStore.LANGUAGES.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('')+'</select></label>';
@@ -1433,6 +1434,9 @@ function openDeckEditor(createCopy=false,fromStandard=false){
  html+='<div class="row deck-editor-footer"><button type="button" id="deckEditorCancel">キャンセル</button>'+(existing?'<button type="button" id="deckEditorDelete">このデッキを削除</button>':'')+'<button type="button" class="primary" id="deckEditorSave">デッキを保存</button></div>';
  modal(html);
  $('modalBg').classList.add('tarot-deck-editor-active');
+ $('deckEditorBack').onclick=closeModal;
+ $('deckEditorStandard').onclick=()=>{if(confirm('標準78枚から新規作成しますか？ 編集中の未保存の変更は破棄されます。'))openDeckEditor(true,true)};
+ $('deckEditorCopy').onclick=()=>{if(confirm('現在選択されているデッキを複製しますか？ 編集中の未保存の変更は破棄されます。'))openDeckEditor(true,false)};
  $('deckEditorFaceStyle').value=draft.faceStyle||'standard';
  $('deckEditorLanguage').value=draft.language||'original';
  $('deckEditorPip').value=draft.pipBackground;
@@ -1517,8 +1521,6 @@ $('pipBackground').addEventListener('change',e=>{
  setStatus('小アルカナの図像を切り替えました。');
 });
 $('deckLibrarySelect').addEventListener('change',e=>activateDeck(e.target.value));
-$('deckEditNew').addEventListener('click',()=>openDeckEditor(true));
-$('deckEditStandard').addEventListener('click',()=>openDeckEditor(true,true));
 $('deckEditCurrent').addEventListener('click',()=>openDeckEditor(false));
 function customModal(){
  const blueprint=activeBlueprint();

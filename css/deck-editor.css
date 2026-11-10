@@ -38,3 +38,15 @@
  .tarot-deck-editor-active .deck-editor-footer{bottom:-14px;display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 4px}
  .tarot-deck-editor-active .deck-editor-footer button{flex:1 1 auto;font-size:12px;padding:8px 4px}
 }
+
+/* v0.385 — Tarot editor shares the Playing Card editor's visual hierarchy. */
+.tarot-deck-editor-active .tarot-edit-header{background:#202a25;border-bottom:1px solid #79694c;padding:14px;margin:-2px -2px 16px}
+.tarot-deck-editor-active .tarot-edit-header small{display:block;font:11px sans-serif;letter-spacing:.22em;color:#c6b58f}
+.tarot-deck-editor-active .tarot-edit-header h2{font:600 21px Georgia,"Yu Mincho",serif;margin:8px 0}
+.tarot-deck-editor-active .tarot-edit-header p{font:12px/1.6 sans-serif;color:#c6c0ae;margin:6px 0 10px}
+.tarot-deck-editor-active .tarot-editor-back{font-size:12px;padding:7px 10px}
+.tarot-deck-editor-active .tarot-edit-manage{margin:0 0 16px}
+.tarot-deck-editor-active .tarot-edit-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tarot-deck-editor-active .tarot-edit-actions button{font-size:12px;padding:9px 5px;white-space:normal;line-height:1.4}
+.tarot-deck-editor-active .tarot-edit-manage .note{margin:9px 0 0;line-height:1.6}
+@media(max-width:600px){.tarot-deck-editor-active .tarot-edit-header{padding:12px;margin:0 0 13px}.tarot-deck-editor-active .tarot-edit-header h2{font-size:19px}.tarot-deck-editor-active .tarot-edit-actions{gap:6px}}
