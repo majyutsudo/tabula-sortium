@@ -1335,3 +1335,21 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 
 /* Deck capability-controlled fields must stay hidden even if grid styles apply. */
 #pipBackgroundField[hidden]{display:none!important}
+
+/* Independent deck blueprint placeholders: printed title, rank and suit glyph. */
+.front .blueprint-card-face{display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;height:100%;min-height:0;padding:6px 3px;box-sizing:border-box;color:#2c2823;overflow:hidden}
+.front .blueprint-card-face.red{color:#982d32}
+.front .blueprint-card-rank{align-self:flex-start;font:bold clamp(11px,1.8vw,21px)/1 Georgia,serif}
+.front .blueprint-card-symbol{font:clamp(22px,3.9vw,48px)/1 Georgia,serif}
+.front .blueprint-card-title{font:bold clamp(9px,1.25vw,13px)/1.2 Georgia,'Yu Mincho',serif;text-align:center;overflow-wrap:anywhere;max-width:100%}
+.blueprint-card-view{background:#eee1c3;border:6px double #766143;color:#2c2823;border-radius:7px;width:min(60vw,260px);height:auto;aspect-ratio:2/3;display:flex;padding:10px;box-sizing:border-box;box-shadow:0 6px 20px #0008}
+.blueprint-card-view .blueprint-card-face{display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;height:100%;color:#2c2823;padding:8px;box-sizing:border-box}
+.blueprint-card-view .blueprint-card-face.red{color:#982d32}
+.blueprint-card-view .blueprint-card-rank{align-self:flex-start;font:bold 27px Georgia,serif}
+.blueprint-card-view .blueprint-card-symbol{font:64px Georgia,serif}
+.blueprint-card-view .blueprint-card-title{font:bold 19px Georgia,'Yu Mincho',serif;text-align:center;overflow-wrap:anywhere}
+@media(max-width:780px){
+ .front .blueprint-card-rank{font-size:clamp(10px,3vw,15px)}
+ .front .blueprint-card-symbol{font-size:clamp(19px,6vw,30px)}
+ .front .blueprint-card-title{font-size:clamp(8px,2.6vw,11px)}
+}
