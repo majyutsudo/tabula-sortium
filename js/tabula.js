@@ -337,6 +337,7 @@ let deckLibrary=TabulaDeckStore.read(localStorage,cards);
 function activeDeck(){return deckLibrary.find(d=>d.id===settings.deckId)||null}
 const BUILTIN_PLAYING=TabulaDeckBlueprint.builtInPlaying;
 function activeBlueprint(){return blueprintFor(settings.deckId)}
+function isPlayingBlueprint(b){return !!b&&(b.id===BUILTIN_PLAYING.id||b.playingFamily===true)}
 function activeBlueprintNameSet(blueprint=activeBlueprint()){
  if(!blueprint)return 'primary';
  const selected=settings.blueprintNameSets?.[blueprint.id]||'primary';
@@ -352,7 +353,7 @@ function blueprintCards(blueprint){
  const nameSet=activeBlueprintNameSet(blueprint);
  return TabulaDeckBlueprint.generate(blueprint).map(c=>{
   const suit=suits.get(c.suitId),rank=ranks.get(c.rankId);
-  return {...c,name:blueprint.id===BUILTIN_PLAYING.id?TabulaDeckBlueprint.playingName(c,nameSet):TabulaDeckBlueprint.nameOf(c,nameSet),group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
+  return {...c,name:isPlayingBlueprint(blueprint)?(c.names?.[nameSet]||(nameSet==='primary'?c.name:TabulaDeckBlueprint.playingName(c,nameSet))):TabulaDeckBlueprint.nameOf(c,nameSet),group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
    number:rank?.order||0,rankLabel:c.number??rank?.label??'',cardColor:suit?.color||'black'};
  });
 }
@@ -362,7 +363,7 @@ function effectivePipBackground(){return activeDeck()?.pipBackground||settings.p
 function displayCard(c){if(activeBlueprint())return workingCard(c.id)||c;const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
 function tableCardName(c){const lang=settings.tableCardLanguage||'linked';if(activeBlueprint()){if(activeBlueprint().id===BUILTIN_PLAYING.id&&lang!=='linked')return TabulaDeckBlueprint.playingName(c,lang);return displayCard(c).name;}return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
-function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+'（設計室）',d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
+function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+(isPlayingBlueprint(d)?'（PLAYING CARD）':'（設計室）'),d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
 const randomize=TabulaShuffle.randomize;
 // French-suited historic packs. Each list identifies actual ranks, never an
@@ -379,7 +380,7 @@ function selectBlueprintCards(blueprint,pool,ids){
   const selected=new Set(ids);
   return available.filter(c=>selected.has(c.id));
  }
- const builtIn=blueprint.id===BUILTIN_PLAYING.id;
+ const builtIn=isPlayingBlueprint(blueprint);
  const ranks=builtIn?PLAYING_POOL_RANKS[pool]:null;
  if(ranks)return available.filter(c=>c.rankId&&ranks.includes(Number(c.rankId.slice(1))));
  if(builtIn&&pool==='fiftyTwo')return available.filter(c=>c.kind!=='joker');
@@ -397,7 +398,7 @@ function selectedCards(){
 // Existing subsets retain their relative positions in that full order.
 function orderedCardIds(mode,deckId=settings.deckId){
  const blueprint=blueprintFor(deckId);
- if(blueprint?.id===BUILTIN_PLAYING.id&&mode==='ordered'){
+ if(isPlayingBlueprint(blueprint)&&mode==='ordered'){
   const suits=[['spades',false],['diamonds',false],['clubs',true],['hearts',true]];
   return ['playing-joker-1','playing-joker-2',...suits.flatMap(([suit,reverse])=>{
    const ranks=Array.from({length:13},(_,i)=>i+1);
@@ -1362,7 +1363,7 @@ function closeModal(){$('modalBg').classList.remove('open','records-active','car
 function updateStandaloneAvailability(){const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash;w.title=noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}if(c){c.disabled=noCut;c.title=noCut?'カットは「なし」に設定されています':'山札をカット'}}function sync(){if(activeBlueprint())settings.cardDesign='simple';else if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';updateAppearanceControls();refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';const poolInput=$('pool');
  const blueprint=activeBlueprint();
  const poolOptions=blueprint
-  ?(blueprint.id===BUILTIN_PLAYING.id
+  ?(isPlayingBlueprint(blueprint)
     ?[['all','全54枚（ジョーカー2枚）'],['fiftyTwo','52枚（ジョーカーなし）'],
       ['russian36','36枚（6〜A）'],['piquet32','32枚（7〜A／ピケ）'],
       ['euchre24','24枚（9〜A）'],['latin40','40枚（A・2〜7・J/Q/K）'],
@@ -1374,7 +1375,7 @@ function updateStandaloneAvailability(){const noWash=settings.quickWashDirection
  // Keep the saved pool (including a custom subset) when refreshing the UI.
  if(!poolOptions.some(([id])=>id===settings.pool))settings.pool='all';
  poolInput.value=settings.pool;$('spread').value=settings.spread;syncSpreadShortcut();syncDealOrderField();const initialOrderSelect=$('initialOrder');
- const initialChoices=activeBlueprint()?.id===BUILTIN_PLAYING.id
+ const initialChoices=isPlayingBlueprint(activeBlueprint())
   ?[['random','ランダム（標準）'],['ordered','新品NDO'],['suitOrder','スート順（整列）']]
   :[['random','ランダム（標準）'],['ordered','新品（整列）']];
  if(initialOrderSelect.options.length!==initialChoices.length||[...initialOrderSelect.options].some((o,i)=>o.value!==initialChoices[i][0]||o.textContent!==initialChoices[i][1]))
@@ -1398,7 +1399,9 @@ function activateDeck(id,ask=true){
  return true;
 }
 function openDeckEditor(createCopy=false){
- if(activeBlueprint()){window.location.href='deck-designer.html'+(createCopy||settings.deckId===BUILTIN_PLAYING.id?'':'?deck='+encodeURIComponent(settings.deckId));return;}
+ if(activeBlueprint()){
+ const b=activeBlueprint();window.location.href=isPlayingBlueprint(b)?'playing-card-editor.html'+(createCopy||b.id===BUILTIN_PLAYING.id?'':'?deck='+encodeURIComponent(b.id)):'deck-designer.html'+(createCopy?'':'?deck='+encodeURIComponent(b.id));return;
+}
  const existing=createCopy?null:activeDeck();
  const source=activeDeck();
  const draft=existing?structuredClone(existing):source?structuredClone(source):TabulaDeckStore.fresh(cards,'deck_temp','新しいデッキ');
@@ -1746,21 +1749,21 @@ const GALLERY={visible:false,listed:[],focus:null,index:0,deckId:'builtin'};
 const tarotGalleryFilters=Array.from($('cardGalleryFilter').options,o=>[o.value,o.text]);
 const playingGalleryFilters=[['all','全54枚'],['pip','数札40枚'],['court','人物札12枚'],
  ['joker','ジョーカー2枚'],...BUILTIN_PLAYING.suits.map(s=>[s.id,s.name+'13枚'])];
-function galleryPlaying(){return GALLERY.deckId===BUILTIN_PLAYING.id}
+function galleryPlaying(){return isPlayingBlueprint(blueprintFor(GALLERY.deckId))}
 function galleryFilters(){
  const picker=$('cardGalleryFilter'),filters=galleryPlaying()?playingGalleryFilters:tarotGalleryFilters;
  const old=picker.value;
  if(picker.options.length!==filters.length)picker.replaceChildren(...filters.map(([value,label])=>new Option(label,value)));
  picker.value=filters.some(([value])=>value===old)?old:'all';
  const gallery=$('cardGallery');
- gallery.querySelector('.gallery-brand').textContent=galleryPlaying()?BUILTIN_PLAYING.name:'TABULA TAROT';
+ gallery.querySelector('.gallery-brand').textContent=galleryPlaying()?blueprintFor(GALLERY.deckId)?.name:'TABULA TAROT';
  gallery.querySelector('.gallery-head small').textContent=galleryPlaying()?'THE CARDS · 54枚の図鑑':'THE CARDS · 78枚の図鑑';
  gallery.querySelector('.face-preferences').style.display=galleryPlaying()?'none':'';
 }
 function galleryDeck(){return deckLibrary.find(d=>d.id===GALLERY.deckId)||null}
 function gallerySimple(){return GALLERY.deckId==='simple'||!!galleryDeck()&&galleryDeck().faceStyle==='simple'}
 function galleryCard(c){
- if(galleryPlaying())return {...c,name:TabulaDeckBlueprint.playingName(c,activeBlueprintNameSet(BUILTIN_PLAYING))};
+ if(galleryPlaying()){const b=blueprintFor(GALLERY.deckId),set=activeBlueprintNameSet(b);return {...c,name:c.names?.[set]||(set==='primary'?c.name:TabulaDeckBlueprint.playingName(c,set))};}
  const d=galleryDeck();
  const language=d?.language||'original';
  return {...c,name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,language),
@@ -1770,6 +1773,7 @@ function galleryDeckOptions(){
  const picker=$('cardGalleryDeck'),previous=GALLERY.deckId;
  picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option('シンプル','simple'));
  for(const deck of deckLibrary)picker.add(new Option(deck.name,deck.id));
+ for(const deck of TabulaDeckBlueprint.load().filter(isPlayingBlueprint))picker.add(new Option(deck.name,deck.id));
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
  picker.value=GALLERY.deckId;
 }
@@ -1810,7 +1814,7 @@ function galleryArtwork(c){
 }
 function gallerySelection(){
  const v=$('cardGalleryFilter').value,d=galleryDeck();
- if(galleryPlaying())return blueprintCards(BUILTIN_PLAYING).filter(c=>
+ if(galleryPlaying())return TabulaDeckBlueprint.generate(blueprintFor(GALLERY.deckId)).map(c=>({...c,group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId,symbol:blueprintFor(GALLERY.deckId).suits.find(s=>s.id===c.suitId)?.symbol||'✦',cardColor:blueprintFor(GALLERY.deckId).suits.find(s=>s.id===c.suitId)?.color||'black',rankLabel:c.number})).filter(c=>
   v==='all'||v==='pip'&&c.group==='minor'||v==='court'&&c.group==='court'||v==='joker'&&c.kind==='joker'||c.suit===v);
  return cards.filter(c=>{
   if(d&&!d.included.includes(c.id))return false;
@@ -1869,7 +1873,7 @@ function galleryRender(){
 function galleryOpen(){
  if(GALLERY.visible)return;GALLERY.visible=true;
  // On first opening, use the active deck as a convenient initial selection.
- GALLERY.deckId=settings.deckId===BUILTIN_PLAYING.id?BUILTIN_PLAYING.id:activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin');
+ GALLERY.deckId=isPlayingBlueprint(activeBlueprint())?settings.deckId:activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin');
  galleryDeckOptions();
  $('cardGallery').hidden=false;document.body.classList.add('gallery-open');
  $('cardGalleryLightbox').hidden=true;galleryRender();$('cardGalleryClose').focus();
@@ -2426,7 +2430,7 @@ function independentTableForSource(source){
  return dualSession.tables[table];
 }
 function usesPlayingBack(source=null){
- return (independentTableForSource(source)?.deckId||settings.deckId)===BUILTIN_PLAYING.id;
+ return isPlayingBlueprint(blueprintFor(independentTableForSource(source)?.deckId||settings.deckId));
 }
 function deckCapabilities(source=null){
  const table=independentTableForSource(source);
@@ -2477,7 +2481,7 @@ function updateAppearanceControls(){
  }
  for(const id of ['cardLanguageField','tableCardLanguageField']){
   const field=$(id);if(!field)continue;
-  const visible=!blueprint||(id==='tableCardLanguageField'&&blueprint.id===BUILTIN_PLAYING.id);
+  const visible=!blueprint||(id==='tableCardLanguageField'&&isPlayingBlueprint(blueprint));
   field.hidden=!visible;field.style.display=visible?'':'none';
  }
  const orientationField=$('playingOrientationMarkField');
@@ -2522,7 +2526,7 @@ function independentDeckChoices(){
  const p=$('independentDeckSelect');if(!p)return;const old=p.value;
  p.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option('シンプル','simple'));
  for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
- for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+'（設計室）',d.id));
+ for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+(isPlayingBlueprint(d)?'（PLAYING CARD）':'（設計室）'),d.id));
  p.value=Array.from(p.options).some(o=>o.value===old)?old:'builtin';
  updateIndependentPool();
 }
