@@ -54,12 +54,16 @@ test('the face uses the stable rank and suit IDs while labels and symbols stay e
   assert.equal(deck.playingFaceMarkup({...card,rankId:'custom'},'♠','black'),'');
 });
 
-test('the built-in deck preserves all 52 template IDs and ships twelve symmetric court faces',()=>{
+test('the built-in deck adds two distinct Jokers to the unchanged 52 standard cards',()=>{
   const builtin=deck.builtInPlaying;
   assert.equal(builtin.id,'playing-cards');
   assert.equal(builtin.name,'TABULA PLAYING CARDS');
   const cards=deck.generate(builtin);
-  assert.deepEqual(cards.map(c=>c.id),deck.generate(faces).map(c=>c.id));
+  const standard=deck.generate(faces);
+  assert.deepEqual(cards.slice(0,52).map(c=>c.id),standard.map(c=>c.id));
+  assert.equal(cards.length,54);
+  assert.deepEqual(cards.slice(52).map(c=>c.id),['playing-joker-1','playing-joker-2']);
+  assert.ok(cards.slice(52).every(c=>c.kind==='joker'&&c.rankId===null&&c.suitId===null));
   const courts=cards.filter(deck.isPlayingCourt);
   assert.equal(courts.length,12);
   const clips=new Set();
