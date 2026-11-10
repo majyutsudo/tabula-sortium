@@ -358,6 +358,24 @@ function workingCards(){
  });
 }
 function workingCard(id){return workingCards().find(c=>c.id===id)||null}
+let blueprintArtDeck=null,blueprintArtUrls=new Map(),blueprintArtNonce=0;
+async function loadBlueprintArt(){
+ const blueprint=activeBlueprint(),id=blueprint?.id||null,nonce=++blueprintArtNonce;
+ blueprintArtDeck=id;
+ for(const url of blueprintArtUrls.values())URL.revokeObjectURL(url);
+ blueprintArtUrls=new Map();
+ if(!id||!globalThis.TabulaDeckArt)return;
+ try{
+  const blobs=await TabulaDeckArt.loadDeck(id,TabulaDeckBlueprint.generate(blueprint).map(c=>c.id));
+  if(nonce!==blueprintArtNonce)return;
+  for(const [cardId,blob] of blobs)blueprintArtUrls.set(cardId,URL.createObjectURL(blob));
+  render();
+ }catch(error){if(nonce===blueprintArtNonce)setStatus('画像を読み込めません：'+error.message)}
+}
+function refreshBlueprintArt(){
+ const id=activeBlueprint()?.id||null;
+ if(id!==blueprintArtDeck)loadBlueprintArt();
+}
 function effectiveCardLanguage(){return activeDeck()?.language||settings.cardLanguage||'original'}
 function effectivePipBackground(){return activeDeck()?.pipBackground||settings.pipBackground||'landscape'}
 function displayCard(c){if(activeBlueprint())return workingCard(c.id)||c;const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
@@ -399,6 +417,8 @@ function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint()
  return simpleCardMarkup(c);
 }
 function blueprintCardMarkup(c){
+ const imageUrl=blueprintArtUrls.get(c.id);
+ if(imageUrl)return '<img class="blueprint-card-image" alt="" src="'+escapeHTML(imageUrl)+'">';
  return '<div class="blueprint-card-face '+(c.cardColor==='red'?'red':'')+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span><span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span></div>';
 }
 /* Shared by the actual table cards and the simple-deck gallery. */
@@ -2320,17 +2340,19 @@ function wearVariant(card){
 }
 function updateAppearanceControls(){
  const blueprint=activeBlueprint();
+ refreshBlueprintArt();
  const nameSetField=$('blueprintNameSetField'),nameSetInput=$('blueprintNameSet');
  if(nameSetField&&nameSetInput){
   const sets=blueprint?TabulaDeckBlueprint.nameSets(blueprint):[];
   nameSetField.hidden=sets.length<2;
+  nameSetField.style.display=sets.length<2?'none':'';
   if(sets.length>=2){
    nameSetInput.replaceChildren(...sets.map(s=>new Option(s.label,s.id)));
    nameSetInput.value=activeBlueprintNameSet();
   }
  }
  for(const id of ['cardLanguageField','tableCardLanguageField']){
-  const field=$(id);if(field)field.hidden=!!blueprint;
+  const field=$(id);if(field){field.hidden=!!blueprint;field.style.display=blueprint?'none':'';}
  }
  const activeSource=dualSession?dualSession.activePile:null;
  const caps=deckCapabilities(activeSource);
@@ -2340,7 +2362,7 @@ function updateAppearanceControls(){
   pipField.style.display=caps.pipBackground?'':'none';
  }
  const backField=$('cardBackColorField');
- if(backField)backField.hidden=!caps.backColor;
+ if(backField){backField.hidden=!caps.backColor;backField.style.display=caps.backColor?'':'none';}
  const field=$('deckAppearance');
  if(field){
   const desired=allowedAppearance(settings.deckAppearance,activeSource);
