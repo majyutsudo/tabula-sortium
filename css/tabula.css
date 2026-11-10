@@ -1069,6 +1069,8 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .table-select-with-color{display:flex;align-items:center;gap:8px;min-width:0}
 .table-select-with-color select{flex:1;min-width:0}
 .dual-deck-fields{display:grid;gap:7px;min-width:0;padding-top:9px;border-top:1px solid rgba(189,163,116,.26)}
+/* The pile selector already has a bottom divider. Avoid a second line above deck A. */
+.dual-deck-fields:first-child{border-top:0;padding-top:0}
 .dual-deck-fields strong{font-size:12px;color:#dcc89f;font-weight:600}
 .dual-table-identity{display:none!important}
 @media(max-width:780px){.dual-table-setup,.dual-deck-settings{width:100%}.dual-table-setup label,.dual-deck-fields label{grid-template-columns:64px minmax(0,1fr)}}
