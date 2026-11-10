@@ -1322,7 +1322,7 @@ function activateDeck(id,ask=true){
  return true;
 }
 function openDeckEditor(createCopy=false){
- if(activeBlueprint()){setStatus('独立デッキの編集はデッキ設計室で行ってください。');window.location.href='deck-designer.html';return;}
+ if(activeBlueprint()){window.location.href='deck-designer.html?deck='+encodeURIComponent(settings.deckId);return;}
  const existing=createCopy?null:activeDeck();
  const source=activeDeck();
  const draft=existing?structuredClone(existing):source?structuredClone(source):TabulaDeckStore.fresh(cards,'deck_temp','新しいデッキ');
@@ -2025,7 +2025,7 @@ function openTableCard(index){
  const update=()=>{
   const appearance=appearanceForCard(p);
   if(activeBlueprint()){
-   const frame=$('tableCardArtFrame');frame.replaceChildren();
+   const frame=$('tableCardArtFrame');$('tableCardLarge').hidden=true;
    const visual=document.createElement('div');visual.className='blueprint-card-view';visual.innerHTML=blueprintCardMarkup(displayCard(c));
    visual.style.transform=p.reversed?'rotate(180deg)':'';frame.append(visual);
    const detail=$('tableCardText');detail.hidden=true;return;
