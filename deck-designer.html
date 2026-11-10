@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TABULA デッキ設計室（試作）</title>
 <style>
-:root{font-family:Georgia,"Hiragino Mincho ProN","Yu Mincho",serif;background:#191b20;color:#eae2d2}*{box-sizing:border-box}body{margin:0}header{padding:20px max(16px,calc((100vw - 1260px)/2));background:#24252a;border-bottom:1px solid #6c5942}h1{font-size:24px;letter-spacing:.1em;margin:6px 0}h2{font-size:17px;color:#e1ccab}p{line-height:1.6}small,.hint{color:#bbb3a9}a{color:#e4c69d}button,input,select{font:inherit}button{border:1px solid #867259;color:#f3e3cb;background:#353131;padding:8px 12px;border-radius:7px;cursor:pointer}button:hover{background:#584a3b}input,select{background:#222227;color:#f5eee3;border:1px solid #77664e;border-radius:5px;padding:8px;min-width:0}label{display:grid;gap:4px;font-size:13px}main{max-width:1280px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(280px,370px) 1fr;gap:20px}.panel{background:#24252a;border:1px solid #504b47;border-radius:10px;padding:16px;margin-bottom:14px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.line{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end;margin:7px 0}.line.rank{grid-template-columns:1fr 1fr auto}.line input{width:100%}.line button{padding:7px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:12px}.playing-card{aspect-ratio:2/3;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:#eee5d3;color:#29211b;border:5px double #8c7356;border-radius:6px;padding:7px 4px;text-align:center;min-width:0;box-shadow:0 3px 9px #0006}.playing-card.red{color:#9a2828}.playing-card .corner{align-self:flex-start;font:700 17px/1 Georgia}.playing-card .mark{font:32px/1 Georgia}.playing-card .card-title{font-size:11px;overflow-wrap:anywhere}.playing-card button{border:0;background:#0001;color:inherit;padding:3px;font:10px sans-serif}.playing-card .preview-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#eee5d3}.playing-card{position:relative}.playing-card .card-buttons{display:flex;flex-direction:column;gap:3px;z-index:2;position:absolute;right:2px;bottom:2px}.playing-card .card-buttons button{background:#eee5d3dd;border-radius:3px}.playing-card .card-title{z-index:1}.image-note{color:#c8bda9;font-size:12px}#cardCount{font-weight:bold;color:#f0d2a3}#status{min-height:22px;color:#d9bc88}.card-list-title{display:flex;align-items:center;justify-content:space-between;gap:8px}@media(max-width:800px){main{display:block;padding:10px}.panel{padding:12px}.cards{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}.playing-card .mark{font-size:25px}}
+:root{font-family:Georgia,"Hiragino Mincho ProN","Yu Mincho",serif;background:#191b20;color:#eae2d2}*{box-sizing:border-box}body{margin:0}header{padding:20px max(16px,calc((100vw - 1260px)/2));background:#24252a;border-bottom:1px solid #6c5942}h1{font-size:24px;letter-spacing:.1em;margin:6px 0}h2{font-size:17px;color:#e1ccab}p{line-height:1.6}small,.hint{color:#bbb3a9}a{color:#e4c69d}button,input,select{font:inherit}button{border:1px solid #867259;color:#f3e3cb;background:#353131;padding:8px 12px;border-radius:7px;cursor:pointer}button:hover{background:#584a3b}input,select{background:#222227;color:#f5eee3;border:1px solid #77664e;border-radius:5px;padding:8px;min-width:0}label{display:grid;gap:4px;font-size:13px}main{max-width:1280px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(280px,370px) 1fr;gap:20px}.panel{background:#24252a;border:1px solid #504b47;border-radius:10px;padding:16px;margin-bottom:14px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.line{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end;margin:7px 0}.line.rank{grid-template-columns:1fr 1fr auto}.line input{width:100%}.line button{padding:7px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:12px}.playing-card{aspect-ratio:2/3;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:#eee5d3;color:#29211b;border:5px double #8c7356;border-radius:6px;padding:7px 4px;text-align:center;min-width:0;box-shadow:0 3px 9px #0006}.playing-card.red{color:#9a2828}.playing-card .corner{align-self:flex-start;font:700 17px/1 Georgia}.playing-card .mark{font:32px/1 Georgia}.playing-card .card-title{font-size:11px;overflow-wrap:anywhere}.playing-card button{border:0;background:#0001;color:inherit;padding:3px;font:10px sans-serif}#cardCount{font-weight:bold;color:#f0d2a3}#status{min-height:22px;color:#d9bc88}.card-list-title{display:flex;align-items:center;justify-content:space-between;gap:8px}@media(max-width:800px){main{display:block;padding:10px}.panel{padding:12px}.cards{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}.playing-card .mark{font-size:25px}}
 </style></head><body>
 <header><a href="index.html">← TABULA の卓へ戻る</a><h1>デッキ設計室 <small>試作</small></h1><p>スートとランクからカードを生成し、一枚ずつ名称や番号を編集できます。保存後にTABULAの卓へ戻り、「使用デッキ」から選ぶと配札できます。</p></header>
 <main><section>
@@ -11,12 +11,12 @@
 <div class="panel"><h2>スート（独立定義）</h2><div id="suits"></div><button id="addSuit">＋ スート</button><p class="hint">スートIDはカードの識別に使用します。名称と記号は自由に変更できます。</p></div>
 <div class="panel"><h2>ランク（独立定義）</h2><div id="ranks"></div><button id="addRank">＋ ランク</button></div>
 <div class="panel"><h2>単独カード</h2><p class="hint">スート×ランクに当てはまらないカードも一枚ずつ追加できます。</p><button id="addCard">＋ カードを一枚追加</button></div>
-</section><section><div class="panel"><p class="image-note">カードの「画像」から画像を一枚ずつ登録できます。画像はこのブラウザー内の専用保存庫に保存されます。JSON書き出しには画像が含まれません。</p><input id="cardImageInput" type="file" accept="image/*" hidden><div class="card-list-title"><h2>カード一覧 <span id="cardCount"></span></h2><span class="hint">カードを押して個別編集</span></div><div id="cards" class="cards"></div></div></section></main>
-<script src="js/deck-blueprint.js?v=0354"></script><script src="js/deck-art.js?v=0354"></script>
+</section><section><div class="panel"><div class="card-list-title"><h2>カード一覧 <span id="cardCount"></span></h2><span class="hint">カードを押して個別編集</span></div><div id="cards" class="cards"></div></div></section></main>
+<script src="js/deck-blueprint.js?v=0355"></script>
 <script>
 (()=>{'use strict';
 const API=TabulaDeckBlueprint,$=id=>document.getElementById(id);
-let def=API.playingCards(),savedId=null,dirty=false,activeSet='primary',pendingImageCard=null,previewUrls=[];
+let def=API.playingCards(),savedId=null,dirty=false,activeSet='primary';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function alertStatus(message){$('status').textContent=message}
 function setDirty(){dirty=true;alertStatus('未保存の変更があります')}
@@ -36,32 +36,13 @@ function render(){
  }
  renderCards();
 }
-function releasePreviews(){for(const url of previewUrls)URL.revokeObjectURL(url);previewUrls=[]}
-async function showArtPreviews(){
- const deckId=def.id,tiles=[...$('cards').querySelectorAll('[data-image-card]')];
- let blobs;
- try{blobs=await TabulaDeckArt.loadDeck(deckId,tiles.map(tile=>tile.dataset.imageCard))}
- catch(e){alertStatus('画像を読み込めません：'+e.message);return}
- for(const tile of tiles){
-  const id=tile.dataset.imageCard;
-  try{
-   const blob=blobs.get(id);
-   if(!blob||def.id!==deckId||!tile.isConnected)return;
-   const url=URL.createObjectURL(blob);previewUrls.push(url);
-   const img=document.createElement('img');img.className='preview-art';img.alt='';img.src=url;
-   tile.prepend(img);
-  }catch(e){alertStatus('画像を読み込めません：'+e.message);return}
- }
-}
 function renderCards(){
- releasePreviews();
  const cards=API.generate(def);$('cardCount').textContent=cards.length+'枚';
  const suits=new Map(def.suits.map(s=>[s.id,s]));
  $('cards').innerHTML=cards.map(c=>{
   const suit=suits.get(c.suitId),symbol=suit?.symbol||'✦',color=suit?.color==='red'?'red':'';
-  return '<div class="playing-card '+color+'" data-image-card="'+esc(c.id)+'"><span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span><span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><div class="card-buttons"><button data-card="'+esc(c.id)+'">編集</button><button data-image="'+esc(c.id)+'">画像</button></div></div>';
+  return '<div class="playing-card '+color+'"><span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span><span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button data-card="'+esc(c.id)+'">編集</button></div>';
  }).join('');
- showArtPreviews();
 }
 function updateField(e){
  const t=e.target,kind=t.dataset.kind,i=Number(t.dataset.i),key=t.dataset.prop;
@@ -74,7 +55,6 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('click',e=>{
  const remove=e.target.closest('[data-remove]');if(remove){const k=remove.dataset.remove,i=Number(remove.dataset.i);def[k].splice(i,1);setDirty();render();return}
- const image=e.target.closest('[data-image]');if(image){pendingImageCard=image.dataset.image;$('cardImageInput').click();return}
  const card=e.target.closest('[data-card]');if(!card)return;
  const c=API.generate(def).find(v=>v.id===card.dataset.card);if(!c)return;
  const title=activeSet==='primary'?'基本名称':'「'+API.nameSets(def).find(v=>v.id===activeSet).label+'」の名称（空欄なら基本名称）';
@@ -107,22 +87,15 @@ $('removeNameSet').onclick=()=>{
  for(const card of def.cards)if(card.names)delete card.names[activeSet];
  activeSet='primary';setDirty();render();
 };
-$('cardImageInput').addEventListener('change',async e=>{
- const file=e.target.files?.[0],cardId=pendingImageCard,deckId=def.id;
- e.target.value='';pendingImageCard=null;if(!file||!cardId)return;
- if(!file.type.startsWith('image/'))return alertStatus('画像形式のファイルを選択してください');
- try{await TabulaDeckArt.put(deckId,cardId,file);if(def.id===deckId){renderCards();alertStatus('画像を登録しました。JSONファイルには含まれません。')}}
- catch(error){alertStatus('画像の保存に失敗しました：'+error.message)}
-});
 $('deckName').addEventListener('change',e=>{def.name=e.target.value;setDirty()});
 $('newPlaying').onclick=()=>{if(dirty&&!confirm('未保存の変更を破棄しますか？'))return;def=API.playingCards();savedId=null;dirty=false;activeSet='primary';render();alertStatus('トランプ52枚の雛形を作成しました')};
 $('newBlank').onclick=()=>{if(dirty&&!confirm('未保存の変更を破棄しますか？'))return;def=API.blank();savedId=null;dirty=false;activeSet='primary';render();alertStatus('白紙のデッキを用意しました')};
 $('addSuit').onclick=()=>{const i=def.suits.length+1;def.suits.push({id:'s'+Date.now().toString(36),name:'新しいスート'+i,symbol:'✦',color:'black'});setDirty();render()};
 $('addRank').onclick=()=>{const i=def.ranks.length+1;def.ranks.push({id:'r'+Date.now().toString(36),order:i,label:String(i),name:String(i)});setDirty();render()};
-$('addCard').onclick=()=>{const i=def.cards.length+1;def.cards.push({id:'single_'+Date.now().toString(36)+'_'+i,suitId:null,rankId:null,number:String(i),name:'新しいカード',image:null,names:{}});setDirty();render()};
+$('addCard').onclick=()=>{const i=def.cards.length+1;def.cards.push({id:'single_'+Date.now().toString(36)+'_'+i,suitId:null,rankId:null,number:String(i),name:'新しいカード',names:{}});setDirty();render()};
 $('save').onclick=()=>{def.name=$('deckName').value.trim();try{API.save(def);savedId=def.id;dirty=false;refreshSaved();alertStatus('デッキを保存しました（'+API.generate(def).length+'枚）')}catch(e){alertStatus(e.message)}};
 $('saved').onchange=e=>{const id=e.target.value;if(!id)return;if(dirty&&!confirm('未保存の変更を破棄しますか？')){refreshSaved();return}const found=API.load().find(d=>d.id===id);if(found){def=API.clone(found);savedId=id;dirty=false;activeSet='primary';render();alertStatus('保存済みデッキを読み込みました')}};
-$('delete').onclick=()=>{if(!savedId)return alertStatus('保存済みのデッキを選んでください');if(!confirm('このデッキを削除しますか？　登録画像も削除されます。'))return;TabulaDeckArt.removeDeck(savedId).catch(e=>alertStatus('画像削除に失敗しました：'+e.message));API.remove(savedId);savedId=null;def=API.blank();dirty=false;activeSet='primary';render();alertStatus('保存済みのデッキを削除しました')};
+$('delete').onclick=()=>{if(!savedId)return alertStatus('保存済みのデッキを選んでください');if(!confirm('このデッキを削除しますか？'))return;API.remove(savedId);savedId=null;def=API.blank();dirty=false;activeSet='primary';render();alertStatus('保存済みのデッキを削除しました')};
 $('export').onclick=()=>{def.name=$('deckName').value.trim();try{API.validate(def)}catch(e){return alertStatus(e.message)}const blob=new Blob([JSON.stringify(def,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='tabula-deck-'+def.id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);alertStatus('JSONを書き出しました')};
 const requestedDeck=new URLSearchParams(location.search).get('deck');
 if(requestedDeck){

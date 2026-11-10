@@ -21,7 +21,7 @@ function generate(def){
  const overrides=new Map(def.cards.map(c=>[c.id,c]));
  for(const suit of def.suits)for(const rank of def.ranks){
   const id='c_'+suit.id+'_'+rank.id;
-  list.push({...{id,suitId:suit.id,rankId:rank.id,number:rank.label,name:suit.name+'の'+rank.name,image:null,names:{}},...clone(overrides.get(id)||{})});
+  list.push({...{id,suitId:suit.id,rankId:rank.id,number:rank.label,name:suit.name+'の'+rank.name,names:{}},...clone(overrides.get(id)||{})});
   ids.add(id);
  }
  for(const c of def.cards){
