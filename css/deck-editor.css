@@ -50,3 +50,7 @@
 .tarot-deck-editor-active .tarot-edit-actions button{font-size:12px;padding:9px 5px;white-space:normal;line-height:1.4}
 .tarot-deck-editor-active .tarot-edit-manage .note{margin:9px 0 0;line-height:1.6}
 @media(max-width:600px){.tarot-deck-editor-active .tarot-edit-header{padding:12px;margin:0 0 13px}.tarot-deck-editor-active .tarot-edit-header h2{font-size:19px}.tarot-deck-editor-active .tarot-edit-actions{gap:6px}}
+
+/* v0.386: compact Tarot editor, without its separate branded header. */
+.tarot-deck-editor-active #modalContent>h2{margin:0 32px 10px 0;font-size:18px}
+.tarot-deck-editor-active #modalContent>.note{line-height:1.6;margin:0 0 14px}
