@@ -1375,7 +1375,7 @@ function updateStandaloneAvailability(){const noWash=settings.quickWashDirection
  if(!poolOptions.some(([id])=>id===settings.pool))settings.pool='all';
  poolInput.value=settings.pool;$('spread').value=settings.spread;syncSpreadShortcut();syncDealOrderField();const initialOrderSelect=$('initialOrder');
  const initialChoices=activeBlueprint()?.id===BUILTIN_PLAYING.id
-  ?[['random','ランダム（標準）'],['ordered','新品NDO（ジョーカー先頭）'],['suitOrder','スート順（整列）']]
+  ?[['random','ランダム（標準）'],['ordered','新品NDO'],['suitOrder','スート順（整列）']]
   :[['random','ランダム（標準）'],['ordered','新品（整列）']];
  if(initialOrderSelect.options.length!==initialChoices.length||[...initialOrderSelect.options].some((o,i)=>o.value!==initialChoices[i][0]||o.textContent!==initialChoices[i][1]))
   initialOrderSelect.replaceChildren(...initialChoices.map(([value,label])=>new Option(label,value)));
