@@ -6,10 +6,11 @@ const clean=x=>String(x??'').trim();
 const newBlueprintId=()=>'blueprint_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
 function playingCards(id=newBlueprintId(),name='プレイングカード（52枚）'){
  const suits=[
-  {id:'spades',name:'スペード',symbol:'♠',color:'black'},
+  // Match the Tarot suit sequence: Wands, Cups, Swords, Pentacles.
+  {id:'clubs',name:'クラブ',symbol:'♣',color:'black'},
   {id:'hearts',name:'ハート',symbol:'♥',color:'red'},
-  {id:'diamonds',name:'ダイヤ',symbol:'♦',color:'red'},
-  {id:'clubs',name:'クラブ',symbol:'♣',color:'black'}
+  {id:'spades',name:'スペード',symbol:'♠',color:'black'},
+  {id:'diamonds',name:'ダイヤ',symbol:'♦',color:'red'}
  ];
  const ranks=Array.from({length:13},(_,i)=>({id:'r'+(i+1),order:i+1,label:['A','2','3','4','5','6','7','8','9','10','J','Q','K'][i],name:['エース','2','3','4','5','6','7','8','9','10','ジャック','クイーン','キング'][i]}));
  return {id,name,suits,ranks,cards:[],nameSets:[{id:'primary',label:'基本名称'}],version:1};
