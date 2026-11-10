@@ -90,3 +90,14 @@ body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-bac
 body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card){
   border:0!important;
 }
+
+/* The playing-card engraving sits over the selected solid color. */
+body:has(#surface) [data-playing-back]{
+ background:var(--playing-back-base) url("../images/decks/tabula-playing-cards/back.svg?v=0363") center / 100% 100% no-repeat!important;
+ border:0!important;
+}
+body:has(#surface) [data-playing-back]::before,
+body:has(#surface) [data-playing-back]::after{
+ content:none!important;
+ display:none!important;
+}
