@@ -59,3 +59,14 @@
 .tarot-deck-editor-active .tarot-editor-nav{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 0 10px;margin:0 0 14px;border-bottom:1px solid #695c45;font:12px sans-serif}
 .tarot-deck-editor-active .tarot-editor-nav button{border:0;padding:0;margin:0;min-width:0;background:none;color:#ebd4a5;font:inherit;text-decoration:underline;cursor:pointer}
 .tarot-deck-editor-active .tarot-editor-nav a{color:#ebd4a5;text-decoration:underline}
+
+/* v0.388: equal deck action heights and embedded Playing Card editor. */
+#cardGalleryOpen,.deck-setting-group .deck-edit-actions>button,.deck-setting-group .deck-edit-actions>a{box-sizing:border-box;display:flex!important;align-items:center;justify-content:center;gap:10px;width:100%;min-height:44px;height:44px;padding:8px 12px!important;margin:0!important;font:12px/1.3 sans-serif!important;text-align:center;white-space:normal;text-decoration:none}
+#cardGalleryOpen svg{flex:none;width:18px;height:20px}
+.deck-setting-group .deck-edit-actions{width:100%}
+.playing-deck-editor-active{padding:12px}
+.playing-deck-editor-active>.modal{display:flex;flex-direction:column;width:min(1120px,100%);max-height:calc(100dvh - 24px);height:calc(100dvh - 24px);padding:8px;overflow:hidden}
+.playing-deck-editor-active>.modal>.close{position:relative;z-index:2;flex:none;align-self:flex-end;width:32px;height:32px;padding:4px}
+.playing-deck-editor-active #modalContent{display:flex;flex:1;min-height:0;overflow:hidden}
+#playingDeckEditorFrame{display:block;width:100%;height:100%;min-height:0;border:0;background:#17211c;border-radius:5px}
+@media(max-width:600px){.playing-deck-editor-active{padding:4px}.playing-deck-editor-active>.modal{width:100%;max-width:100%;height:calc(100dvh - 8px);max-height:calc(100dvh - 8px);padding:5px}}
