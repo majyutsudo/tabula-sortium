@@ -29,6 +29,15 @@ function generate(def){
  }
  return list;
 }
+function nameSets(def){
+ const raw=Array.isArray(def.nameSets)?def.nameSets:[];
+ return raw.length?raw:[{id:'primary',label:'基本名称'}];
+}
+function nameOf(card,setId='primary'){
+ if(setId==='primary')return card.name;
+ const value=card.names?.[setId];
+ return typeof value==='string'&&value.trim()?value.trim():card.name;
+}
 function validate(def){
  if(!def||typeof def!=='object'||!Array.isArray(def.suits)||!Array.isArray(def.ranks)||!Array.isArray(def.cards))throw Error('デッキの構造が正しくありません');
  if(!clean(def.name))throw Error('デッキ名を入力してください');
@@ -36,11 +45,13 @@ function validate(def){
   const ids=arr.map(v=>clean(v.id));
   if(ids.some(v=>!v)||new Set(ids).size!==ids.length)throw Error(key+'のIDが重複または空欄です');
  }
+ const sets=nameSets(def);
+ if(sets[0]?.id!=='primary'||sets.some(v=>!clean(v.id)||!clean(v.label))||new Set(sets.map(v=>v.id)).size!==sets.length)throw Error('名称セットを確認してください');
  if(generate(def).length>400)throw Error('カードは400枚以内にしてください');
  return true;
 }
 function load(){try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}}
 function save(def){validate(def);const all=load().filter(item=>item.id!==def.id);all.push(clone(def));localStorage.setItem(KEY,JSON.stringify(all));return all}
 function remove(id){localStorage.setItem(KEY,JSON.stringify(load().filter(d=>d.id!==id)))}
-root.TabulaDeckBlueprint=Object.freeze({KEY,playingCards,blank,generate,validate,load,save,remove,clone});
+root.TabulaDeckBlueprint=Object.freeze({KEY,playingCards,blank,generate,nameSets,nameOf,validate,load,save,remove,clone});
 })(globalThis);
