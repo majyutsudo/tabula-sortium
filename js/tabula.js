@@ -446,9 +446,6 @@ function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint()
  return simpleCardMarkup(c);
 }
 function blueprintCardMarkup(c){
- // The two Joker identities deliberately use a single high-resolution face.
- if(activeBlueprint()?.id===BUILTIN_PLAYING.id&&c.kind==='joker')
-  return '<img class="card-art playing-joker-art" src="images/decks/tabula-playing-cards/joker.webp?v=0369" alt="JOKER" draggable="false">';
  const artwork=TabulaDeckBlueprint.playingFaceMarkup(c,c.symbol,c.cardColor,c.rankLabel,settings.playingOrientationMarks===true);
  if(artwork)return artwork;
  return '<div class="blueprint-card-face '+(c.cardColor==='red'?'red':'')+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span><span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span></div>';

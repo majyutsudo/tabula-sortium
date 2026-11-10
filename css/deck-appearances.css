@@ -131,38 +131,3 @@ body:has(#surface) #zone .card[data-appearance="worn"]:not([data-worn-asset="tru
  background:url("../images/ui/worn-microtexture.svg") center / 100% 100% no-repeat;
  opacity:.35;
 }
-
-/* One shared Joker illustration for two distinct physical cards. */
-/* Match the full-bleed SVG face geometry: the shared Joker WebP must
-   occupy the entire card, including when the Worn finish is enabled. */
-.front:has(> img.playing-joker-art){
- padding:0!important;
- gap:0!important;
- border:0!important;
- background:#faf5e9;
-}
-.front:has(> img.playing-joker-art)::before{display:none}
-.front > img.playing-joker-art{
- display:block;
- width:100%;
- height:100%;
- max-width:none;
- max-height:none;
- object-fit:fill;
- aspect-ratio:2/3;
- pointer-events:none;
-}
-.blueprint-card-view:has(> img.playing-joker-art){
- padding:0;
- border:0;
- overflow:hidden;
- background:#faf5e9;
-}
-.blueprint-card-view > img.playing-joker-art{
- display:block;
- width:100%;
- height:100%;
- max-width:none;
- max-height:none;
- object-fit:fill;
-}

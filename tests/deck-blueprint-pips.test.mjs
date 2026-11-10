@@ -101,3 +101,17 @@ test('orientation dots are opt-in and appear once on faces that are rotationally
   });
   assert.deepEqual(marked,Array.from(expected));
 });
+
+
+test('both built-in Jokers share one full-bleed SVG image without a second card border',()=>{
+ const jokers=deck.generate(deck.builtInPlaying).filter(card=>card.kind==='joker');
+ assert.equal(jokers.length,2);
+ const faces=jokers.map(card=>deck.playingFaceMarkup(card));
+ assert.equal(faces[0],faces[1]);
+ for(const face of faces){
+  assert.match(face,/class="playing-card-face-svg"/);
+  assert.match(face,/viewBox="0 0 120 180"/);
+  assert.match(face,/<image href="images\/decks\/tabula-playing-cards\/joker\.webp\?v=0371" x="0" y="0" width="120" height="180" preserveAspectRatio="none"\/>/);
+  assert.doesNotMatch(face,/<rect|class="playing-card-index"/);
+ }
+});

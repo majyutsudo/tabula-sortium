@@ -80,6 +80,12 @@ function needsOrientationMark(card,symbol){
  return !!count&&count!==7&&(count%2===0||symbol==='♦'||!suitPaths.has(symbol));
 }
 function playingFaceMarkup(card,symbol,color,rankLabel=card.number,showOrientationMark=false){
+ // Both built-in Jokers use the same full-card artwork in the shared
+ // 120 × 180 SVG coordinate system as all other playing-card faces.
+ // The image is flush with the viewBox: no second paper, border or inset.
+ if(card.id==='playing-joker-1'||card.id==='playing-joker-2'){
+  return '<svg class="playing-card-face-svg" viewBox="0 0 120 180" aria-hidden="true" focusable="false"><image href="images/decks/tabula-playing-cards/joker.webp?v=0371" x="0" y="0" width="120" height="180" preserveAspectRatio="none"/></svg>';
+ }
  const count=pipRanks.get(card.rankId);
  const court=isPlayingCourt(card);
  if(!playingSuitIds.has(card.suitId)||(!count&&!court))return '';
