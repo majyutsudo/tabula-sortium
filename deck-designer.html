@@ -70,6 +70,11 @@ $('save').onclick=()=>{def.name=$('deckName').value.trim();try{API.save(def);sav
 $('saved').onchange=e=>{const id=e.target.value;if(!id)return;if(dirty&&!confirm('未保存の変更を破棄しますか？')){refreshSaved();return}const found=API.load().find(d=>d.id===id);if(found){def=API.clone(found);savedId=id;dirty=false;render();alertStatus('保存済みデッキを読み込みました')}};
 $('delete').onclick=()=>{if(!savedId)return alertStatus('保存済みのデッキを選んでください');if(!confirm('このデッキを削除しますか？'))return;API.remove(savedId);savedId=null;def=API.blank();dirty=false;render();alertStatus('保存済みのデッキを削除しました')};
 $('export').onclick=()=>{def.name=$('deckName').value.trim();try{API.validate(def)}catch(e){return alertStatus(e.message)}const blob=new Blob([JSON.stringify(def,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='tabula-deck-'+def.id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);alertStatus('JSONを書き出しました')};
+const requestedDeck=new URLSearchParams(location.search).get('deck');
+if(requestedDeck){
+ const saved=API.load().find(d=>d.id===requestedDeck);
+ if(saved){def=API.clone(saved);savedId=saved.id;dirty=false;}
+}
 render();
 })();
 </script></body></html>
