@@ -23,3 +23,18 @@
 .deck-editor-shortcuts{margin:13px 0 17px;gap:8px}
 .deck-editor-shortcuts button{min-height:38px;flex:1;white-space:normal;line-height:1.4}
 @media(max-width:470px){.deck-editor-shortcuts{gap:6px}.deck-editor-shortcuts button{font-size:11px}}
+
+/* v0.384 — Tarot editor: same clear creation actions and mobile fit as Playing Cards. */
+.deck-edit-help{margin:0 0 5px;font-size:11px;line-height:1.5}
+.tarot-deck-editor-active .modal{box-sizing:border-box;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);overscroll-behavior:contain}
+.tarot-deck-editor-active .modal h2{margin:0 32px 10px 0;line-height:1.4;overflow-wrap:anywhere}
+.tarot-deck-editor-active .modal input,.tarot-deck-editor-active .modal select{min-width:0}
+@media(max-width:600px){
+ .tarot-deck-editor-active{padding:12px}
+ .tarot-deck-editor-active .modal{width:100%;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:14px;overflow-y:auto}
+ .tarot-deck-editor-active .modal h2{font-size:17px}
+ .tarot-deck-editor-active .deck-editor-row{grid-template-columns:24px 54px minmax(0,1fr);gap:5px}
+ .tarot-deck-editor-active .deck-editor-row input:not([type=checkbox]),.tarot-deck-editor-active .deck-editor-row select,.tarot-deck-editor-active #deckEditorName{font-size:16px}
+ .tarot-deck-editor-active .deck-editor-footer{bottom:-14px;display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 4px}
+ .tarot-deck-editor-active .deck-editor-footer button{flex:1 1 auto;font-size:12px;padding:8px 4px}
+}
