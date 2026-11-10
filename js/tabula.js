@@ -2305,6 +2305,10 @@ function wearVariant(card){
  return 'abcd'[hash%4];
 }
 function updateAppearanceControls(){
+ const blueprint=activeBlueprint();
+ for(const id of ['cardLanguageField','tableCardLanguageField']){
+  const field=$(id);if(field)field.hidden=!!blueprint;
+ }
  const activeSource=dualSession?dualSession.activePile:null;
  const caps=deckCapabilities(activeSource);
  const pipField=$('pipBackgroundField');
