@@ -1353,3 +1353,8 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  .front .blueprint-card-symbol{font-size:clamp(19px,6vw,30px)}
  .front .blueprint-card-title{font-size:clamp(8px,2.6vw,11px)}
 }
+
+/* User-imported card faces in independently authored decks. */
+.front .blueprint-card-image{display:block;width:100%;height:100%;object-fit:fill}
+.blueprint-card-view .blueprint-card-image{display:block;width:100%;height:100%;object-fit:fill}
+.blueprint-card-view:has(> .blueprint-card-image){padding:0;border:0;overflow:hidden}
