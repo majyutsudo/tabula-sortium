@@ -1,6 +1,6 @@
 /* TABULA card alignment — independent of deck and display technology. */
 (function(root){'use strict';
-function snap(position,items,size,threshold=14,gap=0){
+function snap(position,items,size,threshold=22,gap=0){
  const {x,y}=position,{w,h}=size;
  if(!Number.isFinite(w)||!Number.isFinite(h)||w<=0||h<=0||!items.length)return {x,y};
  const xs=[x],ys=[y];
