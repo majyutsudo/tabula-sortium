@@ -709,26 +709,19 @@ let freeSnapMode='off';
 function snapFreePosition(x,y,excludeId=null){
  if(settings.spread!=='free'||freeSnapMode==='off')return {x,y};
  const z=$('zone').getBoundingClientRect(),m=metrics();
+ if(!z.width||!z.height)return {x,y};
  if(freeSnapMode==='grid'){
   const sx=Math.max(8,m.w*.5),sy=Math.max(8,m.h*.5);
   return {x:Math.round(x*z.width/100/sx)*sx/z.width*100,
           y:Math.round(y*z.height/100/sy)*sy/z.height*100};
  }
- // Magnetic alignment to existing card centers and edges. Each axis snaps
- // independently, allowing rows, columns, and half-card pyramid staggering.
- const candidates=state.placed.filter(c=>!c.auxiliaryPile&&c.id!==excludeId);
- if(!candidates.length)return {x,y};
- const stepX=m.w/z.width*100,stepY=m.h/z.height*100;
- const thresholdX=14/z.width*100,thresholdY=14/z.height*100;
- let bestX=x,bestY=y,distX=thresholdX,distY=thresholdY;
- for(const c of candidates){
-  for(const offset of [-1,-.5,0,.5,1]){
-   const cx=c.x+offset*stepX,cy=c.y+offset*stepY;
-   if(Math.abs(x-cx)<distX){distX=Math.abs(x-cx);bestX=cx}
-   if(Math.abs(y-cy)<distY){distY=Math.abs(y-cy);bestY=cy}
-  }
- }
- return {x:bestX,y:bestY};
+ const available=state.placed.filter(c=>!c.auxiliaryPile&&c.id!==excludeId);
+ const position=TabulaCardSnap.snap(
+  {x:x*z.width/100,y:y*z.height/100},
+  available.map(c=>({x:c.x*z.width/100,y:c.y*z.height/100})),
+  {w:m.w,h:m.h}
+ );
+ return {x:position.x/z.width*100,y:position.y/z.height*100};
 }
 function syncFreeSnapButton(){
  updateNaturalTiltButton();
