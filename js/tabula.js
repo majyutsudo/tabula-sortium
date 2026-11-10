@@ -352,7 +352,7 @@ function blueprintCards(blueprint){
  const nameSet=activeBlueprintNameSet(blueprint);
  return TabulaDeckBlueprint.generate(blueprint).map(c=>{
   const suit=suits.get(c.suitId),rank=ranks.get(c.rankId);
-  return {...c,name:TabulaDeckBlueprint.nameOf(c,nameSet),group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
+  return {...c,name:blueprint.id===BUILTIN_PLAYING.id?TabulaDeckBlueprint.playingName(c,nameSet):TabulaDeckBlueprint.nameOf(c,nameSet),group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
    number:rank?.order||0,rankLabel:c.number??rank?.label??'',cardColor:suit?.color||'black'};
  });
 }
@@ -360,7 +360,7 @@ function workingCard(id){return workingCards().find(c=>c.id===id)||null}
 function effectiveCardLanguage(){return activeDeck()?.language||settings.cardLanguage||'original'}
 function effectivePipBackground(){return activeDeck()?.pipBackground||settings.pipBackground||'landscape'}
 function displayCard(c){if(activeBlueprint())return workingCard(c.id)||c;const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
-function tableCardName(c){if(activeBlueprint())return displayCard(c).name;const lang=settings.tableCardLanguage||'linked';return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
+function tableCardName(c){const lang=settings.tableCardLanguage||'linked';if(activeBlueprint()){if(activeBlueprint().id===BUILTIN_PLAYING.id&&lang!=='linked')return TabulaDeckBlueprint.playingName(c,lang);return displayCard(c).name;}return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
 function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option('シンプル','simple'));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+'（設計室）',d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
@@ -1488,7 +1488,7 @@ $('blueprintNameSet').addEventListener('change',e=>{
  const selected=e.target.value;
  if(!TabulaDeckBlueprint.nameSets(blueprint).some(s=>s.id===selected))return;
  settings.blueprintNameSets??={};settings.blueprintNameSets[blueprint.id]=selected;
- render();saveLocal();setStatus('名称セット「'+TabulaDeckBlueprint.nameSets(blueprint).find(s=>s.id===selected).label+'」を表示しました。');
+ render();if(GALLERY.visible)galleryRender();saveLocal();setStatus('名称セット「'+TabulaDeckBlueprint.nameSets(blueprint).find(s=>s.id===selected).label+'」を表示しました。');
 });
 $('cardLanguage').addEventListener('change',e=>{
  const language=e.target.value,d=activeDeck();
@@ -1761,7 +1761,7 @@ function galleryFilters(){
 function galleryDeck(){return deckLibrary.find(d=>d.id===GALLERY.deckId)||null}
 function gallerySimple(){return GALLERY.deckId==='simple'||!!galleryDeck()&&galleryDeck().faceStyle==='simple'}
 function galleryCard(c){
- if(galleryPlaying())return c;
+ if(galleryPlaying())return {...c,name:TabulaDeckBlueprint.playingName(c,activeBlueprintNameSet(BUILTIN_PLAYING))};
  const d=galleryDeck();
  const language=d?.language||'original';
  return {...c,name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,language),
@@ -2477,7 +2477,9 @@ function updateAppearanceControls(){
   }
  }
  for(const id of ['cardLanguageField','tableCardLanguageField']){
-  const field=$(id);if(field){field.hidden=!!blueprint;field.style.display=blueprint?'none':'';}
+  const field=$(id);if(!field)continue;
+  const visible=!blueprint||(id==='tableCardLanguageField'&&blueprint.id===BUILTIN_PLAYING.id);
+  field.hidden=!visible;field.style.display=visible?'':'none';
  }
  const orientationField=$('playingOrientationMarkField');
  const hasOrientationMarks=!!blueprint&&blueprintCards(blueprint).some(c=>TabulaDeckBlueprint.needsOrientationMark(c,c.symbol));

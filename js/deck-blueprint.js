@@ -16,7 +16,43 @@ function playingCards(id=newBlueprintId(),name='プレイングカード（52枚
 }
 // Two distinct physical cards sharing one approved artwork. A Joker belongs to
 // the built-in deck's catalogue, but not to any reduced historic rank preset.
+// Localized names for the built-in French-suited playing cards.
+// These are language labels, not claims about historical divinatory meanings.
+const PLAYING_LANGUAGES=Object.freeze([
+ ['primary','日本語（基本名称）'],['en','English'],['fr','Français'],
+ ['es','Español'],['de','Deutsch'],['it','Italiano']
+]);
+const PLAYING_SUIT_NAMES=Object.freeze({
+ en:{spades:'Spades',hearts:'Hearts',diamonds:'Diamonds',clubs:'Clubs'},
+ fr:{spades:'pique',hearts:'cœur',diamonds:'carreau',clubs:'trèfle'},
+ es:{spades:'picas',hearts:'corazones',diamonds:'diamantes',clubs:'tréboles'},
+ de:{spades:'Pik',hearts:'Herz',diamonds:'Karo',clubs:'Kreuz'},
+ it:{spades:'picche',hearts:'cuori',diamonds:'quadri',clubs:'fiori'}
+});
+const PLAYING_RANK_NAMES=Object.freeze({
+ en:['Ace','2','3','4','5','6','7','8','9','10','Jack','Queen','King'],
+ fr:['As','2','3','4','5','6','7','8','9','10','Valet','Dame','Roi'],
+ es:['As','2','3','4','5','6','7','8','9','10','Jota','Reina','Rey'],
+ de:['Ass','2','3','4','5','6','7','8','9','10','Bube','Dame','König'],
+ it:['Asso','2','3','4','5','6','7','8','9','10','Fante','Donna','Re']
+});
+function playingName(card,language='primary'){
+ if(language==='primary'||language==='ja'||language==='original')return card.name;
+ const rank=Number(String(card.rankId||'').replace(/^r/,'')),suit=PLAYING_SUIT_NAMES[language]?.[card.suitId];
+ if(card.kind==='joker'){
+  const index=card.id==='playing-joker-2'?'Ⅱ':'Ⅰ';
+  return 'Joker '+index;
+ }
+ if(!suit||!Number.isInteger(rank)||rank<1||rank>13)return card.name;
+ const name=PLAYING_RANK_NAMES[language][rank-1];
+ if(language==='en')return name+' of '+suit;
+ if(language==='fr')return name+' de '+suit;
+ if(language==='es')return name+' de '+suit;
+ if(language==='de')return suit+'-'+name;
+ return name+' di '+suit;
+}
 const builtInPlaying=playingCards('playing-cards','TABULA PLAYING CARDS');
+builtInPlaying.nameSets=PLAYING_LANGUAGES.map(([id,label])=>({id,label}));
 builtInPlaying.cards.push(
  {id:'playing-joker-1',name:'ジョーカーⅠ',number:'JOKER',rankId:null,suitId:null,kind:'joker'},
  {id:'playing-joker-2',name:'ジョーカーⅡ',number:'JOKER',rankId:null,suitId:null,kind:'joker'}
@@ -129,5 +165,5 @@ function validate(def){
 function load(){try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}}
 function save(def){validate(def);const all=load().filter(item=>item.id!==def.id);all.push(clone(def));localStorage.setItem(KEY,JSON.stringify(all));return all}
 function remove(id){localStorage.setItem(KEY,JSON.stringify(load().filter(d=>d.id!==id)))}
-root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,needsOrientationMark,nameSets,nameOf,validate,load,save,remove,clone});
+root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,needsOrientationMark,nameSets,nameOf,playingName,validate,load,save,remove,clone});
 })(globalThis);
