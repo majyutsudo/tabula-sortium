@@ -1353,3 +1353,9 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  .front .blueprint-card-symbol{font-size:clamp(19px,6vw,30px)}
  .front .blueprint-card-title{font-size:clamp(8px,2.6vw,11px)}
 }
+
+/* English-pattern pip faces share the same proportions on the table and in the viewer. */
+.front:has(> .playing-card-face-svg){padding:0!important;gap:0!important;border:0;background:#faf5e9}
+.front:has(> .playing-card-face-svg):before{display:none}
+.blueprint-card-view:has(> .playing-card-face-svg){padding:0;border:0;background:#faf5e9;overflow:hidden}
+.front .playing-card-face-svg,.blueprint-card-view .playing-card-face-svg{display:block;width:100%;height:100%;pointer-events:none}

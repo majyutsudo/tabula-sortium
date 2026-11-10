@@ -3,6 +3,9 @@
 <title>TABULA デッキ設計室（試作）</title>
 <style>
 :root{font-family:Georgia,"Hiragino Mincho ProN","Yu Mincho",serif;background:#191b20;color:#eae2d2}*{box-sizing:border-box}body{margin:0}header{padding:20px max(16px,calc((100vw - 1260px)/2));background:#24252a;border-bottom:1px solid #6c5942}h1{font-size:24px;letter-spacing:.1em;margin:6px 0}h2{font-size:17px;color:#e1ccab}p{line-height:1.6}small,.hint{color:#bbb3a9}a{color:#e4c69d}button,input,select{font:inherit}button{border:1px solid #867259;color:#f3e3cb;background:#353131;padding:8px 12px;border-radius:7px;cursor:pointer}button:hover{background:#584a3b}input,select{background:#222227;color:#f5eee3;border:1px solid #77664e;border-radius:5px;padding:8px;min-width:0}label{display:grid;gap:4px;font-size:13px}main{max-width:1280px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(280px,370px) 1fr;gap:20px}.panel{background:#24252a;border:1px solid #504b47;border-radius:10px;padding:16px;margin-bottom:14px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.line{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end;margin:7px 0}.line.rank{grid-template-columns:1fr 1fr auto}.line input{width:100%}.line button{padding:7px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:12px}.playing-card{aspect-ratio:2/3;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:#eee5d3;color:#29211b;border:5px double #8c7356;border-radius:6px;padding:7px 4px;text-align:center;min-width:0;box-shadow:0 3px 9px #0006}.playing-card.red{color:#9a2828}.playing-card .corner{align-self:flex-start;font:700 17px/1 Georgia}.playing-card .mark{font:32px/1 Georgia}.playing-card .card-title{font-size:11px;overflow-wrap:anywhere}.playing-card button{border:0;background:#0001;color:inherit;padding:3px;font:10px sans-serif}#cardCount{font-weight:bold;color:#f0d2a3}#status{min-height:22px;color:#d9bc88}.card-list-title{display:flex;align-items:center;justify-content:space-between;gap:8px}@media(max-width:800px){main{display:block;padding:10px}.panel{padding:12px}.cards{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}.playing-card .mark{font-size:25px}}
+.playing-card.pip-preview{aspect-ratio:auto;align-self:start;gap:4px;background:transparent;color:#eae2d2;border:0;padding:0;box-shadow:none}
+.pip-preview .playing-card-face-svg{display:block;width:100%;height:auto;box-shadow:0 3px 9px #0006;border-radius:6px}
+.pip-preview button{background:#353131}
 </style></head><body>
 <header><a href="index.html">← TABULA の卓へ戻る</a><h1>デッキ設計室 <small>試作</small></h1><p>スートとランクからカードを生成し、一枚ずつ名称や番号を編集できます。保存後にTABULAの卓へ戻り、「使用デッキ」から選ぶと配札できます。</p></header>
 <main><section>
@@ -12,7 +15,7 @@
 <div class="panel"><h2>ランク（独立定義）</h2><div id="ranks"></div><button id="addRank">＋ ランク</button></div>
 <div class="panel"><h2>単独カード</h2><p class="hint">スート×ランクに当てはまらないカードも一枚ずつ追加できます。</p><button id="addCard">＋ カードを一枚追加</button></div>
 </section><section><div class="panel"><div class="card-list-title"><h2>カード一覧 <span id="cardCount"></span></h2><span class="hint">カードを押して個別編集</span></div><div id="cards" class="cards"></div></div></section></main>
-<script src="js/deck-blueprint.js?v=0355"></script>
+<script src="js/deck-blueprint.js?v=0357"></script>
 <script>
 (()=>{'use strict';
 const API=TabulaDeckBlueprint,$=id=>document.getElementById(id);
@@ -41,7 +44,9 @@ function renderCards(){
  const suits=new Map(def.suits.map(s=>[s.id,s]));
  $('cards').innerHTML=cards.map(c=>{
   const suit=suits.get(c.suitId),symbol=suit?.symbol||'✦',color=suit?.color==='red'?'red':'';
-  return '<div class="playing-card '+color+'"><span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span><span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button data-card="'+esc(c.id)+'">編集</button></div>';
+  const pips=API.pipFaceMarkup(c,symbol,color);
+  const face=pips||'<span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span>';
+  return '<div class="playing-card '+(pips?'pip-preview':color)+'">'+face+'<span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button data-card="'+esc(c.id)+'">編集</button></div>';
  }).join('');
 }
 function updateField(e){

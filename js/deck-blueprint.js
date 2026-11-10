@@ -29,6 +29,48 @@ function generate(def){
  }
  return list;
 }
+// The 52-card template keeps its suit and rank IDs even when labels change.
+const playingSuitIds=new Set(['spades','hearts','diamonds','clubs']);
+const pipRanks=new Map(Array.from({length:10},(_,i)=>['r'+(i+1),i+1]));
+const center=y=>[60,y];
+const sides=(...rows)=>rows.flatMap(y=>[[38,y],[82,y]]);
+const pipLayouts=[
+ [],
+ [center(90)],
+ [center(32),center(148)],
+ [center(32),center(90),center(148)],
+ sides(32,148),
+ [...sides(32,148),center(90)],
+ sides(32,90,148),
+ [...sides(32,90,148),center(61)],
+ [...sides(32,90,148),center(61),center(119)],
+ [...sides(32,71,109,148),center(90)],
+ [...sides(32,71,109,148),center(51.5),center(128.5)]
+];
+const suitPaths=new Map([
+ ['♠','M0-12C-4-7-12-3-12 3a6 6 0 0 0 10 4c-.4 2-1.3 4-3 5h10c-1.7-1-2.6-3-3-5a6 6 0 0 0 10-4c0-6-8-10-12-15Z'],
+ ['♥','M0 11C-6 6-12 2-12-4a6.5 6.5 0 0 1 12-3 6.5 6.5 0 0 1 12 3c0 6-6 10-12 15Z'],
+ ['♦','M0-12 9 0 0 12-9 0Z'],
+ ['♣','M0-12a6 6 0 0 1 5 9 6 6 0 1 1-3 10c.4 2 1.3 4 3 5H-5c1.7-1 2.6-3 3-5a6 6 0 1 1-3-10 6 6 0 0 1 5-9Z']
+]);
+const xml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function pipFaceMarkup(card,symbol,color,rankLabel=card.number){
+ const count=pipRanks.get(card.rankId);
+ if(!count||!playingSuitIds.has(card.suitId))return '';
+ const rank=String(rankLabel??'');
+ const rankSize=Math.min(18,36/Math.max(1,Array.from(rank).length));
+ const glyph=suitPaths.has(symbol)
+  ?`<path d="${suitPaths.get(symbol)}"/>`
+  :`<text x="0" y="0" dominant-baseline="central" font-size="24">${xml(symbol)}</text>`;
+ const ink=color==='red'?'#a5232c':'#25211e';
+ const index=`<text x="13" y="20" font-size="${rankSize}" font-weight="700">${xml(rank)}</text><g transform="translate(13 31) scale(.48)">${glyph}</g>`;
+ const pips=pipLayouts[count].map(([x,y])=>{
+  const orientation=y>90?' rotate(180)':'';
+  const size=count===1?' scale(2)':'';
+  return `<g class="playing-card-pip" transform="translate(${x} ${y})${orientation}${size}">${glyph}</g>`;
+ }).join('');
+ return `<svg class="playing-card-face-svg" viewBox="0 0 120 180" aria-hidden="true" focusable="false"><rect x=".75" y=".75" width="118.5" height="178.5" rx="6" fill="#faf5e9" stroke="#c6b79e" stroke-width="1.5"/><g fill="${ink}" text-anchor="middle" font-family="Georgia, serif"><g class="playing-card-index">${index}</g><g class="playing-card-index" transform="rotate(180 60 90)">${index}</g>${pips}</g></svg>`;
+}
 function nameSets(def){
  const raw=Array.isArray(def.nameSets)?def.nameSets:[];
  return raw.length?raw:[{id:'primary',label:'基本名称'}];
@@ -53,5 +95,5 @@ function validate(def){
 function load(){try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}}
 function save(def){validate(def);const all=load().filter(item=>item.id!==def.id);all.push(clone(def));localStorage.setItem(KEY,JSON.stringify(all));return all}
 function remove(id){localStorage.setItem(KEY,JSON.stringify(load().filter(d=>d.id!==id)))}
-root.TabulaDeckBlueprint=Object.freeze({KEY,playingCards,blank,generate,nameSets,nameOf,validate,load,save,remove,clone});
+root.TabulaDeckBlueprint=Object.freeze({KEY,playingCards,blank,generate,pipFaceMarkup,nameSets,nameOf,validate,load,save,remove,clone});
 })(globalThis);
