@@ -31,7 +31,8 @@ test('a saved snapshot preserves the full deck and is independent from the live 
     dealCheckpoint:[{id:'swords_02',reversed:true}]
   };
   const slots=[{x:25,y:48,name:'過去'}],customIds=['major_00','major_01'];
-  const input={id:'s_test',name:'Test',time:'2026-11-06T00:00:00.000Z',settings,state,slots,customIds,recipeId:'single'};
+  const cardNames=['吊り橋'];
+  const input={cardNames,id:'s_test',name:'Test',time:'2026-11-06T00:00:00.000Z',settings,state,slots,customIds,recipeId:'single'};
   const result=history.createSnapshot(input);
   assert.equal(result.id,input.id);
   assert.equal(result.name,input.name);
@@ -41,6 +42,7 @@ test('a saved snapshot preserves the full deck and is independent from the live 
   assert.deepEqual(JSON.parse(JSON.stringify(result.deck)),state.deck);
   assert.deepEqual(JSON.parse(JSON.stringify(result.dealCheckpoint)),state.dealCheckpoint);
   assert.deepEqual(JSON.parse(JSON.stringify(result.removed)),state.removed);
+  cardNames[0]='変更後の札名';
   state.deck[0].reversed=false;
   state.placed[0].x=99;
   state.removed.length=0;
@@ -53,6 +55,7 @@ test('a saved snapshot preserves the full deck and is independent from the live 
   assert.equal(result.slots[0].x,25);
   assert.equal(result.settings.cardSize,1.3);
   assert.equal(result.customIds.length,2);
+  assert.deepEqual(Array.from(result.cardNames),['吊り橋']);
 });
 
 test('history serialization round-trips and retains record order',()=>{
