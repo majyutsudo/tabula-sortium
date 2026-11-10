@@ -54,3 +54,8 @@
 /* v0.386: compact Tarot editor, without its separate branded header. */
 .tarot-deck-editor-active #modalContent>h2{margin:0 32px 10px 0;font-size:18px}
 .tarot-deck-editor-active #modalContent>.note{line-height:1.6;margin:0 0 14px}
+
+/* v0.387: shared compact navigation in both deck editors. */
+.tarot-deck-editor-active .tarot-editor-nav{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 0 10px;margin:0 0 14px;border-bottom:1px solid #695c45;font:12px sans-serif}
+.tarot-deck-editor-active .tarot-editor-nav button{border:0;padding:0;margin:0;min-width:0;background:none;color:#ebd4a5;font:inherit;text-decoration:underline;cursor:pointer}
+.tarot-deck-editor-active .tarot-editor-nav a{color:#ebd4a5;text-decoration:underline}
