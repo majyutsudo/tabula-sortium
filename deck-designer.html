@@ -39,10 +39,13 @@ function render(){
 function releasePreviews(){for(const url of previewUrls)URL.revokeObjectURL(url);previewUrls=[]}
 async function showArtPreviews(){
  const deckId=def.id,tiles=[...$('cards').querySelectorAll('[data-image-card]')];
+ let blobs;
+ try{blobs=await TabulaDeckArt.loadDeck(deckId,tiles.map(tile=>tile.dataset.imageCard))}
+ catch(e){alertStatus('画像を読み込めません：'+e.message);return}
  for(const tile of tiles){
   const id=tile.dataset.imageCard;
   try{
-   const blob=await TabulaDeckArt.get(deckId,id);
+   const blob=blobs.get(id);
    if(!blob||def.id!==deckId||!tile.isConnected)return;
    const url=URL.createObjectURL(blob);previewUrls.push(url);
    const img=document.createElement('img');img.className='preview-art';img.alt='';img.src=url;
@@ -105,10 +108,10 @@ $('removeNameSet').onclick=()=>{
  activeSet='primary';setDirty();render();
 };
 $('cardImageInput').addEventListener('change',async e=>{
- const file=e.target.files?.[0],cardId=pendingImageCard;
+ const file=e.target.files?.[0],cardId=pendingImageCard,deckId=def.id;
  e.target.value='';pendingImageCard=null;if(!file||!cardId)return;
  if(!file.type.startsWith('image/'))return alertStatus('画像形式のファイルを選択してください');
- try{await TabulaDeckArt.put(def.id,cardId,file);renderCards();alertStatus('画像を登録しました。JSONファイルには含まれません。')}
+ try{await TabulaDeckArt.put(deckId,cardId,file);if(def.id===deckId){renderCards();alertStatus('画像を登録しました。JSONファイルには含まれません。')}}
  catch(error){alertStatus('画像の保存に失敗しました：'+error.message)}
 });
 $('deckName').addEventListener('change',e=>{def.name=e.target.value;setDirty()});
