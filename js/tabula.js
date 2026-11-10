@@ -447,7 +447,7 @@ function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint()
 function blueprintCardMarkup(c){
  const artwork=TabulaDeckBlueprint.playingFaceMarkup(c,c.symbol,c.cardColor,c.rankLabel,settings.playingOrientationMarks===true);
  if(artwork)return artwork;
- return '<div class="blueprint-card-face '+(c.cardColor==='red'?'red':'')+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span><span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span></div>';
+ return '<div class="blueprint-card-face" style="color:'+TabulaDeckBlueprint.inkColor(c.cardColor)+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span><span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span></div>';
 }
 /* Shared by the actual table cards and the simple-deck gallery. */
 // One compact, fixed-proportion design for tabletop and encyclopedia.

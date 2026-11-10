@@ -4,6 +4,17 @@ const KEY='tabula_deck_blueprints_v1';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const clean=x=>String(x??'').trim();
 const newBlueprintId=()=>'blueprint_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+const COLORS=Object.freeze([
+ ['black','黒','#25211e'],['red','赤','#a5232c'],['blue','青','#22589b'],
+ ['green','緑','#247047'],['purple','紫','#704596'],['burgundy','深紅','#842c49'],
+ ['navy','紺','#253966'],['teal','青緑','#15716a'],['turquoise','ターコイズ','#16858b'],
+ ['orange','橙','#b65a1c'],['gold','金','#98700f'],['brown','茶','#765135'],
+ ['pink','桃','#aa456d'],['indigo','藍','#444a92'],['olive','オリーブ','#66712d'],
+ ['gray','灰','#62636a']
+]);
+const COLOR_INKS=Object.fromEntries(COLORS.map(([id,,ink])=>[id,ink]));
+function inkColor(value){return COLOR_INKS[value]||COLOR_INKS.black}
+
 function playingCards(id=newBlueprintId(),name='プレイングカード（52枚）'){
  const suits=[
   // Match the Tarot suit sequence: Wands, Cups, Swords, Pentacles.
@@ -131,7 +142,7 @@ function playingFaceMarkup(card,symbol,color,rankLabel=card.number,showOrientati
  const glyph=suitPaths.has(symbol)
   ?`<path d="${suitPaths.get(symbol)}"/>`
   :`<text x="0" y="0" dominant-baseline="central" font-size="24">${xml(symbol)}</text>`;
- const ink=color==='red'?'#a5232c':'#25211e';
+ const ink=inkColor(color);
  const index=`<text x="13" y="20" font-size="${rankSize}" font-weight="700">${xml(rank)}</text><g transform="translate(13 31) scale(.48)">${glyph}</g>`;
  const design=court?courtArtwork(card):pipLayouts[count].map(([x,y])=>{
   const orientation=y>90?' rotate(180)':'';
@@ -166,5 +177,5 @@ function validate(def){
 function load(){try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}}
 function save(def){validate(def);const all=load().filter(item=>item.id!==def.id);all.push(clone(def));localStorage.setItem(KEY,JSON.stringify(all));return all}
 function remove(id){localStorage.setItem(KEY,JSON.stringify(load().filter(d=>d.id!==id)))}
-root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,needsOrientationMark,nameSets,nameOf,playingName,validate,load,save,remove,clone});
+root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,needsOrientationMark,nameSets,nameOf,playingName,COLORS,inkColor,validate,load,save,remove,clone});
 })(globalThis);

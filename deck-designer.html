@@ -15,7 +15,7 @@
 <div class="panel"><h2>ランク（独立定義）</h2><div id="ranks"></div><button id="addRank">＋ ランク</button></div>
 <div class="panel"><h2>単独カード</h2><p class="hint">スート×ランクに当てはまらないカードも一枚ずつ追加できます。</p><button id="addCard">＋ カードを一枚追加</button></div>
 </section><section><div class="panel"><div class="card-list-title"><h2>カード一覧 <span id="cardCount"></span></h2><span class="hint">カードを押して個別編集</span></div><div id="cards" class="cards"></div></div></section></main>
-<script src="js/deck-blueprint.js?v=0360"></script>
+<script src="js/deck-blueprint.js?v=0380"></script>
 <script>
 (()=>{'use strict';
 const API=TabulaDeckBlueprint,$=id=>document.getElementById(id);
@@ -32,7 +32,7 @@ function render(){
  for(const [kind,items] of [['suits',def.suits],['ranks',def.ranks]]){
   $(kind).innerHTML=items.map((item,i)=>{
    const columns=kind==='suits'?
-     '<label>名称<input data-kind="suits" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>記号<input data-kind="suits" data-i="'+i+'" data-prop="symbol" value="'+esc(item.symbol)+'"></label><label>色<select data-kind="suits" data-i="'+i+'" data-prop="color"><option value="black" '+(item.color==='black'?'selected':'')+'>黒</option><option value="red" '+(item.color==='red'?'selected':'')+'>赤</option></select></label>':
+     '<label>名称<input data-kind="suits" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>記号<input data-kind="suits" data-i="'+i+'" data-prop="symbol" value="'+esc(item.symbol)+'"></label><label>色<select data-kind="suits" data-i="'+i+'" data-prop="color">'+API.COLORS.map(([id,label,ink])=>'<option value="'+id+'" '+(item.color===id?'selected':'')+'>'+label+'</option>').join('')+'</select></label>':
      '<label>表示<input data-kind="ranks" data-i="'+i+'" data-prop="label" value="'+esc(item.label)+'"></label><label>名称<input data-kind="ranks" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label>';
    return '<div class="line '+(kind==='ranks'?'rank':'')+'">'+columns+'<button data-remove="'+kind+'" data-i="'+i+'" title="削除">×</button></div>';
   }).join('');
@@ -43,10 +43,10 @@ function renderCards(){
  const cards=API.generate(def);$('cardCount').textContent=cards.length+'枚';
  const suits=new Map(def.suits.map(s=>[s.id,s]));
  $('cards').innerHTML=cards.map(c=>{
-  const suit=suits.get(c.suitId),symbol=suit?.symbol||'✦',color=suit?.color==='red'?'red':'';
+  const suit=suits.get(c.suitId),symbol=suit?.symbol||'✦',color=suit?.color||'black';
   const artwork=API.playingFaceMarkup(c,symbol,color);
   const face=artwork||'<span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span>';
-  return '<div class="playing-card '+(artwork?'playing-preview':color)+'">'+face+'<span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button data-card="'+esc(c.id)+'">編集</button></div>';
+  return '<div class="playing-card '+(artwork?'playing-preview':'')+'" style="color:'+API.inkColor(color)+'">'+face+'<span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button data-card="'+esc(c.id)+'">編集</button></div>';
  }).join('');
 }
 function updateField(e){
