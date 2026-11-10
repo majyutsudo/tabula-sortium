@@ -1322,7 +1322,7 @@ function activateDeck(id,ask=true){
  return true;
 }
 function openDeckEditor(createCopy=false){
- if(activeBlueprint()){window.location.href='deck-designer.html?deck='+encodeURIComponent(settings.deckId);return;}
+ if(activeBlueprint()){window.location.href='deck-designer.html'+(createCopy?'':'?deck='+encodeURIComponent(settings.deckId));return;}
  const existing=createCopy?null:activeDeck();
  const source=activeDeck();
  const draft=existing?structuredClone(existing):source?structuredClone(source):TabulaDeckStore.fresh(cards,'deck_temp','新しいデッキ');
