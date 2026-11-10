@@ -11,10 +11,10 @@ function playingCards(){
   {id:'clubs',name:'クラブ',symbol:'♣',color:'black'}
  ];
  const ranks=Array.from({length:13},(_,i)=>({id:'r'+(i+1),order:i+1,label:['A','2','3','4','5','6','7','8','9','10','J','Q','K'][i],name:['エース','2','3','4','5','6','7','8','9','10','ジャック','クイーン','キング'][i]}));
- return {id:'blueprint_'+Date.now().toString(36),name:'プレイングカード（52枚）',suits,ranks,cards:[],nameSets:[{id:'primary',label:'基本名称'}],version:1};
+ return {id:'blueprint_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),name:'プレイングカード（52枚）',suits,ranks,cards:[],nameSets:[{id:'primary',label:'基本名称'}],version:1};
 }
 function blank(){
- return {id:'blueprint_'+Date.now().toString(36),name:'新しいデッキ',suits:[],ranks:[],cards:[],nameSets:[{id:'primary',label:'基本名称'}],version:1};
+ return {id:'blueprint_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),name:'新しいデッキ',suits:[],ranks:[],cards:[],nameSets:[{id:'primary',label:'基本名称'}],version:1};
 }
 function generate(def){
  const list=[],ids=new Set();
