@@ -339,14 +339,21 @@ function activeBlueprint(){
  if(!settings.deckId?.startsWith('blueprint_')||!globalThis.TabulaDeckBlueprint)return null;
  return TabulaDeckBlueprint.load().find(d=>d.id===settings.deckId)||null;
 }
+function activeBlueprintNameSet(){
+ const blueprint=activeBlueprint();
+ if(!blueprint)return 'primary';
+ const selected=settings.blueprintNameSets?.[blueprint.id]||'primary';
+ return TabulaDeckBlueprint.nameSets(blueprint).some(s=>s.id===selected)?selected:'primary';
+}
 function workingCards(){
  const blueprint=activeBlueprint();
  if(!blueprint)return cards;
  const suits=new Map(blueprint.suits.map(s=>[s.id,s]));
  const ranks=new Map(blueprint.ranks.map(r=>[r.id,r]));
+ const nameSet=activeBlueprintNameSet();
  return TabulaDeckBlueprint.generate(blueprint).map(c=>{
   const suit=suits.get(c.suitId),rank=ranks.get(c.rankId);
-  return {...c,group:'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
+  return {...c,name:TabulaDeckBlueprint.nameOf(c,nameSet),group:'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
    number:rank?.order||0,rankLabel:c.number??rank?.label??'',cardColor:suit?.color||'black'};
  });
 }
@@ -1406,6 +1413,13 @@ function openDeckEditor(createCopy=false){
   closeModal();activateDeck('builtin',false);setStatus('保存デッキを削除しました。');
  };
 }
+$('blueprintNameSet').addEventListener('change',e=>{
+ const blueprint=activeBlueprint();if(!blueprint)return;
+ const selected=e.target.value;
+ if(!TabulaDeckBlueprint.nameSets(blueprint).some(s=>s.id===selected))return;
+ settings.blueprintNameSets??={};settings.blueprintNameSets[blueprint.id]=selected;
+ render();saveLocal();setStatus('名称セット「'+TabulaDeckBlueprint.nameSets(blueprint).find(s=>s.id===selected).label+'」を表示しました。');
+});
 $('cardLanguage').addEventListener('change',e=>{
  const language=e.target.value,d=activeDeck();
  if(d){
@@ -2306,6 +2320,15 @@ function wearVariant(card){
 }
 function updateAppearanceControls(){
  const blueprint=activeBlueprint();
+ const nameSetField=$('blueprintNameSetField'),nameSetInput=$('blueprintNameSet');
+ if(nameSetField&&nameSetInput){
+  const sets=blueprint?TabulaDeckBlueprint.nameSets(blueprint):[];
+  nameSetField.hidden=sets.length<2;
+  if(sets.length>=2){
+   nameSetInput.replaceChildren(...sets.map(s=>new Option(s.label,s.id)));
+   nameSetInput.value=activeBlueprintNameSet();
+  }
+ }
  for(const id of ['cardLanguageField','tableCardLanguageField']){
   const field=$(id);if(field)field.hidden=!!blueprint;
  }
