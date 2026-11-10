@@ -14,18 +14,20 @@ function snap(position,items,size,threshold=14,gap=0){
    near(xs,c.x-w/2,x);near(xs,c.x+w/2,x);
   }
  }
- let best={x,y},score=Infinity;
+ let best={x,y},score=Infinity,quality=0;
  for(const px of xs)for(const py of ys){
-  // Cards are center-positioned. Never magnetically push one into another.
-  if(items.some(c=>Math.abs(px-c.x)<w+gap-.5&&Math.abs(py-c.y)<h+gap-.5))continue;
-  const move=Math.hypot(px-x,py-y);
-  const aligned=(px!==x?1:0)+(py!==y?1:0);
-  // Prefer a real alignment over the untouched location, but only if
-  // within the threshold on both axes.
+  const dx=Math.abs(px-x),dy=Math.abs(py-y);
+  if(dx>threshold||dy>threshold)continue;
+  const aligned=Number(px!==x)+Number(py!==y);
   if(!aligned)continue;
-  if(move>Math.SQRT2*threshold)continue;
-  const cost=move-aligned*.05;
-  if(cost<score){score=cost;best={x:px,y:py}}
+  // Cards are center-positioned. Never pull a card on top of an existing one.
+  if(items.some(c=>Math.abs(px-c.x)<w+gap-.5&&Math.abs(py-c.y)<h+gap-.5))continue;
+  const move=Math.hypot(dx,dy);
+  // Two-axis alignment takes precedence over a nearer one-axis alignment.
+  // The former makes exact rows, columns and staggered pyramid joints.
+  if(aligned>quality||(aligned===quality&&move<score)){
+   quality=aligned;score=move;best={x:px,y:py};
+  }
  }
  return best;
 }

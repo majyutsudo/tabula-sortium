@@ -35,3 +35,8 @@ test('unrelated points and empty sets do not move',()=>{
  equal(snap({x:501,y:413},base,dim),{x:501,y:413});
  equal(snap({x:100,y:100},[],dim),{x:100,y:100});
 });
+
+test('two-axis edge contact takes priority over a closer partial alignment',()=>{
+ equal(snap({x:267,y:203},base,dim),{x:270,y:200});
+ equal(snap({x:236,y:303},base,dim),{x:235,y:305});
+});
