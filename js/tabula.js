@@ -692,7 +692,7 @@ function syncFreeSnapButton(){
  button.title='自由配置 → 格子吸着 → カード吸着';
  button.setAttribute('aria-pressed',String(freeSnapMode!=='off'));
 }
-function cardHTML(item,index){const c=cards.find(c=>c.id===item.id)||cards[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;node.dataset.appearance=appearanceForCard(item);if(node.dataset.appearance==='worn'){node.dataset.wearVariant=wearVariant(item);if(wornMaterialAvailable(item.id))node.dataset.wornAsset='true'}if(item.sourceDeck){node.dataset.sourceDeck=item.sourceDeck;node.dataset.backTone=dualBackTone(item.sourceDeck)}if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
+function cardHTML(item,index){const c=workingCard(item.id)||workingCards()[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;node.dataset.appearance=appearanceForCard(item);if(node.dataset.appearance==='worn'){node.dataset.wearVariant=wearVariant(item);if(wornMaterialAvailable(item.id))node.dataset.wornAsset='true'}if(item.sourceDeck){node.dataset.sourceDeck=item.sourceDeck;node.dataset.backTone=dualBackTone(item.sourceDeck)}if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
  node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;node.addEventListener('pointerdown',e=>{if(e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();if(!spreadWorkbench)longPressTimer=setTimeout(()=>{longPressTimer=null;if(drag?.type==='placed'&&drag.idx===index&&!dragMoved){drag.longSelected=true;drag.rotating=true;
@@ -719,11 +719,11 @@ const openedCross=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.
 const moveCross=openedCross?celticCrossShift():0;
 node.style.top=`calc(${item.y}% + ${moveCross}px)`;
 node.classList.toggle('no-reversal-spin',!!item.reversed);node.style.setProperty('--rotation',cardDisplayRotation(item)+'deg');refreshDraggedSlotLabel(item);
-const cardData=cards.find(c=>c.id===item.id),position=item.slot!=null?getSlots()[item.slot]:null;
+const cardData=workingCard(item.id),position=item.slot!=null?getSlots()[item.slot]:null;
 $('infoText').textContent=`${cardData.name}（${item.reversed?'逆位置':'正位置'}）${position?` — ${item.slot+1}. ${position.name}：${position.detail}`:' — 自由配置'}`;
 if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position.name:'');updateLiveResults();maybeTriggerCompletionEffect();saveLocal();if(dragMoved&&!wasRotating)startHandGlide(item,node,releasedDrag)});node.addEventListener('pointercancel',()=>{cancelCardLongPress();node.classList.remove('dragging');drag=null});node.addEventListener('contextmenu',e=>{e.preventDefault();if(inspectionEnabled()||e.pointerType==='touch')return;item.angle=(item.angle+90)%360;render();saveLocal()});if(inspectionEnabled()){node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',item.faceUp?c.name+'を拡大する':'伏せ札');}node.addEventListener('click',()=>{if(inspectionEnabled())inspectTableCard(index,node)});node.addEventListener('keydown',e=>{if(inspectionEnabled()&&(e.key==='Enter'||e.key===' ')){e.preventDefault();inspectTableCard(index,node)}});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
 function syncResultsVisibility(){const panel=$('liveResults'),button=$('toggleResults');if(!panel||!button)return;panel.hidden=!resultsVisible;button.textContent=resultsVisible?'RESULTSを閉じる ▴':'RESULTSを表示 ▾';button.setAttribute('aria-expanded',String(resultsVisible))}
-function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:item.significator?'シグニフィケイター':`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(cards.find(c=>c.id===item.id)||cards[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${all.filter(p=>p.faceUp&&!p.significator).length} / ${all.filter(p=>!p.significator).length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
+function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:item.significator?'シグニフィケイター':`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(workingCard(item.id)||workingCards()[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${all.filter(p=>p.faceUp&&!p.significator).length} / ${all.filter(p=>!p.significator).length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
 $('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
 const BACK_COLOR_LABELS={"sepia":"セピア","green":"緑","burgundy":"深紅","navy":"紺","purple":"紫","black":"黒","ivory":"象牙色"};
 const TABULA_BACK_PALETTE={green:'#0d3428',burgundy:'#651622',navy:'#11234b',purple:'#3b2458',black:'#18191a',sepia:'#55331d',ivory:'#e6d6b1'};
@@ -821,7 +821,7 @@ function installPhysicalCardPicker(){
   list.replaceChildren();returns.replaceChildren();
   const q=filter.value.trim().toLocaleLowerCase();
   for(const entry of state.deck){
-   const card=cards.find(c=>c.id===entry.id);if(!card)continue;
+   const card=workingCard(entry.id);if(!card)continue;
    const name=displayCard(card).name;
    if(q&&!name.toLocaleLowerCase().includes(q)&&!entry.id.toLocaleLowerCase().includes(q))continue;
    const b=document.createElement('button');b.type='button';b.textContent=name;b.style.cssText=buttonStyle;
@@ -830,7 +830,7 @@ function installPhysicalCardPicker(){
   }
   if(!list.childElementCount){const empty=document.createElement('span');empty.textContent='該当するカードは山札にありません。';list.append(empty)}
   for(const item of state.placed.filter(c=>c.physicalSelection)){
-   const card=cards.find(c=>c.id===item.id);const b=document.createElement('button');b.type='button';
+   const card=workingCard(item.id);const b=document.createElement('button');b.type='button';
    b.textContent=(card?displayCard(card).name:item.id)+' ↩';b.style.cssText=buttonStyle;
    b.onclick=()=>{
     const idx=state.placed.findIndex(c=>c.physicalSelection&&(item.instanceId?c.instanceId===item.instanceId:c.id===item.id));
@@ -1985,7 +1985,7 @@ function refreshTableLabels(){
   let text=num;
   if(labelMode==='position'&&slot)text+=' · '+slot.name;
   if(labelMode==='card'&&item?.faceUp){
-   const c=cards.find(c=>c.id===item.id);
+   const c=workingCard(item.id);
    text+=(text?' · ':'')+(c?tableCardName(c):'カード')+(item.reversed?'〈逆〉':'');
   }
   if(!text)return;
@@ -2017,7 +2017,7 @@ const textImport=document.createElement('button');textImport.type='button';textI
 const enlarge=document.createElement('button');enlarge.id='enlargeSelected';enlarge.type='button';enlarge.textContent='拡大';$('cardControls').append(enlarge);
 function openTableCard(index){
  const p=state.placed[index];if(!p)return;if(!p.faceUp){setStatus('表向きのカードを選ぶと拡大できます。');return}
- const c=cards.find(c=>c.id===p.id);if(!c)return;
+ const c=workingCard(p.id);if(!c)return;
  const position=p.slot!=null?getSlots()[p.slot]:null;
  modal('<h2>'+escapeHTML(c.name)+(p.reversed?'〈逆位置〉':'〈正位置〉')+'</h2>'+(position?'<section class="table-reading-context" aria-label="ポジションの意味"><strong>'+escapeHTML(String(p.slot+1)+'. '+position.name)+'</strong>'+(position.detail?'<p>'+escapeHTML(position.detail)+'</p>':'')+'</section>':'')+'<div class="table-card-view detail-body"><div id="tableCardArtFrame"><img id="tableCardLarge" alt="'+escapeHTML(c.name)+'"></div><aside class="detail-copy" id="tableCardText" hidden></aside></div><div class="table-card-footer"><div class="row"><button type="button" id="tableCardPrev">前の札</button><button type="button" id="tableCardNext">次の札</button></div></div>');
  $('modalBg').classList.add('card-viewer-active');$('modalClose').focus();
