@@ -393,13 +393,12 @@ function selectedCards(){
  return base.sort((a,b)=>a.group==='major'&&b.group==='major'?((displayCard(a).number??-1)-(displayCard(b).number??-1)):0);
 }
 // Ordered stock is an explicit deck-level policy. For the playing deck:
-// NDO starts with the two Jokers, then Hearts A-K, Clubs A-K,
-// Diamonds K-A and Spades K-A. Suit order uses the blueprint's
-// declared suit/rank sequence. Subsets retain their relative positions.
+// NDO: two Jokers, Spades A-K, Diamonds A-K, Clubs K-A, Hearts K-A.
+// Existing subsets retain their relative positions in that full order.
 function orderedCardIds(mode,deckId=settings.deckId){
  const blueprint=blueprintFor(deckId);
  if(blueprint?.id===BUILTIN_PLAYING.id&&mode==='ordered'){
-  const suits=[['hearts',false],['clubs',false],['diamonds',true],['spades',true]];
+  const suits=[['spades',false],['diamonds',false],['clubs',true],['hearts',true]];
   return ['playing-joker-1','playing-joker-2',...suits.flatMap(([suit,reverse])=>{
    const ranks=Array.from({length:13},(_,i)=>i+1);
    if(reverse)ranks.reverse();
