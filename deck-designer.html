@@ -2,7 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TABULA デッキ設計室（試作）</title>
 <style>
-:root{font-family:Georgia,"Hiragino Mincho ProN","Yu Mincho",serif;background:#191b20;color:#eae2d2}*{box-sizing:border-box}body{margin:0}header{padding:20px max(16px,calc((100vw - 1260px)/2));background:#24252a;border-bottom:1px solid #6c5942}h1{font-size:24px;letter-spacing:.1em;margin:6px 0}h2{font-size:17px;color:#e1ccab}p{line-height:1.6}small,.hint{color:#bbb3a9}a{color:#e4c69d}button,input,select{font:inherit}button{border:1px solid #867259;color:#f3e3cb;background:#353131;padding:8px 12px;border-radius:7px;cursor:pointer}button:hover{background:#584a3b}input,select{background:#222227;color:#f5eee3;border:1px solid #77664e;border-radius:5px;padding:8px;min-width:0}label{display:grid;gap:4px;font-size:13px}main{max-width:1280px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(280px,370px) 1fr;gap:20px}.panel{background:#24252a;border:1px solid #504b47;border-radius:10px;padding:16px;margin-bottom:14px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.line{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end;margin:7px 0}.line.rank{grid-template-columns:1fr 1fr auto}.line input{width:100%}.line button{padding:7px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:12px}.playing-card{aspect-ratio:2/3;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:#eee5d3;color:#29211b;border:5px double #8c7356;border-radius:6px;padding:7px 4px;text-align:center;min-width:0;box-shadow:0 3px 9px #0006}.playing-card.red{color:#9a2828}.playing-card .corner{align-self:flex-start;font:700 17px/1 Georgia}.playing-card .mark{font:32px/1 Georgia}.playing-card .card-title{font-size:11px;overflow-wrap:anywhere}.playing-card button{border:0;background:#0001;color:inherit;padding:3px;font:10px sans-serif}#cardCount{font-weight:bold;color:#f0d2a3}#status{min-height:22px;color:#d9bc88}.card-list-title{display:flex;align-items:center;justify-content:space-between;gap:8px}@media(max-width:800px){main{display:block;padding:10px}.panel{padding:12px}.cards{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}.playing-card .mark{font-size:25px}}
+:root{font-family:Georgia,"Hiragino Mincho ProN","Yu Mincho",serif;background:#191b20;color:#eae2d2}*{box-sizing:border-box}body{margin:0}header{padding:20px max(16px,calc((100vw - 1260px)/2));background:#24252a;border-bottom:1px solid #6c5942}h1{font-size:24px;letter-spacing:.1em;margin:6px 0}h2{font-size:17px;color:#e1ccab}p{line-height:1.6}small,.hint{color:#bbb3a9}a{color:#e4c69d}button,input,select{font:inherit}button{border:1px solid #867259;color:#f3e3cb;background:#353131;padding:8px 12px;border-radius:7px;cursor:pointer}button:hover{background:#584a3b}input,select{background:#222227;color:#f5eee3;border:1px solid #77664e;border-radius:5px;padding:8px;min-width:0}label{display:grid;gap:4px;font-size:13px}main{max-width:1280px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(280px,370px) 1fr;gap:20px}.panel{background:#24252a;border:1px solid #504b47;border-radius:10px;padding:16px;margin-bottom:14px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.line{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end;margin:7px 0}.line.rank{grid-template-columns:1fr 1fr auto}.line input{width:100%}.line label select+input{margin-top:4px}.line button{padding:7px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:12px}.playing-card{aspect-ratio:2/3;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:#eee5d3;color:#29211b;border:5px double #8c7356;border-radius:6px;padding:7px 4px;text-align:center;min-width:0;box-shadow:0 3px 9px #0006}.playing-card.red{color:#9a2828}.playing-card .corner{align-self:flex-start;font:700 17px/1 Georgia}.playing-card .mark{font:32px/1 Georgia}.playing-card .card-title{font-size:11px;overflow-wrap:anywhere}.playing-card button{border:0;background:#0001;color:inherit;padding:3px;font:10px sans-serif}#cardCount{font-weight:bold;color:#f0d2a3}#status{min-height:22px;color:#d9bc88}.card-list-title{display:flex;align-items:center;justify-content:space-between;gap:8px}@media(max-width:800px){main{display:block;padding:10px}.panel{padding:12px}.cards{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}.playing-card .mark{font-size:25px}}
 .playing-card.playing-preview{aspect-ratio:auto;align-self:start;gap:4px;background:transparent;color:#eae2d2;border:0;padding:0;box-shadow:none}
 .playing-preview .playing-card-face-svg{display:block;width:100%;height:auto;box-shadow:0 3px 9px #0006;border-radius:6px}
 .playing-preview button{background:#353131}
@@ -21,6 +21,22 @@
 const API=TabulaDeckBlueprint,$=id=>document.getElementById(id);
 let def=API.playingCards(),savedId=null,dirty=false,activeSet='primary';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SYMBOL_PRESETS=[
+ ['','自由入力'],
+ ['♠','♠ スペード'],['♥','♥ ハート'],['♦','♦ ダイヤ'],['♣','♣ クラブ'],
+ ['★','★ 星（塗り）'],['☆','☆ 星（輪郭）'],['✦','✦ 四芒星'],['✧','✧ 四芒星（輪郭）'],
+ ['⛤','⛤ 五芒星'],['⛥','⛥ 逆五芒星'],
+ ['☀','☀ 太陽'],['☼','☼ 太陽（光線）'],['☾','☾ 三日月'],['☽','☽ 月（反転）'],
+ ['☿','☿ 水星'],['♀','♀ 金星'],['♂','♂ 火星'],['♃','♃ 木星'],['♄','♄ 土星'],
+ ['☉','☉ 太陽（天文）'],['☯','☯ 陰陽'],
+ ['🜂','🜂 火'],['🜄','🜄 水'],['🜁','🜁 空気'],['🜃','🜃 地'],
+ ['⚜','⚜ フルール・ド・リス'],['☥','☥ アンク'],['⚡','⚡ 稲妻'],
+ ['∞','∞ 無限'],['❖','❖ 菱形'],['❀','❀ 花']
+];
+function symbolOptions(current){
+ const known=SYMBOL_PRESETS.some(([v])=>v===current);
+ return SYMBOL_PRESETS.map(([value,label])=>'<option value="'+esc(value)+'"'+((known?current===value:!value)?' selected':'')+'>'+esc(label)+'</option>').join('');
+}
 function alertStatus(message){$('status').textContent=message}
 function setDirty(){dirty=true;alertStatus('未保存の変更があります')}
 function refreshSaved(){const list=API.load();$('saved').replaceChildren(new Option('現在のデッキ',''));for(const d of list)$('saved').add(new Option(d.name,d.id));$('saved').value=savedId||''}
@@ -32,7 +48,7 @@ function render(){
  for(const [kind,items] of [['suits',def.suits],['ranks',def.ranks]]){
   $(kind).innerHTML=items.map((item,i)=>{
    const columns=kind==='suits'?
-     '<label>名称<input data-kind="suits" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>記号<input data-kind="suits" data-i="'+i+'" data-prop="symbol" value="'+esc(item.symbol)+'"></label><label>色<select data-kind="suits" data-i="'+i+'" data-prop="color">'+API.COLORS.map(([id,label,ink])=>'<option value="'+id+'" '+(item.color===id?'selected':'')+'>'+label+'</option>').join('')+'</select></label>':
+     '<label>名称<input data-kind="suits" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>記号<select data-symbol-preset data-i="'+i+'">'+symbolOptions(item.symbol)+'</select><input data-kind="suits" data-i="'+i+'" data-prop="symbol" value="'+esc(item.symbol)+'" aria-label="記号を自由入力"></label><label>色<select data-kind="suits" data-i="'+i+'" data-prop="color">'+API.COLORS.map(([id,label,ink])=>'<option value="'+id+'" '+(item.color===id?'selected':'')+'>'+label+'</option>').join('')+'</select></label>':
      '<label>表示<input data-kind="ranks" data-i="'+i+'" data-prop="label" value="'+esc(item.label)+'"></label><label>名称<input data-kind="ranks" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label>';
    return '<div class="line '+(kind==='ranks'?'rank':'')+'">'+columns+'<button data-remove="'+kind+'" data-i="'+i+'" title="削除">×</button></div>';
   }).join('');
@@ -56,6 +72,14 @@ function updateField(e){
  setDirty();renderCards();
 }
 document.addEventListener('change',e=>{
+ const preset=e.target.closest('[data-symbol-preset]');
+ if(preset){
+  if(!preset.value)return;
+  const suit=def.suits[Number(preset.dataset.i)];
+  if(!suit)return;
+  suit.symbol=preset.value;
+  setDirty();render();return;
+ }
  if(e.target.dataset.prop)updateField(e);
 });
 document.addEventListener('click',e=>{
