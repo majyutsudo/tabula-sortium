@@ -78,6 +78,7 @@ function run(deck,steps,options={}){
   if(count()!==before)fail('card conservation violated');
   if(step.type!=='skip-deal'&&step.type!=='deal-rest'&&step.type!=='take')capture(step.type,step.type==='shuffle-recipe'?'シャッフル':step.type==='take'?(step.to==='removed'?'除外':step.to==='dealt'?'配札':'保留'):step.type==='split'?'山札を分割':step.type==='collect'?'山札を積み直す':'工程を実行');
   if(options.trace&&step.type==='shuffle-recipe'&&state.timeline.length)state.timeline[state.timeline.length-1].recipeId=step.recipeId;
+  if(options.trace&&step.type==='collect'&&state.timeline.length)state.timeline[state.timeline.length-1].collectOrder=[...step.order];
   state.log.push({type:step.type,stock:state.stock.length,piles:state.piles.map(p=>p.length),selected:state.selected.length,dealt:state.dealt.length,removed:state.removed.length});
  }
  return state;

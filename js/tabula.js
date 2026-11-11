@@ -2435,6 +2435,65 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
   const pileX=(surfaceRect.left+surfaceRect.width*.057+size.w/2-zoneRect.left)/zoneRect.width*100;
   const pileY=(surfaceRect.top+surfaceRect.height*.058+size.h/2-zoneRect.top)/zoneRect.height*100;
   const placeRemoved=(list)=>list.map((c,i)=>{const pos={x:pileX+i*.12,y:pileY+i*.12,angle:0};return {...c,slot:null,...pos,origin:{...pos},faceUp:false,auxiliaryPile:true,dragOrder:i+1}});
+
+  let pileOverlay=null;
+  function clearPileOverlay(){pileOverlay?.remove();pileOverlay=null}
+  function pilePosition(index,count){
+   const cols=Math.min(4,Math.max(2,Math.ceil(Math.sqrt(count))));
+   const rows=Math.ceil(count/cols),col=index%cols,row=Math.floor(index/cols);
+   const spanX=Math.min(18,58/Math.max(1,cols-1)),spanY=Math.min(22,50/Math.max(1,rows-1));
+   return {x:50+(col-(cols-1)/2)*spanX,y:36+(row-(rows-1)/2)*spanY};
+  }
+  function makePileCard(index,count,amount){
+   const card=document.createElement('div');card.className='deal-pile-card';
+   card.dataset.pileIndex=String(index);
+   const label=document.createElement('span');label.className='deal-pile-caption';
+   label.textContent='束'+String.fromCharCode(65+index)+' · '+amount+'枚';card.append(label);
+   applyPlayingBack(card);const point=pilePosition(index,count);
+   card.style.left=point.x+'%';card.style.top=point.y+'%';
+   card.style.transform='translate(-50%,-50%)';
+   return card;
+  }
+  async function displayPileFrame(frame,prior){
+   const surface=$('surface');
+   if(frame.type==='split'){
+    clearPileOverlay();
+    const layer=document.createElement('div');layer.className='deal-pile-layer';layer.setAttribute('aria-hidden','true');surface.append(layer);pileOverlay=layer;
+    const start=$('deck').getBoundingClientRect(),bounds=surface.getBoundingClientRect();
+    const dx=start.left+start.width/2-bounds.left,dy=start.top+start.height/2-bounds.top;
+    const nodes=frame.piles.map((cards,i)=>makePileCard(i,frame.piles.length,cards.length));
+    nodes.forEach(node=>layer.append(node));
+    await Promise.all(nodes.map(async(node,i)=>{
+     const end=node.getBoundingClientRect();
+     const x=dx-(end.left+end.width/2-bounds.left),y=dy-(end.top+end.height/2-bounds.top);
+     const animation=node.animate([{transform:'translate(calc(-50% + '+x+'px),calc(-50% + '+y+'px)) scale(.8)',opacity:.75},{transform:'translate(-50%,-50%) scale(1)',opacity:1}],{duration:520+i*65,easing:'cubic-bezier(.2,.8,.2,1)'});
+     try{await animation.finished}catch{}
+    }));
+    return;
+   }
+   if(!pileOverlay)return;
+   if(frame.type==='collect'){
+    const nodes=Array.from(pileOverlay.querySelectorAll('.deal-pile-card'));
+    const order=Array.isArray(frame.collectOrder)?frame.collectOrder:nodes.map((_,i)=>i);
+    const start=$('deck').getBoundingClientRect(),bounds=surface.getBoundingClientRect();
+    for(let k=0;k<order.length;k++){
+     const node=nodes.find(n=>Number(n.dataset.pileIndex)===order[k]);if(!node)continue;
+     const end=node.getBoundingClientRect(),x=start.left+start.width/2-(end.left+end.width/2),y=start.top+start.height/2-(end.top+end.height/2);
+     const animation=node.animate([{transform:'translate(-50%,-50%)',opacity:1},{transform:'translate(calc(-50% + '+x+'px),calc(-50% + '+y+'px)) scale(.82)',opacity:.28}],{duration:360,easing:'ease-in-out',fill:'forwards'});
+     try{await animation.finished}catch{}
+     node.style.visibility='hidden';
+    }
+    clearPileOverlay();return;
+   }
+   const labels=pileOverlay.querySelectorAll('.deal-pile-card');
+   labels.forEach(node=>{
+    const idx=Number(node.dataset.pileIndex),count=frame.piles[idx]?.length;
+    if(count===undefined)return;
+    node.style.opacity=count?1:.45;
+    node.querySelector('.deal-pile-caption').textContent='束'+String.fromCharCode(65+idx)+' · '+count+'枚';
+   });
+  }
+
   const placeDealt=(list)=>placed.slice(0,list.length).map((card,i)=>({...card,dragOrder:i+tableCards.length+1}));
   state.selected=null;state.completionShown=false;state.dealCheckpoint=null;
   const timeline=Array.isArray(positionOptions.timeline)?positionOptions.timeline:null;
@@ -2444,8 +2503,8 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
     if(last.dealt.map(c=>c.id).join('|')+';'+last.removed.map(c=>c.id).join('|')!==finalIds)throw Error('ディール工程の最終結果が一致しません');
     const sequence=[{type:'start',label:'開始',stock:[...state.deck],piles:[],selected:[],dealt:[],removed:[]},...timeline];
     let cursor=0;
-    function nextStage(){
-      const frame=sequence[cursor];
+    async function nextStage(){
+      const frame=sequence[cursor],prior=sequence[cursor-1]||null;
       const previousPlaced=state.placed.filter(c=>!c.auxiliaryPile).length,previousRemoved=state.placed.filter(c=>c.auxiliaryPile).length;
       const sourceRect=$('deck').getBoundingClientRect();
       const stock=[...frame.stock,...frame.piles.flat(),...frame.selected];
@@ -2453,6 +2512,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
       state.placed=[...placeRemoved(frame.removed),...placeDealt(frame.dealt)];
       state.removed=[];
       render();saveLocal();
+      await displayPileFrame(frame,prior);
       if(frame.dealt.length>previousPlaced)animateCardFromDeck(state.placed.length-1,sourceRect);
       else if(frame.removed.length>previousRemoved)animateCardFromDeck(frame.removed.length-1,sourceRect);
       setStatus('独自ディール '+cursor+' / '+timeline.length+'：'+frame.label+'（配札 '+frame.dealt.length+'枚・除外 '+frame.removed.length+'枚）');
@@ -2474,6 +2534,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
         }else setTimeout(()=>requestAnimationFrame(nextStage),frame.type==='split'||frame.type==='collect'?430:380);
       }
       else{
+        clearPileOverlay();
         state.deck=cards.map(c=>({...c}));
         state.placed=[...placeRemoved(tableCards),...placed];
         state.removed=removed.filter(c=>!tableIds.has(c.id)).map(c=>({...c}));
