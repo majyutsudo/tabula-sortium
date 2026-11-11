@@ -315,3 +315,24 @@ arrays. The shared card engine remains read-only; it has no write-back yet.
 Empty anchored piles currently reserve their locations, so automated
 vacancy refill into those placeholders is a separate next milestone.
 Avoid changing the live two-table mode until a full round-trip is validated.
+
+
+## Vacant anchored position refill — v0.430
+
+A registered spread position may continue to own an **empty** manual pile after
+all its cards have been moved elsewhere. Such piles now count as *vacant* for
+deal ordering, but the existing pile identity, role and fan geometry persist.
+An empty anchored pile is shown as its own clickable refill placeholder rather
+than a duplicate spread slot marker; clicking it deals one stock card into the
+existing pile. Standard registered-spread dealing likewise refills the
+empty pile rather than creating a separate placed card at the same location.
+
+A pile with cards still counts as an occupied position. Bare, unanchored empty
+piles are unchanged. The stock's next physical card is transferred intact,
+and its face-up state follows normal deal settings (talon piles open face-up).
+The source pile and all remaining card identities and ordering are preserved.
+Removing the empty pile itself frees the registered slot normally.
+
+The ordinary `state.placed` and `state.tablePiles` arrays still own live
+operations. The experimental common-container engine remains projection-only;
+this is the first UI path toward manual refill of registered multi-card slots.
