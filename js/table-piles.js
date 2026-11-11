@@ -29,6 +29,17 @@ function deposit(state,index,id){
  state.selected=null;state.completionShown=false;
  return card;
 }
+/* Deal the stock's top physical card directly onto a table pile. */
+function drawFromDeck(state,id,faceUp=false){
+ validate(state);
+ const target=find(state,id);
+ if(!Array.isArray(state.deck)||!state.deck.length)fail('empty deck');
+ const next=state.deck.shift();
+ const card={...next,faceUp:faceUp===true,slot:null,manualMoved:true};
+ target.cards.unshift(card);
+ state.selected=null;state.completionShown=false;
+ return card;
+}
 function withdraw(state,id,position){
  validate(state);const p=find(state,id);
  if(!p.cards.length)fail('empty pile');
@@ -72,5 +83,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,deposit,withdraw,transfer,split,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,deposit,drawFromDeck,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
