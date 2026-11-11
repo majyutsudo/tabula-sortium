@@ -1419,6 +1419,11 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 @media(max-width:780px){.table-pile-handle{font-size:10px;min-height:24px;top:-27px}.table-pile-empty{font-size:9px}}
 
 /* v0.413: choose the number of top cards to lift from an ordered pile. */
-.table-pile-take-count{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);z-index:5;width:max(112px,100%);min-width:112px;height:27px;box-sizing:border-box;border:1px solid #a58c60;border-radius:5px;background:#29362d;color:#f2e5c5;font:12px/1.2 Arial,sans-serif;text-align:center;text-align-last:center;padding:2px 18px 2px 8px;cursor:pointer;touch-action:manipulation}
+.table-pile-take-count{position:absolute;top:calc(100% + 33px);left:50%;transform:translateX(-50%);z-index:5;width:max(112px,100%);min-width:112px;height:27px;box-sizing:border-box;border:1px solid #a58c60;border-radius:5px;background:#29362d;color:#f2e5c5;font:12px/1.2 Arial,sans-serif;text-align:center;text-align-last:center;padding:2px 18px 2px 8px;cursor:pointer;touch-action:manipulation}
 .table-pile-take-count:focus-visible{outline:2px solid #e6bd72;outline-offset:2px}
-@media(max-width:780px){.table-pile-take-count{font-size:11px;height:25px;top:calc(100% + 5px);min-width:108px}}
+@media(max-width:780px){.table-pile-take-count{font-size:11px;height:25px;top:calc(100% + 31px);min-width:108px}}
+
+/* A compact control leaves pile counts unobtrusive until explicitly requested. */
+.table-pile-take-toggle{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);z-index:5;min-width:78px;height:24px;padding:2px 8px;border:1px solid #8b7753;border-radius:5px;background:#29362d;color:#e2d4b8;font:11px/1.2 Arial,sans-serif;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.table-pile-take-count[hidden]{display:none}
+@media(max-width:780px){.table-pile-take-toggle{height:22px;font-size:10px}}
