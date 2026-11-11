@@ -70,6 +70,35 @@ test('primary shortcuts stay at five while pile creation is in placement popover
  await expect(page.locator('#zone .table-pile')).toHaveCount(1);
  await expect(add).toHaveAttribute('aria-pressed','false');
 });
+test('an emptied registered pile can be refilled in place without losing its identity',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('three');
+ await page.locator('#quickDeal').click();
+ await expect.poll(async ()=>((await saved(page,WORKSPACE)).state.placed.length)).toBe(3);
+ await page.evaluate(key=>{
+  const data=JSON.parse(localStorage.getItem(key));
+  const previous=data.state.placed.find(card=>card.slot===1);
+  data.state.placed=data.state.placed.filter(card=>card.slot!==1);
+  data.state.deck.unshift(previous);
+  data.state.tablePiles.push({id:'pile-1',slot:1,x:50,y:48,role:'tableau',fan:{dx:.23,dy:-.18},cards:[]});
+  localStorage.setItem(key,JSON.stringify(data));
+ },WORKSPACE);
+ await page.reload();
+ const empty=page.locator('#zone .table-pile-empty.refill-ready');
+ await expect(empty).toBeVisible();
+ await expect(page.locator('#zone .slot')).toHaveCount(0);
+ const before=(await saved(page,WORKSPACE)).state;
+ await empty.click();
+ const after=(await saved(page,WORKSPACE)).state;
+ expect(after.tablePiles).toHaveLength(1);
+ expect(after.tablePiles[0].id).toBe('pile-1');
+ expect(after.tablePiles[0].slot).toBe(1);
+ expect(after.tablePiles[0].cards).toHaveLength(1);
+ expect(after.tablePiles[0].fan).toEqual({dx:.23,dy:-.18});
+ expect(after.placed).toHaveLength(2);
+ expect(after.deck.length).toBe(before.deck.length-1);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.tablePiles[0].cards).toHaveLength(1);
+});
 test('stacking cards at a registered position keeps that slot assigned',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('three');
  await page.locator('#quickDeal').click();
