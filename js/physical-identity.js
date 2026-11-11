@@ -9,10 +9,11 @@ function preserveCard(c){
  if(c.sourceDeck)result.sourceDeck=c.sourceDeck;
  return result;
 }
+function allPhysical(state){return [...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards||[])]}
 function ensureSingle(state){
- if(!state||!Array.isArray(state.deck)||!Array.isArray(state.placed)||!Array.isArray(state.removed??[]))fail('invalid state');
+ if(!state||!Array.isArray(state.deck)||!Array.isArray(state.placed)||!Array.isArray(state.removed??[])||!Array.isArray(state.tablePiles??[])||!(state.tablePiles||[]).every(p=>p&&Array.isArray(p.cards)))fail('invalid state');
  const seen=new Set(),faces=new Set();
- for(const c of [...state.deck,...state.placed,...(state.removed||[])]){
+ for(const c of allPhysical(state)){
   if(!c||typeof c.id!=='string'||!c.id||faces.has(c.id))fail('duplicate or invalid face in single deck');
   faces.add(c.id);
   const physical=c.instanceId||'A:'+c.id;
@@ -20,7 +21,7 @@ function ensureSingle(state){
   seen.add(physical);c.instanceId=physical;
  }
  if(Array.isArray(state.dealCheckpoint)){
-  const byFace=new Map([...state.deck,...state.placed,...(state.removed||[])].map(c=>[c.id,c.instanceId]));
+  const byFace=new Map(allPhysical(state).map(c=>[c.id,c.instanceId]));
   for(const c of state.dealCheckpoint){
    if(!c||!byFace.has(c.id))fail('invalid checkpoint card');
    c.instanceId=byFace.get(c.id);
@@ -30,7 +31,7 @@ function ensureSingle(state){
 }
 function nextReading(previous,selected,{reversals=false,random=Math.random}={}){
  const current=new Map();
- if(previous)for(const c of [...previous.deck,...previous.placed,...(previous.removed||[])]){
+ if(previous)for(const c of allPhysical(previous)){
   if(current.has(c.id))fail('duplicate old card');current.set(c.id,c.instanceId||'A:'+c.id);
  }
  const seen=new Set();
