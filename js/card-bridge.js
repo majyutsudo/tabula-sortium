@@ -71,7 +71,19 @@ function project({decks,tables,stocks,placed,removed,extraPiles=[],preserveIds=f
   }
  }
  for(const p of extraPiles){
-  const key=ensurePile(p.id,p.tableId,p.x,p.y,p.role||'pile');
+  // An explicit pile attached to a spread position owns that position's
+  // multi-card slot container. Do not create a second physical location.
+  const anchored=Number.isInteger(p.slot);
+  const key=anchored?'slot:'+p.tableId+':'+p.slot:ensurePile(p.id,p.tableId,p.x,p.y,p.role||'pile');
+  const destination=w.containers[key];
+  if(!destination)fail('unknown anchored pile slot');
+  if(anchored){
+   if(destination.displayPileId)fail('duplicate anchored pile');
+   destination.displayPileId=p.id;
+   destination.role=p.role||'pile';
+   destination.x=p.x;destination.y=p.y;
+  }
+  if(p.fan)destination.fan=copy(p.fan);
   for(const c of p.cards)place(c,key);
  }
  E.validate(w);
@@ -111,13 +123,14 @@ function singleStable(state,slots,{tableId='main',deckId='A'}={}){
   placed:{[tableId]:state.placed.map(asCard)},
   removed:{[tableId]:(state.removed||[]).map(asCard)},
   extraPiles:(state.tablePiles||[]).map(p=>({
-   id:p.id,tableId,x:p.x,y:p.y,role:p.role||'manual',
+   id:p.id,tableId,x:p.x,y:p.y,role:p.role||'pile',slot:p.slot,
    cards:p.cards.map(asCard),fan:p.fan
   })),
   preserveIds:true
  });
  for(const p of state.tablePiles||[]){
-  const target=projected.engine.containers['pile:'+p.id];
+  const target=projected.engine.containers[Number.isInteger(p.slot)?'slot:'+tableId+':'+p.slot:'pile:'+p.id];
+  if(!target)fail('unknown pile container');
   if(p.fan)target.fan=copy(p.fan);
  }
  for(const id of seen)if(projected.identityMap[id]!==id)fail('unstable physical identity');
