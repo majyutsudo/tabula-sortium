@@ -59,3 +59,52 @@ test('pile moves, serialization and collection preserve physical order',()=>{
  assert.deepEqual(Array.from(returned,c=>c.instanceId),['A:b','A:a']);
  assert.equal(I.ensureSingle({...saved,deck:[...returned,...saved.deck],placed:[],removed:[]}).deck.length,3);
 });
+
+test('transfer preserves the order of the selected top block and target cards',()=>{
+ const s=fresh(),one=P.create(s,25,40),two=P.create(s,75,40);
+ P.deposit(s,0,one.id);P.deposit(s,0,one.id);
+ const stock=s.deck.shift();two.cards.push(stock);
+ const originals=one.cards.map(c=>c.instanceId);
+ const result=P.transfer(s,one.id,two.id,2);
+ assert.deepEqual(Array.from(result,c=>c.instanceId),originals);
+ assert.deepEqual(Array.from(two.cards,c=>c.instanceId),[...originals,stock.instanceId]);
+ assert.equal(one.cards.length,0);
+ assert.equal(I.ensureSingle(s),s);
+});
+test('split lifts a top sequence without reversing it or recreating identities',()=>{
+ const s=fresh(),pile=P.create(s,25,40);
+ P.deposit(s,0,pile.id);P.deposit(s,0,pile.id);
+ const top=pile.cards[0].instanceId;
+ const child=P.split(s,pile.id,1,70,60);
+ assert.equal(child.cards.length,1);
+ assert.equal(child.cards[0].instanceId,top);
+ assert.equal(pile.cards.length,1);
+ assert.notEqual(child.id,pile.id);
+ assert.equal(I.ensureSingle(s),s);
+ const persisted=JSON.parse(JSON.stringify(s));
+ const returned=P.collect(persisted);
+ assert.deepEqual(Array.from(returned,c=>c.instanceId),[pile.cards[0].instanceId,top]);
+});
+test('invalid transfer and split leave both source and destination unchanged',()=>{
+ const s=fresh(),a=P.create(s,30,40),b=P.create(s,70,40);
+ P.deposit(s,0,a.id);P.deposit(s,0,a.id);
+ const before=JSON.stringify(s);
+ assert.throws(()=>P.transfer(s,a.id,a.id,1));
+ assert.throws(()=>P.transfer(s,a.id,b.id,3));
+ assert.throws(()=>P.transfer(s,a.id,'missing',1));
+ assert.throws(()=>P.transfer(s,a.id,b.id,0));
+ assert.throws(()=>P.split(s,a.id,3,20,20));
+ assert.throws(()=>P.split(s,a.id,1,Number.NaN,20));
+ assert.equal(JSON.stringify(s),before);
+});
+test('whole-pile merge preserves block order and empty source may be removed',()=>{
+ const s=fresh(),one=P.create(s,30,35),two=P.create(s,70,45);
+ P.deposit(s,0,one.id);P.deposit(s,0,one.id);
+ const last=s.deck.shift();two.cards.push(last);
+ const before=one.cards.map(c=>c.instanceId);
+ P.transfer(s,one.id,two.id,one.cards.length);
+ P.removeEmpty(s,one.id);
+ assert.deepEqual(Array.from(two.cards,c=>c.instanceId),[...before,last.instanceId]);
+ assert.equal(s.tablePiles.length,1);
+ assert.deepEqual(ids(s).sort(),['A:a','A:b','A:c']);
+});
