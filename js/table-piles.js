@@ -41,6 +41,28 @@ function withdraw(state,id,position){
  state.placed.push(move);
  state.selected=null;return move;
 }
+/* Move a consecutive block from the TOP of one pile to the TOP of another.
+   The internal top-to-bottom order of that block is never reversed. */
+function transfer(state,fromId,toId,count=1){
+ validate(state);
+ if(fromId===toId)fail('source and destination are the same pile');
+ const source=find(state,fromId),target=find(state,toId);
+ if(!Number.isInteger(count)||count<1||count>source.cards.length)fail('invalid transfer count');
+ const cards=source.cards.splice(0,count);
+ target.cards.unshift(...cards);
+ state.selected=null;state.completionShown=false;
+ return cards;
+}
+/* Split off the top N cards as a new, independently movable pile. */
+function split(state,id,count,x,y){
+ validate(state);
+ const source=find(state,id);
+ if(!Number.isInteger(count)||count<1||count>source.cards.length)fail('invalid split count');
+ if(!Number.isFinite(x)||!Number.isFinite(y))fail('invalid position');
+ const target=create(state,x,y);
+ transfer(state,id,target.id,count);
+ return target;
+}
 function relocate(state,id,x,y){
  const p=find(state,id);if(!Number.isFinite(x)||!Number.isFinite(y))fail('invalid position');
  p.x=clamp(x);p.y=clamp(y);return p;
@@ -50,5 +72,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,deposit,withdraw,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,deposit,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
