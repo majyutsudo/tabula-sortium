@@ -1394,7 +1394,8 @@ function activateDeck(id,ask=true){
  settings.pool='all';
  customIds=(blueprint?TabulaDeckBlueprint.generate(blueprint):cards).map(c=>c.id);
  settings.cardDesign=blueprint?'simple':deck?.faceStyle||(id==='simple'?'simple':'standard');
- settings.cardBackColor=deck?.backColor||'sepia';
+ if(deck?.backColor)settings.cardBackColor=deck.backColor;
+ else if(blueprint)settings.cardBackColor='sepia';
  finishedCache.clear();
  sync();initialize();
  setStatus((blueprint?.name||deck?.name||(id==='simple'?'SIMPLE TAROT':'TABULA TAROT（標準）'))+' を読み込みました。');
@@ -1502,7 +1503,7 @@ function openDeckEditor(createCopy=false,fromStandard=false){
  }
  
  const groups=[['major','大アルカナ'],...suitDefs.map(([id,name])=>[id,name])];
- let html='<h2>TABULA TAROT — デッキ編集</h2><p class="note">標準78枚体系を元に名称・番号・図像設定・収録カードを編集できます。標準デッキは変更しません。</p><nav class="editor-nav tarot-editor-nav" aria-label="編集画面の移動"><button type="button" id="deckEditorBack">← TABULAへ戻る</button><a href="deck-designer.html" id="deckEditorDesigner">デッキ設計室</a></nav>';
+ let html='<h2>TABULA TAROT — デッキ編集</h2><p class="note">標準78枚体系を元に名称・番号・図像設定・収録カードを編集できます。標準デッキは変更しません。</p><nav class="editor-nav tarot-editor-nav" aria-label="編集画面の移動"><button type="button" id="deckEditorReturn">← TABULAへ戻る</button><a href="deck-designer.html" id="deckEditorDesigner">デッキ設計室</a></nav>';
  html+='<div class="tarot-edit-manage"><div class="tarot-edit-actions"><button type="button" id="deckEditorStandard">標準から新規作成</button><button type="button" id="deckEditorCopy">現在の内容を複製</button></div><p class="note">'+(existing?'保存済みデッキを編集中。':source?'選択中のデッキを元に複製を作成中。':'標準78枚から新しいデッキを作成中。')+' 新規作成は標準78枚から、複製は現在の設定を引き継ぎます。</p></div>';
  html+='<label class="field">デッキ名<input id="deckEditorName" maxlength="80" value="'+escapeHTML(draft.name)+'"></label>';
  html+='<label class="field">表面デザイン<select id="deckEditorFaceStyle"><option value="standard">TABULA TAROT</option><option value="simple">SIMPLE TAROT</option></select></label>';
@@ -1526,7 +1527,7 @@ function openDeckEditor(createCopy=false,fromStandard=false){
  $('modalBg').classList.add('tarot-deck-editor-active');
  $('deckEditorStandard').onclick=()=>{if(confirm('標準78枚から新規作成しますか？ 編集中の未保存の変更は破棄されます。'))openDeckEditor(true,true)};
  $('deckEditorCopy').onclick=()=>{if(confirm('現在選択されているデッキを複製しますか？ 編集中の未保存の変更は破棄されます。'))openDeckEditor(true,false)};
- $('deckEditorBack').onclick=closeModal;
+ $('deckEditorReturn').onclick=closeModal;
  $('deckEditorDesigner').onclick=e=>{if(!confirm('デッキ設計室へ移動しますか？ 編集中の未保存の変更は破棄されます。'))e.preventDefault()};
  $('deckEditorFaceStyle').value=draft.faceStyle||'standard';
  $('deckEditorLanguage').value=draft.language||'original';
