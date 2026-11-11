@@ -280,3 +280,46 @@ test('refilling an empty registered pile preserves identity, role, slot and fan'
  assert.equal(P.find(persisted,pile.id).cards.length,1);
  assert.equal(I.ensureSingle(persisted),persisted);
 });
+
+test('top card of an existing pile can form a new pile on a single placed card',()=>{
+ const state=fresh();
+ const source=P.create(state,20,45,'tableau');
+ P.deposit(state,0,source.id); // slot 0 card a moved to source
+ const sourceId=source.cards[0].instanceId;
+ const targetId=state.placed[0].instanceId;
+ const originals=ids(state).sort();
+ const result=P.stackFromPile(state,source.id,0);
+ assert.equal(result.slot,1);
+ assert.deepEqual(Array.from(result.cards,c=>c.instanceId),[sourceId,targetId]);
+ assert.equal(source.cards.length,0);
+ assert.equal(P.find(state,source.id).id,source.id);
+ assert.equal(P.roleOf(source),'tableau');
+ assert.deepEqual(ids(state).sort(),originals);
+ assert.equal(I.ensureSingle(state),state);
+ const persisted=JSON.parse(JSON.stringify(state));
+ assert.equal(persisted.tablePiles[0].cards.length,0);
+ assert.equal(persisted.tablePiles[1].slot,1);
+});
+test('selected top block stays top-first when stacked onto a single card',()=>{
+ const state=fresh();
+ const source=P.create(state,20,45);
+ P.deposit(state,0,source.id);
+ const extra=state.deck.shift();
+ source.cards.unshift(extra);
+ const order=Array.from(source.cards,c=>c.instanceId);
+ const bottom=state.placed[0].instanceId;
+ const result=P.stackFromPile(state,source.id,0,2);
+ assert.deepEqual(Array.from(result.cards,c=>c.instanceId),[...order,bottom]);
+ assert.equal(source.cards.length,0);
+ assert.equal(I.ensureSingle(state),state);
+});
+test('invalid pile-to-single-card stack is atomic',()=>{
+ const state=fresh();
+ const p=P.create(state,30,40);
+ P.deposit(state,0,p.id);
+ const before=JSON.stringify(state);
+ assert.throws(()=>P.stackFromPile(state,p.id,99));
+ assert.throws(()=>P.stackFromPile(state,p.id,0,3));
+ assert.throws(()=>P.stackFromPile(state,p.id,0,0));
+ assert.equal(JSON.stringify(state),before);
+});
