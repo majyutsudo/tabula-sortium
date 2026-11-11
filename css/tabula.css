@@ -1438,3 +1438,10 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 
 /* v0.420: a lifted sequence must appear above destination piles during drag. */
 .table-pile.pile-drag-active{z-index:2100}
+
+/* v0.423: role selection is disclosed by the existing pile handle.
+   It remains absent from the tabletop until the handle is clicked. */
+.table-pile-role-select{position:absolute;top:0;left:0;width:100%;height:30px;z-index:650;
+ box-sizing:border-box;border:1px solid #b59b68;border-radius:4px;background:#26392f;color:#f0dfc1;
+ font:12px Arial,sans-serif;cursor:pointer}
+.table-pile-role-select[hidden]{display:none}
