@@ -34,6 +34,39 @@ test('pile count selector is hidden until requested',async ({page})=>{
   await expect(pile.locator('.table-pile-take-count')).toBeHidden();
 });
 
+test('first pile fan gesture renders lower cards immediately and lifted stack is foregrounded',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.locator('#addTablePile').click();
+ await page.locator('#zone').click({position:{x:230,y:210}});
+ const pile=page.locator('#zone .table-pile').first();
+ for(let i=0;i<3;i++){
+  const deck=await page.locator('#deck').boundingBox();
+  const target=await pile.boundingBox();
+  await page.mouse.move(deck.x+deck.width/2,deck.y+deck.height/2);
+  await page.mouse.down();
+  await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});
+  await page.mouse.up();
+ }
+ const grip=await pile.locator('.table-pile-fan-grip').boundingBox();
+ const gx=grip.x+grip.width/2,gy=grip.y+grip.height/2;
+ await page.mouse.move(gx,gy);
+ await page.mouse.down();
+ await page.mouse.move(gx+55,gy+35,{steps:8});
+ // The first gesture must reveal all the cards before pointer release.
+ await expect(pile.locator('.table-pile-top')).toHaveCount(3);
+ const offsets=await pile.locator('.table-pile-top').evaluateAll(nodes=>nodes.map(n=>parseFloat(n.style.left)||0));
+ expect(new Set(offsets).size).toBe(3);
+ await page.mouse.up();
+ const top=await pile.locator('.table-pile-top[data-pile-index="0"]').boundingBox();
+ await page.mouse.move(top.x+top.width*.85,top.y+top.height*.85);
+ await page.mouse.down();
+ await page.mouse.move(top.x+top.width*.85+45,top.y+top.height*.85+40,{steps:8});
+ await expect(pile).toHaveClass(/pile-drag-active/);
+ const z=await pile.evaluate(node=>getComputedStyle(node).zIndex);
+ expect(Number(z)).toBeGreaterThan(1600);
+ await page.mouse.up();
+});
+
 test('pile spreads diagonally and retains its fan after reload',async ({page})=>{
   await page.locator('#spreadQuickSelect').selectOption('free');
   await page.locator('#addTablePile').click();
