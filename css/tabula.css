@@ -1427,3 +1427,11 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .table-pile-take-toggle{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);z-index:5;min-width:78px;height:24px;padding:2px 8px;border:1px solid #8b7753;border-radius:5px;background:#29362d;color:#e2d4b8;font:11px/1.2 Arial,sans-serif;white-space:nowrap;cursor:pointer;touch-action:manipulation}
 .table-pile-take-count[hidden]{display:none}
 @media(max-width:780px){.table-pile-take-toggle{height:22px;font-size:10px}}
+
+/* v0.419: a small gesture grip opens a pile at any angle; expanded cards
+   retain their own physical identity and remain full-size surfaces. */
+.table-pile-top{width:100%;height:100%;right:auto;bottom:auto;box-sizing:border-box}
+.table-pile-fan-grip{position:absolute;right:-13px;top:3px;z-index:500;width:25px;height:25px;border:1px solid #ae966b;border-radius:50%;background:#26332ae8;color:#f2e4c4;font:17px/1 sans-serif;padding:0;cursor:grab;touch-action:none}
+.table-pile-fan-grip:active{cursor:grabbing}
+.table-pile-handle{z-index:450}
+.table-pile-take-toggle,.table-pile-take-count{z-index:460}
