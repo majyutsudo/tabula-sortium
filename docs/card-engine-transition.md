@@ -125,3 +125,41 @@ Regression coverage: `tests/physical-identity.test.mjs` adds identity
 retention, collection ordering, storage roundtrip and invalid-state tests.
 Browser and complete Node-suite validation are still required before a
 production release.
+
+## Manual tabletop piles — incremental UI prototype (v0.411)
+
+The single-table UI now loads `js/table-piles.js`. A user can arm
+**＋束を置く**, tap the desired cloth location, and create an explicit
+empty ordered pile. Dragging a dealt card onto the pile removes that physical
+card from `state.placed` and puts it at index zero of `state.tablePiles[i].cards`.
+The old spread slot becomes vacant, so the existing Deal command can refill
+it. Tapping or dragging the pile's top card returns it to a loose position
+or nearby empty preset slot. Dragging the pile handle moves the pile.
+An empty pile can be removed, or all piles are collected with the regular
+collection action. Top-first order and physical `instanceId` are preserved.
+
+`TabulaPhysicalIdentity.ensureSingle` now accounts for pile cards and the
+single-table bridge projects them as explicit ordered containers. Existing
+stock, position, history and UI structures remain the runtime source of
+truth: this is **not** yet the engine-authoritative cutover.
+
+Deliberate scope limits:
+- **Single-table mode only.** Creating the shared additional table with
+  existing manual piles is blocked rather than silently discarding cards.
+  Two-deck and independent-table pile operations await unified state.
+- Cards may be moved into piles one at a time, and the **top card** is
+  retrievable. Splitting or moving multiple cards as a block, arbitrary
+  reordering within a pile, fanning, hiding/revealing underlying cards, and
+  undo are not implemented yet.
+- Piles are user-designated objects; visual overlap in a spread never
+  converts into pile ownership.
+- Positions currently use a simple zone percentage and visible handles.
+  Further improvements for small screens and touch precision are pending.
+- The original `state.removed` (automatic dealing exclusions) remains a
+  separate legacy category, distinct from user-created tabletop piles.
+- Reading snapshots and export formats need a later audit for displaying
+  pile contents, although single-table local state stores `tablePiles`.
+  The full interactive editing experience must receive browser verification.
+
+Implementation intentionally preserves existing Tarot workflows and
+card images. Do not advertise multi-deck or all-solitaire support yet.
