@@ -421,6 +421,16 @@ test('pile split, ordered multi-card transfer, and whole-pile merge preserve ide
  const p1=page.locator('.table-pile[data-pile-id="pile-1"]');
  const p2=page.locator('.table-pile[data-pile-id="pile-2"]');
  await expect(p1.locator('.table-pile-take-count')).toHaveValue('1');
+ const geometry=await p1.evaluate(el=>{
+  const select=el.querySelector('.table-pile-take-count').getBoundingClientRect();
+  const handle=el.querySelector('.table-pile-handle').getBoundingClientRect();
+  const card=el.querySelector('.table-pile-top').getBoundingClientRect();
+  return {selectorBottom:select.bottom,selectorWidth:select.width,handleTop:handle.top,cardTop:card.top};
+ });
+ expect(geometry.selectorBottom).toBeLessThanOrEqual(geometry.handleTop+1);
+ expect(geometry.handleTop).toBeLessThan(geometry.cardTop);
+ expect(geometry.selectorWidth).toBeGreaterThanOrEqual(108);
+ await expect(p1.locator('.table-pile-top')).toHaveAttribute('data-instance-id',seeded.source[0]);
  await p1.locator('.table-pile-take-count').selectOption('2');
  let src=await p1.locator('.table-pile-top').boundingBox(),dst=await p2.locator('.table-pile-top').boundingBox();
  await page.mouse.move(src.x+src.width/2,src.y+src.height/2);
@@ -431,6 +441,7 @@ test('pile split, ordered multi-card transfer, and whole-pile merge preserve ide
  let state=(await saved(page,WORKSPACE)).state;
  expect(state.tablePiles[0].cards.map(c=>c.instanceId)).toEqual([seeded.source[2]]);
  expect(state.tablePiles[1].cards.map(c=>c.instanceId)).toEqual([seeded.source[0],seeded.source[1],seeded.target]);
+ await expect(p2.locator('.table-pile-top')).toHaveAttribute('data-instance-id',seeded.source[0]);
 
  await p2.locator('.table-pile-take-count').selectOption('2');
  src=await p2.locator('.table-pile-top').boundingBox();
