@@ -11,7 +11,7 @@ const css=read('css/tabula.css');
 const storage=read('js/storage-format.js');
 const identity=read('js/physical-identity.js');
 const modules=[
- 'storage-format','physical-identity','multi-workspace','catalog',
+ 'storage-format','physical-identity','table-piles','multi-workspace','catalog',
  'spread-store','spread-geometry','spread-encyclopedia','deck-store',
  'deck-blueprint','card-rules','shuffle','reading-history','ui-format',
  'deal-workflow','mathers-first-method','deal-workbench','card-snap','tabula'
