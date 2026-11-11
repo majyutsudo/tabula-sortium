@@ -347,6 +347,47 @@ test('built-in deck language and traditional pip option can change without cloni
  await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(1);
 });
 
+test('manual pile holds a physical card, leaves a refillable slot, and survives reload',async ({page})=>{
+ await page.locator('#quickDeal').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+ const before=await saved(page,WORKSPACE);
+ const original=before.state.placed[0];
+ const add=page.locator('#addTablePile');
+ await add.click();
+ const zone=await page.locator('#zone').boundingBox();
+ await page.mouse.click(zone.x+zone.width*.83,zone.y+zone.height*.28);
+ await expect(page.locator('.table-pile')).toHaveCount(1);
+ const pile=await page.locator('.table-pile').boundingBox();
+ const card=await page.locator('#zone .card[data-index="0"]').boundingBox();
+ await page.mouse.move(card.x+card.width/2,card.y+card.height/2);
+ await page.mouse.down();
+ await page.mouse.move(pile.x+pile.width/2,pile.y+pile.height/2,{steps:12});
+ await page.mouse.up();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.tablePiles[0].cards.length).toBe(1);
+ const deposited=await saved(page,WORKSPACE);
+ expect(deposited.state.tablePiles[0].cards[0].instanceId).toBe(original.instanceId);
+ expect(deposited.state.placed).toHaveLength(9);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.tablePiles[0].cards[0].instanceId).toBe(original.instanceId);
+ await page.locator('#quickDeal').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+ const refilled=await saved(page,WORKSPACE);
+ expect(refilled.state.placed.find(c=>c.slot===original.slot)?.instanceId).not.toBe(original.instanceId);
+ const top=await page.locator('.table-pile-top').boundingBox();
+ await page.mouse.move(top.x+top.width/2,top.y+top.height/2);
+ await page.mouse.down();
+ await page.mouse.move(zone.x+zone.width*.70,zone.y+zone.height*.70,{steps:12});
+ await page.mouse.up();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.tablePiles[0].cards.length).toBe(0);
+ const withdrawn=await saved(page,WORKSPACE);
+ expect(withdrawn.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(true);
+ await page.locator('#quickCollect').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.deck.length).toBe(78);
+ const collected=await saved(page,WORKSPACE);
+ expect(new Set(collected.state.deck.map(c=>c.instanceId)).size).toBe(78);
+ expect(collected.state.tablePiles).toHaveLength(0);
+});
+
 test('fresh and dealt cards are unique by physical ID',async ({page})=>{
  const getIds=async()=>{const w=await saved(page,WORKSPACE);return [...w.state.deck,...w.state.placed,...(w.state.removed||[])].map(c=>c.id)};
  for(let k=0;k<4;k++){
