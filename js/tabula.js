@@ -974,8 +974,11 @@ function renderTablePiles(zone,m){
   const role=TabulaTablePiles.roleOf(pile);
   const anchoredSlot=Number.isInteger(pile.slot)?getSlots()[pile.slot]:null;
   const pileLabel=role==='pile'?pile.id.replace('pile-','束 '):roleLabels[role]+' '+pile.id.replace('pile-','');
-  title.textContent='✥ '+(anchoredSlot?((pile.slot+1)+'. '):'')+pileLabel+' · '+pile.cards.length+'枚';
-  title.title=(anchoredSlot?(pile.slot+1)+'. '+anchoredSlot.name+' — ':'')+'ドラッグで束を移動／クリックで役割を設定';
+  // Pile metadata is presented through the shared label system. Keep this
+  // handle independently operable even with all text labels hidden.
+  title.textContent='✥';
+  title.title=(anchoredSlot?(pile.slot+1)+'. '+anchoredSlot.name+' — ':'')+pileLabel+' · '+pile.cards.length+'枚／ドラッグで移動・クリックで役割を設定';
+  title.setAttribute('aria-label',title.title);
   title.setAttribute('aria-expanded','false');
   const roleSelect=document.createElement('select');roleSelect.className='table-pile-role-select';
   roleSelect.hidden=true;roleSelect.setAttribute('aria-label','この束の役割');
@@ -993,6 +996,20 @@ function renderTablePiles(zone,m){
   if(pile.cards.length){
    const fan=TabulaTablePiles.fanOf(pile);
    const expanded=Math.hypot(fan.dx,fan.dy)>.012&&pile.cards.length>1;
+   // Decorative paper edges sit behind the real card and never capture events.
+   // Do not build layers when the pile is fanned: those physical cards are
+   // already visible and remain directly draggable.
+   el.classList.toggle('has-card-depth',pile.cards.length>1&&!expanded);
+   if(pile.cards.length>1&&!expanded){
+    const depth=document.createElement('div');depth.className='table-pile-depth';
+    const layers=Math.min(3,pile.cards.length-1);
+    for(let i=layers;i>=1;i--){
+     const edge=document.createElement('span');edge.className='table-pile-depth-sheet';
+     edge.style.setProperty('--depth-index',String(i));
+     depth.append(edge);
+    }
+    el.append(depth);
+   }
    const faces=[];
    // Closed piles render only their top card. The first fan gesture lazily
    // creates every lower face before applying the initial spread distance.
@@ -2747,6 +2764,30 @@ function refreshTableLabels(){
  }
  slots.forEach((slot,i)=>add(state.placed.find(p=>p.slot===i),slot,i));
  state.placed.filter(p=>p.slot==null).forEach(p=>add(p,null,-1));
+ // Physical piles participate in the SAME display modes as placed cards.
+ // Labels are independent of movement handles and are never hit targets.
+ for(const pile of state.tablePiles||[]){
+  const slot=Number.isInteger(pile.slot)?slots[pile.slot]:null;
+  const first=pile.cards[0],definition=first?workingCard(first.id):null;
+  const roleNames={pile:'束',tableau:'場札',foundation:'組札',waste:'タロン',discard:'捨て札'};
+  const role=roleNames[TabulaTablePiles.roleOf(pile)]||'束';
+  const number=slot?String(pile.slot+1):pile.id.replace('pile-','');
+  let label='';
+  if(labelMode==='number')label=number;
+  else if(labelMode==='position')label=slot?number+' · '+slot.name:role+' '+number;
+  else if(labelMode==='card'&&first?.faceUp)label=(slot?number+' · ':'')+(definition?tableCardName(definition):'カード')+(first.reversed?'〈逆〉':'');
+  if(!label)continue;
+  const t=document.createElement('span');t.className='zone-label unified-label pile-label';
+  t.textContent=label;t.title=label;
+  const x=pile.x,y=pile.y;
+  const halfHeight=m.h/2+5;
+  t.style.left=x+'%';
+  t.style.top=`calc(${y}% + ${labelPlacement==='below'?halfHeight:-halfHeight}px)`;
+  t.style.setProperty('transform',labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
+  zone.append(t);
+  const width=t.getBoundingClientRect().width/tableCamera.scale,zw=zone.offsetWidth;
+  if(zw&&width)t.style.left=Math.max(width/2+3,Math.min(zw-width/2-3,zw*x/100))+'px';
+ }
 }
 function refreshDraggedSlotLabel(){refreshTableLabels()}
 const baseRender=render;render=function(){baseRender();refreshTableLabels()};
