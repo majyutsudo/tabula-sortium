@@ -60,6 +60,22 @@ function drawFromDeck(state,id,faceUp=false){
  state.selected=null;state.completionShown=false;
  return card;
 }
+/* Turn exactly two intentional overlapping loose/tableau cards into a pile.
+   The dropped card becomes the top card; unrelated visual overlaps remain loose. */
+function stackPlaced(state,movingIndex,targetIndex){
+ validate(state);
+ if(!Number.isInteger(movingIndex)||!Number.isInteger(targetIndex)||movingIndex===targetIndex||
+    movingIndex<0||targetIndex<0||movingIndex>=state.placed.length||targetIndex>=state.placed.length)fail('invalid stack selection');
+ const moving=state.placed[movingIndex],target=state.placed[targetIndex];
+ if(!Number.isFinite(target.x)||!Number.isFinite(target.y))fail('invalid stack position');
+ const next=create(state,target.x,target.y);
+ const movingCard=state.placed.splice(movingIndex,1)[0];
+ const adjusted=targetIndex>movingIndex?targetIndex-1:targetIndex;
+ const targetCard=state.placed.splice(adjusted,1)[0];
+ next.cards.push(movingCard,targetCard);
+ state.selected=null;state.completionShown=false;
+ return next;
+}
 function withdraw(state,id,position){
  validate(state);const p=find(state,id);
  if(!p.cards.length)fail('empty pile');
@@ -104,5 +120,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,withdraw,transfer,split,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
