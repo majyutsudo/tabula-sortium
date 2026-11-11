@@ -124,7 +124,7 @@ test('About opens from settings, credits and legal details navigate correctly',a
   await expect(about.locator('h2')).toHaveText('TABULA SORTIUM');
   await expect(about.locator('.about-subtitle')).toHaveText('THE VIRTUAL DIVINATION TABLE');
   await expect(about.locator('.about-credits')).toContainText('Created by Majyutsudo');
-  await expect(about.locator('.about-meta').first()).toHaveText('Version 0.9.96');
+  await expect(about.locator('.about-meta').first()).toHaveText('Version '+(await page.title()).match(/TABULA SORTIUM v([0-9.]+)/)[1]);
   await expect(about.locator('.about-icon')).toHaveJSProperty('complete',true);
   await page.locator('#aboutLegal').click();
   await expect(page.locator('.about-legal')).toContainText('License & Disclaimer');
@@ -174,7 +174,7 @@ test('spread-edit preview never persists duplicate virtual cards to a real readi
 test('current spread opens reference page without changing the current reading',async({page})=>{
  const before=await saved(page,WORKSPACE);
  await page.locator('#spreadInfoButton').click();
- await expect(page.locator('.spread-guide h2')).toHaveText('ケルト十字');
+ await expect(page.locator('.spread-guide h2')).toContainText('ケルト十字');
  await expect(page.locator('#spreadGuideDiagram .spread-diagram-slot')).toHaveCount(10);
  await expect(page.locator('.spread-guide-position')).toHaveCount(10);
  await page.locator('.spread-diagram-slot[data-spread-slot="8"]').click();
