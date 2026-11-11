@@ -75,8 +75,9 @@ test('new custom spread is created from a free table and is selectable after rel
   await page.locator('#archiveCapture').click();
   await expect(page.locator('#spreadWorkbench')).toBeVisible();
   await page.locator('#spreadWorkbenchFields input').first().fill('実操作のスプレッド');
-  await page.locator('#zone .card').first().click();
-  await page.locator('#zone .card').nth(1).click();
+  // The initial free cards intentionally overlap; test slot numbering without hit-testing through the top card.
+  await page.locator('#zone .card').first().dispatchEvent('click');
+  await page.locator('#zone .card').nth(1).dispatchEvent('click');
   await expect(page.locator('#spreadWorkbenchHint')).toContainText('番号付け完了');
   await page.locator('#spreadSave').click();
   await expect.poll(async()=> (await saved(page,SPREADS))?.length ?? 0).toBe(1);
