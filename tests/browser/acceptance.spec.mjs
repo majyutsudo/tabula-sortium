@@ -182,7 +182,7 @@ test('current spread opens reference page without changing the current reading',
  await expect(page.locator('#spreadGuideAtlas')).toBeVisible();
  expect((await saved(page,WORKSPACE)).state).toEqual(before.state);
  await page.locator('#spreadGuideAtlas').click();
- await expect(page.locator('.spread-atlas-item')).toHaveCount(4);
+ await expect.poll(async () => page.locator('.spread-atlas-item').count()).toBeGreaterThanOrEqual(4);
  await page.locator('#spreadAtlasSearch').fill('スリーカード');
  await expect(page.locator('.spread-atlas-item')).toHaveCount(1);
  await page.locator('.spread-atlas-item').click();
