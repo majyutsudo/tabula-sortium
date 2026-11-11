@@ -55,3 +55,42 @@ Design and test persistent instance identifiers, a unified container registry,
 and a reversible conversion/controlled cutover for one table before replacing
 any live state. Preserve normal draw/cut/shuffle, custom deal, two-deck mode,
 reading snapshots, and backup/restore. Keep `main` untouched.
+
+## Identity and collection contract (v0.401)
+
+User-approved rules:
+
+- **Physical identity never encodes a mutable position.** A card keeps its
+  `instanceId` through draws, shuffles, cuts, collection and subsequent
+  readings with the same physical deck.
+- **Normal collection preserves the current order within each collected
+  bundle.** The caller explicitly chooses bundle order and whether to
+  deposit on top or bottom. Depositing successive bundles on top naturally
+  reverses the sequence of *bundles*, without reversing their internal cards.
+- **Restore to the state before dealing is a separate operation** and must not
+  be implemented as ordinary collection.
+- **New reading reuses the physical deck**, rather than creating new IDs.
+  Recreating an entirely new physical deck is an explicit different action.
+
+The engine now accepts optional `instanceIds` in each deck definition and
+provides `collect({from, to, toEnd})` for explicit whole-pile collection.
+Names like `A:0` remain a fallback for temporary/test constructions; they
+must *not* be regenerated from stock indices at the future live-state cutover.
+
+**Important:** `card-bridge.js` is still a legacy **projection** that
+generates positional internal keys and exposes the original identity via
+`identityMap`. It is not a persistent-ID write-back adapter. The next
+integration must avoid changing legacy state until a stable, saved instance
+registry and round-trip checks are implemented. Existing single-table
+`initialize()` still creates fresh legacy card objects, so this approved
+behavior is an engine-level contract, **not yet a live UI feature**.
+
+### Next migration gate
+
+Before enabling the engine in the UI, add a persistent card registry to the
+workspace storage and verify:
+1. new readings preserve the IDs while changing ordering;
+2. collected cards preserve physical order, and old restore is independent;
+3. the same picture in multiple decks remains independently identifiable;
+4. creating, editing or replacing a physical deck is an explicit lifecycle;
+5. save/reload, backups, multiple tables and card conservation round-trip.
