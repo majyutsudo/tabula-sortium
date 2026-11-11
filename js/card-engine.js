@@ -39,8 +39,8 @@ function validate(w){
 function create({decks=[],tables=[]}={}){
  const w={schemaVersion:1,cards:{},decks:{},tables:{},containers:{}};
  for(const d of decks){
-  const id=requireId(d.id,'deck id');if(w.decks[id]||!Array.isArray(d.cardIds))fail('invalid deck definition');
-  const keys=d.cardIds.map((cardId,i)=>{requireId(cardId,'card id');const key=id+':'+i;w.cards[key]={instanceId:key,cardId,deckId:id,faceUp:false,reversed:false,angle:0};return key});
+  const id=requireId(d.id,'deck id');if(w.decks[id]||!Array.isArray(d.cardIds)||d.instanceIds!==undefined&&(!Array.isArray(d.instanceIds)||d.instanceIds.length!==d.cardIds.length))fail('invalid deck definition');
+  const keys=d.cardIds.map((cardId,i)=>{requireId(cardId,'card id');const key=d.instanceIds===undefined?id+':'+i:requireId(d.instanceIds[i],'instance id');if(w.cards[key])fail('duplicate instance id');w.cards[key]={instanceId:key,cardId,deckId:id,faceUp:false,reversed:false,angle:0};return key});
   w.decks[id]={id,instanceIds:keys};w.containers['stock:'+id]={id:'stock:'+id,kind:'stock',deckId:id,cards:keys.slice()};
  }
  for(const t of tables){
@@ -66,6 +66,21 @@ function move(w,{from,to,count=1,fromEnd='top',toEnd='top'}){
   if(toEnd==='top')dst.cards.unshift(...moved);else dst.cards.push(...moved);
  });
 }
+/* Collect an explicitly ordered sequence of whole piles. A pile retains its
+   internal top-to-bottom order; depositing successive piles on top changes
+   group order just as with real cards. Callers choose the collection order. */
+function collect(w,{from,to,toEnd='top'}){
+ if(!Array.isArray(from)||!from.length||new Set(from).size!==from.length)fail('invalid collect sources');
+ if(!['top','bottom'].includes(toEnd)||from.includes(to))fail('invalid collect destination');
+ return change(w,n=>{
+  const dest=n.containers[to];if(!dest)fail('unknown collect destination');
+  for(const sourceId of from){
+   const src=n.containers[sourceId];if(!src||src===dest)fail('unknown collect source');
+   const cards=src.cards.splice(0);
+   if(toEnd==='top')dest.cards.unshift(...cards);else dest.cards.push(...cards);
+  }
+ });
+}
 function dealVacancies(w,{from,tableId,order,count=Infinity}){
  validate(w);const t=w.tables[tableId];if(!t||!w.containers[from])fail('invalid deal target');
  const ids=order===undefined?t.slots.map(s=>s.id):order; if(!Array.isArray(ids))fail('invalid deal order');
@@ -83,5 +98,5 @@ function flip(w,instanceId,faceUp){return change(w,n=>{const c=n.cards[instanceI
 function rotate(w,instanceId,angle){return change(w,n=>{const c=n.cards[instanceId];if(!c||!Number.isFinite(angle))fail('invalid rotation');c.angle=angle})}
 function reorder(w,containerId,orderedIds){return change(w,n=>{const c=n.containers[containerId];if(!c||!Array.isArray(orderedIds)||orderedIds.length!==c.cards.length||new Set(orderedIds).size!==orderedIds.length||orderedIds.some(id=>!c.cards.includes(id)))fail('invalid reorder');c.cards=orderedIds.slice()})}
 function removeEmptyPile(w,id){return change(w,n=>{const key='pile:'+id,c=n.containers[key];if(!c||c.kind!=='pile'||c.cards.length)fail('pile not empty');delete n.containers[key]})}
-root.TabulaCardEngine=Object.freeze({create,validate,addPile,move,dealVacancies,flip,rotate,reorder,removeEmptyPile});
+root.TabulaCardEngine=Object.freeze({create,validate,addPile,move,collect,dealVacancies,flip,rotate,reorder,removeEmptyPile});
 })(typeof globalThis!=='undefined'?globalThis:this);
