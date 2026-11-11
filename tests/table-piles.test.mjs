@@ -258,3 +258,25 @@ test('creating a pile on a registered spread card preserves its position',()=>{
  assert.equal(pile.slot,1);
  assert.equal(P.roleOf(split),'pile');
 });
+
+test('refilling an empty registered pile preserves identity, role, slot and fan',()=>{
+ const state=fresh();
+ const pile=P.stackPlaced(state,0,1);
+ P.setRole(state,pile.id,'tableau');
+ P.setFan(state,pile.id,.22,-.35);
+ const other=P.create(state,85,70,'discard');
+ P.transfer(state,pile.id,other.id,2);
+ assert.equal(pile.cards.length,0);
+ const before=ids(state).sort(),originalId=pile.id,originalSlot=pile.slot;
+ const stockTop=state.deck[0].instanceId;
+ const dealt=P.drawFromDeck(state,pile.id,false);
+ assert.equal(dealt.instanceId,stockTop);
+ assert.equal(pile.id,originalId);
+ assert.equal(pile.slot,originalSlot);
+ assert.equal(P.roleOf(pile),'tableau');
+ assert.deepEqual(JSON.parse(JSON.stringify(P.fanOf(pile))),{dx:.22,dy:-.35});
+ assert.deepEqual(ids(state).sort(),before);
+ const persisted=JSON.parse(JSON.stringify(state));
+ assert.equal(P.find(persisted,pile.id).cards.length,1);
+ assert.equal(I.ensureSingle(persisted),persisted);
+});
