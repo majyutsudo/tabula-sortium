@@ -1471,3 +1471,8 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 #placementToolsContent .placement-tools-button[aria-pressed="true"]{border-color:#bb995b;background:#4c4430;color:#fff0ca}
 #placementToolsContent .placement-tools-button[hidden]{display:none!important}
 #placementToolsContent .placement-tools-button .quick-symbol{font-size:16px;color:inherit}
+
+/* v0.430: registered empty piles remain usable refill targets. Other empty
+   piles retain their previous passive placeholder behavior. */
+.table-pile-empty.refill-ready{pointer-events:auto;cursor:pointer;touch-action:manipulation;border:1px dashed #b69d6b;border-radius:4px;background:#2631269e;color:#f0deb5}
+.table-pile-empty.refill-ready:hover{background:#384536d9;border-color:#d8bc7e}
