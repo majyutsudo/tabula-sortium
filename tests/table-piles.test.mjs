@@ -149,3 +149,26 @@ test('fan accepts diagonal vectors and clamps excessive offsets',()=>{
  assert.deepEqual(P.fanOf(pile),{dx:0,dy:0});
  assert.throws(()=>P.setFan(s,pile.id,Number.NaN,0));
 });
+
+test('semantic tabletop roles stay with their pile and survive card transfers',()=>{
+ const state=fresh(),talon=P.create(state,30,40,'waste'),discard=P.create(state,70,40,'discard');
+ P.deposit(state,0,talon.id);P.deposit(state,0,talon.id);
+ const before=Array.from(talon.cards,c=>c.instanceId);
+ assert.equal(P.roleOf(talon),'waste');
+ P.transfer(state,talon.id,discard.id,1);
+ assert.equal(P.roleOf(talon),'waste');
+ assert.equal(P.roleOf(discard),'discard');
+ assert.deepEqual(Array.from(discard.cards,c=>c.instanceId),before.slice(0,1));
+ const offshoot=P.split(state,talon.id,1,50,60);
+ assert.equal(P.roleOf(offshoot),'pile');
+ P.setRole(state,offshoot.id,'foundation');
+ assert.equal(P.roleOf(JSON.parse(JSON.stringify(offshoot))),'foundation');
+ assert.equal(I.ensureSingle(state),state);
+});
+test('pile role validation rejects unrecognized role without changing card state',()=>{
+ const state=fresh(),p=P.create(state,40,50);
+ const before=JSON.stringify(state);
+ assert.throws(()=>P.setRole(state,p.id,'invalid-role'));
+ assert.throws(()=>P.create(state,80,50,'invalid-role'));
+ assert.equal(JSON.stringify(state),before);
+});
