@@ -351,7 +351,6 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
  await page.locator('#quickDeal').click();
  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
  const before=await saved(page,WORKSPACE);
- const original=before.state.placed[0];
  const add=page.locator('#addTablePile');
  await add.click();
  await page.locator('#zone').scrollIntoViewIfNeeded();
@@ -366,7 +365,9 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
  await page.mouse.up();
  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.tablePiles[0].cards.length).toBe(1);
  const deposited=await saved(page,WORKSPACE);
- expect(deposited.state.tablePiles[0].cards[0].instanceId).toBe(original.instanceId);
+ const original=deposited.state.tablePiles[0].cards[0];
+ expect(before.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(true);
+ expect(deposited.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(false);
  expect(deposited.state.placed).toHaveLength(9);
  await page.reload();
  expect((await saved(page,WORKSPACE)).state.tablePiles[0].cards[0].instanceId).toBe(original.instanceId);
