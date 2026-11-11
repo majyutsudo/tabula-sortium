@@ -336,3 +336,34 @@ Removing the empty pile itself frees the registered slot normally.
 The ordinary `state.placed` and `state.tablePiles` arrays still own live
 operations. The experimental common-container engine remains projection-only;
 this is the first UI path toward manual refill of registered multi-card slots.
+
+
+## Shared ordered tabletop frames — v0.431
+
+A preset and a free tabletop now use the same **ordered location operations**.
+The pure, DOM-independent `js/table-arrangement.js` treats registered
+spread slots and manually created piles as frames:
+`slot:<index>` and `pile:<pile-id>`.
+
+- **Compact** fills each empty frame using the next occupied frame in the
+  caller-specified order. A whole pile moves as one top-first sequence; the
+  source stays as an empty frame. A multi-card block moved to a bare
+  registered slot becomes a position-attached pile.
+- **Refill** deals one physical card from the current stock into each empty
+  frame in order. Existing occupied frames are unchanged. Waste-role piles
+  draw face-up; other frame positions follow the normal deal-face-up setting.
+- Both operations are atomic, returning a new copy of the workspace and the
+  number of moves/cards dealt. They do not introduce game-specific legality
+  checks and do not change cards' physical identities or existing order.
+- The bottom-right tabletop popover offers **場所の整理** with
+  **空きを詰める**, **空きを一括補充**, and an order choice. The default is
+  the spread's designated deal order followed by freely placed frames in
+  creation order. **卓の上から左順** orders all frames geometrically.
+- In a free tabletop, manually placed piles supply the frames; it does not
+  need to switch to a special registered spread for these operations.
+  Ordinary loose cards are not implicitly treated as empty/occupied frames,
+  since they have no designated destination location.
+
+The current live bridge commits the pure operation's changed stock, placed
+cards and piles to the ordinary local state. The experimental multi-table
+engine migration remains separate. The basic five reading buttons stay intact.
