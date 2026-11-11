@@ -354,26 +354,9 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
  const original=before.state.placed[0];
  const add=page.locator('#addTablePile');
  await add.click();
+ await page.locator('#zone').scrollIntoViewIfNeeded();
  const zone=await page.locator('#zone').boundingBox();
- const diagnostics=await page.evaluate(()=>{
-   const r=document.querySelector('#zone').getBoundingClientRect();
-   const x=r.left+r.width*.83,y=r.top+r.height*.28;
-   const node=document.elementFromPoint(x,y);
-   return {armed:document.querySelector('#addTablePile').getAttribute('aria-pressed'),target:node?.className,tag:node?.tagName,inSurface:document.querySelector('#surface').contains(node),x,y};
- });
- console.log('PILE_PLACEMENT_DIAGNOSTIC',JSON.stringify(diagnostics));
- const x=zone.x+zone.width*.83,y=zone.y+zone.height*.28;
- console.log('PILE PRE',await page.evaluate(([x,y])=>{
-  const target=document.elementFromPoint(x,y),el=document.getElementById('addTablePile');
-  return {target:target?.outerHTML?.slice(0,350),pressed:el?.getAttribute('aria-pressed'),disabled:el?.disabled,zone:getComputedStyle(document.getElementById('zone')).pointerEvents,body:document.body.className};
- },[x,y]));
- await page.mouse.click(x,y);
- console.log('PILE POST',await page.evaluate(()=>({
-  pressed:document.getElementById('addTablePile')?.getAttribute('aria-pressed'),
-  count:document.querySelectorAll('.table-pile').length,
-  state:JSON.parse(localStorage.getItem('tabula_sortium_v01'))?.state?.tablePiles,
-  log:document.getElementById('log')?.textContent?.slice(0,250)
- })));
+ await page.mouse.click(zone.x+zone.width*.83,zone.y+zone.height*.28);
  await expect(page.locator('.table-pile')).toHaveCount(1);
  const pile=await page.locator('.table-pile').boundingBox();
  const card=await page.locator('#zone .card[data-index="0"]').boundingBox();
@@ -391,10 +374,12 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
  const refilled=await saved(page,WORKSPACE);
  expect(refilled.state.placed.find(c=>c.slot===original.slot)?.instanceId).not.toBe(original.instanceId);
+ await page.locator('#zone').scrollIntoViewIfNeeded();
+ const visibleZone=await page.locator('#zone').boundingBox();
  const top=await page.locator('.table-pile-top').boundingBox();
  await page.mouse.move(top.x+top.width/2,top.y+top.height/2);
  await page.mouse.down();
- await page.mouse.move(zone.x+zone.width*.70,zone.y+zone.height*.70,{steps:12});
+ await page.mouse.move(visibleZone.x+visibleZone.width*.70,visibleZone.y+visibleZone.height*.70,{steps:12});
  await page.mouse.up();
  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.tablePiles[0].cards.length).toBe(0);
  const withdrawn=await saved(page,WORKSPACE);
