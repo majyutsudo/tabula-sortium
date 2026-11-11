@@ -836,8 +836,24 @@ function renderTablePiles(zone,m){
   const el=document.createElement('div');el.className='table-pile';el.dataset.pileId=pile.id;
   el.style.left=pile.x+'%';el.style.top=pile.y+'%';el.style.width=m.w+'px';el.style.height=m.h+'px';
   const title=document.createElement('button');title.type='button';title.className='table-pile-handle';
-  title.textContent='✥ '+pile.id.replace('pile-','束 ')+' · '+pile.cards.length+'枚';title.title='ドラッグで束を移動';
-  el.append(title);
+  const roleLabels={pile:'束',tableau:'場札',foundation:'組札',waste:'タロン',discard:'捨て札'};
+  const role=TabulaTablePiles.roleOf(pile);
+  title.textContent='✥ '+(role==='pile'?pile.id.replace('pile-','束 '):roleLabels[role]+' '+pile.id.replace('pile-',''))+' · '+pile.cards.length+'枚';
+  title.title='ドラッグで束を移動／クリックで役割を設定';
+  title.setAttribute('aria-expanded','false');
+  const roleSelect=document.createElement('select');roleSelect.className='table-pile-role-select';
+  roleSelect.hidden=true;roleSelect.setAttribute('aria-label','この束の役割');
+  for(const [value,label] of Object.entries(roleLabels)){
+   const option=document.createElement('option');option.value=value;option.textContent=label;
+   roleSelect.append(option);
+  }
+  roleSelect.value=role;
+  roleSelect.addEventListener('pointerdown',e=>e.stopPropagation());
+  roleSelect.onchange=()=>{
+   TabulaTablePiles.setRole(state,pile.id,roleSelect.value);
+   render();saveLocal();setStatus('束の役割を「'+roleLabels[roleSelect.value]+'」に設定しました。');
+  };
+  el.append(title,roleSelect);
   if(pile.cards.length){
    const fan=TabulaTablePiles.fanOf(pile);
    const expanded=Math.hypot(fan.dx,fan.dy)>.012&&pile.cards.length>1;
@@ -1007,7 +1023,11 @@ function renderTablePiles(zone,m){
    const clear=()=>{title.removeEventListener('pointermove',move);title.removeEventListener('pointerup',end);title.removeEventListener('pointercancel',cancel)};
    const end=ev=>{
     clear();
-    if(!moved){render();return}
+    if(!moved){
+     roleSelect.hidden=!roleSelect.hidden;
+     title.setAttribute('aria-expanded',String(!roleSelect.hidden));
+     return;
+    }
     const pt=position(ev);
     el.style.left=pt.x+'%';el.style.top=pt.y+'%';
     // Hit-test actual pile rectangles, not the pointer over the handle above the card.
@@ -1035,6 +1055,11 @@ function renderTablePiles(zone,m){
    };
    const cancel=()=>{clear();render()};
    title.addEventListener('pointermove',move);title.addEventListener('pointerup',end);title.addEventListener('pointercancel',cancel);
+   title.addEventListener('click',e=>{
+    if(e.detail!==0)return;
+    roleSelect.hidden=!roleSelect.hidden;
+    title.setAttribute('aria-expanded',String(!roleSelect.hidden));
+   });
   });
   zone.append(el);
  }
