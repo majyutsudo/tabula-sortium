@@ -2089,11 +2089,11 @@ function finishedCardSource(c,tabletop=false,appearance='standard',deckOverride=
  // A gallery-only deck is passed explicitly. Never change settings or the
  // active deck merely to render an illustration in the encyclopedia.
  const d=deckOverride===undefined?activeDeck():deckOverride;
- const language=deckOverride===undefined?effectiveCardLanguage():(d?.language||'original');
+ const language=deckOverride===undefined?effectiveCardLanguage():(d?.language||settings.cardLanguage||'original');
  c=deckOverride===undefined?displayCard(c):{...c,
   name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,language),
   number:c.group==='major'&&d&&Object.hasOwn(d.majorNumbers,c.id)?d.majorNumbers[c.id]:c.number};
- const pipPlain=(deckOverride===undefined?effectivePipBackground():d?.pipBackground||'landscape')==='none';
+ const pipPlain=(deckOverride===undefined?effectivePipBackground():d?.pipBackground||settings.pipBackground||'landscape')==='none';
  const wornMaterial=appearance==='worn'&&wornMaterialAvailable(c.id);
  const finishOverlay=wornMaterial?wornMaterialMarkup(c.id):'';
  const wornInk=wornMaterial?'#795a40':null;
