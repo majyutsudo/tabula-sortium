@@ -172,3 +172,22 @@ test('pile role validation rejects unrecognized role without changing card state
  assert.throws(()=>P.create(state,80,50,'invalid-role'));
  assert.equal(JSON.stringify(state),before);
 });
+
+test('intentional two-card stack uses dropped card as top without absorbing neighbors',()=>{
+ const state=fresh();
+ state.placed.push({id:'d',instanceId:'A:d',slot:null,x:40,y:45,faceUp:true});
+ const original=ids(state).sort();
+ const stack=P.stackPlaced(state,0,1);
+ assert.deepEqual(Array.from(stack.cards,c=>c.id),['a','b']);
+ assert.equal(stack.x,50);assert.equal(stack.y,30);
+ assert.equal(P.roleOf(stack),'pile');
+ assert.deepEqual(Array.from(state.placed,c=>c.id),['d']);
+ assert.deepEqual(ids(state).sort(),original);
+ assert.equal(I.ensureSingle(state),state);
+});
+test('invalid two-card stack request is atomic',()=>{
+ const state=fresh(),before=JSON.stringify(state);
+ assert.throws(()=>P.stackPlaced(state,0,0));
+ assert.throws(()=>P.stackPlaced(state,0,999));
+ assert.equal(JSON.stringify(state),before);
+});
