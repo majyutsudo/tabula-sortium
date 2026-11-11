@@ -83,3 +83,19 @@ test('persistent identity validation rejects mismatched lengths and duplicates',
  assert.throws(()=>E.create({decks:[{id:'A',cardIds:['a','b'],instanceIds:['same','same']}]}));
  assert.throws(()=>E.create({decks:[{id:'A',cardIds:['a'],instanceIds:['same']},{id:'B',cardIds:['a'],instanceIds:['same']}]}));
 });
+
+test('semantic container roles survive engine moves and cannot be inherited by card identity',()=>{
+ let w=fresh();
+ w=E.addPile(w,{id:'talon',tableId:'main',x:70,y:50,role:'waste'});
+ w=E.addPile(w,{id:'discard',tableId:'main',x:85,y:60,role:'discard'});
+ w=E.move(w,{from:'stock:A',to:'pile:talon',count:2});
+ const before=Array.from(w.containers['pile:talon'].cards);
+ w=E.move(w,{from:'pile:talon',to:'pile:discard',count:1});
+ assert.deepEqual(Array.from(w.containers['pile:discard'].cards),before.slice(0,1));
+ assert.equal(E.roleOf(w.containers['pile:discard']),'discard');
+ assert.equal(E.roleOf(w.containers['pile:talon']),'waste');
+ w=E.setPileRole(w,'talon','tableau');
+ assert.equal(E.roleOf(w.containers['pile:talon']),'tableau');
+ assert.equal(E.validate(JSON.parse(JSON.stringify(w))),true);
+ assert.throws(()=>E.setPileRole(w,'talon','unknown'));
+});
