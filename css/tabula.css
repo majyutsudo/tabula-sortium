@@ -1445,3 +1445,9 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  box-sizing:border-box;border:1px solid #b59b68;border-radius:4px;background:#26392f;color:#f0dfc1;
  font:12px Arial,sans-serif;cursor:pointer}
 .table-pile-role-select[hidden]{display:none}
+
+/* v0.424 — accessible pile creation and deliberate stack gesture */
+.table-shortcuts{grid-template-columns:repeat(6,minmax(0,1fr))}
+.table-shortcuts #addTablePile[aria-pressed="true"]{border-color:#d7ae63;background:#59432b;color:#fff0c9}
+.stack-hover-target{outline:3px solid #d7bc83;outline-offset:3px;box-shadow:0 0 0 4px #3b302a77,0 0 18px #d7bc83a8}
+@media(max-width:780px){.table-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))}}
