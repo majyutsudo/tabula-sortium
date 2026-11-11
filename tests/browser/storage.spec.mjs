@@ -162,6 +162,9 @@ test('invalid JSON does not replace the current workspace', async ({ page }) => 
 });
 
 test('settings reset preserves the current reading', async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem('tabula-deal-actions-v1', JSON.stringify([{name:'初期化テスト用ディール',steps:[{type:'skip-deal',skip:1,times:2}],autoDeal:true}])));
+  await page.reload();
+  await expect(page.locator('#quickDealChoice option')).toContainText(['番号順（裏配り）','番号順（表配り）','初期化テスト用ディール','手順を編集・登録…']);
   await page.locator('.label-cycle-settings summary').click();
   await page.locator('.label-cycle-options input[value="number"]').check();
   await page.locator('#toolbarLabelToggle').click();
@@ -177,10 +180,15 @@ test('settings reset preserves the current reading', async ({ page }) => {
   expect(after.state.placed).toEqual(before.state.placed);
   expect(after.settings.spread).toBe('celtic');
   expect(after.settings.shuffleMethod).toBe('overhand');
+  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('tabula-deal-actions-v1')))).toHaveLength(1);
+  await expect(page.locator('#quickDealChoice option')).toHaveCount(4);
   await expect(page.locator('#tableLabelMode')).toHaveValue('card');
 });
 
 test('all-data reset discards readings and returns card size to its default', async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem('tabula-deal-actions-v1', JSON.stringify([{name:'初期化テスト用ディール',steps:[{type:'skip-deal',skip:1,times:2}],autoDeal:true}])));
+  await page.reload();
+  await expect(page.locator('#quickDealChoice option')).toContainText(['番号順（裏配り）','番号順（表配り）','初期化テスト用ディール','手順を編集・登録…']);
   await page.locator('.label-cycle-settings summary').click();
   await page.locator('.label-cycle-options input[value="number"]').check();
   await page.locator('#toolbarLabelToggle').click();
@@ -208,6 +216,9 @@ test('all-data reset discards readings and returns card size to its default', as
   for (let i = 1; i < rightColumn.length; i++)
     expect(rightColumn[i - 1].bottom).toBeLessThanOrEqual(rightColumn[i].top + 1);
 
+  expect(await page.evaluate(() => localStorage.getItem('tabula-deal-actions-v1'))).toBeNull();
+  await expect(page.locator('#quickDealChoice option')).toHaveCount(3);
+  await expect(page.locator('#quickDealChoice')).toHaveValue('');
   expect(await saved(page, HISTORY)).toBeNull();
   expect(await saved(page, SPREADS)).toBeNull();
   expect(Number(await page.evaluate(() => localStorage.getItem('tabula_card_size_v2')))).toBe(originalSize);
