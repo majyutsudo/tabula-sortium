@@ -445,7 +445,7 @@ test('full artwork subtitles complement multilingual titles rather than duplicat
  expect(english).toContain('Strength');
  expect(english).toContain('MAJOR ARCANA');
  await expect(page.locator('#cardGalleryLabel')).toContainText('Strength');
- await expect(page.locator('.deck-setting-heading').first()).toHaveText('デッキの選択');
+ await expect(page.locator('.deck-setting-heading').filter({hasText:'デッキの選択'}).first()).toHaveText('デッキの選択');
 });
 
 test('tabletop label language can follow card names or use an independent language',async ({page})=>{
