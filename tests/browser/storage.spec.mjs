@@ -118,7 +118,7 @@ test('full JSON backup keeps schema, readings and custom spreads', async ({ page
   let raw = '';
   for await (const chunk of file) raw += chunk.toString();
   const exported = JSON.parse(raw);
-  expect(exported).toMatchObject({ format: 'tabula-sortium', version: 1, kind: 'backup' });
+  expect(exported).toMatchObject({ format: 'tabula-sortium', version: 2, kind: 'backup' });
   expect(exported.workspace.schemaVersion).toBe(1);
   expect(exported.workspace.state.placed).toEqual(before.state.placed);
   expect(exported.snapshots).toEqual([]);
