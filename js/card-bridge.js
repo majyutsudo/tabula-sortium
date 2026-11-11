@@ -5,9 +5,9 @@
 (function(root){'use strict';
 function fail(s){throw Error('Card bridge: '+s)}
 function copy(v){return JSON.parse(JSON.stringify(v))}
-function project({decks,tables,stocks,placed,removed,extraPiles=[]}){
+function project({decks,tables,stocks,placed,removed,extraPiles=[],preserveIds=false}){
  const E=root.TabulaCardEngine;if(!E)fail('card engine unavailable');
- const deckDefs=decks.map(d=>({id:d.id,cardIds:d.instances.map(c=>c.id)}));
+ const deckDefs=decks.map(d=>({id:d.id,cardIds:d.instances.map(c=>c.id),...(preserveIds?{instanceIds:d.instances.map(c=>{if(typeof c.instanceId!=='string'||!c.instanceId)fail('missing persistent instanceId');return c.instanceId})}:{})}));
  const w=E.create({decks:deckDefs,tables:tables.map(t=>({id:t.id,slots:t.slots}))});
  const registry={},payloads={},lookup=new Map();
  for(const d of decks){
@@ -92,6 +92,37 @@ function single(state,slots,{tableId='main',deckId='A'}={}){
   extraPiles:(state.tablePiles||[]).map(p=>({id:p.id,tableId,x:p.x,y:p.y,role:'manual',cards:p.cards.map(asCard)}))
  });
 }
+/* Strict, lossless single-table projection for the future controlled cutover.
+   Unlike the legacy projection, card identifiers are not regenerated from
+   catalogue faces or stock indices. The mapping is read-only. */
+function singleStable(state,slots,{tableId='main',deckId='A'}={}){
+ if(!state||!Array.isArray(state.deck)||!Array.isArray(state.placed)||!Array.isArray(slots))fail('invalid single-table state');
+ const all=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards||[])];
+ const seen=new Set();
+ for(const c of all){
+  if(!c||typeof c.id!=='string'||typeof c.instanceId!=='string'||!c.instanceId||seen.has(c.instanceId))fail('invalid or duplicate physical instanceId');
+  seen.add(c.instanceId);
+ }
+ const asCard=c=>({...c,sourceDeck:deckId});
+ const projected=project({
+  decks:[{id:deckId,instances:all.map(asCard)}],
+  tables:[{id:tableId,slots:slots.map((slot,i)=>({id:String(i),...slot}))}],
+  stocks:[{deckId,cards:state.deck.map(asCard)}],
+  placed:{[tableId]:state.placed.map(asCard)},
+  removed:{[tableId]:(state.removed||[]).map(asCard)},
+  extraPiles:(state.tablePiles||[]).map(p=>({
+   id:p.id,tableId,x:p.x,y:p.y,role:p.role||'manual',
+   cards:p.cards.map(asCard),fan:p.fan
+  })),
+  preserveIds:true
+ });
+ for(const p of state.tablePiles||[]){
+  const target=projected.engine.containers['pile:'+p.id];
+  if(p.fan)target.fan=copy(p.fan);
+ }
+ for(const id of seen)if(projected.identityMap[id]!==id)fail('unstable physical identity');
+ return projected;
+}
 function multi(workspace,slotDefinitions={}){
  if(!workspace||!Array.isArray(workspace.instances)||!workspace.piles||!workspace.tables)fail('invalid multi-table state');
  if(root.TabulaMultiWorkspace)root.TabulaMultiWorkspace.validate(workspace);
@@ -107,5 +138,5 @@ function multi(workspace,slotDefinitions={}){
  const removed=Object.fromEntries(tables.map(t=>[t.id,workspace.tables[t.id].removed||[]]));
  return project({decks,tables,stocks,placed,removed});
 }
-root.TabulaCardBridge=Object.freeze({single,multi});
+root.TabulaCardBridge=Object.freeze({single,singleStable,multi});
 })(typeof globalThis!=='undefined'?globalThis:this);
