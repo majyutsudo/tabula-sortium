@@ -355,6 +355,13 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
  const add=page.locator('#addTablePile');
  await add.click();
  const zone=await page.locator('#zone').boundingBox();
+ const diagnostics=await page.evaluate(()=>{
+   const r=document.querySelector('#zone').getBoundingClientRect();
+   const x=r.left+r.width*.83,y=r.top+r.height*.28;
+   const node=document.elementFromPoint(x,y);
+   return {armed:document.querySelector('#addTablePile').getAttribute('aria-pressed'),target:node?.className,tag:node?.tagName,inSurface:document.querySelector('#surface').contains(node),x,y};
+ });
+ console.log('PILE_PLACEMENT_DIAGNOSTIC',JSON.stringify(diagnostics));
  await page.mouse.click(zone.x+zone.width*.83,zone.y+zone.height*.28);
  await expect(page.locator('.table-pile')).toHaveCount(1);
  const pile=await page.locator('.table-pile').boundingBox();
