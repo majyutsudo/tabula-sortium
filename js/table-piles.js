@@ -69,6 +69,9 @@ function stackPlaced(state,movingIndex,targetIndex){
  const moving=state.placed[movingIndex],target=state.placed[targetIndex];
  if(!Number.isFinite(target.x)||!Number.isFinite(target.y))fail('invalid stack position');
  const next=create(state,target.x,target.y);
+ // Registered spread positions belong to the destination location, not the
+ // moving card. Preserve the position when independent cards become a pile.
+ if(Number.isInteger(target.slot)&&target.slot>=0)next.slot=target.slot;
  const movingCard=state.placed.splice(movingIndex,1)[0];
  const adjusted=targetIndex>movingIndex?targetIndex-1:targetIndex;
  const targetCard=state.placed.splice(adjusted,1)[0];
@@ -98,7 +101,7 @@ function withdraw(state,id,position){
  if(!p.cards.length)fail('empty pile');
  if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.y))fail('invalid position');
  const slot=position.slot??null;
- if(slot!==null&&(state.placed.some(c=>c.slot===slot)||!Number.isInteger(slot)))fail('occupied or invalid destination slot');
+ if(slot!==null&&(!Number.isInteger(slot)||slot<0||state.placed.some(c=>c.slot===slot)||piles(state).some(other=>other.slot===slot)))fail('occupied or invalid destination slot');
  const card=p.cards.shift();
  const x=clamp(position.x),y=clamp(position.y);
  const move={...card,slot,x,y,angle:position.angle??card.angle??0,origin:{x,y,angle:position.angle??card.angle??0},manualMoved:slot===null};
