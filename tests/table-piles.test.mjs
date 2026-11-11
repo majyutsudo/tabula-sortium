@@ -111,6 +111,7 @@ test('whole-pile merge preserves block order and empty source may be removed',()
 
 test('stock can be dealt directly onto a pile preserving identity and order',()=>{
  const s=fresh(),pile=P.create(s,40,45);
+ s.deck.push(...s.placed.splice(0));
  const first=s.deck[0],second=s.deck[1];
  P.drawFromDeck(s,pile.id,false);
  P.drawFromDeck(s,pile.id,true);
