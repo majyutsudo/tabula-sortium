@@ -13,6 +13,20 @@ test.beforeEach(async ({page})=>{
   for (const button of await page.locator('aside .section > h2 .section-toggle').all()) await button.click();
 });
 
+test('primary shortcuts stay at five while pile creation is in placement popover',async ({page})=>{
+ await expect(page.locator('.table-shortcuts button#addTablePile')).toHaveCount(0);
+ await expect(page.locator('.table-shortcuts > button')).toHaveCount(5);
+ const popup=page.locator('#placementToolsContent');
+ const add=popup.locator('#addTablePile');
+ await expect(add).toBeHidden();
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
+ await expect(add).toBeVisible();
+ await add.click();
+ await expect(add).toHaveAttribute('aria-pressed','true');
+ await page.locator('#zone').click({position:{x:250,y:230}});
+ await expect(page.locator('#zone .table-pile')).toHaveCount(1);
+ await expect(add).toHaveAttribute('aria-pressed','false');
+});
 test('deliberately hovering a dropped card turns exactly two cards into a pile',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('free');
  await expect(page.locator('.table-shortcuts #addTablePile')).toBeVisible();
