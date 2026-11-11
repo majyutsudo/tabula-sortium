@@ -287,3 +287,31 @@ mode). Shared button dimensions, font and active-state styling replace
 the earlier mixed inline styles. The main five-button reading action bar
 remains unchanged. The group layout is rebuilt only if missing, while
 the existing DOM controls retain their event handlers and IDs.
+
+
+## Registered spread positions holding multiple cards — v0.429
+
+A deliberately stacked pair of placed cards now retains the destination's
+registered `slot` index on the newly created `tablePiles` object. This
+is container/location ownership; the source position becomes vacant. The
+pile's other properties (role, free-angle fan, physical top-first order)
+continue to work as before. Splitting a stack produces an unanchored
+ordinary pile; the original pile keeps its registered position.
+
+The live tabletop treats anchored piles as occupying their spread slots for
+vacancy markers and automatic dealing. It shows the attached position number
+on the pile handle, preserves the name in its tooltip, and renders the
+top card of the pile in the spread's results list. Completion checks include
+visible top cards of anchored piles.
+
+`TabulaCardBridge.singleStable` projects the anchored pile into the *actual
+registered slot container* of `TabulaCardEngine`, with all its cards,
+order, face state, role and fan vector. It does not create a parallel pile
+container. Strict validation rejects out-of-range slot anchors; engine
+operations still preserve physical card identity and conservation.
+
+**Boundary:** the live UI is still backed by its established placed/pile
+arrays. The shared card engine remains read-only; it has no write-back yet.
+Empty anchored piles currently reserve their locations, so automated
+vacancy refill into those placeholders is a separate next milestone.
+Avoid changing the live two-table mode until a full round-trip is validated.
