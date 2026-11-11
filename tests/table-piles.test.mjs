@@ -191,3 +191,28 @@ test('invalid two-card stack request is atomic',()=>{
  assert.throws(()=>P.stackPlaced(state,0,999));
  assert.equal(JSON.stringify(state),before);
 });
+
+test('tapping a card in a pile flips only that card and preserves physical order',()=>{
+ const state=fresh(),pile=P.create(state,48,51);
+ P.deposit(state,0,pile.id);P.deposit(state,0,pile.id);
+ const identities=Array.from(pile.cards,c=>c.instanceId);
+ const first=!!pile.cards[0].faceUp,second=!!pile.cards[1].faceUp;
+ P.flipCard(state,pile.id,0);
+ assert.equal(pile.cards[0].faceUp,!first);
+ assert.equal(!!pile.cards[1].faceUp,second);
+ P.flipCard(state,pile.id,1);
+ assert.equal(pile.cards[1].faceUp,!second);
+ assert.deepEqual(Array.from(pile.cards,c=>c.instanceId),identities);
+ assert.equal(I.ensureSingle(state),state);
+ const restored=JSON.parse(JSON.stringify(state));
+ assert.equal(restored.tablePiles[0].cards[0].faceUp,!first);
+});
+test('invalid flip indices do not modify ordered pile contents',()=>{
+ const state=fresh(),p=P.create(state,35,40);
+ P.deposit(state,0,p.id);
+ const before=JSON.stringify(state);
+ assert.throws(()=>P.flipCard(state,p.id,4));
+ assert.throws(()=>P.flipCard(state,p.id,-1));
+ assert.throws(()=>P.flipCard(state,p.id,1.5));
+ assert.equal(JSON.stringify(state),before);
+});
