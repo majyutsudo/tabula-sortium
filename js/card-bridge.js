@@ -79,7 +79,7 @@ function project({decks,tables,stocks,placed,removed,extraPiles=[]}){
 }
 function single(state,slots,{tableId='main',deckId='A'}={}){
  if(!state||!Array.isArray(state.deck)||!Array.isArray(state.placed)||!Array.isArray(slots))fail('invalid single-table state');
- const cards=[...state.deck,...state.placed,...(state.removed||[])];
+ const cards=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards||[])];
  const seen=new Set();
  for(const c of cards){if(!c||typeof c.id!=='string'||seen.has(c.id))fail('single-table identity unavailable');seen.add(c.id)}
  const asCard=c=>({...c,instanceId:deckId+':'+c.id,sourceDeck:deckId});
@@ -88,7 +88,8 @@ function single(state,slots,{tableId='main',deckId='A'}={}){
   tables:[{id:tableId,slots:slots.map((s,i)=>({id:String(i),...s}))}],
   stocks:[{deckId,cards:state.deck.map(asCard)}],
   placed:{[tableId]:state.placed.map(asCard)},
-  removed:{[tableId]:(state.removed||[]).map(asCard)}
+  removed:{[tableId]:(state.removed||[]).map(asCard)},
+  extraPiles:(state.tablePiles||[]).map(p=>({id:p.id,tableId,x:p.x,y:p.y,role:'manual',cards:p.cards.map(asCard)}))
  });
 }
 function multi(workspace,slotDefinitions={}){
