@@ -839,7 +839,7 @@ function renderTablePiles(zone,m){
   el.append(title);
   if(pile.cards.length){
    const top=pile.cards[0],card=workingCard(top.id);
-   const face=document.createElement('div');face.className='table-pile-top'+(top.faceUp?' is-face-up':' is-face-down');
+   const face=document.createElement('div');face.className='table-pile-top'+(top.faceUp?' is-face-up':' is-face-down');face.dataset.instanceId=top.instanceId||'';face.dataset.cardId=top.id;
    face.title='一番上の札。ドラッグして取り出す／タップで卓上へ置く';
    face.style.setProperty('--rotation',((top.angle||0)+(top.reversed&&top.faceUp?180:0))+'deg');
    if(top.faceUp&&card){face.innerHTML=cardMark(card,appearanceForCard(top));}
