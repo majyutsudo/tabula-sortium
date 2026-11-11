@@ -362,7 +362,18 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
    return {armed:document.querySelector('#addTablePile').getAttribute('aria-pressed'),target:node?.className,tag:node?.tagName,inSurface:document.querySelector('#surface').contains(node),x,y};
  });
  console.log('PILE_PLACEMENT_DIAGNOSTIC',JSON.stringify(diagnostics));
- await page.mouse.click(zone.x+zone.width*.83,zone.y+zone.height*.28);
+ const x=zone.x+zone.width*.83,y=zone.y+zone.height*.28;
+ console.log('PILE PRE',await page.evaluate(([x,y])=>{
+  const target=document.elementFromPoint(x,y),el=document.getElementById('addTablePile');
+  return {target:target?.outerHTML?.slice(0,350),pressed:el?.getAttribute('aria-pressed'),disabled:el?.disabled,zone:getComputedStyle(document.getElementById('zone')).pointerEvents,body:document.body.className};
+ },[x,y]));
+ await page.mouse.click(x,y);
+ console.log('PILE POST',await page.evaluate(()=>({
+  pressed:document.getElementById('addTablePile')?.getAttribute('aria-pressed'),
+  count:document.querySelectorAll('.table-pile').length,
+  state:JSON.parse(localStorage.getItem('tabula_sortium_v01'))?.state?.tablePiles,
+  log:document.getElementById('log')?.textContent?.slice(0,250)
+ })));
  await expect(page.locator('.table-pile')).toHaveCount(1);
  const pile=await page.locator('.table-pile').boundingBox();
  const card=await page.locator('#zone .card[data-index="0"]').boundingBox();
