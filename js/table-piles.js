@@ -92,7 +92,6 @@ function split(state,id,count,x,y){
  if(!Number.isFinite(x)||!Number.isFinite(y))fail('invalid position');
  const target=create(state,x,y);
  target.fan={...fanOf(source)};
- target.role=roleOf(source);
  transfer(state,id,target.id,count);
  return target;
 }
