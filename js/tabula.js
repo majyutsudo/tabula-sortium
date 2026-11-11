@@ -939,8 +939,11 @@ function renderTablePiles(zone,m){
      if(dragged)for(const node of moving)node.style.transform='translate('+(ev.clientX-startX)+'px,'+(ev.clientY-startY)+'px)';
     };
     const finish=ev=>{
-     face.removeEventListener('pointermove',move);face.removeEventListener('pointerup',finish);
-     face.removeEventListener('pointercancel',cancel);
+     clear();
+     // Returning near the original grab point cancels an accidental pickup.
+     if(dragged&&Math.hypot(ev.clientX-startX,ev.clientY-startY)<=28){
+      render();setStatus('カードの移動を取り消しました。');return;
+     }
      const destination=dragged?pileAtPoint(ev.clientX,ev.clientY,pile.id):null;
      try{
       if(destination){
@@ -963,8 +966,21 @@ function renderTablePiles(zone,m){
       render();saveLocal();
      }catch(err){render();setStatus(err.message)}
     };
-    const cancel=()=>{face.removeEventListener('pointermove',move);face.removeEventListener('pointerup',finish);face.removeEventListener('pointercancel',cancel);render()};
-    face.addEventListener('pointermove',move);face.addEventListener('pointerup',finish);face.addEventListener('pointercancel',cancel);
+    const clear=()=>{
+     face.removeEventListener('pointermove',move);
+     face.removeEventListener('pointerup',finish);
+     face.removeEventListener('pointercancel',cancel);
+     window.removeEventListener('keydown',onKeyDown,true);
+    };
+    const cancel=()=>{clear();render()};
+    const onKeyDown=ev=>{
+     if(ev.key!=='Escape')return;
+     ev.preventDefault();ev.stopPropagation();
+     clear();render();setStatus('カードの移動を取り消しました。');
+    };
+    face.addEventListener('pointermove',move);face.addEventListener('pointerup',finish);
+    face.addEventListener('pointercancel',cancel);
+    window.addEventListener('keydown',onKeyDown,true);
    });
 
   }else{
