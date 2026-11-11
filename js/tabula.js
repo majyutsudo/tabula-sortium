@@ -2069,7 +2069,9 @@ pile.addEventListener('pointerup',e=>{
   const destination=!dualSession&&!spreadWorkbench?pileAtPoint(e.clientX,e.clientY):null;
   if(destination){
     if(!applyDealRemoval())return;
-    TabulaTablePiles.drawFromDeck(state,destination,settings.dealFaceUp===true);
+    // Turning stock into a talon reveals the card; other piles retain the deal setting.
+    const recipient=TabulaTablePiles.find(state,destination);
+    TabulaTablePiles.drawFromDeck(state,destination,TabulaTablePiles.roleOf(recipient)==='waste'||settings.dealFaceUp===true);
     play('deal');render();saveLocal();
     setStatus('山札から束の一番上へ1枚配札しました。');
     return;
