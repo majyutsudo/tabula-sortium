@@ -3,6 +3,8 @@
    Each physical card occurs in exactly one container. Cards are ordered top-first. */
 (function(root){'use strict';
 const clone=v=>JSON.parse(JSON.stringify(v));
+const pileRoles=Object.freeze(['pile','tableau','foundation','waste','discard']);
+function roleOf(container){return pileRoles.includes(container?.role)?container.role:'pile'}
 function fail(s){throw Error('Card engine: '+s)}
 function requireId(v,label){if(typeof v!=='string'||!v.trim())fail('invalid '+label);return v}
 function distinct(items,label){if(new Set(items).size!==items.length)fail('duplicate '+label)}
@@ -51,10 +53,19 @@ function create({decks=[],tables=[]}={}){
  validate(w);return w;
 }
 function change(w,fn){validate(w);const next=clone(w);fn(next);validate(next);return next}
-function addPile(w,{id,tableId,x,y,angle=0,faceUp=null}){
+function addPile(w,{id,tableId,x,y,angle=0,faceUp=null,role='pile'}){
+ if(!pileRoles.includes(role))fail('invalid pile role');
  return change(w,n=>{requireId(id,'pile id');if(!n.tables[tableId]||!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(angle))fail('invalid pile position');
   const key='pile:'+id;if(n.containers[key])fail('pile exists');
-  n.containers[key]={id:key,kind:'pile',tableId,x,y,angle,faceUp,cards:[]};
+  n.containers[key]={id:key,kind:'pile',tableId,x,y,angle,faceUp,role,cards:[]};
+ });
+}
+function setPileRole(w,id,role){
+ if(!pileRoles.includes(role))fail('invalid pile role');
+ return change(w,n=>{
+  const c=n.containers['pile:'+id];
+  if(!c||c.kind!=='pile')fail('unknown pile');
+  c.role=role;
  });
 }
 function move(w,{from,to,count=1,fromEnd='top',toEnd='top'}){
@@ -98,5 +109,5 @@ function flip(w,instanceId,faceUp){return change(w,n=>{const c=n.cards[instanceI
 function rotate(w,instanceId,angle){return change(w,n=>{const c=n.cards[instanceId];if(!c||!Number.isFinite(angle))fail('invalid rotation');c.angle=angle})}
 function reorder(w,containerId,orderedIds){return change(w,n=>{const c=n.containers[containerId];if(!c||!Array.isArray(orderedIds)||orderedIds.length!==c.cards.length||new Set(orderedIds).size!==orderedIds.length||orderedIds.some(id=>!c.cards.includes(id)))fail('invalid reorder');c.cards=orderedIds.slice()})}
 function removeEmptyPile(w,id){return change(w,n=>{const key='pile:'+id,c=n.containers[key];if(!c||c.kind!=='pile'||c.cards.length)fail('pile not empty');delete n.containers[key]})}
-root.TabulaCardEngine=Object.freeze({create,validate,addPile,move,collect,dealVacancies,flip,rotate,reorder,removeEmptyPile});
+root.TabulaCardEngine=Object.freeze({create,validate,addPile,roleOf,setPileRole,move,collect,dealVacancies,flip,rotate,reorder,removeEmptyPile});
 })(typeof globalThis!=='undefined'?globalThis:this);
