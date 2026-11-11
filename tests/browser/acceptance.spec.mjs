@@ -98,6 +98,34 @@ test('deliberately hovering a dropped card turns exactly two cards into a pile',
  expect(state.placed).toHaveLength(0);
 });
 
+test('Open reveals only the top card in each pile, including expanded piles',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
+ await page.locator('#placementToolsContent #addTablePile').click();
+ await page.locator('#zone').click({position:{x:270,y:230}});
+ const pile=page.locator('#zone .table-pile').first();
+ for(let i=0;i<3;i++){
+  const deck=await page.locator('#deck').boundingBox();
+  const target=await pile.boundingBox();
+  await page.mouse.move(deck.x+deck.width/2,deck.y+deck.height/2);
+  await page.mouse.down();
+  await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});
+  await page.mouse.up();
+ }
+ await page.evaluate(key=>{
+  const saved=JSON.parse(localStorage.getItem(key));
+  saved.state.tablePiles[0].fan={dx:.25,dy:.15};
+  saved.state.tablePiles[0].cards.forEach(c=>c.faceUp=false);
+  localStorage.setItem(key,JSON.stringify(saved));
+ },WORKSPACE);
+ await page.reload();
+ await expect(pile.locator('.table-pile-top')).toHaveCount(3);
+ await page.locator('#quickOpen').click();
+ await expect.poll(async ()=>((await saved(page,WORKSPACE)).state.tablePiles[0].cards[0].faceUp)).toBe(true);
+ const cards=(await saved(page,WORKSPACE)).state.tablePiles[0].cards;
+ expect(cards.map(c=>c.faceUp)).toEqual([true,false,false]);
+ await expect(pile.locator('.table-pile-top.is-face-up')).toHaveCount(1);
+});
 test('tapping the top card of a pile flips it without removing it',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('free');
  await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
