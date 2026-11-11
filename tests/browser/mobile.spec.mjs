@@ -16,7 +16,7 @@ test('mobile cockpit actions do not overlap across responsive rows', async ({ pa
   const spreadGroup=await page.locator('.mobile-cockpit-actions>.toolbar-spread-shortcut').boundingBox();
   const infoButton=await page.locator('#spreadInfoButton').boundingBox();
   expect(spreadGroup && infoButton).toBeTruthy();
-  expect(Math.abs(spreadGroup.width-boxes[0].width)).toBeLessThanOrEqual(3);
+  expect(spreadGroup.width).toBeGreaterThan(boxes[0].width);
   expect(infoButton.width).toBeGreaterThan(0);
 });
 
