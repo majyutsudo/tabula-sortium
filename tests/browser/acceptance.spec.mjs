@@ -13,6 +13,24 @@ test.beforeEach(async ({page})=>{
   for (const button of await page.locator('aside .section > h2 .section-toggle').all()) await button.click();
 });
 
+test('pile handle assigns a waste role without adding permanent table controls',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.locator('#addTablePile').click();
+ await page.locator('#zone').click({position:{x:230,y:210}});
+ const pile=page.locator('#zone .table-pile').first();
+ const role=pile.locator('.table-pile-role-select');
+ await expect(role).toBeHidden();
+ await pile.locator('.table-pile-handle').click();
+ await expect(role).toBeVisible();
+ await role.selectOption('waste');
+ await expect(pile.locator('.table-pile-handle')).toContainText('タロン');
+ const savedRole=(await saved(page,WORKSPACE)).state.tablePiles[0].role;
+ expect(savedRole).toBe('waste');
+ await page.reload();
+ await expect(page.locator('#zone .table-pile .table-pile-handle').first()).toContainText('タロン');
+ await expect(page.locator('#zone .table-pile-role-select').first()).toBeHidden();
+});
+
 test('pile count selector is hidden until requested',async ({page})=>{
   await page.locator('#spreadQuickSelect').selectOption('free');
   await page.locator('#addTablePile').click();
