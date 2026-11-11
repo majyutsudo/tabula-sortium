@@ -13,6 +13,27 @@ test.beforeEach(async ({page})=>{
   for (const button of await page.locator('aside .section > h2 .section-toggle').all()) await button.click();
 });
 
+test('deliberately hovering a dropped card turns exactly two cards into a pile',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await expect(page.locator('.table-shortcuts #addTablePile')).toBeVisible();
+ await page.locator('#quickDeal').click();
+ await page.locator('#quickDeal').click();
+ const cards=page.locator('#zone .card');
+ await expect(cards).toHaveCount(2);
+ const first=await cards.nth(0).boundingBox();
+ const second=await cards.nth(1).boundingBox();
+ await page.mouse.move(second.x+second.width/2,second.y+second.height/2);
+ await page.mouse.down();
+ await page.mouse.move(first.x+first.width/2,first.y+first.height/2,{steps:12});
+ await page.waitForTimeout(800);
+ await expect(cards.nth(0)).toHaveClass(/stack-hover-target/);
+ await page.mouse.up();
+ await expect(page.locator('#zone .table-pile')).toHaveCount(1);
+ const state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles[0].cards).toHaveLength(2);
+ expect(state.placed).toHaveLength(0);
+});
+
 test('pile handle assigns a waste role without adding permanent table controls',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('free');
  await page.locator('#addTablePile').click();
