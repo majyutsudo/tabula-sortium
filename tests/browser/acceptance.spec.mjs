@@ -67,6 +67,38 @@ test('first pile fan gesture renders lower cards immediately and lifted stack is
  await page.mouse.up();
 });
 
+test('returning an accidentally lifted sequence to its origin does not split the pile',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.locator('#addTablePile').click();
+ await page.locator('#zone').click({position:{x:240,y:240}});
+ const pile=page.locator('#zone .table-pile').first();
+ for(let i=0;i<3;i++){
+  const deck=await page.locator('#deck').boundingBox();
+  const target=await pile.boundingBox();
+  await page.mouse.move(deck.x+deck.width/2,deck.y+deck.height/2);
+  await page.mouse.down();
+  await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});
+  await page.mouse.up();
+ }
+ const grip=await pile.locator('.table-pile-fan-grip').boundingBox();
+ const gx=grip.x+grip.width/2,gy=grip.y+grip.height/2;
+ await page.mouse.move(gx,gy);
+ await page.mouse.down();
+ await page.mouse.move(gx+90,gy+45,{steps:10});
+ await page.mouse.up();
+ const before=(await saved(page,WORKSPACE)).state.tablePiles.map(p=>p.cards.map(c=>c.instanceId));
+ const card=await pile.locator('.table-pile-top[data-pile-index="1"]').boundingBox();
+ const x=card.x+card.width*.35,y=card.y+card.height*.55;
+ await page.mouse.move(x,y);
+ await page.mouse.down();
+ await page.mouse.move(x+65,y+25,{steps:6});
+ await page.mouse.move(x+3,y+2,{steps:6});
+ await page.mouse.up();
+ const after=(await saved(page,WORKSPACE)).state.tablePiles.map(p=>p.cards.map(c=>c.instanceId));
+ expect(after).toEqual(before);
+ await expect(page.locator('#zone .table-pile')).toHaveCount(1);
+});
+
 test('pile spreads diagonally and retains its fan after reload',async ({page})=>{
   await page.locator('#spreadQuickSelect').selectOption('free');
   await page.locator('#addTablePile').click();
