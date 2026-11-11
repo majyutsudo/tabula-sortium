@@ -53,12 +53,12 @@ test('new menu is collapsed with readable hints, can be opened and remembers its
     await expect(sections.nth(i).locator('.section-toggle')).toHaveAttribute('aria-expanded','false');
   }
   await expect(page.locator('#openAbout')).toHaveText('About');
-  await sections.first().locator('.section-toggle').click();
-  await expect(sections.first()).not.toHaveClass(/is-collapsed/);
+  await sections.nth(1).locator('.section-toggle').click();
+  await expect(sections.nth(1)).not.toHaveClass(/is-collapsed/);
   await expect(page.locator('#pool')).toBeVisible();
   await page.reload();
-  await expect(sections.first()).not.toHaveClass(/is-collapsed/);
-  await expect(sections.nth(1)).toHaveClass(/is-collapsed/);
+  await expect(sections.nth(1)).not.toHaveClass(/is-collapsed/);
+  await expect(sections.first()).toHaveClass(/is-collapsed/);
 });
 
 test('deck move handle repositions the pile without drawing and survives reload', async ({ page }) => {
@@ -145,17 +145,17 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  await page.goto('/');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','sepia');
  expect(await page.locator('#cardBackColor option').allTextContents()).toEqual(['セピア','緑','深紅','紺','紫','黒','象牙色']);
- await page.locator('aside .section > h2 .section-toggle').first().click();
+ await page.locator('aside .section > h2 .section-toggle').nth(1).click();
  await expect(page.locator('#cardBackColorField')).toBeVisible();
  await page.locator('#cardBackColor').selectOption('burgundy');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','burgundy');
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('tabula_sortium_v01')));
  expect(saved.settings.cardBackColor).toBe('burgundy');
- await page.locator('aside .section > h2 .section-toggle').nth(2).click();
+ await page.locator('aside .section > h2 .section-toggle').nth(3).click();
  await page.locator('#visualTheme').selectOption('gothic');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','burgundy');
  await page.reload();
- if(!await page.locator('#deckLibrarySelect').isVisible())await page.locator('aside .section > h2 .section-toggle').first().click();
+ if(!await page.locator('#deckLibrarySelect').isVisible())await page.locator('aside .section > h2 .section-toggle').nth(1).click();
  await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
  expect(await page.locator('#deckLibrarySelect option').allTextContents()).toContain('SIMPLE TAROT');
  await page.locator('#deckLibrarySelect').selectOption('simple');
@@ -187,7 +187,7 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
 
 test('mobile Use Deck lists built-in Simple and restores its selection',async({page})=>{
  await page.goto('/');
- const first=page.locator('aside .section > h2 .section-toggle').first();
+ const first=page.locator('aside .section > h2 .section-toggle').nth(1);
  if(!await page.locator('#deckLibrarySelect').isVisible())await first.click();
  await expect(page.locator('#deckLibrarySelect option[value="simple"]')).toHaveText('SIMPLE TAROT');
  await page.locator('#deckLibrarySelect').selectOption('simple');
