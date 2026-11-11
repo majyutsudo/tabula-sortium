@@ -438,10 +438,13 @@ function sortPhysicalCards(items,mode,deckId=settings.deckId){
 function getDealOrder(spread=settings.spread){return TabulaCardRules.getDealOrder(presets,spread,settings.spreadDealOrders)}
 function parseDealOrderInput(raw,spread=settings.spread){return TabulaCardRules.parseDealOrderInput(raw,presets,spread)}
 function syncDealOrderField(){const el=$('spreadDealOrder'),help=$('spreadOrderHelp'),reset=$('resetSpreadDealOrder');if(!el)return;const spread=settings.spread,count=getSlots().length;el.disabled=spread==='free';reset.disabled=spread==='free';el.value=spread==='free'?'':getDealOrder().map(n=>n+1).join(', ');help.textContent=spread==='free'?'自由配置では配札位置の指定順はありません。':`位置番号1〜${count}を並べ替えます。カードの意味・結果番号はそのままです。`}
+function anchoredPileAtSlot(slot){
+ return (state.tablePiles||[]).find(pile=>pile.slot===slot)||null;
+}
 function occupiedSpreadSlots(){
  return new Set([
   ...state.placed.map(card=>card.slot),
-  ...(state.tablePiles||[]).map(pile=>pile.slot)
+  ...(state.tablePiles||[]).filter(pile=>pile.cards.length>0).map(pile=>pile.slot)
  ].filter(Number.isInteger));
 }
 function hasOccupiedSpreadSlot(slot){return occupiedSpreadSlots().has(slot)}
@@ -1081,7 +1084,18 @@ function renderTablePiles(zone,m){
    });
 
   }else{
-   const empty=document.createElement('span');empty.className='table-pile-empty';empty.textContent='ここへ札を重ねる';el.append(empty);
+   const empty=document.createElement('span');empty.className='table-pile-empty';
+   empty.textContent=anchoredSlot?'空き位置 · クリックで補充':'ここへ札を重ねる';
+   if(anchoredSlot){
+    empty.classList.add('refill-ready');
+    empty.title='山札からこの位置に1枚補充';
+    empty.addEventListener('click',event=>{
+     event.preventDefault();event.stopPropagation();
+     if(!state.deck.length){setStatus('山札にカードがありません。');return}
+     drawAt(pile.slot);
+    });
+   }
+   el.append(empty);
    const close=document.createElement('button');close.type='button';close.className='table-pile-remove';close.textContent='×';close.title='空の束を削除';
    close.onclick=()=>{TabulaTablePiles.removeEmpty(state,pile.id);render();saveLocal()};el.append(close);
   }
@@ -1268,10 +1282,19 @@ function installPhysicalCardPicker(){
  },true);
 }
 function nextPlacedStackOrder(){return Math.max(0,...state.placed.map(c=>Number(c.dragOrder)||0))+1}
-function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
+function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
  const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
  if(duplicate){setStatus('同じカードが重複しています（'+duplicate.id+'）。新しい占いを始めるかバックアップを確認してください。');return}
  if(!applyDealRemoval())return;
+ if(refillPile){
+  // Refill the original registered location without creating a second card
+  // location. Keep its ID, role and fan properties intact.
+  const opening=TabulaTablePiles.roleOf(refillPile)==='waste'||settings.dealFaceUp===true;
+  TabulaTablePiles.drawFromDeck(state,refillPile.id,opening);
+  play('deal');render();saveLocal();
+  setStatus((slot+1)+'番の空いた束に1枚補充しました。');
+  return Promise.resolve();
+ }
  const sourceRect=$(dualSession&&dualSession.activePile==='B'&&!isIndependentTables()?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:settings.dealFaceUp===true,dragOrder:nextPlacedStackOrder()});play('deal');render();
  const arrival=animateArrival?animateCardFromDeck(state.placed.length-1,sourceRect):Promise.resolve();
  setStatus(`配札しました（${state.placed.length}枚・${settings.dealFaceUp?'表':'裏'}向き）。${settings.dealFaceUp?'':'カードをクリックして開いてください。'}`);
