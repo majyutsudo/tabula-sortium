@@ -13,6 +13,31 @@ test.beforeEach(async ({page})=>{
   for (const button of await page.locator('aside .section > h2 .section-toggle').all()) await button.click();
 });
 
+test('pile handle click does not jump and drag retains the grabbed offset',async ({page})=>{
+  await page.locator('#spreadQuickSelect').selectOption('free');
+  await page.locator('#addTablePile').click();
+  await page.locator('#zone').click({position:{x:240,y:220}});
+  const pile=page.locator('#zone .table-pile').first();
+  await expect(pile).toBeVisible();
+  const initial=await pile.boundingBox();
+  const before=(await saved(page,WORKSPACE)).state.tablePiles[0];
+  const handle=pile.locator('.table-pile-handle');
+  await handle.click();
+  const afterClick=(await saved(page,WORKSPACE)).state.tablePiles[0];
+  expect(afterClick.x).toBeCloseTo(before.x,5);
+  expect(afterClick.y).toBeCloseTo(before.y,5);
+  const handleRect=await handle.boundingBox();
+  const grabX=handleRect.x+handleRect.width*.25;
+  const grabY=handleRect.y+handleRect.height/2;
+  await page.mouse.move(grabX,grabY);
+  await page.mouse.down();
+  await page.mouse.move(grabX+65,grabY+35,{steps:8});
+  await page.mouse.up();
+  const moved=await pile.boundingBox();
+  expect(moved.x-initial.x).toBeCloseTo(65,0);
+  expect(moved.y-initial.y).toBeCloseTo(35,0);
+});
+
 test('card gallery opens, filters majors and displays enlarged artwork',async ({page})=>{
   await page.locator('#cardGalleryOpen').click();
   await expect(page.locator('#cardGallery')).toBeVisible();
