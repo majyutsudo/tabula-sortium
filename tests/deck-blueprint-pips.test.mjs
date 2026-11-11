@@ -62,7 +62,7 @@ test('the built-in deck adds two distinct Jokers to the unchanged 52 standard ca
   const standard=deck.generate(faces);
   assert.deepEqual(cards.slice(0,52).map(c=>c.id),standard.map(c=>c.id));
   assert.equal(cards.length,54);
-  assert.deepEqual(cards.slice(52).map(c=>c.id),['playing-joker-1','playing-joker-2']);
+  assert.deepEqual(Array.from(cards.slice(52),c=>c.id),['playing-joker-1','playing-joker-2']);
   assert.ok(cards.slice(52).every(c=>c.kind==='joker'&&c.rankId===null&&c.suitId===null));
   const courts=cards.filter(deck.isPlayingCourt);
   assert.equal(courts.length,12);
