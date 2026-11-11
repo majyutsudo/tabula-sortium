@@ -32,7 +32,7 @@ test('card gallery opens, filters majors and displays enlarged artwork',async ({
 
 test('physical cut restacks every card exactly once while preserving identity',async ({page})=>{
   const before=await saved(page,WORKSPACE);
-  await page.locator('#cut').click();
+  await page.locator('#quickCut').click();
   const piles=page.locator('#physicalCutOverlay button[aria-label^="束"]');
   await expect(piles).toHaveCount(3);
   for(let i=2;i>=0;i--)await piles.nth(i).click();
