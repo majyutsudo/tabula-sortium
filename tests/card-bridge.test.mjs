@@ -40,3 +40,13 @@ test('missing multi-table slot definition fails without silent data loss',()=>{
  const w=M.deal(M.create(['a'],[]),{slot:0}).workspace;
  assert.throws(()=>B.multi(w,{}));
 });
+
+test('single state projects interactive manual pile into engine as ordered container',()=>{
+ const state={deck:[{id:'c'}],placed:[{id:'b',slot:1,x:50,y:45}],removed:[],tablePiles:[{id:'pile-1',x:70,y:30,cards:[{id:'a',faceUp:true}]}]};
+ const p=B.single(state,slots(3));const w=p.engine;
+ assert.equal(E.validate(w),true);
+ assert.equal(w.containers['pile:pile-1'].cards.length,1);
+ assert.equal(w.cards[w.containers['pile:pile-1'].cards[0]].cardId,'a');
+ assert.equal(w.cards[w.containers['pile:pile-1'].cards[0]].faceUp,true);
+ assert.equal(w.containers['slot:main:1'].cards.length,1);
+});
