@@ -1963,6 +1963,16 @@ pile.addEventListener('pointerup',e=>{
   if(!dragMoved){drawAt();return}
   const r=$('zone').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
   if(x<0||x>100||y<0||y>100)return;
+  // A stock card may land directly on an existing pile, without an
+  // intermediate free card. Keep the stock-to-pile transfer atomic.
+  const destination=!dualSession&&!spreadWorkbench?pileAtPoint(e.clientX,e.clientY):null;
+  if(destination){
+    if(!applyDealRemoval())return;
+    TabulaTablePiles.drawFromDeck(state,destination,settings.dealFaceUp===true);
+    play('deal');render();saveLocal();
+    setStatus('山札から束の一番上へ1枚配札しました。');
+    return;
+  }
   const before=state.placed.length;
   if(settings.spread==='free'||getSlots().every((_,i)=>state.placed.some(p=>p.slot===i))){
     const p=snapFreePosition(x,y);
