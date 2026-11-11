@@ -24,10 +24,10 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
       - name: Static schema checks
         run: npm run test:static
+      - name: Install Chromium
+        run: npx playwright install chromium
       - name: Browser regression tests
         run: npm run test:browser
       - name: Upload failure diagnostics
