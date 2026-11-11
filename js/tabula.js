@@ -900,9 +900,9 @@ function renderTablePiles(zone,m){
    take.value=String(Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1));
    take.onchange=()=>pileTakeCounts.set(pile.id,Number(take.value));
    take.addEventListener('pointerdown',e=>e.stopPropagation());
-   take.hidden=!pileTakeOpen.has(pile.id);
+   take.hidden=expanded||!pileTakeOpen.has(pile.id);
    const takeToggle=document.createElement('button');
-   takeToggle.type='button';takeToggle.className='table-pile-take-toggle';
+   takeToggle.type='button';takeToggle.className='table-pile-take-toggle';takeToggle.hidden=expanded;
    takeToggle.textContent=pileTakeOpen.has(pile.id)?'枚数を閉じる':'枚数指定 ▾';
    takeToggle.title='束の上からまとめて移動する枚数を指定';
    takeToggle.setAttribute('aria-expanded',String(pileTakeOpen.has(pile.id)));
