@@ -1736,9 +1736,11 @@ $('addTablePile').onclick=()=>{
  $('zone').classList.toggle('pile-placement-armed',pilePlacementArmed);
  setStatus(pilePlacementArmed?'卓上の好きな場所をクリックして、空の束を作成してください。':'束の配置を終了しました。');
 };
-$('zone').addEventListener('click',e=>{
+$('surface').addEventListener('click',e=>{
  if(!pilePlacementArmed||dualSession||spreadWorkbench)return;
- if(e.target.closest('.card,.table-pile'))return;
+ if(e.target.closest('.card,.table-pile,.deck,.candle,button'))return;
+ const bounds=$('zone').getBoundingClientRect();
+ if(e.clientX<bounds.left||e.clientX>bounds.right||e.clientY<bounds.top||e.clientY>bounds.bottom)return;
  e.preventDefault();e.stopImmediatePropagation();
  const pt=tablePoint(e.clientX,e.clientY);
  TabulaTablePiles.create(state,pt.x,pt.y);
