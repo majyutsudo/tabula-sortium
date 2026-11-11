@@ -66,5 +66,5 @@ test('separate helper modules are still delegated to from the main app',()=>{
 test('table control and responsive CSS selectors remain present',()=>{
  for(const selector of ['.mobile-cockpit-actions','#desktopTableViews','#spreadNotebook','.table-action-settings'])assert.ok(css.includes(selector));
  for(const id of ['quickWash','quickShuffle','quickCut','quickDeal','quickOpen','openAbout'])assert.ok(html.includes('id="'+id+'"'));
- assert.match(html,/v0\.402/);
+ assert.match(html,/TABULA SORTIUM v0\.\d+/);
 });
