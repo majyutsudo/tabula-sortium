@@ -94,3 +94,34 @@ workspace storage and verify:
 3. the same picture in multiple decks remains independently identifiable;
 4. creating, editing or replacing a physical deck is an explicit lifecycle;
 5. save/reload, backups, multiple tables and card conservation round-trip.
+
+## Legacy live integration (v0.402)
+
+The existing single-table runtime now loads `js/physical-identity.js`.
+This compatibility layer fills/validates `instanceId` on the active
+`deck`, `placed` and `removed` arrays, and keeps matching IDs in the
+read-only `dealCheckpoint`. IDs survive normal single-table local saves,
+reloads, ordinary collection, stock restoration and new-reading reshuffles.
+UI card operations still use the legacy arrays.
+
+For the currently supported one-copy-per-face single deck, a missing ID is
+normalized to `A:<cardId>`, consistent with the existing multi-workspace
+naming convention. Existing IDs are respected and never rewritten merely
+because a card changes array or order. Duplicate faces and duplicate physical
+IDs are rejected; they are not silently repaired.
+
+This is **not** the final arbitrary-deck identity lifecycle. New IDs for
+freshly created or replaced physical decks, independent copies of identical
+pictures inside the *same* deck, and engine-authoritative shared state remain
+separate, uncompleted migration gates. The existing multi-workspace identity
+format is unchanged for compatibility; do not claim the new container engine
+is driving the UI.
+
+User-approved default: collect ordered bundles as they currently lie; preserve
+individual physical identities into subsequent readings. The explicit
+pre-deal restore remains a distinct action.
+
+Regression coverage: `tests/physical-identity.test.mjs` adds identity
+retention, collection ordering, storage roundtrip and invalid-state tests.
+Browser and complete Node-suite validation are still required before a
+production release.
