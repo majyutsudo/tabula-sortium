@@ -256,7 +256,7 @@ function installTableCamera(){
   if(e.pointerType==='touch'){
    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
    if(touches.size===1){blocked=false;const card=e.target.closest('.card');const index=card?Number(card.dataset.index):-1;const p=state.placed[index];firstCard=p?{index,x:p.x,y:p.y,manualMoved:p.manualMoved}:null;}
-   if(touches.size===1&&tableCamera.scale>1&&!e.target.closest('.card,#deck,.slot,.altar-object,button,input,select,textarea,a')){oneFingerPan={id:e.pointerId,x:e.clientX,y:e.clientY,viewX:tableCamera.x,viewY:tableCamera.y,moved:false};stage.setPointerCapture(e.pointerId);stopEvent(e);}
+   if(touches.size===1&&tableCamera.scale>1&&!e.target.closest('.card,.table-pile,#deck,.slot,.altar-object,button,input,select,textarea,a')){oneFingerPan={id:e.pointerId,x:e.clientX,y:e.clientY,viewX:tableCamera.x,viewY:tableCamera.y,moved:false};stage.setPointerCapture(e.pointerId);stopEvent(e);}
    if(touches.size>=2){oneFingerPan=null;blocked=true;cancelCardGesture();startPair();stage.classList.add('camera-moving');for(const id of touches.keys()){try{stage.setPointerCapture(id)}catch(e){}}stopEvent(e)}
   }else if((cameraPanMode&&e.button===0)||e.button===1){cancelCardGesture();mousePan={id:e.pointerId,x:e.clientX,y:e.clientY,viewX:tableCamera.x,viewY:tableCamera.y};stage.setPointerCapture(e.pointerId);stage.classList.add('camera-moving');stopEvent(e)}
  },true);
@@ -314,7 +314,7 @@ function installDesktopTableViews(){
  const stage=$('stage');let backgroundPan=null,backgroundMoved=false;
  stage.addEventListener('pointerdown',e=>{
   backgroundMoved=false;
-  if(e.button!==0||e.pointerType==='touch'||!desktopTableEnabled()||desktopTableScale()<=1||e.target.closest('.card,#deck,.slot,.altar-object,button,input,select,textarea,a'))return;
+  if(e.button!==0||e.pointerType==='touch'||!desktopTableEnabled()||desktopTableScale()<=1||e.target.closest('.card,.table-pile,#deck,.slot,.altar-object,button,input,select,textarea,a'))return;
   backgroundPan={id:e.pointerId,x:e.clientX,y:e.clientY,panX:desktopTablePan.x,panY:desktopTablePan.y};stage.setPointerCapture(e.pointerId);e.preventDefault();e.stopImmediatePropagation();
  },true);
  stage.addEventListener('pointermove',e=>{
@@ -552,6 +552,29 @@ function updateNaturalTiltButton(){
  if(addPile&&placementContent&&addPile.parentElement!==placementContent){
   placementContent.append(addPile);
   addPile.classList.add('placement-add-pile');
+ }
+ // Specialist tools are grouped by purpose, not by creation order.
+ const content=document.getElementById('placementToolsContent');
+ if(content){
+  let layout=content.querySelector('.placement-tools-layout');
+  if(!layout){
+   layout=document.createElement('div');layout.className='placement-tools-layout';
+   const placement=document.createElement('section');placement.className='placement-tools-group';placement.dataset.group='placement';
+   const placementHeading=document.createElement('div');placementHeading.className='placement-tools-heading';placementHeading.textContent='配置';
+   placement.append(placementHeading);
+   const behavior=document.createElement('section');behavior.className='placement-tools-group';behavior.dataset.group='behavior';
+   const behaviorHeading=document.createElement('div');behaviorHeading.className='placement-tools-heading';behaviorHeading.textContent='操作';
+   behavior.append(behaviorHeading);
+   layout.append(placement,behavior);content.append(layout);
+  }
+  const placement=layout.querySelector('[data-group="placement"]');
+  const behavior=layout.querySelector('[data-group="behavior"]');
+  for(const id of ['freeSnapButton','physicalCardPickButton','addTablePile']){
+   const control=document.getElementById(id);
+   if(control){control.removeAttribute('style');control.classList.add('placement-tools-button');placement.append(control)}
+  }
+  const hand=document.getElementById('naturalTiltButton');
+  if(hand){hand.removeAttribute('style');hand.classList.add('placement-tools-button');behavior.append(hand)}
  }
  button.textContent=naturalTilt?'◌ 手置き ON':'◌ 手置き OFF';
  button.title='テスト用：手を離した方向へ最大150pxの滑りと軽い衝突（自動傾きなし）';
