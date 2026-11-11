@@ -915,8 +915,8 @@ function renderTablePiles(zone,m){
   const role=TabulaTablePiles.roleOf(pile);
   const anchoredSlot=Number.isInteger(pile.slot)?getSlots()[pile.slot]:null;
   const pileLabel=role==='pile'?pile.id.replace('pile-','束 '):roleLabels[role]+' '+pile.id.replace('pile-','');
-  title.textContent='✥ '+(anchoredSlot?((pile.slot+1)+'. '+anchoredSlot.name+' · '):'')+pileLabel+' · '+pile.cards.length+'枚';
-  title.title='ドラッグで束を移動／クリックで役割を設定';
+  title.textContent='✥ '+(anchoredSlot?((pile.slot+1)+'. '):'')+pileLabel+' · '+pile.cards.length+'枚';
+  title.title=(anchoredSlot?(pile.slot+1)+'. '+anchoredSlot.name+' — ':'')+'ドラッグで束を移動／クリックで役割を設定';
   title.setAttribute('aria-expanded','false');
   const roleSelect=document.createElement('select');roleSelect.className='table-pile-role-select';
   roleSelect.hidden=true;roleSelect.setAttribute('aria-label','この束の役割');
