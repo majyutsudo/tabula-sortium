@@ -1402,3 +1402,18 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 @media(max-width:600px){
  .table-surface .deck.deal-pile-card .deal-pile-caption{font-size:10px;min-width:55px}
 }
+
+/* v0.411: Explicit, movable physical tabletop piles.
+   Overlapping tarot cards remain independent unless manually dropped here. */
+.table-zone.pile-placement-armed{cursor:crosshair}
+.table-pile{position:absolute;z-index:1600;transform:translate(-50%,-50%);box-sizing:border-box;border:2px dashed #d6b57c;border-radius:6px;background:#191d1bdd;box-shadow:0 4px 12px #0009;touch-action:none}
+.table-pile::before{content:"";position:absolute;inset:4px;pointer-events:none;border:1px solid #ab8c59;border-radius:4px}
+.table-pile-handle{position:absolute;left:-2px;right:-2px;top:-29px;width:calc(100% + 4px);min-height:25px;border:1px solid #a18b62;border-radius:6px 6px 0 0;background:#29362d;color:#ead9b5;font:11px/1.2 Arial,sans-serif;z-index:3;cursor:grab;touch-action:none;white-space:nowrap;padding:3px 1px}
+.table-pile-top{position:absolute;inset:0;z-index:2;overflow:hidden;border-radius:5px;cursor:grab;touch-action:none;user-select:none;background:#e1d1aa}
+.table-pile-top.is-face-down{background:#423329}
+.table-pile-top>.face.back{display:block;position:absolute;inset:0;width:100%;height:100%;transform:none;backface-visibility:visible}
+.table-pile-top .card-art,.table-pile-top svg{width:100%;height:100%;max-height:100%;display:block}
+.table-pile-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;color:#e1c995;font:11px/1.4 sans-serif;pointer-events:none}
+.table-pile-remove{position:absolute;z-index:2;right:-9px;bottom:-9px;width:25px;height:25px;padding:0;border:1px solid #d5b678;border-radius:50%;background:#27362c;color:#eee0c6;cursor:pointer}
+.table-utility-actions #addTablePile[aria-pressed="true"]{border-color:#d7ae63;background:#59432b;color:#fff0c9}
+@media(max-width:780px){.table-pile-handle{font-size:10px;min-height:24px;top:-27px}.table-pile-empty{font-size:9px}}
