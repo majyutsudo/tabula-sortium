@@ -17,7 +17,6 @@ test('pile count selector is hidden until requested',async ({page})=>{
   await page.locator('#spreadQuickSelect').selectOption('free');
   await page.locator('#addTablePile').click();
   await page.locator('#zone').click({position:{x:240,y:220}});
-  await page.locator('#addTablePile').click();
   const pile=page.locator('#zone .table-pile').first();
   // Deposit one dealt card into the empty pile so that count selection exists.
   await page.locator('#quickDeal').click();
