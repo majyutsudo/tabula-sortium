@@ -163,3 +163,28 @@ Deliberate scope limits:
 
 Implementation intentionally preserves existing Tarot workflows and
 card images. Do not advertise multi-deck or all-solitaire support yet.
+
+## Ordered multi-card manipulation — v0.413
+
+The single-table manual pile UI now supports top-block transfers and splitting:
+- The selector beneath a nonempty pile chooses **上からN枚**. Drag its top
+  visible card onto another explicit pile to put those N cards above the target,
+  preserving the selected block's top-to-bottom order.
+- Drag the selected top block onto an unoccupied part of the tabletop to
+  create a new pile at that position, without duplicating any card. A single
+  card retains its prior behavior of returning to a loose tableau position.
+- Drag a pile's **header/handle** onto another pile to stack *all* source
+  cards on the destination; the now-empty source pile is removed.
+  Dragging the header elsewhere simply moves the existing pile.
+- Selecting multiple cards and simply tapping the top does not remove them:
+  the user must drag, preventing accidental loss of the intended block.
+- Physical IDs, card orientations, block order and explicit pile membership
+  are retained through save/reload and ordinary collection.
+
+`js/table-piles.js` exports `transfer(state,source,destination,count)` and
+`split(state,source,count,x,y)`. Invalid destinations, invalid counts,
+self-transfers, and invalid positions fail before any card is removed.
+These are still **single-table** operations on the legacy-compatible
+`state.tablePiles`, not the final engine-authoritative multi-table model.
+Within a pile, only a contiguous block from the top can be moved; arbitrary
+internal removal, fanning and undo remain future work.
