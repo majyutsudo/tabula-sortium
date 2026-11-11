@@ -30,19 +30,16 @@ test('card gallery opens, filters majors and displays enlarged artwork',async ({
   await expect(page.locator('#cardGallery')).toBeHidden();
 });
 
-test('manual cut modal restacks every card exactly once',async ({page})=>{
+test('physical cut restacks every card exactly once while preserving identity',async ({page})=>{
   const before=await saved(page,WORKSPACE);
   await page.locator('#cut').click();
-  await expect(page.locator('#cutConfirm')).toBeDisabled();
-  const piles=page.locator('.cut-stack');
+  const piles=page.locator('#physicalCutOverlay button[aria-label^="束"]');
   await expect(piles).toHaveCount(3);
   for(let i=2;i>=0;i--)await piles.nth(i).click();
-  await expect(page.locator('#cutConfirm')).toBeEnabled();
-  await page.locator('#cutConfirm').click();
-  await expect.poll(async()=> (await saved(page,WORKSPACE)).state.deck.length).toBe(78);
+  await expect(page.locator('#physicalCutOverlay')).toHaveCount(0,{timeout:12000});
   const after=await saved(page,WORKSPACE);
-  expect(after.state.deck.map(c=>c.id).sort()).toEqual(before.state.deck.map(c=>c.id).sort());
-  expect(new Set(after.state.deck.map(c=>c.id)).size).toBe(78);
+  expect(after.state.deck.map(c=>c.instanceId).sort()).toEqual(before.state.deck.map(c=>c.instanceId).sort());
+  expect(new Set(after.state.deck.map(c=>c.instanceId)).size).toBe(78);
   expect(after.state.placed).toEqual(before.state.placed);
 });
 
