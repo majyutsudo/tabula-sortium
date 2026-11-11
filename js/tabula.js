@@ -1957,7 +1957,7 @@ $('addTablePile').onclick=()=>{
  if(dualSession||spreadWorkbench){setStatus('束の自由操作は現在、単独卓で利用できます。');return}
  pilePlacementArmed=!pilePlacementArmed;
  $('addTablePile').setAttribute('aria-pressed',String(pilePlacementArmed));
- $('addTablePile').textContent=pilePlacementArmed?'配置をやめる':'＋束を置く';
+ $('addTablePile').lastElementChild.textContent=pilePlacementArmed?'配置をやめる':'＋束を置く';
  $('zone').classList.toggle('pile-placement-armed',pilePlacementArmed);
  setStatus(pilePlacementArmed?'卓上の好きな場所をクリックして、空の束を作成してください。':'束の配置を終了しました。');
  if(pilePlacementArmed)$('surface').scrollIntoView({block:'center',behavior:'instant'});
@@ -1971,7 +1971,7 @@ $('surface').addEventListener('click',e=>{
  const pt=tablePoint(e.clientX,e.clientY);
  TabulaTablePiles.create(state,pt.x,pt.y);
  pilePlacementArmed=false;$('zone').classList.remove('pile-placement-armed');
- $('addTablePile').setAttribute('aria-pressed','false');$('addTablePile').textContent='＋束を置く';
+ $('addTablePile').setAttribute('aria-pressed','false');$('addTablePile').lastElementChild.textContent='＋束を置く';
  render();saveLocal();setStatus('空の束を作成しました。札をドラッグして重ねられます。');
 },true);
 
