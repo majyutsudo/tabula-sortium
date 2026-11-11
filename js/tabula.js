@@ -807,13 +807,15 @@ let lastRenderedSpread=null;
 // Piles are opt-in tabletop objects, not incidental overlaps in a tarot spread.
 // Single-table only in this first integration; the legacy two-table mode is unchanged.
 let pilePlacementArmed=false;
+const pileTakeCounts=new Map();
 function tablePoint(clientX,clientY){
  const rect=$('zone').getBoundingClientRect();
  return {x:Math.max(4,Math.min(96,(clientX-rect.left)/rect.width*100)),
          y:Math.max(4,Math.min(96,(clientY-rect.top)/rect.height*100))};
 }
-function pileAtPoint(clientX,clientY){
+function pileAtPoint(clientX,clientY,excludeId=null){
  for(const el of [...$('zone').querySelectorAll('.table-pile')].reverse()){
+  if(el.dataset.pileId===excludeId)continue;
   const r=el.getBoundingClientRect();
   if(clientX>=r.left-8&&clientX<=r.right+8&&clientY>=r.top-8&&clientY<=r.bottom+8)return el.dataset.pileId;
  }
@@ -843,6 +845,18 @@ function renderTablePiles(zone,m){
    if(top.faceUp&&card){face.innerHTML=cardMark(card,appearanceForCard(top));}
    else {face.innerHTML='<div class="face back"></div>';applyPlayingBack(face.firstElementChild,top.sourceDeck);}
    el.append(face);
+   const take=document.createElement('select');
+   take.className='table-pile-take-count';
+   take.setAttribute('aria-label','上から移す枚数：'+pile.id);
+   take.title='束の上からまとめて移動する枚数';
+   for(let number=1;number<=pile.cards.length;number++){
+    const option=document.createElement('option');option.value=String(number);
+    option.textContent='上から'+number+'枚';take.append(option);
+   }
+   take.value=String(Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1));
+   take.onchange=()=>pileTakeCounts.set(pile.id,Number(take.value));
+   take.addEventListener('pointerdown',e=>e.stopPropagation());
+   el.append(take);
    face.addEventListener('pointerdown',e=>{
     if(e.button!==0)return;e.preventDefault();e.stopPropagation();
     const startX=e.clientX,startY=e.clientY;let dragged=false;
@@ -852,9 +866,27 @@ function renderTablePiles(zone,m){
     const finish=ev=>{
      face.removeEventListener('pointermove',move);face.removeEventListener('pointerup',finish);
      face.removeEventListener('pointercancel',cancel);
-     const pos=dragged?pileDropPosition(ev.clientX,ev.clientY):{x:Math.min(94,pile.x+Math.max(9,m.w/$('zone').clientWidth*115)),y:pile.y};
-     try{TabulaTablePiles.withdraw(state,pile.id,pos);render();saveLocal();setStatus('束から一番上のカードを取り出しました。')}
-     catch(err){render();setStatus(err.message)}
+     const count=Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1);
+     const destination=dragged?pileAtPoint(ev.clientX,ev.clientY,pile.id):null;
+     try{
+      if(destination){
+       TabulaTablePiles.transfer(state,pile.id,destination,count);
+       pileTakeCounts.delete(pile.id);
+       setStatus('上から'+count+'枚を、別の束の上に重ねました。');
+      }else if(count>1){
+       if(!dragged){face.style.transform='';setStatus('複数枚の移動はカードをドラッグしてください。');return}
+       const point=tablePoint(ev.clientX,ev.clientY);
+       TabulaTablePiles.split(state,pile.id,count,point.x,point.y);
+       pileTakeCounts.delete(pile.id);
+       setStatus('上から'+count+'枚を新しい束に分けました。');
+      }else{
+       const pos=dragged?pileDropPosition(ev.clientX,ev.clientY):{x:Math.min(94,pile.x+Math.max(9,m.w/$('zone').clientWidth*115)),y:pile.y};
+       TabulaTablePiles.withdraw(state,pile.id,pos);
+       pileTakeCounts.delete(pile.id);
+       setStatus('束から一番上のカードを取り出しました。');
+      }
+      render();saveLocal();
+     }catch(err){render();setStatus(err.message)}
     };
     const cancel=()=>{face.removeEventListener('pointermove',move);face.removeEventListener('pointerup',finish);face.removeEventListener('pointercancel',cancel);render()};
     face.addEventListener('pointermove',move);face.addEventListener('pointerup',finish);face.addEventListener('pointercancel',cancel);
@@ -869,7 +901,18 @@ function renderTablePiles(zone,m){
    const sx=e.clientX,sy=e.clientY;title.setPointerCapture(e.pointerId);
    const move=ev=>{const pt=tablePoint(ev.clientX,ev.clientY);el.style.left=pt.x+'%';el.style.top=pt.y+'%'};
    const end=ev=>{title.removeEventListener('pointermove',move);title.removeEventListener('pointerup',end);title.removeEventListener('pointercancel',cancel);
-    const pt=tablePoint(ev.clientX,ev.clientY);TabulaTablePiles.relocate(state,pile.id,pt.x,pt.y);render();saveLocal()};
+    const destination=pileAtPoint(ev.clientX,ev.clientY,pile.id);
+    if(destination&&pile.cards.length){
+     const count=pile.cards.length;
+     TabulaTablePiles.transfer(state,pile.id,destination,count);
+     TabulaTablePiles.removeEmpty(state,pile.id);
+     pileTakeCounts.delete(pile.id);
+     setStatus('束ごと'+count+'枚を別の束の上に重ねました。');
+    }else{
+     const pt=tablePoint(ev.clientX,ev.clientY);
+     TabulaTablePiles.relocate(state,pile.id,pt.x,pt.y);
+    }
+    render();saveLocal()};
    const cancel=()=>{title.removeEventListener('pointermove',move);title.removeEventListener('pointerup',end);title.removeEventListener('pointercancel',cancel);render()};
    title.addEventListener('pointermove',move);title.addEventListener('pointerup',end);title.addEventListener('pointercancel',cancel);
   });
