@@ -367,3 +367,21 @@ spread slots and manually created piles as frames:
 The current live bridge commits the pure operation's changed stock, placed
 cards and piles to the ordinary local state. The experimental multi-table
 engine migration remains separate. The basic five reading buttons stay intact.
+
+
+## Pile-to-single-card stacking — v0.432
+
+An upper card (or an explicitly selected upper block) of a manually created
+pile can be dragged onto an independent placed card and held for the same
+650 ms dwell used by independent-card stacking. The existing gold target
+outline signals that releasing will create a new pile. The transferred
+block becomes the top of that pile in its original physical order, with the
+single target card below it; the target's registered position, if any, is
+inherited by the new pile. The source pile persists as a location even if
+empty, preserving its role, coordinates and spread-frame attachment.
+
+A short overlap without the dwell does not silently absorb the target;
+normal pile withdraw/split behavior remains available. Moving onto an
+existing pile continues to transfer cards directly. The method
+`TabulaTablePiles.stackFromPile` validates the source and target before
+mutating arrays and preserves each physical instance ID.
