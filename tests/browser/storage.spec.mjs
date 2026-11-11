@@ -272,8 +272,8 @@ test('custom Marseille-style deck saves French names, swaps VIII/XI, and restore
  await expect(page.locator('#deckLibrarySelect')).toHaveValue(decks[0].id);
  await page.locator('#cardGalleryOpen').click();
  await page.locator('#cardGalleryFilter').selectOption('major');
- await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(8)).toContainText('La Force');
- await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(11)).toContainText('La Justice');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(8)).toContainText('La Justice');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(11)).toContainText('La Force');
  await page.locator('#cardGalleryFilter').selectOption('pip');
  await expect(page.locator('#cardGalleryGrid .gallery-tile').first().locator('.ace-background')).toHaveCount(0);
  await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(0);
@@ -443,7 +443,8 @@ test('full artwork subtitles complement multilingual titles rather than duplicat
  await page.locator('#cardGalleryGrid .gallery-tile').nth(8).click();
  const english=await page.locator('#cardGalleryLarge').evaluate(el=>decodeURIComponent(el.outerHTML));
  expect(english).toContain('Strength');
- expect(english).toContain('MAJOR ARCANA');
+ expect(english).toContain('STRENGTH');
+ await expect(page.locator('#cardGalleryLabel')).toContainText('Strength');
  await expect(page.locator('.deck-setting-heading').first()).toHaveText('デッキの選択');
 });
 
