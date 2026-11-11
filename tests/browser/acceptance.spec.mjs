@@ -13,6 +13,28 @@ test.beforeEach(async ({page})=>{
   for (const button of await page.locator('aside .section > h2 .section-toggle').all()) await button.click();
 });
 
+test('pile count selector is hidden until requested',async ({page})=>{
+  await page.locator('#spreadQuickSelect').selectOption('free');
+  await page.locator('#addTablePile').click();
+  await page.locator('#zone').click({position:{x:240,y:220}});
+  await page.locator('#addTablePile').click();
+  const pile=page.locator('#zone .table-pile').first();
+  // Deposit one dealt card into the empty pile so that count selection exists.
+  await page.locator('#quickDeal').click();
+  const card=page.locator('#zone .card').first();
+  const p=await pile.boundingBox();
+  const c=await card.boundingBox();
+  await page.mouse.move(c.x+c.width/2,c.y+c.height/2);
+  await page.mouse.down();
+  await page.mouse.move(p.x+p.width/2,p.y+p.height/2,{steps:12});
+  await page.mouse.up();
+  await expect(pile.locator('.table-pile-take-count')).toBeHidden();
+  await pile.locator('.table-pile-take-toggle').click();
+  await expect(pile.locator('.table-pile-take-count')).toBeVisible();
+  await pile.locator('.table-pile-take-toggle').click();
+  await expect(pile.locator('.table-pile-take-count')).toBeHidden();
+});
+
 test('pile handle click does not jump and drag retains the grabbed offset',async ({page})=>{
   await page.locator('#spreadQuickSelect').selectOption('free');
   await page.locator('#addTablePile').click();
