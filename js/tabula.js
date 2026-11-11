@@ -2445,11 +2445,17 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
    return {x:50+(col-(cols-1)/2)*spanX,y:36+(row-(rows-1)/2)*spanY};
   }
   function makePileCard(index,count,amount){
-   const card=document.createElement('div');card.className='deal-pile-card';
+   // Reuse the actual stock element so every selected back design,
+   // physical card size and appearance (Standard/Pocket/Worn) is identical.
+   const card=$('deck').cloneNode(false);
+   card.removeAttribute('id');
+   card.classList.remove('empty');
+   card.classList.add('deal-pile-card');
+   card.removeAttribute('title');
    card.dataset.pileIndex=String(index);
    const label=document.createElement('span');label.className='deal-pile-caption';
    label.textContent='束'+String.fromCharCode(65+index)+' · '+amount+'枚';card.append(label);
-   applyPlayingBack(card);const point=pilePosition(index,count);
+   const point=pilePosition(index,count);
    card.style.left=point.x+'%';card.style.top=point.y+'%';
    card.style.transform='translate(-50%,-50%)';
    return card;
