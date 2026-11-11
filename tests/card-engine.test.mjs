@@ -51,3 +51,35 @@ test('nonempty piles cannot be removed',()=>{
  w=E.move(w,{from:'pile:discard',to:'stock:A'});
  w=E.removeEmptyPile(w,'discard');assert.equal(w.containers['pile:discard'],undefined);
 });
+
+test('explicit persistent IDs survive reshuffling and another reading',()=>{
+ const ids=['physical-91','physical-07','physical-35'];
+ let w=E.create({decks:[{id:'A',cardIds:['h1','h1','s2'],instanceIds:ids}],tables:[{id:'t',slots:[{id:'0',x:20,y:25},{id:'1',x:40,y:25}]}]});
+ w=E.dealVacancies(w,{from:'stock:A',tableId:'t'}).workspace;
+ w=E.addPile(w,{id:'discard',tableId:'t',x:70,y:70});
+ w=E.move(w,{from:'slot:t:0',to:'pile:discard'});
+ w=E.collect(w,{from:['pile:discard','slot:t:1'],to:'stock:A'});
+ assert.deepEqual(Array.from(w.containers['stock:A'].cards),['physical-07','physical-91','physical-35']);
+ w=E.reorder(w,'stock:A',['physical-35','physical-07','physical-91']);
+ const saved=JSON.parse(JSON.stringify(w));assert.equal(E.validate(saved),true);
+ assert.deepEqual(Array.from(saved.decks.A.instanceIds),ids);
+ assert.deepEqual(Array.from(saved.containers['stock:A'].cards),['physical-35','physical-07','physical-91']);
+ const next=E.dealVacancies(saved,{from:'stock:A',tableId:'t'}).workspace;
+ assert.equal(next.containers['slot:t:0'].cards[0],'physical-35');
+ assert.equal(E.validate(next),true);
+});
+test('whole-pile collection preserves within-pile order and has explicit group order',()=>{
+ let w=E.create({decks:[{id:'A',cardIds:['a','b','c','d']}],tables:[{id:'t',slots:[]}]});
+ w=E.addPile(w,{id:'one',tableId:'t',x:10,y:10});
+ w=E.addPile(w,{id:'two',tableId:'t',x:30,y:10});
+ w=E.move(w,{from:'stock:A',to:'pile:one',count:2});
+ w=E.move(w,{from:'stock:A',to:'pile:two',count:2});
+ w=E.collect(w,{from:['pile:one','pile:two'],to:'stock:A'});
+ assert.deepEqual(Array.from(w.containers['stock:A'].cards),['A:2','A:3','A:0','A:1']);
+ assert.equal(E.validate(w),true);
+});
+test('persistent identity validation rejects mismatched lengths and duplicates',()=>{
+ assert.throws(()=>E.create({decks:[{id:'A',cardIds:['a'],instanceIds:[]}]}));
+ assert.throws(()=>E.create({decks:[{id:'A',cardIds:['a','b'],instanceIds:['same','same']}]}));
+ assert.throws(()=>E.create({decks:[{id:'A',cardIds:['a'],instanceIds:['same']},{id:'B',cardIds:['a'],instanceIds:['same']}]}));
+});
