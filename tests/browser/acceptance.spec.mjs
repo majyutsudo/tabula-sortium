@@ -13,6 +13,49 @@ test.beforeEach(async ({page})=>{
   for (const button of await page.locator('aside .section > h2 .section-toggle').all()) await button.click();
 });
 
+test('advanced placement popup groups controls and preserves five basic shortcuts',async ({page})=>{
+ await expect(page.locator('.table-shortcuts > button')).toHaveCount(5);
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
+ const popup=page.locator('#placementToolsContent');
+ await expect(popup.locator('[data-group="placement"] .placement-tools-heading')).toHaveText('配置');
+ await expect(popup.locator('[data-group="behavior"] .placement-tools-heading')).toHaveText('操作');
+ await expect(popup.locator('[data-group="placement"] #physicalCardPickButton')).toBeVisible();
+ await expect(popup.locator('[data-group="placement"] #addTablePile')).toBeVisible();
+ await expect(popup.locator('[data-group="behavior"] #naturalTiltButton')).toBeVisible();
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await expect(popup.locator('[data-group="placement"] #freeSnapButton')).toBeVisible();
+});
+test('zoomed desktop pile card drag is not stolen by background pan',async ({page})=>{
+ await page.setViewportSize({width:1280,height:850});
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
+ await page.locator('#placementToolsContent #addTablePile').click();
+ await page.locator('#zone').click({position:{x:290,y:240}});
+ const pile=page.locator('#zone .table-pile').first();
+ for(let i=0;i<3;i++){
+  const deck=await page.locator('#deck').boundingBox();
+  const target=await pile.boundingBox();
+  await page.mouse.move(deck.x+deck.width/2,deck.y+deck.height/2);
+  await page.mouse.down();
+  await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});
+  await page.mouse.up();
+ }
+ const grip=await pile.locator('.table-pile-fan-grip').boundingBox();
+ await page.mouse.move(grip.x+grip.width/2,grip.y+grip.height/2);
+ await page.mouse.down();
+ await page.mouse.move(grip.x+grip.width/2+70,grip.y+grip.height/2+28,{steps:10});
+ await page.mouse.up();
+ await expect(pile.locator('.table-pile-top')).toHaveCount(3);
+ await page.locator('#desktopTableViews button[data-distance="2"]').click();
+ const card=await pile.locator('.table-pile-top[data-pile-index="1"]').boundingBox();
+ await page.mouse.move(card.x+card.width*.17,card.y+card.height*.75);
+ await page.mouse.down();
+ await page.mouse.move(card.x+card.width*.17+120,card.y+card.height*.75+90,{steps:10});
+ await expect(pile).toHaveClass(/pile-drag-active/);
+ await page.mouse.up();
+ const state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles.some(p=>p.cards.length===2)).toBe(true);
+});
 test('primary shortcuts stay at five while pile creation is in placement popover',async ({page})=>{
  await expect(page.locator('.table-shortcuts button#addTablePile')).toHaveCount(0);
  await expect(page.locator('.table-shortcuts > button')).toHaveCount(5);
@@ -29,7 +72,7 @@ test('primary shortcuts stay at five while pile creation is in placement popover
 });
 test('deliberately hovering a dropped card turns exactly two cards into a pile',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('free');
- await expect(page.locator('.table-shortcuts #addTablePile')).toBeVisible();
+ await expect(page.locator('.table-shortcuts > button')).toHaveCount(5);
  await page.locator('#quickDeal').click();
  await page.locator('#quickDeal').click();
  await page.evaluate(key=>{
