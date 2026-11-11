@@ -76,6 +76,17 @@ function stackPlaced(state,movingIndex,targetIndex){
  state.selected=null;state.completionShown=false;
  return next;
 }
+/* Flip one physical card in place without changing pile membership or order.
+   Index zero remains the top, including in collapsed piles. */
+function flipCard(state,id,index=0){
+ validate(state);
+ const pile=find(state,id);
+ if(!Number.isInteger(index)||index<0||index>=pile.cards.length)fail('invalid flip index');
+ const card=pile.cards[index];
+ card.faceUp=!card.faceUp;
+ state.completionShown=false;
+ return card;
+}
 function withdraw(state,id,position){
  validate(state);const p=find(state,id);
  if(!p.cards.length)fail('empty pile');
@@ -120,5 +131,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,withdraw,transfer,split,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,flipCard,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
