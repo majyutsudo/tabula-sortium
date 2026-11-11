@@ -310,7 +310,7 @@ test('numberless Fool, major numbering and independent language preset persist',
  expect(deck.language).toBe('fr');
  await page.locator('#cardGalleryOpen').click();
  await page.locator('#cardGalleryFilter').selectOption('major');
- await page.locator('#cardGalleryGrid .gallery-tile').first().click();
+ await page.locator('#cardGalleryGrid .gallery-tile').filter({hasText:'Le Mat'}).click();
  await expect(page.locator('#cardGalleryLabel')).toContainText('Le Mat');
  const code=await page.locator('#cardGalleryLarge').evaluate(el=>el.outerHTML);
  expect(code).not.toMatch(/>0<\/text>/);
