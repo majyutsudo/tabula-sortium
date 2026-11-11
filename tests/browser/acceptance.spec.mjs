@@ -32,7 +32,7 @@ test('card gallery opens, filters majors and displays enlarged artwork',async ({
 
 test('manual cut modal restacks every card exactly once',async ({page})=>{
   const before=await saved(page,WORKSPACE);
-  await page.locator('#quickCut').click();
+  await page.locator('#cut').click();
   await expect(page.locator('#cutConfirm')).toBeDisabled();
   const piles=page.locator('.cut-stack');
   await expect(piles).toHaveCount(3);
