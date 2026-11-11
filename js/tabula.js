@@ -1083,14 +1083,44 @@ function renderTablePiles(zone,m){
     const index=Number(face.dataset.pileIndex);
     const count=expanded?index+1:Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1);
     const moving=expanded?faces.filter(node=>Number(node.dataset.pileIndex)<=index):[face];
+    // Consistent with independent-card dwell: a stationary intentional overlap
+    // arms stack creation, while a quick release preserves ordinary withdrawal.
+    const stackIntent={candidate:null,armed:false,timer:null,active:true};
+    const clearPileStack=()=>{
+     stackIntent.active=false;
+     if(stackIntent.timer)clearTimeout(stackIntent.timer);
+     stackIntent.timer=null;stackIntent.candidate=null;stackIntent.armed=false;
+     $('zone').querySelectorAll('.stack-hover-target').forEach(el=>el.classList.remove('stack-hover-target'));
+    };
+    const updatePileStack=()=>{
+     if(!dragged||dualSession||spreadWorkbench||pilePlacementArmed)return;
+     const target=stackCandidate(face),candidate=target?.dataset.index??null;
+     if(candidate===stackIntent.candidate)return;
+     if(stackIntent.timer)clearTimeout(stackIntent.timer);
+     $('zone').querySelectorAll('.stack-hover-target').forEach(el=>el.classList.remove('stack-hover-target'));
+     stackIntent.candidate=candidate;stackIntent.armed=false;stackIntent.timer=null;
+     if(candidate===null)return;
+     stackIntent.timer=setTimeout(()=>{
+      if(!stackIntent.active||!dragged||stackIntent.candidate!==candidate)return;
+      const current=$('zone').querySelector('.card[data-index="'+candidate+'"]');
+      if(!current||stackCandidate(face)!==current)return;
+      stackIntent.armed=true;current.classList.add('stack-hover-target');
+     },STACK_DWELL_MS);
+    };
     face.setPointerCapture(e.pointerId);
     const move=ev=>{
      if(!dragged&&Math.hypot(ev.clientX-startX,ev.clientY-startY)>7){
       dragged=true;el.classList.add('pile-drag-active');
      }
-     if(dragged)for(const node of moving)node.style.transform='translate('+(ev.clientX-startX)+'px,'+(ev.clientY-startY)+'px)';
+     if(dragged){
+      for(const node of moving)node.style.transform='translate('+(ev.clientX-startX)+'px,'+(ev.clientY-startY)+'px)';
+      updatePileStack();
+     }
     };
     const finish=ev=>{
+     const stackIndex=stackIntent.armed&&stackIntent.candidate!==null?Number(stackIntent.candidate):null;
+     const stackNode=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;
+     const stackReady=dragged&&stackNode&&stackCandidate(face)===stackNode;
      clear();
      // Returning near the original grab point cancels an accidental pickup.
      if(dragged&&Math.hypot(ev.clientX-startX,ev.clientY-startY)<=28){
@@ -1104,7 +1134,11 @@ function renderTablePiles(zone,m){
      }
      const destination=pileAtPoint(ev.clientX,ev.clientY,pile.id);
      try{
-      if(destination){
+      if(stackReady&&!dualSession&&!spreadWorkbench){
+       TabulaTablePiles.stackFromPile(state,pile.id,stackIndex,count);
+       pileTakeCounts.delete(pile.id);
+       setStatus('束の上から'+count+'枚を単体の札に重ね、新しい束を作りました。');
+      }else if(destination){
        TabulaTablePiles.transfer(state,pile.id,destination,count);
        pileTakeCounts.delete(pile.id);
        setStatus('上から'+count+'枚を、別の束の上に重ねました。');
@@ -1123,6 +1157,7 @@ function renderTablePiles(zone,m){
      }catch(err){render();setStatus(err.message)}
     };
     const clear=()=>{
+     clearPileStack();
      face.removeEventListener('pointermove',move);
      face.removeEventListener('pointerup',finish);
      face.removeEventListener('pointercancel',cancel);
