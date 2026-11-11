@@ -64,7 +64,7 @@ test('transfer preserves the order of the selected top block and target cards',(
  const s=fresh(),one=P.create(s,25,40),two=P.create(s,75,40);
  P.deposit(s,0,one.id);P.deposit(s,0,one.id);
  const stock=s.deck.shift();two.cards.push(stock);
- const originals=one.cards.map(c=>c.instanceId);
+ const originals=Array.from(one.cards,c=>c.instanceId);
  const result=P.transfer(s,one.id,two.id,2);
  assert.deepEqual(Array.from(result,c=>c.instanceId),originals);
  assert.deepEqual(Array.from(two.cards,c=>c.instanceId),[...originals,stock.instanceId]);
