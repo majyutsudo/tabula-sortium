@@ -241,7 +241,7 @@ test('saved readings can be reopened and restored after page reload', async ({ p
 });
 
 test('custom Marseille-style deck saves French names, swaps VIII/XI, and restores full-area plain pips', async ({ page }) => {
- await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditCurrent').click();
  await expect(page.locator('#deckEditorName')).toBeVisible();
  await page.locator('#deckEditorName').fill('Tarot de Marseille — étude');
  await page.locator('#deckEditorLanguage').selectOption('fr');
@@ -299,7 +299,7 @@ test('deck definitions validate unique major numbers and one or more included ca
 });
 
 test('numberless Fool, major numbering and independent language preset persist',async ({page})=>{
- await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditCurrent').click();
  await page.locator('#deckEditorName').fill('Le Mat sans numéro');
  await page.locator('#deckEditorLanguage').selectOption('fr');
  await page.locator('.deck-major-number[data-major="major_00"]').selectOption('none');
@@ -395,7 +395,7 @@ test('language selection supersedes one-off preset names but keeps unique custom
 });
 
 test('deck editor Fool shortcut toggles unnumbered and zero and survives save',async ({page})=>{
- await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditCurrent').click();
  await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を番号なしに');
  await page.locator('#deckEditorUnnumbered').click();
  await expect(page.locator('.deck-major-number[data-major="major_00"]')).toHaveValue('none');
@@ -416,7 +416,7 @@ test('deck editor Fool shortcut toggles unnumbered and zero and survives save',a
 
 test('standard pip label is concise while deck editor preserves descriptive labels',async ({page})=>{
  await expect(page.locator('#pipBackground option[value="none"]')).toHaveText('シンプル');
- await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditCurrent').click();
  await expect(page.locator('#deckEditorPip option[value="none"]')).toContainText('スートを全面に大きく配置');
  await expect(page.locator('#deckEditorSwap')).toHaveText('力 VIII ↔ 正義 XI');
 });
