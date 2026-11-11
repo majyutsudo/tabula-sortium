@@ -34,6 +34,35 @@ test('pile count selector is hidden until requested',async ({page})=>{
   await expect(pile.locator('.table-pile-take-count')).toBeHidden();
 });
 
+test('pile spreads diagonally and retains its fan after reload',async ({page})=>{
+  await page.locator('#spreadQuickSelect').selectOption('free');
+  await page.locator('#addTablePile').click();
+  await page.locator('#zone').click({position:{x:250,y:240}});
+  const pile=page.locator('#zone .table-pile').first();
+  for(let i=0;i<3;i++){
+    const deck=await page.locator('#deck').boundingBox();
+    const target=await pile.boundingBox();
+    await page.mouse.move(deck.x+deck.width/2,deck.y+deck.height/2);
+    await page.mouse.down();
+    await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});
+    await page.mouse.up();
+  }
+  await expect(pile.locator('.table-pile-top')).toHaveCount(1);
+  const grip=await pile.locator('.table-pile-fan-grip').boundingBox();
+  await page.mouse.move(grip.x+grip.width/2,grip.y+grip.height/2);
+  await page.mouse.down();
+  await page.mouse.move(grip.x+grip.width/2+80,grip.y+grip.height/2-65,{steps:10});
+  await page.mouse.up();
+  await expect(pile.locator('.table-pile-top')).toHaveCount(3);
+  const fan=(await saved(page,WORKSPACE)).state.tablePiles[0].fan;
+  expect(fan.dx).toBeGreaterThan(0);
+  expect(fan.dy).toBeLessThan(0);
+  await page.reload();
+  await expect(page.locator('#zone .table-pile .table-pile-top')).toHaveCount(3);
+  const persisted=(await saved(page,WORKSPACE)).state.tablePiles[0].fan;
+  expect(persisted).toEqual(fan);
+});
+
 test('pile handle click does not jump and drag retains the grabbed offset',async ({page})=>{
   await page.locator('#spreadQuickSelect').selectOption('free');
   await page.locator('#addTablePile').click();
