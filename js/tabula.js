@@ -545,6 +545,14 @@ function updateNaturalTiltButton(){
   button.onclick=()=>{naturalTilt=!naturalTilt;updateNaturalTiltButton();setStatus('手置き（小さな滑り＋接触）：'+(naturalTilt?'ON':'OFF'));};
   document.getElementById('placementToolsContent').append(button);
  }
+ // Keep the five basic shortcuts for ordinary readings. Pile creation is
+ // a specialist placement tool, grouped with manual placement options.
+ const addPile=document.getElementById('addTablePile');
+ const placementContent=document.getElementById('placementToolsContent');
+ if(addPile&&placementContent&&addPile.parentElement!==placementContent){
+  placementContent.append(addPile);
+  addPile.classList.add('placement-add-pile');
+ }
  button.textContent=naturalTilt?'◌ 手置き ON':'◌ 手置き OFF';
  button.title='テスト用：手を離した方向へ最大150pxの滑りと軽い衝突（自動傾きなし）';
  button.setAttribute('aria-pressed',String(naturalTilt));
