@@ -220,3 +220,32 @@ for the first manual-play milestone.
 
 Until then do not alter the established pile or spread gestures as a side
 effect of migration. The `main` branch remains untouched.
+
+
+## Named tabletop container roles — v0.423
+
+Manual tabletop piles now support a `role` field with generic values:
+`pile` (ordinary), `tableau`, `foundation`, `waste` (talon),
+and `discard`. Role is location metadata, **not** a property of a card;
+a split-off bundle starts as an ordinary pile. Existing pile cards retain
+physical `instanceId`, top-first order, face state, and the pile fan vector.
+
+The live UI can change the role by clicking/tapping the existing pile
+movement handle and choosing a role from the temporary selector. No extra
+permanent control is added. The role is shown in the pile header and stored
+with the workspace. Dragging stock onto a `waste` pile deals a face-up card;
+other destinations continue to follow the normal face-up setting.
+
+The experimental engine exposes `roleOf` and immutable `setPileRole`.
+The strict bridge also projects roles. Do not replace the existing
+`state.removed` exclusion category with a player-created discard pile:
+these are separate locations with different purposes.
+
+Roles currently **do not enforce rules** about which cards are allowed to
+enter, leave, or be visible. A future optional rule layer can enforce
+foundation sequence, waste-top-only access, or tableau sequences without
+putting those rules into physical-card transfer operations.
+
+This release still does not make the experimental engine authoritative;
+validation must cover the two-deck/multi-table lifecycle and write-back
+before migration. `main` is untouched.
