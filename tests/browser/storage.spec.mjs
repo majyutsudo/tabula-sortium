@@ -443,7 +443,7 @@ test('full artwork subtitles complement multilingual titles rather than duplicat
  await page.locator('#cardGalleryGrid .gallery-tile').nth(8).click();
  const english=await page.locator('#cardGalleryLarge').evaluate(el=>decodeURIComponent(el.outerHTML));
  expect(english).toContain('Strength');
- expect(english).toContain('STRENGTH');
+ expect(english).toContain('MAJOR ARCANA');
  await expect(page.locator('#cardGalleryLabel')).toContainText('Strength');
  await expect(page.locator('.deck-setting-heading').first()).toHaveText('デッキの選択');
 });
