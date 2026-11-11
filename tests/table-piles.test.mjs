@@ -108,3 +108,21 @@ test('whole-pile merge preserves block order and empty source may be removed',()
  assert.equal(s.tablePiles.length,1);
  assert.deepEqual(ids(s).sort(),['A:a','A:b','A:c']);
 });
+
+test('stock can be dealt directly onto a pile preserving identity and order',()=>{
+ const s=fresh(),pile=P.create(s,40,45);
+ const first=s.deck[0],second=s.deck[1];
+ P.drawFromDeck(s,pile.id,false);
+ P.drawFromDeck(s,pile.id,true);
+ assert.deepEqual(pile.cards.map(c=>c.instanceId),[second.instanceId,first.instanceId]);
+ assert.equal(pile.cards[0].faceUp,true);
+ assert.equal(pile.cards[1].faceUp,false);
+ assert.equal(s.deck.length,1);
+ assert.equal(I.ensureSingle(s),s);
+});
+test('stock-to-pile deal rejects an empty stock without changing a pile',()=>{
+ const s=fresh(),pile=P.create(s,40,45);
+ s.deck=[];
+ assert.throws(()=>P.drawFromDeck(s,pile.id));
+ assert.deepEqual(pile.cards,[]);
+});
