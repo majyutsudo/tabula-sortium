@@ -249,3 +249,24 @@ putting those rules into physical-card transfer operations.
 This release still does not make the experimental engine authoritative;
 validation must cover the two-deck/multi-table lifecycle and write-back
 before migration. `main` is untouched.
+
+
+## Intentional stack creation by hover — v0.424
+
+While dragging one independent tabletop card over another, holding the
+overlap steady for about 650 ms arms a prospective two-card pile, marked
+with a temporary border on the target. Releasing while still overlapping
+commits `TabulaTablePiles.stackPlaced`: the dragged card becomes top,
+the designated target becomes bottom, the new pile takes the target's
+coordinates, and both cards retain physical identities and face states.
+Quick release retains the established independent-card overlap behavior.
+
+The operation does not absorb unrelated overlapping cards. It is disabled
+in the spread editor, during pile-placement arming, and in multi-workspace
+mode. This is a deliberate conversion, not automatic pile membership
+inferred from visual overlap.
+
+The existing `＋束を置く` control remains available for creating an
+empty location. It now lives alongside Shuffle/Cut/Deal/Open in the
+primary table shortcut bar; on narrower screens the six operations
+form two rows. No new permanent controls are placed over the cards.
