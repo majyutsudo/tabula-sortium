@@ -13,6 +13,17 @@ function validate(state){
  }
  return true;
 }
+function fanOf(pile){
+ const fan=pile?.fan;
+ return fan&&Number.isFinite(fan.dx)&&Number.isFinite(fan.dy)
+  ?{dx:fan.dx,dy:fan.dy}:{dx:0,dy:0};
+}
+function setFan(state,id,dx,dy){
+ const pile=find(state,id);
+ if(!Number.isFinite(dx)||!Number.isFinite(dy))fail('invalid fan');
+ pile.fan={dx:Math.max(-0.85,Math.min(0.85,dx)),dy:Math.max(-0.85,Math.min(0.85,dy))};
+ return pile.fan;
+}
 function create(state,x,y){
  validate(state);if(!Number.isFinite(x)||!Number.isFinite(y))fail('invalid position');
  let i=1;while(state.tablePiles.some(p=>p.id==='pile-'+i))i++;
@@ -71,6 +82,7 @@ function split(state,id,count,x,y){
  if(!Number.isInteger(count)||count<1||count>source.cards.length)fail('invalid split count');
  if(!Number.isFinite(x)||!Number.isFinite(y))fail('invalid position');
  const target=create(state,x,y);
+ target.fan={...fanOf(source)};
  transfer(state,id,target.id,count);
  return target;
 }
@@ -83,5 +95,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,deposit,drawFromDeck,withdraw,transfer,split,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,fanOf,setFan,deposit,drawFromDeck,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
