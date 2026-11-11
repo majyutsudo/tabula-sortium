@@ -270,3 +270,20 @@ The existing `＋束を置く` control remains available for creating an
 empty location. It now lives alongside Shuffle/Cut/Deal/Open in the
 primary table shortcut bar; on narrower screens the six operations
 form two rows. No new permanent controls are placed over the cards.
+
+
+## Zoomed pile interactions and placement controls — v0.427
+
+The tabletop camera's touch and desktop pointer-capture pan handlers now
+explicitly exempt `.table-pile` descendants alongside regular `.card`
+elements. Zoomed tabletop background pans still begin on bare cloth,
+but a gesture starting on an expanded pile's intermediate card remains a
+pile card drag, including on mobile. This fixes the earlier camera
+interception without changing pile data or its drag semantics.
+
+The small bottom-right placement popup is organized into `配置`
+(free snap, select a card, create an empty pile) and `操作` (hand-placement
+mode). Shared button dimensions, font and active-state styling replace
+the earlier mixed inline styles. The main five-button reading action bar
+remains unchanged. The group layout is rebuilt only if missing, while
+the existing DOM controls retain their event handlers and IDs.
