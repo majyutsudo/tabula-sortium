@@ -206,6 +206,38 @@ test('Open reveals only the top card in each pile, including expanded piles',asy
  expect(cards.map(c=>c.faceUp)).toEqual([true,false,false]);
  await expect(pile.locator('.table-pile-top.is-face-up')).toHaveCount(1);
 });
+test('dragging a pile top onto a single card creates a new pile after dwell',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.evaluate(key=>{
+  const workspace=JSON.parse(localStorage.getItem(key));
+  const top=workspace.state.deck.shift(),bottom=workspace.state.deck.shift();
+  workspace.state.placed=[{...bottom,slot:null,x:70,y:45,angle:0,faceUp:true}];
+  workspace.state.tablePiles=[{id:'pile-1',x:20,y:45,role:'tableau',
+    cards:[{...top,slot:null,faceUp:false}]}];
+  localStorage.setItem(key,JSON.stringify(workspace));
+ },WORKSPACE);
+ await page.reload();
+ const pile=page.locator('#zone .table-pile').first();
+ const source=await pile.locator('.table-pile-top').boundingBox();
+ const target=await page.locator('#zone .card').first().boundingBox();
+ const before=(await saved(page,WORKSPACE)).state;
+ const sourceId=before.tablePiles[0].cards[0].instanceId;
+ const targetId=before.placed[0].instanceId;
+ await page.mouse.move(source.x+source.width/2,source.y+source.height/2);
+ await page.mouse.down();
+ await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:14});
+ await page.waitForTimeout(800);
+ await expect(page.locator('#zone .card').first()).toHaveClass(/stack-hover-target/);
+ await page.mouse.up();
+ const after=(await saved(page,WORKSPACE)).state;
+ expect(after.tablePiles).toHaveLength(2);
+ expect(after.tablePiles[0].id).toBe('pile-1');
+ expect(after.tablePiles[0].cards).toHaveLength(0);
+ expect(after.tablePiles[1].cards.map(c=>c.instanceId)).toEqual([sourceId,targetId]);
+ expect(after.placed).toHaveLength(0);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.tablePiles[1].cards).toHaveLength(2);
+});
 test('tapping the top card of a pile flips it without removing it',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('free');
  await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
