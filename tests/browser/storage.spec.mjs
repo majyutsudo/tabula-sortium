@@ -348,8 +348,9 @@ test('built-in deck language and traditional pip option can change without cloni
 });
 
 test('manual pile holds a physical card, leaves a refillable slot, and survives reload',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('three');
  await page.locator('#quickDeal').click();
- await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(3);
  const before=await saved(page,WORKSPACE);
  const add=page.locator('#addTablePile');
  await add.click();
@@ -368,11 +369,11 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
  const original=deposited.state.tablePiles[0].cards[0];
  expect(before.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(true);
  expect(deposited.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(false);
- expect(deposited.state.placed).toHaveLength(9);
+ expect(deposited.state.placed).toHaveLength(2);
  await page.reload();
  expect((await saved(page,WORKSPACE)).state.tablePiles[0].cards[0].instanceId).toBe(original.instanceId);
  await page.locator('#quickDeal').click();
- await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(10);
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(3);
  const refilled=await saved(page,WORKSPACE);
  expect(refilled.state.placed.find(c=>c.slot===original.slot)?.instanceId).not.toBe(original.instanceId);
  await page.locator('#zone').scrollIntoViewIfNeeded();
