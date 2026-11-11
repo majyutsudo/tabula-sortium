@@ -33,9 +33,9 @@ function withdraw(state,id,position){
  validate(state);const p=find(state,id);
  if(!p.cards.length)fail('empty pile');
  if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.y))fail('invalid position');
- const card=p.cards.shift();
  const slot=position.slot??null;
  if(slot!==null&&(state.placed.some(c=>c.slot===slot)||!Number.isInteger(slot)))fail('occupied or invalid destination slot');
+ const card=p.cards.shift();
  const x=clamp(position.x),y=clamp(position.y);
  const move={...card,slot,x,y,angle:position.angle??card.angle??0,origin:{x,y,angle:position.angle??card.angle??0},manualMoved:slot===null};
  state.placed.push(move);
