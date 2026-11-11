@@ -13,6 +13,35 @@ test.beforeEach(async ({page})=>{
   for (const button of await page.locator('aside .section > h2 .section-toggle').all()) await button.click();
 });
 
+test('free tabletop frames compact ordered stacks then refill vacancies from stock',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.evaluate(key=>{
+  const data=JSON.parse(localStorage.getItem(key));
+  const a=data.state.deck.shift(),b=data.state.deck.shift(),c=data.state.deck.shift();
+  data.state.placed=[];
+  data.state.tablePiles=[
+   {id:'pile-1',x:15,y:40,role:'tableau',cards:[]},
+   {id:'pile-2',x:45,y:40,role:'tableau',cards:[a,b]},
+   {id:'pile-3',x:75,y:40,role:'tableau',cards:[c]}
+  ];
+  localStorage.setItem(key,JSON.stringify(data));
+ },WORKSPACE);
+ await page.reload();
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
+ await expect(page.locator('#placementToolsContent #arrangementCompact')).toBeVisible();
+ await page.locator('#arrangementCompact').click();
+ let state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles.map(p=>p.cards.length)).toEqual([2,1,0]);
+ const initialIds=state.tablePiles[0].cards.map(c=>c.instanceId);
+ await page.locator('#arrangementRefill').click();
+ state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles.map(p=>p.cards.length)).toEqual([2,1,1]);
+ expect(state.tablePiles[0].cards.map(c=>c.instanceId)).toEqual(initialIds);
+ await page.reload();
+ state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles.map(p=>p.cards.length)).toEqual([2,1,1]);
+ await expect(page.locator('.table-shortcuts > button')).toHaveCount(5);
+});
 test('advanced placement popup groups controls and preserves five basic shortcuts',async ({page})=>{
  await expect(page.locator('.table-shortcuts > button')).toHaveCount(5);
  await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
