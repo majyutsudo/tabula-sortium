@@ -216,3 +216,24 @@ test('invalid flip indices do not modify ordered pile contents',()=>{
  assert.throws(()=>P.flipCard(state,p.id,1.5));
  assert.equal(JSON.stringify(state),before);
 });
+
+test('Open candidate list contains top cards of piles only, independent of fan direction or role',()=>{
+ const state=fresh();
+ const p=P.create(state,35,40,'tableau'),w=P.create(state,65,40,'waste');
+ P.deposit(state,0,p.id);P.deposit(state,0,p.id);
+ P.deposit(state,0,w.id);P.deposit(state,0,w.id);
+ P.setFan(state,p.id,.31,-.42);
+ p.cards[0].faceUp=false;p.cards[1].faceUp=false;
+ w.cards[0].faceUp=true;w.cards[1].faceUp=false;
+ const before=JSON.stringify(state),closed=P.closedTopCards(state);
+ assert.equal(closed.length,1);
+ assert.equal(closed[0],p.cards[0]);
+ assert.equal(JSON.stringify(state),before);
+ closed.forEach(card=>card.faceUp=true);
+ assert.equal(p.cards[0].faceUp,true);
+ assert.equal(p.cards[1].faceUp,false);
+ assert.equal(w.cards[1].faceUp,false);
+ assert.equal(P.closedTopCards(state).length,0);
+ const restored=JSON.parse(JSON.stringify(state));
+ assert.equal(restored.tablePiles[0].cards[1].faceUp,false);
+});
