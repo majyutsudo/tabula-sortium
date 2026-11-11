@@ -83,3 +83,15 @@ test('strict projection rejects missing and repeated physical instance IDs witho
  assert.equal(JSON.stringify(a),before);
  assert.throws(()=>B.singleStable({deck:[{id:'a'}],placed:[],removed:[],tablePiles:[]},slots(1)));
 });
+
+test('strict projection retains waste and discard roles as container metadata',()=>{
+ const state={deck:[{id:'a',instanceId:'physical-a'}],placed:[],removed:[],tablePiles:[
+  {id:'pile-1',role:'waste',x:30,y:35,cards:[{id:'b',instanceId:'physical-b',faceUp:true}]},
+  {id:'pile-2',role:'discard',x:60,y:35,cards:[{id:'c',instanceId:'physical-c',faceUp:false}]}
+ ]};
+ const original=JSON.stringify(state),projection=B.singleStable(state,slots(1));
+ assert.equal(projection.engine.containers['pile:pile-1'].role,'waste');
+ assert.equal(projection.engine.containers['pile:pile-2'].role,'discard');
+ assert.equal(E.validate(projection.engine),true);
+ assert.equal(JSON.stringify(state),original);
+});
