@@ -55,6 +55,31 @@ test('deliberately hovering a dropped card turns exactly two cards into a pile',
  expect(state.placed).toHaveLength(0);
 });
 
+test('tapping the top card of a pile flips it without removing it',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
+ await page.locator('#placementToolsContent #addTablePile').click();
+ await page.locator('#zone').click({position:{x:250,y:230}});
+ const pile=page.locator('#zone .table-pile').first();
+ const deck=await page.locator('#deck').boundingBox();
+ const target=await pile.boundingBox();
+ await page.mouse.move(deck.x+deck.width/2,deck.y+deck.height/2);
+ await page.mouse.down();
+ await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});
+ await page.mouse.up();
+ await expect(pile.locator('.table-pile-top')).toHaveCount(1);
+ const before=(await saved(page,WORKSPACE)).state;
+ const physical=before.tablePiles[0].cards[0].instanceId;
+ const initial=before.tablePiles[0].cards[0].faceUp===true;
+ await pile.locator('.table-pile-top').click();
+ const after=(await saved(page,WORKSPACE)).state;
+ expect(after.tablePiles[0].cards[0].instanceId).toBe(physical);
+ expect(after.tablePiles[0].cards[0].faceUp).toBe(!initial);
+ expect(after.placed).toHaveLength(0);
+ await page.reload();
+ const restored=(await saved(page,WORKSPACE)).state;
+ expect(restored.tablePiles[0].cards[0].faceUp).toBe(!initial);
+});
 test('pile handle assigns a waste role without adding permanent table controls',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('free');
  await page.locator('#addTablePile').click();
