@@ -912,7 +912,7 @@ function renderTablePiles(zone,m){
     face.dataset.instanceId=item.instanceId||'';
     face.dataset.cardId=item.id;
     face.dataset.pileIndex=String(i);
-    face.title=expanded?'この札から上の'+(i+1)+'枚をドラッグ':'一番上の札。ドラッグして取り出す／タップで卓上へ置く';
+    face.title=expanded?'タップでこの札を裏返す／ドラッグでこの札から上の'+(i+1)+'枚を移動':'タップで一番上の札を裏返す／ドラッグして取り出す';
     face.style.left=(expanded?(pile.cards.length-1-i)*fan.dx*m.w:0)+'px';
     face.style.top=(expanded?(pile.cards.length-1-i)*fan.dy*m.h:0)+'px';
     face.style.zIndex=String(10+pile.cards.length-1-i);
@@ -1005,21 +1005,25 @@ function renderTablePiles(zone,m){
      if(dragged&&Math.hypot(ev.clientX-startX,ev.clientY-startY)<=28){
       render();setStatus('カードの移動を取り消しました。');return;
      }
-     const destination=dragged?pileAtPoint(ev.clientX,ev.clientY,pile.id):null;
+     if(!dragged){
+      TabulaTablePiles.flipCard(state,pile.id,index);
+      play('flip');render();saveLocal();
+      setStatus('束の'+(index+1)+'枚目のカードを'+(pile.cards[index].faceUp?'表':'裏')+'向きにしました。');
+      return;
+     }
+     const destination=pileAtPoint(ev.clientX,ev.clientY,pile.id);
      try{
       if(destination){
        TabulaTablePiles.transfer(state,pile.id,destination,count);
        pileTakeCounts.delete(pile.id);
        setStatus('上から'+count+'枚を、別の束の上に重ねました。');
       }else if(count>1){
-       if(!dragged){render();setStatus('複数枚はドラッグして移動してください。');return}
        const point=tablePoint(ev.clientX,ev.clientY);
        TabulaTablePiles.split(state,pile.id,count,point.x,point.y);
        pileTakeCounts.delete(pile.id);
        setStatus('上から'+count+'枚を新しい束に分けました。');
       }else{
-       if(expanded&&!dragged){render();return}
-       const pos=dragged?pileDropPosition(ev.clientX,ev.clientY):{x:Math.min(94,pile.x+Math.max(9,m.w/$('zone').clientWidth*115)),y:pile.y};
+       const pos=pileDropPosition(ev.clientX,ev.clientY);
        TabulaTablePiles.withdraw(state,pile.id,pos);
        pileTakeCounts.delete(pile.id);
        setStatus('束から一番上のカードを取り出しました。');
