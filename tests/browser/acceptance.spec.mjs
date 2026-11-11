@@ -18,6 +18,13 @@ test('deliberately hovering a dropped card turns exactly two cards into a pile',
  await expect(page.locator('.table-shortcuts #addTablePile')).toBeVisible();
  await page.locator('#quickDeal').click();
  await page.locator('#quickDeal').click();
+ await page.evaluate(key=>{
+  const workspace=JSON.parse(localStorage.getItem(key));
+  workspace.state.placed[0].x=30;workspace.state.placed[0].y=45;
+  workspace.state.placed[1].x=70;workspace.state.placed[1].y=45;
+  localStorage.setItem(key,JSON.stringify(workspace));
+ },WORKSPACE);
+ await page.reload();
  const cards=page.locator('#zone .card');
  await expect(cards).toHaveCount(2);
  const first=await cards.nth(0).boundingBox();
