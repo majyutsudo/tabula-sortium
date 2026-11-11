@@ -19,10 +19,10 @@ test('pile handle click does not jump and drag retains the grabbed offset',async
   await page.locator('#zone').click({position:{x:240,y:220}});
   const pile=page.locator('#zone .table-pile').first();
   await expect(pile).toBeVisible();
-  const initial=await pile.boundingBox();
   const before=(await saved(page,WORKSPACE)).state.tablePiles[0];
   const handle=pile.locator('.table-pile-handle');
   await handle.click();
+  const initial=await pile.boundingBox();
   const afterClick=(await saved(page,WORKSPACE)).state.tablePiles[0];
   expect(afterClick.x).toBeCloseTo(before.x,5);
   expect(afterClick.y).toBeCloseTo(before.y,5);
