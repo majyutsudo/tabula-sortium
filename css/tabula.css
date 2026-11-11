@@ -1366,3 +1366,9 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .table-action-settings{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:780px){.table-action-settings{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #zone .card.instant-faceup .card-inner{transition:none!important}
+
+/* v0.393 — readable stacked controls in the custom deal editor. */
+.deal-workbench-panel .deal-step-form,.deal-workbench-panel .deal-step-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:stretch;min-width:0}
+.deal-workbench-panel .deal-step-form>span,.deal-workbench-panel .deal-step-fields>span{display:block;min-width:0;font:13px/1.5 sans-serif;color:#e6d5b6;margin:2px 0 0}
+.deal-workbench-panel .deal-step-form select,.deal-workbench-panel .deal-step-form input{box-sizing:border-box;display:block;width:100%;min-width:0;max-width:100%;margin:0;font-size:16px}
+.deal-workbench-panel .deal-step-form>button{justify-self:start;max-width:100%;white-space:normal}
