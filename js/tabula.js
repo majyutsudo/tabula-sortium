@@ -898,10 +898,38 @@ function renderTablePiles(zone,m){
   }
   title.addEventListener('pointerdown',e=>{
    if(e.button!==0)return;e.preventDefault();e.stopPropagation();
-   const sx=e.clientX,sy=e.clientY;title.setPointerCapture(e.pointerId);
-   const move=ev=>{const pt=tablePoint(ev.clientX,ev.clientY);el.style.left=pt.x+'%';el.style.top=pt.y+'%'};
-   const end=ev=>{title.removeEventListener('pointermove',move);title.removeEventListener('pointerup',end);title.removeEventListener('pointercancel',cancel);
-    const destination=pileAtPoint(ev.clientX,ev.clientY,pile.id);
+   const sx=e.clientX,sy=e.clientY;
+   // Preserve the pile center relative to the grabbed handle, rather than snapping
+   // the pile center to the pointer on the first movement.
+   const startRect=el.getBoundingClientRect();
+   const centerX=startRect.left+startRect.width/2;
+   const centerY=startRect.top+startRect.height/2;
+   let moved=false;
+   title.setPointerCapture(e.pointerId);
+   const position=ev=>tablePoint(centerX+ev.clientX-sx,centerY+ev.clientY-sy);
+   const move=ev=>{
+    if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<6)return;
+    moved=true;
+    const pt=position(ev);el.style.left=pt.x+'%';el.style.top=pt.y+'%';
+   };
+   const clear=()=>{title.removeEventListener('pointermove',move);title.removeEventListener('pointerup',end);title.removeEventListener('pointercancel',cancel)};
+   const end=ev=>{
+    clear();
+    if(!moved){render();return}
+    const pt=position(ev);
+    el.style.left=pt.x+'%';el.style.top=pt.y+'%';
+    // Hit-test actual pile rectangles, not the pointer over the handle above the card.
+    const moving=el.getBoundingClientRect();
+    let destination=null,bestArea=0;
+    for(const candidate of zone.querySelectorAll('.table-pile')){
+     if(candidate===el)continue;
+     const target=candidate.getBoundingClientRect();
+     const overlapX=Math.max(0,Math.min(moving.right,target.right)-Math.max(moving.left,target.left));
+     const overlapY=Math.max(0,Math.min(moving.bottom,target.bottom)-Math.max(moving.top,target.top));
+     const area=overlapX*overlapY;
+     const minArea=Math.min(moving.width*moving.height,target.width*target.height);
+     if(area>=minArea*.15&&area>bestArea){destination=candidate.dataset.pileId;bestArea=area}
+    }
     if(destination&&pile.cards.length){
      const count=pile.cards.length;
      TabulaTablePiles.transfer(state,pile.id,destination,count);
@@ -909,11 +937,11 @@ function renderTablePiles(zone,m){
      pileTakeCounts.delete(pile.id);
      setStatus('束ごと'+count+'枚を別の束の上に重ねました。');
     }else{
-     const pt=tablePoint(ev.clientX,ev.clientY);
      TabulaTablePiles.relocate(state,pile.id,pt.x,pt.y);
     }
-    render();saveLocal()};
-   const cancel=()=>{title.removeEventListener('pointermove',move);title.removeEventListener('pointerup',end);title.removeEventListener('pointercancel',cancel);render()};
+    render();saveLocal();
+   };
+   const cancel=()=>{clear();render()};
    title.addEventListener('pointermove',move);title.addEventListener('pointerup',end);title.addEventListener('pointercancel',cancel);
   });
   zone.append(el);
