@@ -1204,7 +1204,7 @@ function snapshotPanel(v){
 }
 function snapshotStockForTable(v,source){
  const convert=list=>(list||[]).map(({instanceId,sourceDeck,...card})=>source
-  ?{...dualClone(card),instanceId:source+':'+card.id,sourceDeck:source}:dualClone(card));
+  ?{...dualClone(card),instanceId:source+':'+card.id,sourceDeck:source}:dualClone({...card,...(instanceId?{instanceId}:{})}));
  return {deck:convert(v.deck),placed:convert(v.placed),removed:convert(v.removed),
   dealCheckpoint:Array.isArray(v.dealCheckpoint)?convert(v.dealCheckpoint):null};
 }
