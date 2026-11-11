@@ -188,3 +188,35 @@ These are still **single-table** operations on the legacy-compatible
 `state.tablePiles`, not the final engine-authoritative multi-table model.
 Within a pile, only a contiguous block from the top can be moved; arbitrary
 internal removal, fanning and undo remain future work.
+
+
+## Stable, read-only container projection — v0.422
+
+The runtime still uses the existing `state.deck`, `state.placed`,
+`state.removed`, and `state.tablePiles`. There is **no authority cutover**.
+
+`TabulaCardBridge.singleStable(state, slots)` introduces a stricter,
+lossless-in-identity projection to the experimental container engine.
+It differs from the older `single()` compatibility projection:
+- Every physical card must have an explicit, unique `instanceId`;
+  catalogue card IDs may repeat without conflating the physical cards.
+- Engine keys are these persistent instance IDs, not freshly generated
+  `deckId:index` keys. Input is never modified.
+- Stock order, placement slots, explicit top-first pile order, face state,
+  rotation, the existing removed group, and each manual pile's fan vector
+  survive the projection.
+- The projected engine validates card conservation independently of the UI.
+- This bridge is **read-only** and not loaded by the live app yet; it does
+  not authorize routing live moves or saving its representation in place
+  of the established state.
+
+**Required next gates:** introduce explicit container roles (stock, tableau,
+foundation, waste/talon, discard, dealing exclusion), optional table-slot
+multi-card ownership, and a write-back/transaction boundary with equivalent
+save/reload and backup round-trips. Validate Free Spread and Four Seasons
+manual operations before enabling an engine-driven UI. Monte Carlo additionally
+needs ordered compaction and refill. A rule-checking game engine is not needed
+for the first manual-play milestone.
+
+Until then do not alter the established pile or spread gestures as a side
+effect of migration. The `main` branch remains untouched.
