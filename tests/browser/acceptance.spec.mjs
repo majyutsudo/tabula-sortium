@@ -70,6 +70,28 @@ test('primary shortcuts stay at five while pile creation is in placement popover
  await expect(page.locator('#zone .table-pile')).toHaveCount(1);
  await expect(add).toHaveAttribute('aria-pressed','false');
 });
+test('stacking cards at a registered position keeps that slot assigned',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('three');
+ await page.locator('#quickDeal').click();
+ await expect.poll(async ()=>((await saved(page,WORKSPACE)).state.placed.length)).toBe(3);
+ const cards=page.locator('#zone .card');
+ const source=await cards.nth(0).boundingBox();
+ const target=await cards.nth(1).boundingBox();
+ await page.mouse.move(source.x+source.width/2,source.y+source.height/2);
+ await page.mouse.down();
+ await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});
+ await page.waitForTimeout(800);
+ await page.mouse.up();
+ const state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles).toHaveLength(1);
+ expect(state.tablePiles[0].slot).toBe(1);
+ expect(state.tablePiles[0].cards).toHaveLength(2);
+ expect(state.placed).toHaveLength(1);
+ // The new pile owns position 2, so the vacant-slot marker must not reappear.
+ await expect(page.locator('#zone .slot')).toHaveCount(1);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.tablePiles[0].slot).toBe(1);
+});
 test('deliberately hovering a dropped card turns exactly two cards into a pile',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('free');
  await expect(page.locator('.table-shortcuts > button')).toHaveCount(5);
