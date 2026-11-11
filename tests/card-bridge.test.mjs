@@ -95,3 +95,29 @@ test('strict projection retains waste and discard roles as container metadata',(
  assert.equal(E.validate(projection.engine),true);
  assert.equal(JSON.stringify(state),original);
 });
+
+test('a role-aware pile anchored to a registered spread position projects as one multi-card slot',()=>{
+ const state={deck:[{id:'stock',instanceId:'physical-stock'}],placed:[],removed:[],tablePiles:[
+  {id:'pile-1',slot:1,x:40,y:30,role:'tableau',fan:{dx:.18,dy:.34},
+   cards:[{id:'a',instanceId:'physical-a',faceUp:true},
+          {id:'b',instanceId:'physical-b',faceUp:false}]}
+ ]};
+ const original=JSON.stringify(state),p=B.singleStable(state,slots(3)),w=p.engine;
+ assert.equal(E.validate(w),true);
+ assert.deepEqual(Array.from(w.containers['slot:main:1'].cards),['physical-a','physical-b']);
+ assert.equal(w.containers['slot:main:1'].displayPileId,'pile-1');
+ assert.equal(w.containers['slot:main:1'].role,'tableau');
+ assert.deepEqual(JSON.parse(JSON.stringify(w.containers['slot:main:1'].fan)),{dx:.18,dy:.34});
+ assert.equal(w.containers['pile:pile-1'],undefined);
+ assert.equal(JSON.stringify(state),original);
+ const next=E.move(w,{from:'slot:main:1',to:'slot:main:2'});
+ assert.deepEqual(Array.from(next.containers['slot:main:1'].cards),['physical-b']);
+ assert.deepEqual(Array.from(next.containers['slot:main:2'].cards),['physical-a']);
+ assert.equal(E.validate(next),true);
+});
+test('strict projection rejects a position-attached pile outside the registered spread',()=>{
+ const state={deck:[],placed:[],removed:[],tablePiles:[{
+  id:'bad',slot:8,x:40,y:40,cards:[{id:'a',instanceId:'physical-a'}]
+ }]};
+ assert.throws(()=>B.singleStable(state,slots(2)));
+});
