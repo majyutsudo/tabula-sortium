@@ -50,3 +50,36 @@ test('single state projects interactive manual pile into engine as ordered conta
  assert.equal(w.cards[w.containers['pile:pile-1'].cards[0]].faceUp,true);
  assert.equal(w.containers['slot:main:1'].cards.length,1);
 });
+
+test('strict projection preserves stable IDs, fanned piles, face states, and physical order',()=>{
+ const state={
+  deck:[{id:'hearts-a',instanceId:'physical-72',reversed:true}],
+  placed:[{id:'hearts-a',instanceId:'physical-04',slot:1,x:30,y:40,faceUp:true,angle:45}],
+  removed:[{id:'joker',instanceId:'physical-83',faceUp:false}],
+  tablePiles:[{id:'pile-1',x:65,y:52,fan:{dx:.31,dy:-.26},cards:[
+   {id:'clubs-7',instanceId:'physical-22',faceUp:true},
+   {id:'clubs-6',instanceId:'physical-21',faceUp:false}
+  ]}]
+ };
+ const old=JSON.stringify(state);
+ const result=B.singleStable(state,slots(3)),w=result.engine;
+ assert.equal(JSON.stringify(state),old);
+ assert.equal(E.validate(w),true);
+ assert.deepEqual(Array.from(w.containers['stock:A'].cards),['physical-72']);
+ assert.deepEqual(Array.from(w.containers['slot:main:1'].cards),['physical-04']);
+ assert.deepEqual(Array.from(w.containers['pile:pile-1'].cards),['physical-22','physical-21']);
+ assert.deepEqual(JSON.parse(JSON.stringify(w.containers['pile:pile-1'].fan)),{dx:.31,dy:-.26});
+ assert.equal(w.cards['physical-04'].faceUp,true);
+ assert.equal(w.cards['physical-04'].angle,45);
+ assert.equal(w.cards['physical-72'].reversed,true);
+ assert.deepEqual(Object.keys(result.identityMap).sort(),Object.values(result.identityMap).sort());
+ const saved=JSON.parse(JSON.stringify(w));
+ assert.equal(E.validate(saved),true);
+});
+test('strict projection rejects missing and repeated physical instance IDs without mutating input',()=>{
+ const a={deck:[{id:'a',instanceId:'card-1'}],placed:[{id:'b',instanceId:'card-1',slot:0,x:20,y:20}],removed:[],tablePiles:[]};
+ const before=JSON.stringify(a);
+ assert.throws(()=>B.singleStable(a,slots(2)));
+ assert.equal(JSON.stringify(a),before);
+ assert.throws(()=>B.singleStable({deck:[{id:'a'}],placed:[],removed:[],tablePiles:[]},slots(1)));
+});
