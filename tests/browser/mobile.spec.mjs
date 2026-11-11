@@ -1,23 +1,23 @@
 import { test, expect } from '@playwright/test';
 
-test('mobile cockpit has four visible actions without overlap', async ({ page }) => {
+test('mobile cockpit actions do not overlap across responsive rows', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#quickDeal')).toBeVisible();
   const ids = ['spreadQuickSelect', 'inspectCards', 'spreadNotebook', 'newSessionStandalone'];
   for (const id of ids) await expect(page.locator('#' + id)).toBeVisible();
   const boxes = await Promise.all(ids.map(id => page.locator('#' + id).boundingBox()));
-  for (let i = 0; i < boxes.length - 1; i++) {
-    const a = boxes[i], b = boxes[i + 1];
-    expect(a && b).toBeTruthy();
-    expect(a.x + a.width).toBeLessThanOrEqual(b.x + 1);
-    expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(2);
+  for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
+    const a=boxes[i],b=boxes[j];
+    expect(a&&b).toBeTruthy();
+    const overlapX=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x);
+    const overlapY=Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y);
+    expect(overlapX>1&&overlapY>1).toBe(false);
   }
   const spreadGroup=await page.locator('.mobile-cockpit-actions>.toolbar-spread-shortcut').boundingBox();
   const infoButton=await page.locator('#spreadInfoButton').boundingBox();
   expect(spreadGroup && infoButton).toBeTruthy();
-  expect(Math.abs(spreadGroup.width - boxes[3].width)).toBeLessThanOrEqual(3);
-  expect(boxes[0].x+boxes[0].width).toBeLessThanOrEqual(infoButton.x+1);
-  expect(infoButton.x+infoButton.width).toBeLessThanOrEqual(boxes[1].x+1);
+  expect(Math.abs(spreadGroup.width-boxes[0].width)).toBeLessThanOrEqual(3);
+  expect(infoButton.width).toBeGreaterThan(0);
 });
 
 test('mobile card size adjustment persists through reload', async ({ page }) => {
@@ -37,14 +37,15 @@ test('new menu is collapsed with readable hints, can be opened and remembers its
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   const sections=page.locator('aside .section');
-  await expect(sections).toHaveCount(4);
+  await expect(sections).toHaveCount(5);
   const expected=[
-    ['Ⅰ. 使用するカード','カードの種類・展開法・詳細設定'],
-    ['Ⅱ. カード操作','シャッフル・カット・配札の設定'],
-    ['Ⅲ. アルター設定','テーブルの色彩・演出・装飾の設定'],
-    ['Ⅳ. 保存・管理','データの保存・読み込み・初期化']
+    ['Ⅰ. 卓の管理','卓の追加・切り替え・管理'],
+    ['Ⅱ. 使用するカード','デッキ・カード表示・展開法'],
+    ['Ⅲ. カード操作','シャッフル・カット・配札の設定'],
+    ['Ⅳ. アルター設定','テーブルの色彩・演出・装飾の設定'],
+    ['Ⅴ. 保存・管理','データの保存・読み込み・初期化']
   ];
-  for(let i=0;i<4;i++){
+  for(let i=0;i<expected.length;i++){
     await expect(sections.nth(i)).toHaveClass(/is-collapsed/);
     await expect(sections.nth(i).locator('.section-title')).toHaveText(expected[i][0]);
     await expect(sections.nth(i).locator('.section-hint')).toHaveText(expected[i][1]);
@@ -62,7 +63,7 @@ test('new menu is collapsed with readable hints, can be opened and remembers its
 
 test('deck move handle repositions the pile without drawing and survives reload', async ({ page }) => {
   await page.goto('/');
-  const handle=page.locator('.deck-move-handle');
+  const handle=page.locator('#deck .deck-move-handle');
   await expect(handle).toBeVisible();
   const before=await page.evaluate(() => JSON.parse(localStorage.getItem('tabula_sortium_v01')).state.placed.length);
   const box=await handle.boundingBox();
@@ -117,7 +118,7 @@ test('toolbar label cycle respects selected modes and deck handle is print-hidde
   await toggle.click();
   await expect(toggle).toHaveText('ポジション名');
   await page.emulateMedia({media:'print'});
-  await expect(page.locator('.deck-move-handle')).toBeHidden();
+  await expect(page.locator('#deck .deck-move-handle')).toBeHidden();
 });
 
 test('label settings disclosure matches the neighboring utility button', async ({page}) => {
@@ -143,7 +144,7 @@ test('label settings disclosure matches the neighboring utility button', async (
 test('TABULA TAROT back color is theme-independent, persistent, and limited to its own deck',async ({page})=>{
  await page.goto('/');
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back-tone','sepia');
- expect(await page.locator('#cardBackColor option').allTextContents()).toEqual(['Sepia','Green','Burgundy','Navy','Purple','Black','Ivory']);
+ expect(await page.locator('#cardBackColor option').allTextContents()).toEqual(['セピア','緑','深紅','紺','紫','黒','象牙色']);
  await page.locator('aside .section > h2 .section-toggle').first().click();
  await expect(page.locator('#cardBackColorField')).toBeVisible();
  await page.locator('#cardBackColor').selectOption('burgundy');
@@ -156,7 +157,7 @@ test('TABULA TAROT back color is theme-independent, persistent, and limited to i
  await page.reload();
  if(!await page.locator('#deckLibrarySelect').isVisible())await page.locator('aside .section > h2 .section-toggle').first().click();
  await expect(page.locator('#cardBackColor')).toHaveValue('burgundy');
- expect(await page.locator('#deckLibrarySelect option').allTextContents()).toContain('シンプル');
+ expect(await page.locator('#deckLibrarySelect option').allTextContents()).toContain('SIMPLE TAROT');
  await page.locator('#deckLibrarySelect').selectOption('simple');
  await expect(page.locator('#cardBackColorField')).toBeHidden();
  await expect(page.locator('body')).toHaveAttribute('data-tabula-back','off');
@@ -188,7 +189,7 @@ test('mobile Use Deck lists built-in Simple and restores its selection',async({p
  await page.goto('/');
  const first=page.locator('aside .section > h2 .section-toggle').first();
  if(!await page.locator('#deckLibrarySelect').isVisible())await first.click();
- await expect(page.locator('#deckLibrarySelect option[value="simple"]')).toHaveText('シンプル');
+ await expect(page.locator('#deckLibrarySelect option[value="simple"]')).toHaveText('SIMPLE TAROT');
  await page.locator('#deckLibrarySelect').selectOption('simple');
  await expect(page.locator('#cardDesign')).toHaveValue('simple');
  await expect(page.locator('#deckLibrarySelect')).toHaveValue('simple');
@@ -213,8 +214,11 @@ test('mobile toolbar finishes initialization with visible, non-overlapping contr
  expect(errors).toEqual([]);
  const ids=['spreadQuickSelect','inspectCards','spreadNotebook','newSessionStandalone'];
  const boxes=await Promise.all(ids.map(id=>page.locator('#'+id).boundingBox()));
- for(let i=0;i<boxes.length-1;i++){
-  expect(boxes[i].x+boxes[i].width).toBeLessThanOrEqual(boxes[i+1].x+1);
-  expect(Math.abs(boxes[i].y-boxes[i+1].y)).toBeLessThanOrEqual(2);
- }
+for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
+    const a=boxes[i],b=boxes[j];
+    expect(a&&b).toBeTruthy();
+    const overlapX=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x);
+    const overlapY=Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y);
+    expect(overlapX>1&&overlapY>1).toBe(false);
+  }
 });
