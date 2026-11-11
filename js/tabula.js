@@ -839,13 +839,56 @@ function renderTablePiles(zone,m){
   title.textContent='✥ '+pile.id.replace('pile-','束 ')+' · '+pile.cards.length+'枚';title.title='ドラッグで束を移動';
   el.append(title);
   if(pile.cards.length){
-   const top=pile.cards[0],card=workingCard(top.id);
-   const face=document.createElement('div');face.className='table-pile-top'+(top.faceUp?' is-face-up':' is-face-down');face.dataset.instanceId=top.instanceId||'';face.dataset.cardId=top.id;
-   face.title='一番上の札。ドラッグして取り出す／タップで卓上へ置く';
-   face.style.setProperty('--rotation',((top.angle||0)+(top.reversed&&top.faceUp?180:0))+'deg');
-   if(top.faceUp&&card){face.innerHTML=cardMark(card,appearanceForCard(top));}
-   else {face.innerHTML='<div class="face back"></div>';applyPlayingBack(face.firstElementChild,top.sourceDeck);}
-   el.append(face);
+   const fan=TabulaTablePiles.fanOf(pile);
+   const expanded=Math.hypot(fan.dx,fan.dy)>.012&&pile.cards.length>1;
+   const faces=[];
+   // Draw bottom-to-top, preserving the physical top-first card order.
+   for(let i=(expanded?pile.cards.length-1:0);i>=0;i--){
+    const item=pile.cards[i],card=workingCard(item.id);
+    const face=document.createElement('div');
+    face.className='table-pile-top'+(item.faceUp?' is-face-up':' is-face-down');
+    face.dataset.instanceId=item.instanceId||'';
+    face.dataset.cardId=item.id;
+    face.dataset.pileIndex=String(i);
+    face.title=expanded?'この札から上の'+(i+1)+'枚をドラッグ':'一番上の札。ドラッグして取り出す／タップで卓上へ置く';
+    face.style.left=(expanded?(pile.cards.length-1-i)*fan.dx*m.w:0)+'px';
+    face.style.top=(expanded?(pile.cards.length-1-i)*fan.dy*m.h:0)+'px';
+    face.style.zIndex=String(10+pile.cards.length-1-i);
+    face.style.setProperty('--rotation',((item.angle||0)+(item.reversed&&item.faceUp?180:0))+'deg');
+    if(item.faceUp&&card){face.innerHTML=cardMark(card,appearanceForCard(item));}
+    else{face.innerHTML='<div class="face back"></div>';applyPlayingBack(face.firstElementChild,item.sourceDeck);}
+    el.append(face);faces.push(face);
+   }
+   const fanGrip=document.createElement('button');
+   fanGrip.type='button';fanGrip.className='table-pile-fan-grip';
+   fanGrip.textContent='⤢';fanGrip.title='好きな方向へドラッグして束を広げる。クリックで閉じる';
+   fanGrip.setAttribute('aria-label','束をドラッグで展開／クリックで閉じる');
+   fanGrip.addEventListener('pointerdown',e=>{
+    if(e.button!==0)return;e.preventDefault();e.stopPropagation();
+    const sx=e.clientX,sy=e.clientY,initial=TabulaTablePiles.fanOf(pile);
+    const scale=tableCamera.scale||1;
+    let moved=false;
+    fanGrip.setPointerCapture(e.pointerId);
+    const update=ev=>{
+     const dx=ev.clientX-sx,dy=ev.clientY-sy;
+     if(!moved&&Math.hypot(dx,dy)<6)return;
+     moved=true;
+     const steps=Math.max(1,pile.cards.length-1);
+     const nx=initial.dx+dx/steps/(m.w*scale);
+     const ny=initial.dy+dy/steps/(m.h*scale);
+     const next=TabulaTablePiles.setFan(state,pile.id,nx,ny);
+     faces.forEach(face=>{
+      const index=Number(face.dataset.pileIndex),offset=pile.cards.length-1-index;
+      face.style.left=(offset*next.dx*m.w)+'px';
+      face.style.top=(offset*next.dy*m.h)+'px';
+     });
+    };
+    const clear=()=>{fanGrip.removeEventListener('pointermove',update);fanGrip.removeEventListener('pointerup',finish);fanGrip.removeEventListener('pointercancel',cancel)};
+    const finish=()=>{clear();if(!moved)TabulaTablePiles.setFan(state,pile.id,0,0);render();saveLocal()};
+    const cancel=()=>{clear();TabulaTablePiles.setFan(state,pile.id,initial.dx,initial.dy);render()};
+    fanGrip.addEventListener('pointermove',update);fanGrip.addEventListener('pointerup',finish);fanGrip.addEventListener('pointercancel',cancel);
+   });
+   el.append(fanGrip);
    const take=document.createElement('select');
    take.className='table-pile-take-count';
    take.setAttribute('aria-label','上から移す枚数：'+pile.id);
@@ -873,16 +916,20 @@ function renderTablePiles(zone,m){
    };
    takeToggle.addEventListener('pointerdown',e=>e.stopPropagation());
    el.append(takeToggle,take);
-   face.addEventListener('pointerdown',e=>{
+   for(const face of faces)face.addEventListener('pointerdown',e=>{
     if(e.button!==0)return;e.preventDefault();e.stopPropagation();
     const startX=e.clientX,startY=e.clientY;let dragged=false;
+    const index=Number(face.dataset.pileIndex);
+    const count=expanded?index+1:Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1);
+    const moving=expanded?faces.filter(node=>Number(node.dataset.pileIndex)<=index):[face];
     face.setPointerCapture(e.pointerId);
-    const move=ev=>{if(Math.abs(ev.clientX-startX)+Math.abs(ev.clientY-startY)>7)dragged=true;
-      if(dragged)face.style.transform='translate('+(ev.clientX-startX)+'px,'+(ev.clientY-startY)+'px)'};
+    const move=ev=>{
+     if(Math.hypot(ev.clientX-startX,ev.clientY-startY)>7)dragged=true;
+     if(dragged)for(const node of moving)node.style.transform='translate('+(ev.clientX-startX)+'px,'+(ev.clientY-startY)+'px)';
+    };
     const finish=ev=>{
      face.removeEventListener('pointermove',move);face.removeEventListener('pointerup',finish);
      face.removeEventListener('pointercancel',cancel);
-     const count=Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1);
      const destination=dragged?pileAtPoint(ev.clientX,ev.clientY,pile.id):null;
      try{
       if(destination){
@@ -890,12 +937,13 @@ function renderTablePiles(zone,m){
        pileTakeCounts.delete(pile.id);
        setStatus('上から'+count+'枚を、別の束の上に重ねました。');
       }else if(count>1){
-       if(!dragged){face.style.transform='';setStatus('複数枚の移動はカードをドラッグしてください。');return}
+       if(!dragged){render();setStatus('複数枚はドラッグして移動してください。');return}
        const point=tablePoint(ev.clientX,ev.clientY);
        TabulaTablePiles.split(state,pile.id,count,point.x,point.y);
        pileTakeCounts.delete(pile.id);
        setStatus('上から'+count+'枚を新しい束に分けました。');
       }else{
+       if(expanded&&!dragged){render();return}
        const pos=dragged?pileDropPosition(ev.clientX,ev.clientY):{x:Math.min(94,pile.x+Math.max(9,m.w/$('zone').clientWidth*115)),y:pile.y};
        TabulaTablePiles.withdraw(state,pile.id,pos);
        pileTakeCounts.delete(pile.id);
@@ -907,6 +955,7 @@ function renderTablePiles(zone,m){
     const cancel=()=>{face.removeEventListener('pointermove',move);face.removeEventListener('pointerup',finish);face.removeEventListener('pointercancel',cancel);render()};
     face.addEventListener('pointermove',move);face.addEventListener('pointerup',finish);face.addEventListener('pointercancel',cancel);
    });
+
   }else{
    const empty=document.createElement('span');empty.className='table-pile-empty';empty.textContent='ここへ札を重ねる';el.append(empty);
    const close=document.createElement('button');close.type='button';close.className='table-pile-remove';close.textContent='×';close.title='空の束を削除';
