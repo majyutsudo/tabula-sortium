@@ -52,8 +52,9 @@ function moveContents(state,src,dst){
   dst.pile.cards=cards.map(c=>({...c,slot:null}));
  }else if(cards.length===1){
   const c=cards[0],pos=dst.position;
-  state.placed.push({...c,slot:dst.slot,x:pos.x,y:pos.y,
-   angle:pos.angle??c.angle??0,manualMoved:false});
+  const angle=pos.angle??c.angle??0;
+  state.placed.push({...c,slot:dst.slot,x:pos.x,y:pos.y,angle,
+   origin:{x:pos.x,y:pos.y,angle},manualMoved:false});
  }else{
   let n=1;while(state.tablePiles.some(p=>p.id==='pile-'+n))n++;
   const pos=dst.position;
