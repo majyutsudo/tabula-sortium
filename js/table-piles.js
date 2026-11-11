@@ -79,6 +79,24 @@ function stackPlaced(state,movingIndex,targetIndex){
  state.selected=null;state.completionShown=false;
  return next;
 }
+/* Place the top N cards of a pile onto a single loose or positioned card,
+   forming a new ordered pile at that card's position. No visual neighbors
+   are absorbed. Source frame remains even when empty. */
+function stackFromPile(state,sourceId,targetIndex,count=1){
+ validate(state);
+ const source=find(state,sourceId);
+ if(!Number.isInteger(count)||count<1||count>source.cards.length)fail('invalid stack count');
+ if(!Number.isInteger(targetIndex)||targetIndex<0||targetIndex>=state.placed.length)fail('invalid target card');
+ const target=state.placed[targetIndex];
+ if(!Number.isFinite(target.x)||!Number.isFinite(target.y))fail('invalid target position');
+ const result=create(state,target.x,target.y);
+ if(Number.isInteger(target.slot)&&target.slot>=0)result.slot=target.slot;
+ const block=source.cards.splice(0,count);
+ const [bottom]=state.placed.splice(targetIndex,1);
+ result.cards.push(...block,bottom);
+ state.selected=null;state.completionShown=false;
+ return result;
+}
 /* Flip one physical card in place without changing pile membership or order.
    Index zero remains the top, including in collapsed piles. */
 /* Reveal operations affect only the physical top of each explicit pile,
@@ -140,5 +158,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,closedTopCards,flipCard,withdraw,transfer,split,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,stackFromPile,closedTopCards,flipCard,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
