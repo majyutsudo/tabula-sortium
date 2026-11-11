@@ -237,3 +237,24 @@ test('Open candidate list contains top cards of piles only, independent of fan d
  const restored=JSON.parse(JSON.stringify(state));
  assert.equal(restored.tablePiles[0].cards[1].faceUp,false);
 });
+
+test('creating a pile on a registered spread card preserves its position',()=>{
+ const state=fresh();
+ const pile=P.stackPlaced(state,0,1);
+ assert.equal(pile.slot,1);
+ assert.equal(pile.cards.length,2);
+ assert.deepEqual(Array.from(pile.cards,c=>c.instanceId),['A:a','A:b']);
+ assert.equal(state.placed.length,0);
+ const restored=JSON.parse(JSON.stringify(state));
+ assert.equal(restored.tablePiles[0].slot,1);
+ assert.equal(I.ensureSingle(restored),restored);
+ // A card cannot be withdrawn into a position already owned by a pile.
+ const other=P.create(state,80,70);
+ P.drawFromDeck(state,other.id,false);
+ assert.throws(()=>P.withdraw(state,other.id,{x:50,y:30,slot:1}));
+ assert.equal(other.cards.length,1);
+ const split=P.split(state,pile.id,1,65,60);
+ assert.equal(split.slot,undefined);
+ assert.equal(pile.slot,1);
+ assert.equal(P.roleOf(split),'pile');
+});
