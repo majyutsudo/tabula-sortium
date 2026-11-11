@@ -1,0 +1,61 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+const ctx={};
+for(const file of ['physical-identity.js','table-piles.js'])runInNewContext(readFileSync(new URL('../js/'+file,import.meta.url),'utf8'),ctx);
+const P=ctx.TabulaTablePiles,I=ctx.TabulaPhysicalIdentity;
+const fresh=()=>I.ensureSingle({deck:[{id:'c'}],placed:[{id:'a',slot:0,x:20,y:30,faceUp:true},{id:'b',slot:1,x:50,y:30,faceUp:false}],removed:[],tablePiles:[]});
+const ids=s=>[...s.deck,...s.placed,...s.removed,...s.tablePiles.flatMap(p=>p.cards)].map(c=>c.instanceId);
+test('piles retain top-first physical order and leave spread slots empty',()=>{
+ const s=fresh(),pile=P.create(s,78,62);
+ assert.equal(pile.cards.length,0);
+ P.deposit(s,0,pile.id);P.deposit(s,0,pile.id);
+ assert.deepEqual(Array.from(pile.cards,c=>c.id),['b','a']);
+ assert.equal(s.placed.length,0);
+ assert.deepEqual(ids(s).sort(),['A:a','A:b','A:c']);
+ assert.equal(I.ensureSingle(s),s);
+ const card=P.withdraw(s,pile.id,{x:20,y:30,slot:0});
+ assert.equal(card.id,'b');assert.equal(card.slot,0);
+ assert.equal(card.faceUp,false);
+ assert.deepEqual(Array.from(pile.cards,c=>c.id),['a']);
+ assert.equal(I.ensureSingle(JSON.parse(JSON.stringify(s))).placed[0].instanceId,'A:b');
+});
+test('new reading conserves identities while stacks are still present',()=>{
+ const s=fresh(),pile=P.create(s,72,44);
+ P.deposit(s,0,pile.id);
+ const next=I.nextReading(s,[{id:'a'},{id:'b'},{id:'c'}]);
+ assert.deepEqual(Array.from(next,c=>c.instanceId),['A:a','A:b','A:c']);
+ const recovered=P.collect(s);
+ assert.deepEqual(Array.from(recovered,c=>c.id),['a']);
+ assert.equal(s.tablePiles.length,0);
+ assert.deepEqual(ids(s).sort(),['A:b','A:c']);
+});
+test('withdraw cannot overwrite occupied slots or take from empty pile',()=>{
+ const s=fresh(),pile=P.create(s,80,50);
+ P.deposit(s,0,pile.id);
+ assert.throws(()=>P.withdraw(s,pile.id,{x:50,y:30,slot:1}));
+ assert.equal(pile.cards.length,1);
+ const card=P.withdraw(s,pile.id,{x:72,y:70});
+ assert.equal(card.slot,null);
+ assert.throws(()=>P.withdraw(s,pile.id,{x:72,y:70}));
+ assert.throws(()=>P.removeEmpty(s,'not-here'));
+ P.removeEmpty(s,pile.id);
+ assert.equal(s.tablePiles.length,0);
+});
+test('card identity validation checks cards inside piles',()=>{
+ const s=fresh(),pile=P.create(s,83,42);P.deposit(s,0,pile.id);
+ s.deck.push({...pile.cards[0]});
+ assert.throws(()=>I.ensureSingle(s));
+});
+test('pile moves, serialization and collection preserve physical order',()=>{
+ const s=fresh(),p=P.create(s,70,70);P.deposit(s,0,p.id);P.deposit(s,0,p.id);
+ P.relocate(s,p.id,91,10);
+ const saved=JSON.parse(JSON.stringify(s));
+ const p2=P.find(saved,p.id);
+ assert.equal(p2.x,91);assert.equal(p2.y,10);
+ assert.deepEqual(Array.from(p2.cards,c=>c.id),['b','a']);
+ const returned=P.collect(saved);
+ assert.deepEqual(Array.from(returned,c=>c.instanceId),['A:b','A:a']);
+ assert.equal(I.ensureSingle({...saved,deck:[...returned,...saved.deck],placed:[],removed:[]}).deck.length,3);
+});
