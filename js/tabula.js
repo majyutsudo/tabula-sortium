@@ -1735,6 +1735,7 @@ $('addTablePile').onclick=()=>{
  $('addTablePile').textContent=pilePlacementArmed?'配置をやめる':'＋束を置く';
  $('zone').classList.toggle('pile-placement-armed',pilePlacementArmed);
  setStatus(pilePlacementArmed?'卓上の好きな場所をクリックして、空の束を作成してください。':'束の配置を終了しました。');
+ if(pilePlacementArmed)$('surface').scrollIntoView({block:'center',behavior:'instant'});
 };
 $('surface').addEventListener('click',e=>{
  if(!pilePlacementArmed||dualSession||spreadWorkbench)return;
