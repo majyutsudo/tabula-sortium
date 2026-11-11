@@ -115,7 +115,7 @@ test('stock can be dealt directly onto a pile preserving identity and order',()=
  const first=s.deck[0],second=s.deck[1];
  P.drawFromDeck(s,pile.id,false);
  P.drawFromDeck(s,pile.id,true);
- assert.deepEqual(pile.cards.map(c=>c.instanceId),[second.instanceId,first.instanceId]);
+ assert.deepEqual(Array.from(pile.cards,c=>c.instanceId),[second.instanceId,first.instanceId]);
  assert.equal(pile.cards[0].faceUp,true);
  assert.equal(pile.cards[1].faceUp,false);
  assert.equal(s.deck.length,1);
