@@ -842,8 +842,9 @@ function renderTablePiles(zone,m){
    const fan=TabulaTablePiles.fanOf(pile);
    const expanded=Math.hypot(fan.dx,fan.dy)>.012&&pile.cards.length>1;
    const faces=[];
-   // Draw bottom-to-top, preserving the physical top-first card order.
-   for(let i=(expanded?pile.cards.length-1:0);i>=0;i--){
+   // Closed piles render only their top card. The first fan gesture lazily
+   // creates every lower face before applying the initial spread distance.
+   function makePileFace(i){
     const item=pile.cards[i],card=workingCard(item.id);
     const face=document.createElement('div');
     face.className='table-pile-top'+(item.faceUp?' is-face-up':' is-face-down');
@@ -858,7 +859,15 @@ function renderTablePiles(zone,m){
     if(item.faceUp&&card){face.innerHTML=cardMark(card,appearanceForCard(item));}
     else{face.innerHTML='<div class="face back"></div>';applyPlayingBack(face.firstElementChild,item.sourceDeck);}
     el.append(face);faces.push(face);
+    return face;
    }
+   function materializePileFaces(){
+    if(faces.length===pile.cards.length)return;
+    for(let i=pile.cards.length-1;i>=0;i--){
+     if(!faces.some(face=>Number(face.dataset.pileIndex)===i))makePileFace(i);
+    }
+   }
+   if(expanded)materializePileFaces();else makePileFace(0);
    const fanGrip=document.createElement('button');
    fanGrip.type='button';fanGrip.className='table-pile-fan-grip';
    fanGrip.textContent='⤢';fanGrip.title='好きな方向へドラッグして束を広げる。クリックで閉じる';
@@ -872,7 +881,7 @@ function renderTablePiles(zone,m){
     const update=ev=>{
      const dx=ev.clientX-sx,dy=ev.clientY-sy;
      if(!moved&&Math.hypot(dx,dy)<6)return;
-     moved=true;
+     if(!moved){moved=true;materializePileFaces();}
      const steps=Math.max(1,pile.cards.length-1);
      const nx=initial.dx+dx/steps/(m.w*scale);
      const ny=initial.dy+dy/steps/(m.h*scale);
@@ -924,7 +933,9 @@ function renderTablePiles(zone,m){
     const moving=expanded?faces.filter(node=>Number(node.dataset.pileIndex)<=index):[face];
     face.setPointerCapture(e.pointerId);
     const move=ev=>{
-     if(Math.hypot(ev.clientX-startX,ev.clientY-startY)>7)dragged=true;
+     if(!dragged&&Math.hypot(ev.clientX-startX,ev.clientY-startY)>7){
+      dragged=true;el.classList.add('pile-drag-active');
+     }
      if(dragged)for(const node of moving)node.style.transform='translate('+(ev.clientX-startX)+'px,'+(ev.clientY-startY)+'px)';
     };
     const finish=ev=>{
