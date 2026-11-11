@@ -2439,10 +2439,21 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
   let pileOverlay=null;
   function clearPileOverlay(){pileOverlay?.remove();pileOverlay=null}
   function pilePosition(index,count){
-   const cols=Math.min(4,Math.max(2,Math.ceil(Math.sqrt(count))));
-   const rows=Math.ceil(count/cols),col=index%cols,row=Math.floor(index/cols);
-   const spanX=Math.min(18,58/Math.max(1,cols-1)),spanY=Math.min(22,50/Math.max(1,rows-1));
-   return {x:50+(col-(cols-1)/2)*spanX,y:36+(row-(rows-1)/2)*spanY};
+   // Match the physical cut: a centered horizontal row, with extra rows
+   // only when full-size decks cannot fit side by side.
+   const surface=$('surface').getBoundingClientRect(),stock=$('deck').getBoundingClientRect();
+   const width=Math.max(1,surface.width),height=Math.max(1,surface.height);
+   const cardW=stock.width||metrics().w,cardH=stock.height||metrics().h;
+   const gap=Math.max(12,cardW*.2),step=cardW+gap;
+   const available=Math.max(cardW,width-30);
+   const columns=Math.max(1,Math.min(count,Math.floor((available+gap)/step)));
+   const rows=Math.ceil(count/columns),row=Math.floor(index/columns),col=index%columns;
+   const inRow=Math.min(columns,count-row*columns);
+   const centerY=height*.40;
+   const rowStep=cardH+Math.max(28,cardH*.24);
+   const x=width/2+(col-(inRow-1)/2)*step;
+   const y=centerY+(row-(rows-1)/2)*rowStep;
+   return {x:x/width*100,y:y/height*100};
   }
   function makePileCard(index,count,amount){
    // Reuse the actual stock element so every selected back design,
