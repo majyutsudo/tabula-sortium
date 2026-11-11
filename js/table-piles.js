@@ -4,6 +4,14 @@
 (function(root){'use strict';
 function fail(msg){throw Error('Table piles: '+msg)}
 const clamp=n=>Math.max(4,Math.min(96,n));
+const roles=Object.freeze(['pile','tableau','foundation','waste','discard']);
+function roleOf(pile){return roles.includes(pile?.role)?pile.role:'pile'}
+function setRole(state,id,role){
+ const pile=find(state,id);
+ if(!roles.includes(role))fail('unknown pile role');
+ pile.role=role;
+ return pile;
+}
 function piles(state){if(!Array.isArray(state.tablePiles))state.tablePiles=[];return state.tablePiles}
 function validate(state){
  const seen=new Set();
@@ -24,10 +32,11 @@ function setFan(state,id,dx,dy){
  pile.fan={dx:Math.max(-0.85,Math.min(0.85,dx)),dy:Math.max(-0.85,Math.min(0.85,dy))};
  return pile.fan;
 }
-function create(state,x,y){
+function create(state,x,y,role='pile'){
+ if(!roles.includes(role))fail('unknown pile role');
  validate(state);if(!Number.isFinite(x)||!Number.isFinite(y))fail('invalid position');
  let i=1;while(state.tablePiles.some(p=>p.id==='pile-'+i))i++;
- const p={id:'pile-'+i,x:clamp(x),y:clamp(y),cards:[]};
+ const p={id:'pile-'+i,x:clamp(x),y:clamp(y),role,cards:[]};
  state.tablePiles.push(p);return p;
 }
 function find(state,id){const p=piles(state).find(p=>p.id===id);if(!p)fail('unknown pile');return p}
@@ -83,6 +92,7 @@ function split(state,id,count,x,y){
  if(!Number.isFinite(x)||!Number.isFinite(y))fail('invalid position');
  const target=create(state,x,y);
  target.fan={...fanOf(source)};
+ target.role=roleOf(source);
  transfer(state,id,target.id,count);
  return target;
 }
@@ -95,5 +105,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,fanOf,setFan,deposit,drawFromDeck,withdraw,transfer,split,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
