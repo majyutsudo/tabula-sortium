@@ -1435,3 +1435,6 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .table-pile-fan-grip:active{cursor:grabbing}
 .table-pile-handle{z-index:450}
 .table-pile-take-toggle,.table-pile-take-count{z-index:460}
+
+/* v0.420: a lifted sequence must appear above destination piles during drag. */
+.table-pile.pile-drag-active{z-index:2100}
