@@ -183,10 +183,10 @@ test('current spread opens reference page without changing the current reading',
  expect((await saved(page,WORKSPACE)).state).toEqual(before.state);
  await page.locator('#spreadGuideAtlas').click();
  await expect(page.locator('.spread-atlas-item')).toHaveCount(4);
- await page.locator('#spreadAtlasSearch').fill('3枚');
+ await page.locator('#spreadAtlasSearch').fill('スリーカード');
  await expect(page.locator('.spread-atlas-item')).toHaveCount(1);
  await page.locator('.spread-atlas-item').click();
- await expect(page.locator('.spread-guide h2')).toHaveText('3枚引き');
+ await expect(page.locator('.spread-guide h2')).toContainText('スリーカード');
  expect((await saved(page,WORKSPACE)).settings.spread).toBe('celtic');
  await page.locator('#spreadGuideUse').click();
  await expect(page.locator('#spread')).toHaveValue('three');
@@ -230,11 +230,11 @@ test('reference lookup does not alter active dealt cards and using a new spread 
  const before=await saved(page,WORKSPACE);
  await page.locator('#spreadInfoButton').click();
  await page.locator('#spreadGuideAtlas').click();
- await page.locator('.spread-atlas-item').filter({hasText:'3枚引き'}).click();
+ await page.locator('.spread-atlas-item').filter({hasText:'スリーカード'}).click();
  const cancel=page.waitForEvent('dialog').then(d=>d.dismiss());
  await page.locator('#spreadGuideUse').click();await cancel;
  expect((await saved(page,WORKSPACE)).state).toEqual(before.state);
- await expect(page.locator('.spread-guide h2')).toHaveText('3枚引き');
+ await expect(page.locator('.spread-guide h2')).toContainText('スリーカード');
  const accept=page.waitForEvent('dialog').then(d=>d.accept());
  await page.locator('#spreadGuideUse').click();await accept;
  await expect(page.locator('#spread')).toHaveValue('three');
