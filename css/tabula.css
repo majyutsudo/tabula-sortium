@@ -1362,5 +1362,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .blueprint-card-view:has(> .playing-card-face-svg){padding:0;border:0;background:#faf5e9;overflow:hidden}
 .front .playing-card-face-svg,.blueprint-card-view .playing-card-face-svg{display:block;width:100%;height:100%;pointer-events:none}
 
-/* v0.391: deal-facing selection occupies the fifth tabletop action slot. */
-.table-action-settings #tableDealFace{width:100%;height:30px;min-height:30px}
+/* v0.392: combined deal selection, four controls on desktop, two columns on phone. */
+.table-action-settings{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:780px){.table-action-settings{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#zone .card.instant-faceup .card-inner{transition:none!important}

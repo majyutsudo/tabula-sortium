@@ -842,6 +842,7 @@ function animateCardFromDeck(index,sourceRect){
  const cardsOnTable=Array.from(zone.children).filter(el=>el.classList.contains('card'));
  const card=cardsOnTable[index];if(!card||!sourceRect||!card.animate)return Promise.resolve();
  const end=card.getBoundingClientRect();if(!end.width||!end.height)return Promise.resolve();
+ if(card.classList.contains('faceup'))card.classList.add('instant-faceup');
  const ghost=card.cloneNode(true);ghost.style.cssText='position:fixed;pointer-events:none;margin:0;z-index:100000;left:'+end.left+'px;top:'+end.top+'px;width:'+end.width+'px;height:'+end.height+'px;transform:none;';
  // A cloned card leaves #zone, losing zone-scoped Worn rules. Copy the
  // rendered back directly to the flying face instead of adding new CSS.
@@ -859,7 +860,7 @@ function animateCardFromDeck(index,sourceRect){
  card.style.visibility='hidden';
  const dx=sourceRect.left+sourceRect.width/2-(end.left+end.width/2),dy=sourceRect.top+sourceRect.height/2-(end.top+end.height/2);
  const animation=ghost.animate([{transform:'translate('+dx+'px,'+dy+'px) scale(.96)',filter:'brightness(1.08)'},{offset:.16,transform:'translate('+(dx*.85)+'px,'+(dy*.85-7)+'px) rotate(-3deg) scale(1.025)'},{transform:'translate(0px,0px) rotate(0deg) scale(1)',filter:'brightness(1)'}],{duration:320,easing:'cubic-bezier(.22,.72,.25,1)'});
- return animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility=''});
+ return animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility='';card.classList.remove('instant-faceup')});
 }
 // Select a physical card from the current deck and place it at an exact table point.
 let chosenPhysicalCardId=null;
@@ -2411,6 +2412,8 @@ installCandles();
 const renderBeforeCandles=render;render=function(){renderBeforeCandles();renderCandles();};
 
 const dealWorkbenchController=TabulaDealWorkbench.install({
+ getDefaultFaceUp:()=>settings.dealFaceUp===true,
+ setDefaultFaceUp:value=>{settings.dealFaceUp=value===true;saveLocal();setStatus(settings.dealFaceUp?'表向きで配札します。':'裏向きで配札します。')},
  deck:()=>state.deck.map(c=>({...c})),
  editorDeck:()=>[...state.deck,...state.placed,...(state.removed||[])].map(c=>({...c})),
  spreadCount:()=>settings.spread==='free'?0:getSlots().length,
@@ -2424,7 +2427,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
   const placed=dealt.map((card,i)=>{
     const slot=i<order.length?order[i]:null;
     const pos=slot!==null&&slots[slot]?slots[slot]:{x:20+(i%7)*10,y:22+(Math.floor(i/7)%5)*13,angle:0};
-    return {...card,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{...pos},faceUp:settings.dealFaceUp===true,dragOrder:i+1};
+    return {...card,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{...pos},faceUp:card.dealFaceUp===true,dragOrder:i+1};
   });
   const tableIds=new Set(positionOptions.tableRemovedIds||[]);
   const tableCards=removed.filter(c=>tableIds.has(c.id));
@@ -2494,11 +2497,10 @@ function installTableActionSettings(){
  if(shuffleChoice)$('tableShuffleChoiceSlot').append(shuffleChoice);
  if(dealChoice)$('tableDealChoiceSlot').append(dealChoice);
  const washDirection=$('tableWashDirection'),washRounds=$('tableWashRounds'),cutCount=$('tableCutCount');
- const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3);$('tableDealFace').value=settings.dealFaceUp===true?'up':'down'};
+ const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3)};
  washDirection.onchange=()=>{settings.quickWashDirection=washDirection.value;$('quickWashDirection').value=washDirection.value;updateStandaloneAvailability();saveLocal()};
  washRounds.onchange=()=>{settings.quickWashRounds=Number(washRounds.value);$('quickWashRounds').value=washRounds.value;updateStandaloneAvailability();saveLocal()};
  cutCount.onchange=()=>{settings.cutCount=Number(cutCount.value);$('cutCountSetting').value=cutCount.value;updateStandaloneAvailability();saveLocal()};
- $('tableDealFace').onchange=e=>{settings.dealFaceUp=e.target.value==='up';saveLocal();setStatus(settings.dealFaceUp?'表向きで配札します。':'裏向きで配札します。')};
  for(const id of ['quickWashDirection','quickWashRounds','cutCountSetting'])$(id).addEventListener('change',update);
  const previousSync=sync;sync=function(){previousSync();update()};
  update();
