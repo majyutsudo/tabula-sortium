@@ -1861,7 +1861,7 @@ function gallerySimple(){return GALLERY.deckId==='simple'||!!galleryDeck()&&gall
 function galleryCard(c){
  if(galleryPlaying()){const b=blueprintFor(GALLERY.deckId),set=activeBlueprintNameSet(b);return {...c,name:c.names?.[set]||(set==='primary'?c.name:TabulaDeckBlueprint.playingName(c,set))};}
  const d=galleryDeck();
- const language=d?.language||'original';
+ const language=d?.language||effectiveCardLanguage();
  return {...c,name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,language),
   number:c.group==='major'&&d&&Object.hasOwn(d.majorNumbers,c.id)?d.majorNumbers[c.id]:c.number};
 }
