@@ -119,8 +119,14 @@ function install(api){
   shade.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
   paint();
  }
+ function resetSavedActions(){
+  localStorage.removeItem(STORE);
+  picker.value='';
+  refreshPicker();
+  picker.value='';quickPicker.value='';
+ }
  refreshPicker();trigger.onclick=()=>{if(dialog)return;try{open()}catch(error){if(dialog){dialog.remove();dialog=null}const reason=error&&error.message?error.message:String(error);api.status('ディール編集画面のエラー：'+reason);window.alert('ディール編集画面を開けませんでした。\n'+reason)}};
- return Object.freeze({executeSelected});
+ return Object.freeze({executeSelected,resetSavedActions});
 }
 root.TabulaDealWorkbench=Object.freeze({install});
 })(globalThis);
