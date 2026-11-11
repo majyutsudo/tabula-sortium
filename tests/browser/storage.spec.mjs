@@ -59,6 +59,32 @@ test('dealing cards persists identities and slots after reload', async ({ page }
   expect(after.state.deck).toEqual(before.state.deck);
 });
 
+test('physical IDs survive dealing, collection, next reading and reload', async ({ page }) => {
+  const initial = await saved(page, WORKSPACE);
+  const identities = new Map(initial.state.deck.map(c => [c.id, c.instanceId]));
+  expect(identities.size).toBe(78);
+  expect(new Set(identities.values()).size).toBe(78);
+  await page.locator('#spreadQuickSelect').selectOption('three');
+  await page.locator('#quickDeal').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(3);
+  const dealt = await saved(page, WORKSPACE);
+  for (const c of dealt.state.placed) expect(c.instanceId).toBe(identities.get(c.id));
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#quickCollect').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(0);
+  const collected = await saved(page, WORKSPACE);
+  expect(collected.state.deck.slice(0, 3).map(c => c.instanceId))
+    .toEqual(dealt.state.placed.map(c => c.instanceId));
+  const afterCollection = new Map(collected.state.deck.map(c => [c.id, c.instanceId]));
+  expect(afterCollection).toEqual(identities);
+  await page.locator('#newSessionStandalone').click();
+  const next = await saved(page, WORKSPACE);
+  expect(new Map(next.state.deck.map(c => [c.id, c.instanceId]))).toEqual(identities);
+  await page.reload();
+  const restored = await saved(page, WORKSPACE);
+  expect(restored.state.deck).toEqual(next.state.deck);
+});
+
 test('custom spreads retain positions, labels, and saved card size', async ({ page }) => {
   const custom = {
     id: 'custom_test_fixture',
