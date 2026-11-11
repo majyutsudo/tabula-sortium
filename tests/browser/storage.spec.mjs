@@ -386,6 +386,7 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.tablePiles[0].cards.length).toBe(0);
  const withdrawn=await saved(page,WORKSPACE);
  expect(withdrawn.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(true);
+ page.once('dialog',dialog=>dialog.accept());
  await page.locator('#quickCollect').click();
  await expect.poll(async()=>(await saved(page,WORKSPACE)).state.deck.length).toBe(78);
  const collected=await saved(page,WORKSPACE);
