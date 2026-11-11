@@ -405,6 +405,64 @@ test('manual pile holds a physical card, leaves a refillable slot, and survives 
  expect(collected.state.tablePiles).toHaveLength(0);
 });
 
+test('pile split, ordered multi-card transfer, and whole-pile merge preserve identities',async ({page})=>{
+ const seeded=await page.evaluate(key=>{
+  const data=JSON.parse(localStorage.getItem(key));
+  const cards=data.state.deck.splice(0,4);
+  data.state.tablePiles=[
+   {id:'pile-1',x:30,y:43,cards:cards.slice(0,3)},
+   {id:'pile-2',x:77,y:43,cards:cards.slice(3)}
+  ];
+  localStorage.setItem(key,JSON.stringify(data));
+  return {source:cards.slice(0,3).map(c=>c.instanceId),target:cards[3].instanceId};
+ },WORKSPACE);
+ await page.reload();
+ await page.locator('#zone').scrollIntoViewIfNeeded();
+ const p1=page.locator('.table-pile[data-pile-id="pile-1"]');
+ const p2=page.locator('.table-pile[data-pile-id="pile-2"]');
+ await expect(p1.locator('.table-pile-take-count')).toHaveValue('1');
+ await p1.locator('.table-pile-take-count').selectOption('2');
+ let src=await p1.locator('.table-pile-top').boundingBox(),dst=await p2.locator('.table-pile-top').boundingBox();
+ await page.mouse.move(src.x+src.width/2,src.y+src.height/2);
+ await page.mouse.down();
+ await page.mouse.move(dst.x+dst.width/2,dst.y+dst.height/2,{steps:12});
+ await page.mouse.up();
+ await expect.poll(async()=> (await saved(page,WORKSPACE)).state.tablePiles[1].cards.length).toBe(3);
+ let state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles[0].cards.map(c=>c.instanceId)).toEqual([seeded.source[2]]);
+ expect(state.tablePiles[1].cards.map(c=>c.instanceId)).toEqual([seeded.source[0],seeded.source[1],seeded.target]);
+
+ await p2.locator('.table-pile-take-count').selectOption('2');
+ src=await p2.locator('.table-pile-top').boundingBox();
+ const zone=await page.locator('#zone').boundingBox();
+ await page.mouse.move(src.x+src.width/2,src.y+src.height/2);
+ await page.mouse.down();
+ await page.mouse.move(zone.x+zone.width*.54,zone.y+zone.height*.77,{steps:12});
+ await page.mouse.up();
+ await expect(page.locator('.table-pile')).toHaveCount(3);
+ state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles[2].cards.map(c=>c.instanceId)).toEqual(seeded.source.slice(0,2));
+ expect(state.tablePiles[1].cards.map(c=>c.instanceId)).toEqual([seeded.target]);
+
+ await page.locator('#zone').scrollIntoViewIfNeeded();
+ const p3=page.locator('.table-pile[data-pile-id="pile-3"]');
+ src=await p3.locator('.table-pile-handle').boundingBox();
+ dst=await p2.locator('.table-pile-top').boundingBox();
+ await page.mouse.move(src.x+src.width/2,src.y+src.height/2);
+ await page.mouse.down();
+ await page.mouse.move(dst.x+dst.width/2,dst.y+dst.height/2,{steps:12});
+ await page.mouse.up();
+ await expect(page.locator('.table-pile')).toHaveCount(2);
+ state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles.find(p=>p.id==='pile-2').cards.map(c=>c.instanceId)).toEqual([seeded.source[0],seeded.source[1],seeded.target]);
+ expect(state.tablePiles.find(p=>p.id==='pile-3')).toBeUndefined();
+ const all=[...state.deck,...state.placed,...state.tablePiles.flatMap(p=>p.cards)].map(c=>c.instanceId);
+ expect(all).toHaveLength(78);
+ expect(new Set(all).size).toBe(78);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.tablePiles.find(p=>p.id==='pile-2').cards.map(c=>c.instanceId)).toEqual([seeded.source[0],seeded.source[1],seeded.target]);
+});
+
 test('fresh and dealt cards are unique by physical ID',async ({page})=>{
  const getIds=async()=>{const w=await saved(page,WORKSPACE);return [...w.state.deck,...w.state.placed,...(w.state.removed||[])].map(c=>c.id)};
  for(let k=0;k<4;k++){
