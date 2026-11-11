@@ -127,3 +127,25 @@ test('stock-to-pile deal rejects an empty stock without changing a pile',()=>{
  assert.throws(()=>P.drawFromDeck(s,pile.id));
  assert.deepEqual(pile.cards,[]);
 });
+
+test('free-angle fan geometry persists through serialization without changing card order',()=>{
+ const s=fresh(),pile=P.create(s,40,45);
+ P.deposit(s,0,pile.id);P.deposit(s,0,pile.id);
+ const original=Array.from(pile.cards,c=>c.instanceId);
+ const fan=P.setFan(s,pile.id,.27,-.43);
+ assert.equal(fan.dx,.27);assert.equal(fan.dy,-.43);
+ const restored=JSON.parse(JSON.stringify(s));
+ assert.deepEqual(P.fanOf(restored.tablePiles[0]),{dx:.27,dy:-.43});
+ assert.deepEqual(Array.from(restored.tablePiles[0].cards,c=>c.instanceId),original);
+ const separated=P.split(restored,pile.id,1,72,60);
+ assert.deepEqual(P.fanOf(separated),{dx:.27,dy:-.43});
+ assert.equal(I.ensureSingle(restored),restored);
+});
+test('fan accepts diagonal vectors and clamps excessive offsets',()=>{
+ const s=fresh(),pile=P.create(s,45,45);
+ P.setFan(s,pile.id,1.7,-1.5);
+ assert.deepEqual(P.fanOf(pile),{dx:.85,dy:-.85});
+ P.setFan(s,pile.id,0,0);
+ assert.deepEqual(P.fanOf(pile),{dx:0,dy:0});
+ assert.throws(()=>P.setFan(s,pile.id,Number.NaN,0));
+});
