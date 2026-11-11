@@ -78,6 +78,12 @@ function stackPlaced(state,movingIndex,targetIndex){
 }
 /* Flip one physical card in place without changing pile membership or order.
    Index zero remains the top, including in collapsed piles. */
+/* Reveal operations affect only the physical top of each explicit pile,
+   whether it is collapsed or fanned. Lower face-down cards stay untouched. */
+function closedTopCards(state){
+ validate(state);
+ return piles(state).filter(p=>p.cards.length&&p.cards[0].faceUp!==true).map(p=>p.cards[0]);
+}
 function flipCard(state,id,index=0){
  validate(state);
  const pile=find(state,id);
@@ -131,5 +137,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,flipCard,withdraw,transfer,split,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,closedTopCards,flipCard,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
