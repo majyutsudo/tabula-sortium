@@ -808,6 +808,7 @@ let lastRenderedSpread=null;
 // Single-table only in this first integration; the legacy two-table mode is unchanged.
 let pilePlacementArmed=false;
 const pileTakeCounts=new Map();
+const pileTakeOpen=new Set();
 function tablePoint(clientX,clientY){
  const rect=$('zone').getBoundingClientRect();
  return {x:Math.max(4,Math.min(96,(clientX-rect.left)/rect.width*100)),
@@ -856,7 +857,22 @@ function renderTablePiles(zone,m){
    take.value=String(Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1));
    take.onchange=()=>pileTakeCounts.set(pile.id,Number(take.value));
    take.addEventListener('pointerdown',e=>e.stopPropagation());
-   el.append(take);
+   take.hidden=!pileTakeOpen.has(pile.id);
+   const takeToggle=document.createElement('button');
+   takeToggle.type='button';takeToggle.className='table-pile-take-toggle';
+   takeToggle.textContent=pileTakeOpen.has(pile.id)?'枚数を閉じる':'枚数指定 ▾';
+   takeToggle.title='束の上からまとめて移動する枚数を指定';
+   takeToggle.setAttribute('aria-expanded',String(pileTakeOpen.has(pile.id)));
+   takeToggle.onclick=e=>{
+    e.stopPropagation();
+    if(pileTakeOpen.has(pile.id))pileTakeOpen.delete(pile.id);
+    else pileTakeOpen.add(pile.id);
+    take.hidden=!pileTakeOpen.has(pile.id);
+    takeToggle.textContent=pileTakeOpen.has(pile.id)?'枚数を閉じる':'枚数指定 ▾';
+    takeToggle.setAttribute('aria-expanded',String(pileTakeOpen.has(pile.id)));
+   };
+   takeToggle.addEventListener('pointerdown',e=>e.stopPropagation());
+   el.append(takeToggle,take);
    face.addEventListener('pointerdown',e=>{
     if(e.button!==0)return;e.preventDefault();e.stopPropagation();
     const startX=e.clientX,startY=e.clientY;let dragged=false;
