@@ -5,7 +5,13 @@ const HISTORY = 'tabula_sortium_history_v034';
 const SPREADS = 'tabula_sortium_spread_library_v1';
 
 async function saved(page, key) {
-  return page.evaluate(k => JSON.parse(localStorage.getItem(k)), key);
+  for(let attempt=0;attempt<5;attempt++){
+    try{return await page.evaluate(k => JSON.parse(localStorage.getItem(k)), key)}
+    catch(error){
+      if(attempt===4||!/Execution context was destroyed|navigation/i.test(error.message))throw error;
+      await page.waitForLoadState('domcontentloaded');
+    }
+  }
 }
 
 test.beforeEach(async ({ page }) => {
