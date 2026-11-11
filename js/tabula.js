@@ -2762,7 +2762,7 @@ function refreshTableLabels(){
   if(zw&&lw){const center=Math.max(lw/2+3,Math.min(zw-lw/2-3,zw*x/100));t.style.left=center+'px';}
 
  }
- slots.forEach((slot,i)=>add(state.placed.find(p=>p.slot===i),slot,i));
+ slots.forEach((slot,i)=>{if((state.tablePiles||[]).some(p=>p.slot===i))return;add(state.placed.find(p=>p.slot===i),slot,i)});
  state.placed.filter(p=>p.slot==null).forEach(p=>add(p,null,-1));
  // Physical piles participate in the SAME display modes as placed cards.
  // Labels are independent of movement handles and are never hit targets.
