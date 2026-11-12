@@ -816,7 +816,7 @@ function updateNaturalTiltButton(){
    const behavior=document.createElement('section');behavior.className='placement-tools-group';behavior.dataset.group='behavior';
    const behaviorHeading=document.createElement('div');behaviorHeading.className='placement-tools-heading';behaviorHeading.textContent='操作';
    behavior.append(behaviorHeading);
-   layout.append(placement);content.append(layout);
+   layout.append(placement,behavior);content.append(layout);
   }
   const placement=layout.querySelector('[data-group="placement"]');
   const behavior=layout.querySelector('[data-group="behavior"]');
