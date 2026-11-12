@@ -189,7 +189,7 @@ if(isStored)$('deleteCustomSpread').onclick=()=>{if(!confirm('この登録スプ
 }display()}
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('先に「展開法」から登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
-const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';let settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:'',dealFaceUp:false,spreadDealOrders:{}};let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};let dualSession=null,dualSingleBackup=null,dualDealBusy=false;const DUAL_SESSION_KEY='tabula_sortium_dual_session_v1';const DUAL_RESTORE_ONCE_KEY='tabula_sortium_dual_restore_once_v1';let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;const quick=$('quickShuffleChoice');if(quick){quick.replaceChildren();const single=recipes.find(r=>r.id==='single');const currentMethod=single?.steps?.[0]?.method||settings.shuffleMethod||'overhand';for(const [method,label] of [['hindu','ヒンズー'],['overhand','オーバーハンド'],['riffle','リフル'],['pile','パイル（山分け）']]){const option=document.createElement('option');option.value='method:'+method;option.textContent=label;quick.append(option)}const custom=recipes.filter(r=>r.id!=='single');if(custom.length){const group=document.createElement('optgroup');group.label='登録済みシャッフル手順';custom.forEach(r=>{const option=document.createElement('option');option.value='recipe:'+r.id;option.textContent=r.name;group.append(option)});quick.append(group)}const editOption=document.createElement('option');editOption.value='__edit__';editOption.textContent='手順を編集・登録…';quick.append(editOption);quick.value=recipeId==='single'?'method:'+currentMethod:'recipe:'+recipeId}const tag=$('activeRecipeLabel');if(tag){const r=selectedRecipe();tag.textContent='シャッフル手順：'+(r?r.name:'単独シャッフル');tag.title='卓上のシャッフルボタンで実行される手順';}}function shuffleStepDefaults(method){return {method,reps:1,groups:method==='pile'?4:method==='hindu'||method==='overhand'?7:1,washDirection:'random'}}
+const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';let settings={cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:'',dealFaceUp:false,spreadDealOrders:{},compactShortcutVisibility:{}};let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};let dualSession=null,dualSingleBackup=null,dualDealBusy=false;const DUAL_SESSION_KEY='tabula_sortium_dual_session_v1';const DUAL_RESTORE_ONCE_KEY='tabula_sortium_dual_restore_once_v1';let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;const quick=$('quickShuffleChoice');if(quick){quick.replaceChildren();const single=recipes.find(r=>r.id==='single');const currentMethod=single?.steps?.[0]?.method||settings.shuffleMethod||'overhand';for(const [method,label] of [['hindu','ヒンズー'],['overhand','オーバーハンド'],['riffle','リフル'],['pile','パイル（山分け）']]){const option=document.createElement('option');option.value='method:'+method;option.textContent=label;quick.append(option)}const custom=recipes.filter(r=>r.id!=='single');if(custom.length){const group=document.createElement('optgroup');group.label='登録済みシャッフル手順';custom.forEach(r=>{const option=document.createElement('option');option.value='recipe:'+r.id;option.textContent=r.name;group.append(option)});quick.append(group)}const editOption=document.createElement('option');editOption.value='__edit__';editOption.textContent='手順を編集・登録…';quick.append(editOption);quick.value=recipeId==='single'?'method:'+currentMethod:'recipe:'+recipeId}const tag=$('activeRecipeLabel');if(tag){const r=selectedRecipe();tag.textContent='シャッフル手順：'+(r?r.name:'単独シャッフル');tag.title='卓上のシャッフルボタンで実行される手順';}}function shuffleStepDefaults(method){return {method,reps:1,groups:method==='pile'?4:method==='hindu'||method==='overhand'?7:1,washDirection:'random'}}
 function normStep(st){return TabulaShuffle.normStep(st,methods)}
 const applyShuffleMethod=TabulaShuffle.applyShuffleMethod;
 const washSequence=TabulaShuffle.washSequence;
@@ -563,7 +563,6 @@ async function animateMonteArrangement(action,order){
    :count+'か所に山札から補充しました。');
  }finally{autoDealBusy=false}
 }
-$('quickCompactMonte').onclick=()=>executeArrangement('compact');
 function executeArrangement(action){
  if(dualSession||spreadWorkbench){setStatus('この卓のカード配置を編集中は整理できません。');return}
  if(autoDealBusy||openingBusy){setStatus('配札またはオープンが終わってから操作してください。');return}
@@ -817,7 +816,7 @@ function updateNaturalTiltButton(){
    const behavior=document.createElement('section');behavior.className='placement-tools-group';behavior.dataset.group='behavior';
    const behaviorHeading=document.createElement('div');behaviorHeading.className='placement-tools-heading';behaviorHeading.textContent='操作';
    behavior.append(behaviorHeading);
-   layout.append(placement,behavior);content.append(layout);
+   layout.append(placement);content.append(layout);
   }
   const placement=layout.querySelector('[data-group="placement"]');
   const behavior=layout.querySelector('[data-group="behavior"]');
@@ -825,8 +824,6 @@ function updateNaturalTiltButton(){
    const control=document.getElementById(id);
    if(control){control.removeAttribute('style');control.classList.add('placement-tools-button');placement.append(control)}
   }
-  const hand=document.getElementById('naturalTiltButton');
-  if(hand){hand.removeAttribute('style');hand.classList.add('placement-tools-button');behavior.append(hand)}
   let arrangement=layout.querySelector('[data-group="arrangement"]');
   if(!arrangement){
    arrangement=document.createElement('section');
@@ -847,12 +844,40 @@ function updateNaturalTiltButton(){
    refill.type='button';refill.className='placement-tools-button';
    refill.textContent='空きを一括補充';refill.onclick=()=>executeArrangement('refill');
    arrangement.append(compact,refill);
+   const visibility=document.createElement('label');visibility.className='compact-shortcut-toggle';
+   const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.id='compactShortcutVisibility';
+   checkbox.onchange=()=>{if(!settings.compactShortcutVisibility||typeof settings.compactShortcutVisibility!=='object')settings.compactShortcutVisibility={};settings.compactShortcutVisibility[settings.spread]=checkbox.checked;syncCompactShortcut();saveLocal()};
+   visibility.append(checkbox,document.createTextNode('「詰める」を卓に表示'));
+   arrangement.append(visibility);
    layout.append(arrangement);
   }
+  const hand=document.getElementById('naturalTiltButton');
+  if(hand){hand.removeAttribute('style');hand.classList.add('placement-tools-button');behavior.append(hand)}
+  layout.append(behavior);
  }
+ syncCompactShortcut();
  button.textContent=naturalTilt?'◌ 手置き ON':'◌ 手置き OFF';
  button.title='テスト用：手を離した方向へ最大150pxの滑りと軽い衝突（自動傾きなし）';
  button.setAttribute('aria-pressed',String(naturalTilt));
+}
+// Shared compact shortcut: a preset provides only the initial visibility.
+function compactShortcutShown(){
+ const overrides=settings.compactShortcutVisibility;
+ if(overrides&&typeof overrides==='object'&&Object.hasOwn(overrides,settings.spread))return overrides[settings.spread]===true;
+ return settings.spread==='monteCarlo';
+}
+function syncCompactShortcut(){
+ const surface=$('surface');if(!surface)return;
+ let shortcut=$('quickCompactAction');
+ if(!shortcut){
+  shortcut=document.createElement('button');shortcut.id='quickCompactAction';shortcut.type='button';
+  shortcut.textContent='▥ 詰める';shortcut.title='メニューの「空きを詰める」を実行';
+  shortcut.onclick=()=>executeArrangement('compact');
+  surface.append(shortcut);
+ }
+ shortcut.hidden=!compactShortcutShown()||!!spreadWorkbench||!!dualSession;
+ const checkbox=$('compactShortcutVisibility');
+ if(checkbox)checkbox.checked=compactShortcutShown();
 }
 function recordTiltSample(track,e){
  if(!track)return;
@@ -1512,7 +1537,6 @@ function renderTablePiles(zone,m){
  }
 }
 function render(){
- const monteCompact=$('quickCompactMonte');if(monteCompact)monteCompact.hidden=settings.spread!=='monteCarlo'||!!spreadWorkbench;
  stopFreeSlide();
  updateAppearanceControls();
  refreshClothIndicators();
