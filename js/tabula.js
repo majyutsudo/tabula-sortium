@@ -2132,8 +2132,13 @@ function inspectFourSeasonsCompletion(){
     {duration:2800,delay:i*260,easing:'ease-in-out',fill:'forwards'});
   }
   zone.append(layer);
-  setTimeout(()=>layer.remove(),4200);
-  previewVisualEffect(true);
+  // The final full-table radiance follows the closing of all four paths.
+  // The last path starts at 780 ms and finishes at 3580 ms.
+  setTimeout(()=>{
+   if(layer.isConnected&&settings.spread==='fourSeasons'&&fourSeasonsCompleteCount()===4&&settings.effectPreset!=='silent')
+    previewVisualEffect(true);
+  },3650);
+  setTimeout(()=>layer.remove(),7600);
  }
  fourSeasonsWholeSeen=whole;
 }
