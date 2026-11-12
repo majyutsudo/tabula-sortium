@@ -666,8 +666,18 @@ function createPlacedSlotLabel(item,slot,slotIndex,m){
   t.style.zIndex=settings.crossLabelLayer==='front'?'310':'2';
   return t;
 }
+const CARD_LONG_PRESS_MS=500,CARD_LONG_PRESS_SLOP=8;
 let longPressTimer=null;
 function cancelCardLongPress(){if(longPressTimer!==null){clearTimeout(longPressTimer);longPressTimer=null}}
+function armCardLongPress(e,onSelect){
+ cancelCardLongPress();
+ const hold={pointerId:e.pointerId,x:e.clientX,y:e.clientY,triggered:false};
+ longPressTimer=setTimeout(()=>{longPressTimer=null;hold.triggered=true;onSelect()},CARD_LONG_PRESS_MS);
+ return hold;
+}
+function moveCardLongPress(hold,e){
+ if(hold&&e.pointerId===hold.pointerId&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>CARD_LONG_PRESS_SLOP)cancelCardLongPress();
+}
 let selectedPileId=null,rotationDragMode=false;
 function selectedRotationTarget(){
  if(selectedPileId)return(state.tablePiles||[]).find(p=>p.id===selectedPileId)||null;
@@ -1055,12 +1065,12 @@ function updateStackIntent(active,node){
 function cardHTML(item,index){const c=workingCard(item.id)||workingCards()[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;node.dataset.appearance=appearanceForCard(item);if(node.dataset.appearance==='worn'){node.dataset.wearVariant=wearVariant(item);if(wornMaterialAvailable(item.id))node.dataset.wornAsset='true'}if(item.sourceDeck){node.dataset.sourceDeck=item.sourceDeck;node.dataset.backTone=dualBackTone(item.sourceDeck)}if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
- node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;applyPlayingBack(node.querySelector('.face.back'),item.sourceDeck);node.addEventListener('pointerdown',e=>{if(rotationDragMode&&state.selected===index&&!selectedPileId)beginRotationGesture(e,node,item)},true);node.addEventListener('pointerdown',e=>{if(pilePlacementArmed||e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;node.setPointerCapture(e.pointerId);cancelCardLongPress();
+ node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;applyPlayingBack(node.querySelector('.face.back'),item.sourceDeck);node.addEventListener('pointerdown',e=>{if(rotationDragMode&&state.selected===index&&!selectedPileId)beginRotationGesture(e,node,item)},true);node.addEventListener('pointerdown',e=>{if(pilePlacementArmed||e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;drag.longPress=armCardLongPress(e,()=>selectCard(index));node.setPointerCapture(e.pointerId);
 // Each grab raises the selected card to the highest persistent stack layer.
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
 node.style.setProperty('--z',String(1000+nextOrder));
-node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;recordTiltSample(drag,e);const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item);updateStackIntent(drag,node)}});node.addEventListener('pointerup',e=>{if(pilePlacementArmed||!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';recordTiltSample(drag,e);const releasedDrag=drag;cancelCardLongPress();const stackIndex=releasedDrag.stackArmed?Number(releasedDrag.stackCandidate):null;const stackTarget=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;const stackReady=!!stackTarget&&stackCandidate(node)===stackTarget;clearStackIntent(releasedDrag);drag=null;if(stackReady&&!dualSession&&!spreadWorkbench){TabulaTablePiles.stackPlaced(state,index,stackIndex);render();saveLocal();setStatus('重ねた2枚を束にしました。');return}if(dragMoved&&!dualSession&&!spreadWorkbench){const pileId=pileAtPoint(e.clientX,e.clientY);if(pileId){TabulaTablePiles.deposit(state,index,pileId);render();saveLocal();setStatus('カードを束に重ねました。');return}}if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}
+node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;recordTiltSample(drag,e);moveCardLongPress(drag.longPress,e);const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item);updateStackIntent(drag,node)}});node.addEventListener('pointerup',e=>{if(pilePlacementArmed||!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';recordTiltSample(drag,e);const releasedDrag=drag;cancelCardLongPress();const stackIndex=releasedDrag.stackArmed?Number(releasedDrag.stackCandidate):null;const stackTarget=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;const stackReady=!!stackTarget&&stackCandidate(node)===stackTarget;clearStackIntent(releasedDrag);drag=null;if(stackReady&&!dualSession&&!spreadWorkbench){TabulaTablePiles.stackPlaced(state,index,stackIndex);render();saveLocal();setStatus('重ねた2枚を束にしました。');return}if(dragMoved&&!dualSession&&!spreadWorkbench){const pileId=pileAtPoint(e.clientX,e.clientY);if(pileId){TabulaTablePiles.deposit(state,index,pileId);render();saveLocal();setStatus('カードを束に重ねました。');return}}if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}
 if(dragMoved&&settings.spread==='monteCarlo'&&!spreadWorkbench&&!dualSession){
  // Resolve the physical drop against the 25 visible frames, not the card's
  // original slot metadata. A free target becomes its new registered location.
@@ -1098,7 +1108,7 @@ if(dragMoved&&settings.spread==='monteCarlo'&&Number.isInteger(item.slot)){
  }
 }
 
-if(!dragMoved){item.faceUp=!item.faceUp;play('flip')}if(dragMoved)selectCard(index);if(dragMoved&&settings.spread==='monteCarlo')maybeTriggerCompletionEffect();
+if(!dragMoved&&!releasedDrag.longPress?.triggered){item.faceUp=!item.faceUp;play('flip')}if(dragMoved)selectCard(index);if(dragMoved&&settings.spread==='monteCarlo')maybeTriggerCompletionEffect();
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
 node.classList.toggle('faceup',item.faceUp);
@@ -1296,6 +1306,7 @@ function renderTablePiles(zone,m){
    for(const face of faces)face.addEventListener('pointerdown',e=>{
     if(e.button!==0)return;e.preventDefault();e.stopPropagation();
     const startX=e.clientX,startY=e.clientY;let dragged=false;
+    const hold=armCardLongPress(e,()=>selectPile(pile.id));
     const index=Number(face.dataset.pileIndex);
     const count=expanded?index+1:1;
     const moving=expanded?faces.filter(node=>Number(node.dataset.pileIndex)<=index):[face];
@@ -1325,6 +1336,7 @@ function renderTablePiles(zone,m){
     };
     face.setPointerCapture(e.pointerId);
     const move=ev=>{
+     moveCardLongPress(hold,ev);
      if(!dragged&&Math.hypot(ev.clientX-startX,ev.clientY-startY)>7){
       dragged=true;el.classList.add('pile-drag-active');
      }
@@ -1334,6 +1346,7 @@ function renderTablePiles(zone,m){
      }
     };
     const finish=ev=>{
+     const heldSelected=hold.triggered;
      const stackIndex=stackIntent.armed&&stackIntent.candidate!==null?Number(stackIntent.candidate):null;
      const stackNode=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;
      const stackReady=dragged&&stackNode&&stackCandidate(face)===stackNode;
@@ -1343,6 +1356,7 @@ function renderTablePiles(zone,m){
       render();setStatus('カードの移動を取り消しました。');return;
      }
      if(!dragged){
+      if(heldSelected)return;
       TabulaTablePiles.flipCard(state,pile.id,index);
       play('flip');render();saveLocal();
       setStatus('束の'+(index+1)+'枚目のカードを'+(pile.cards[index].faceUp?'表':'裏')+'向きにしました。');
@@ -1373,6 +1387,7 @@ function renderTablePiles(zone,m){
      }catch(err){render();setStatus(err.message)}
     };
     const clear=()=>{
+     cancelCardLongPress();
      clearPileStack();
      face.removeEventListener('pointermove',move);
      face.removeEventListener('pointerup',finish);
