@@ -1616,3 +1616,31 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 }
 .gallery-tile:focus-visible>.gallery-blueprint-face{outline:3px solid #dbbf7c;outline-offset:3px}
 @media(max-width:500px){.gallery-lightbox-view>.gallery-blueprint-face{width:min(76vw,calc(62dvh * 2 / 3))}}
+
+/* v0.488: gallery lightbox artwork is INSIDE .detail-body, not a direct
+   child of .gallery-lightbox-view. Without an explicit flex width the
+   generated DIV faces collapse to zero width in the enlarged viewer. */
+.gallery-lightbox-view .detail-body > :is(.gallery-simple-face,.gallery-blueprint-face){
+ display:block;
+ position:relative;
+ box-sizing:border-box;
+ flex:0 0 auto;
+ width:min(76vw,440px,calc(70dvh * 2 / 3));
+ height:auto;
+ aspect-ratio:2/3;
+ max-height:70dvh;
+ min-width:0;
+ overflow:hidden;
+ border-radius:5px;
+ box-shadow:0 8px 30px #000a;
+}
+@media(max-width:700px){
+ .gallery-lightbox-view .detail-body > :is(.gallery-simple-face,.gallery-blueprint-face){
+  width:min(calc(100vw - 106px),440px,calc(62dvh * 2 / 3));
+  max-height:62dvh;
+ }
+ .gallery-lightbox-view .detail-body.has-copy > :is(.gallery-simple-face,.gallery-blueprint-face){
+  width:min(calc(100vw - 106px),440px,calc(50dvh * 2 / 3));
+  max-height:50dvh;
+ }
+}
