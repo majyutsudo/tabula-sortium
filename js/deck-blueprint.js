@@ -144,7 +144,7 @@ function courtTextArtwork(card){
  const fontSize=n>13?8:n>9?10:n>6?12:n>4?15:18;
  const shape=emblemShape(card.courtEmblem||'crown');
  const frame=card.courtFrame||'shield';
- const outlines={shield:'M-29-29H29V5Q25 30 0 39Q-25 30-29 5Z',circle:'M0-32A32 32 0 1 0 0 32A32 32 0 1 0 0-32Z',oval:'M0-34C-42-34-42 34 0 34C42 34 42-34 0-34Z'};
+ const outlines={shield:'M-29-29H29V5Q25 30 0 39Q-25 30-29 5Z',circle:'M0-32A32 32 0 1 0 0 32A32 32 0 1 0 0-32Z',oval:'M0-35C-29-35-29 35 0 35C29 35 29-35 0-35Z'};
  const border=frame==='none'?'':('<path d="'+(outlines[frame]||outlines.shield)+'" fill="none" stroke="currentColor" stroke-width=".8" opacity=".7"/>');
  const half='<g transform="translate(60 0)"><text x="0" y="32" font-size="'+fontSize+'" font-weight="600" letter-spacing=".4">'+xml(title)+'</text><g transform="translate(0 69) scale(.63)" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+border+'<g>'+shape+'</g></g><path d="M-20 86H20" fill="none" stroke="currentColor" stroke-width=".65" opacity=".65"/></g>';
  return '<g class="playing-card-heraldic" fill="currentColor" stroke="none">'+half+'<g transform="rotate(180 60 90)">'+half+'</g></g>';
