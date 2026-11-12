@@ -1569,3 +1569,17 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 #placementToolsContent .compact-shortcut-toggle{display:flex;align-items:center;gap:7px;padding:5px 2px;font:11px/1.4 Georgia,"Yu Mincho",serif;color:#ddcda8;cursor:pointer}
 #placementToolsContent .compact-shortcut-toggle input{width:16px;height:16px;flex:none;accent-color:#b99b65}
 @media(max-width:780px){#surface #quickCompactAction{right:47px;bottom:12px;min-height:38px;padding:7px 12px;font-size:12px}}
+
+/* v0.477: sound shortcut in the toolbar, including narrow phone layouts. */
+.toolbar #toolbarSoundToggle{width:42px;min-width:42px;height:42px;min-height:42px;flex:0 0 42px;padding:8px;box-sizing:border-box;border:1px solid #8b7851;border-radius:5px;background:#27342d;color:#d2c09c;cursor:pointer}
+.toolbar #toolbarSoundToggle svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.toolbar #toolbarSoundToggle[aria-pressed="true"]{background:#62502e;color:#f1d68b;border-color:#c2a46a}
+@media(max-width:780px){
+ .toolbar .mobile-cockpit-actions{grid-template-columns:minmax(0,1fr) 40px 40px 40px minmax(0,1fr);gap:5px}
+ .toolbar .mobile-cockpit-actions>#toolbarSoundToggle{grid-column:2;width:100%!important;min-width:0!important;max-width:100%!important;height:44px!important;min-height:44px!important;margin:0!important;padding:7px!important}
+ .toolbar .mobile-cockpit-actions>#inspectCards{grid-column:3}
+ .toolbar .mobile-cockpit-actions>#spreadNotebook{grid-column:4}
+ .toolbar .mobile-cockpit-actions>#newSessionStandalone{grid-column:5}
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut{min-width:0}
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut select{font-size:11px;padding-left:5px;padding-right:15px}
+}
