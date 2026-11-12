@@ -1575,11 +1575,13 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .toolbar #toolbarSoundToggle svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .toolbar #toolbarSoundToggle[aria-pressed="true"]{background:#62502e;color:#f1d68b;border-color:#c2a46a}
 @media(max-width:780px){
- .toolbar .mobile-cockpit-actions{grid-template-columns:minmax(0,1fr) 40px 40px 40px minmax(0,1fr);gap:5px}
- .toolbar .mobile-cockpit-actions>#toolbarSoundToggle{grid-column:2;width:100%!important;min-width:0!important;max-width:100%!important;height:44px!important;min-height:44px!important;margin:0!important;padding:7px!important}
- .toolbar .mobile-cockpit-actions>#inspectCards{grid-column:3}
- .toolbar .mobile-cockpit-actions>#spreadNotebook{grid-column:4}
- .toolbar .mobile-cockpit-actions>#newSessionStandalone{grid-column:5}
- .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut{min-width:0}
- .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut select{font-size:11px;padding-left:5px;padding-right:15px}
+ /* Preserve the previous wide spread selector: first row is spread + inspect + notebook. */
+ .toolbar .mobile-cockpit-actions{grid-template-columns:44px minmax(0,1fr) 44px 44px;grid-template-rows:44px 42px;gap:6px}
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut{grid-column:1 / 3;grid-row:1;min-width:0}
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut select{font-size:12px;padding-left:8px;padding-right:19px;min-width:0}
+ .toolbar .mobile-cockpit-actions>#inspectCards{grid-column:3;grid-row:1}
+ .toolbar .mobile-cockpit-actions>#spreadNotebook{grid-column:4;grid-row:1}
+ /* The sound control shares the bottom action row instead of shrinking the spread selector. */
+ .toolbar .mobile-cockpit-actions>#toolbarSoundToggle{grid-column:1;grid-row:2;width:44px!important;min-width:0!important;max-width:44px!important;height:42px!important;min-height:42px!important;margin:0!important;padding:7px!important}
+ .toolbar .mobile-cockpit-actions>#newSessionStandalone{grid-column:2 / -1;grid-row:2;width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;margin:0!important}
 }
