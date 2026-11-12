@@ -252,7 +252,7 @@ function installTableCamera(){
  function startPair(){const p=pair(),r=stage.getBoundingClientRect();gesture={...p,scale:tableCamera.scale,localX:(p.x-r.left-r.width/2-tableCamera.x)/tableCamera.scale,localY:(p.y-r.top-r.height/2-tableCamera.y)/tableCamera.scale}}
  function stopEvent(e){e.preventDefault();e.stopImmediatePropagation()}
  stage.addEventListener('pointerdown',e=>{
-  if(!mobileCameraEnabled())return;
+  if(!mobileCameraEnabled()||pilePlacementArmed)return;
   if(e.pointerType==='touch'){
    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
    if(touches.size===1){blocked=false;const card=e.target.closest('.card');const index=card?Number(card.dataset.index):-1;const p=state.placed[index];firstCard=p?{index,x:p.x,y:p.y,manualMoved:p.manualMoved}:null;}
@@ -261,21 +261,21 @@ function installTableCamera(){
   }else if((cameraPanMode&&e.button===0)||e.button===1){cancelCardGesture();mousePan={id:e.pointerId,x:e.clientX,y:e.clientY,viewX:tableCamera.x,viewY:tableCamera.y};stage.setPointerCapture(e.pointerId);stage.classList.add('camera-moving');stopEvent(e)}
  },true);
  stage.addEventListener('pointermove',e=>{
-  if(!mobileCameraEnabled())return;
+  if(!mobileCameraEnabled()||pilePlacementArmed)return;
   if(touches.has(e.pointerId))touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(blocked){if(touches.size>=2&&gesture){const p=pair(),r=stage.getBoundingClientRect();tableCamera.scale=Math.max(1,Math.min(4,gesture.scale*p.d/gesture.d));tableCamera.x=p.x-r.left-r.width/2-gesture.localX*tableCamera.scale;tableCamera.y=p.y-r.top-r.height/2-gesture.localY*tableCamera.scale;applyTableCamera()}stopEvent(e)}
   else if(oneFingerPan&&oneFingerPan.id===e.pointerId){const dx=e.clientX-oneFingerPan.x,dy=e.clientY-oneFingerPan.y;if(Math.hypot(dx,dy)>4)oneFingerPan.moved=true;if(oneFingerPan.moved){tableCamera.x=oneFingerPan.viewX+dx;tableCamera.y=oneFingerPan.viewY+dy;stage.classList.add('camera-moving');applyTableCamera()}stopEvent(e)}
   else if(mousePan&&mousePan.id===e.pointerId){tableCamera.x=mousePan.viewX+e.clientX-mousePan.x;tableCamera.y=mousePan.viewY+e.clientY-mousePan.y;applyTableCamera();stopEvent(e)}
  },true);
  function end(e){
-  if(!mobileCameraEnabled())return;
+  if(!mobileCameraEnabled()||pilePlacementArmed)return;
   if(touches.has(e.pointerId))touches.delete(e.pointerId);
   if(blocked){suppressClickUntil=Date.now()+450;stopEvent(e);if(touches.size>=2)startPair();else gesture=null;if(!touches.size){blocked=false;firstCard=null;stage.classList.remove('camera-moving');saveTableCamera()}}
   if(oneFingerPan&&oneFingerPan.id===e.pointerId){const moved=oneFingerPan.moved;oneFingerPan=null;stage.classList.remove('camera-moving');saveTableCamera();if(moved)suppressClickUntil=Date.now()+450;else if(e.type==='pointerup'){state.selected=null;updateCardSelection()}stopEvent(e)}
   if(mousePan&&mousePan.id===e.pointerId){mousePan=null;suppressClickUntil=Date.now()+450;stage.classList.remove('camera-moving');saveTableCamera();stopEvent(e)}
  }
  stage.addEventListener('pointerup',end,true);stage.addEventListener('pointercancel',end,true);
- stage.addEventListener('click',e=>{if(mobileCameraEnabled()&&(blocked||Date.now()<suppressClickUntil))stopEvent(e)},true);
+ stage.addEventListener('click',e=>{if(mobileCameraEnabled()&&!pilePlacementArmed&&(blocked||Date.now()<suppressClickUntil))stopEvent(e)},true);
  stage.addEventListener('wheel',e=>{
   if(!mobileCameraEnabled())return;
   if(e.ctrlKey||e.metaKey){stopEvent(e);zoomTableAt(tableCamera.scale*Math.exp(-e.deltaY*.002),e.clientX,e.clientY);saveTableCamera()}
@@ -2116,7 +2116,7 @@ $('addTablePile').onclick=()=>{
  $('addTablePile').lastElementChild.textContent=pilePlacementArmed?'配置をやめる':'＋束を置く';
  $('zone').classList.toggle('pile-placement-armed',pilePlacementArmed);
  setStatus(pilePlacementArmed?'卓上の好きな場所をクリックして、空の束を作成してください。':'束の配置を終了しました。');
- if(pilePlacementArmed)$('surface').scrollIntoView({block:'center',behavior:'instant'});
+ if(pilePlacementArmed){blocked=false;oneFingerPan=null;suppressClickUntil=0;$('surface').scrollIntoView({block:'center',behavior:'instant'});}
 };
 $('surface').addEventListener('click',e=>{
  if(!pilePlacementArmed||dualSession||spreadWorkbench)return;
