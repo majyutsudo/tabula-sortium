@@ -488,6 +488,7 @@ function arrangementOrder(){
   .sort((a,b)=>a.p.y-b.p.y||a.p.x-b.p.x||a.i-b.i)
   .map(v=>v.key);
 }
+$('quickCompactMonte').onclick=()=>executeArrangement('compact');
 function executeArrangement(action){
  if(dualSession||spreadWorkbench){setStatus('この卓のカード配置を編集中は整理できません。');return}
  if(autoDealBusy||openingBusy){setStatus('配札またはオープンが終わってから操作してください。');return}
@@ -1275,6 +1276,7 @@ function renderTablePiles(zone,m){
  }
 }
 function render(){
+ const monteCompact=$('quickCompactMonte');if(monteCompact)monteCompact.hidden=settings.spread!=='monteCarlo'||!!spreadWorkbench;
  stopFreeSlide();
  updateAppearanceControls();
  refreshClothIndicators();
