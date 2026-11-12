@@ -108,7 +108,33 @@ function openSpreadGuideEditor(id){
  };
 }
 
-function spreadCapture(){if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。一組モードで登録してください。');return}closeSpreadArchive();if(!state.placed.length){alert('フリースプレッドでカードを並べてから実行してください。');return}if(state.placed.length>52){alert('スプレッドに登録できるのは52位置までです。');return}if(spreadWorkbench)return;spreadWorkbench={previousCardSize:zoom,original:JSON.parse(JSON.stringify(state.placed)),chosen:[],names:{},roles:{},title:'新しいスプレッド',circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};$('spreadSave').textContent='スプレッドを登録';document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;spreadSnap=true;$('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');$('zone').style.setProperty('--workgrid',($('spreadGridSize').value||24)+'px');refreshWorkbench();render();$('spreadWorkbench').scrollIntoView({block:'nearest',behavior:'smooth'});}
+function spreadCapture(){
+ if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。一組モードで登録してください。');return}
+ closeSpreadArchive();
+ const piles=state.tablePiles||[],count=state.placed.length+piles.length;
+ if(!count){alert('フリースプレッドでカードまたは空の束を配置してから実行してください。');return}
+ if(count>52){alert('スプレッドに登録できる配置は52位置までです。');return}
+ if(spreadWorkbench)return;
+ // Editing uses temporary visual cards for physical pile frames. Restore the
+ // complete original session on both save and cancel, including pile contents.
+ const savedSession=JSON.parse(JSON.stringify(state)),previousCardSize=zoom;
+ const original=JSON.parse(JSON.stringify(state.placed));
+ const cards=selectedCards().length?selectedCards():workingCards();
+ const roles={},names={};
+ piles.forEach((pile,i)=>{
+  const index=state.placed.length+i,card=cards[index%cards.length];
+  state.placed.push({id:card.id,reversed:false,faceUp:false,slot:null,x:pile.x,y:pile.y,angle:0,manualMoved:false,dragOrder:index});
+  roles[index]=TabulaTablePiles.roleOf(pile);
+  names[index]='束'+(i+1);
+ });
+ state.tablePiles=[];
+ spreadWorkbench={previousCardSize,original,chosen:[],names,roles,title:'新しいスプレッド',savedSession,circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};
+ $('spreadSave').textContent='スプレッドを登録';
+ document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;
+ spreadSnap=true;$('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');
+ $('zone').style.setProperty('--workgrid',($('spreadGridSize').value||24)+'px');
+ refreshWorkbench();render();$('spreadWorkbench').scrollIntoView({block:'nearest',behavior:'smooth'});
+}
 function openStoredSpreadWorkbench(source){
  if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。');return}
  if(spreadWorkbench)return;
