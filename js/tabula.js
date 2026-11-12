@@ -1009,6 +1009,32 @@ node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!dra
  node.style.setProperty('--rotation',cardDisplayRotation(item)+'deg');
  return;
 }recordTiltSample(drag,e);const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item);updateStackIntent(drag,node)}});node.addEventListener('pointerup',e=>{if(pilePlacementArmed||!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';const wasLong=!!drag.longSelected;const wasRotating=!!drag.rotating;recordTiltSample(drag,e);const releasedDrag=drag;cancelCardLongPress();const stackIndex=releasedDrag.stackArmed?Number(releasedDrag.stackCandidate):null;const stackTarget=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;const stackReady=!!stackTarget&&stackCandidate(node)===stackTarget;clearStackIntent(releasedDrag);drag=null;if(stackReady&&!dualSession&&!spreadWorkbench){TabulaTablePiles.stackPlaced(state,index,stackIndex);render();saveLocal();setStatus('重ねた2枚を束にしました。');return}if(dragMoved&&!dualSession&&!spreadWorkbench){const pileId=pileAtPoint(e.clientX,e.clientY);if(pileId){TabulaTablePiles.deposit(state,index,pileId);render();saveLocal();setStatus('カードを束に重ねました。');return}}if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}
+if(dragMoved&&settings.spread==='monteCarlo'&&!spreadWorkbench&&!dualSession){
+ // Resolve the physical drop against the 25 visible frames, not the card's
+ // original slot metadata. A free target becomes its new registered location.
+ const slots=getSlots();
+ const closest=slots.map((p,i)=>({i,dx:Math.abs(item.x-p.x),dy:Math.abs(item.y-p.y)}))
+  .filter(p=>p.dx<=7&&p.dy<=9.5)
+  .sort((a,b)=>(a.dx/7)**2+(a.dy/9.5)**2-(b.dx/7)**2-(b.dy/9.5)**2)[0];
+ if(closest){
+  const occupied=state.placed.some((c,i)=>i!==index&&c.slot===closest.i)
+   ||(state.tablePiles||[]).some(p=>p.slot===closest.i&&p.cards.length);
+  if(!occupied){
+   const pos=slots[closest.i];
+   item.slot=closest.i;item.x=pos.x;item.y=pos.y;
+   item.angle=pos.angle??item.angle??0;
+   item.origin={x:pos.x,y:pos.y,angle:item.angle};
+   item.manualMoved=false;
+   node.style.left=item.x+'%';node.style.top=item.y+'%';
+   setStatus((closest.i+1)+'番の枠にカードを配置しました。');
+  }else if(item.slot!==closest.i){
+   // Do not let a card appear to occupy a different, already filled frame.
+   const original=Number.isInteger(item.slot)?slots[item.slot]:null;
+   if(original){item.x=original.x;item.y=original.y;node.style.left=item.x+'%';node.style.top=item.y+'%'}
+   setStatus('移動先の枠にはすでにカードがあります。空いている枠へ置いてください。');
+  }
+ }
+}
 if(dragMoved&&settings.spread==='monteCarlo'&&Number.isInteger(item.slot)){
  // Dragging a Monte Carlo card outside the 5x5 playing field removes it
  // from the 25 active positions, while keeping the physical card on the table.
