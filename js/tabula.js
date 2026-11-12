@@ -2581,7 +2581,15 @@ pile.addEventListener('pointerup',e=>{
   recordTiltSample(drag,e);
   const releasedDrag=drag;
   drag=null;clearDeckPreview();
-  if(!dragMoved){if(settings.spread==='fourSeasons'&&!dualSession)dealAuto();else drawAt();return}
+  if(!dragMoved){
+   if(settings.spread==='fourSeasons'&&!dualSession){
+    if(autoDealBusy||openingBusy)return;
+    const next=nextDealSlot();
+    if(next>=0)drawAt(next);
+    else revealFourSeasonsStock();
+   }else drawAt();
+   return;
+  }
   const r=$('zone').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
   if(x<0||x>100||y<0||y>100)return;
   // A stock card may land directly on an existing pile, without an
