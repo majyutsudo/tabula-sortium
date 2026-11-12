@@ -2843,21 +2843,32 @@ const GALLERY={visible:false,listed:[],focus:null,index:0,deckId:'builtin'};
 const tarotGalleryFilters=Array.from($('cardGalleryFilter').options,o=>[o.value,o.text]);
 const playingGalleryFilters=[['all','全54枚'],['pip','数札40枚'],['court','人物札12枚'],
  ['joker','ジョーカー2枚'],...BUILTIN_PLAYING.suits.map(s=>[s.id,s.name+'13枚'])];
-function galleryPlaying(){return isPlayingBlueprint(blueprintFor(GALLERY.deckId))}
+function galleryBlueprint(){return blueprintFor(GALLERY.deckId)}
+function galleryPlaying(){return isPlayingBlueprint(galleryBlueprint())}
 function galleryFilters(){
- const picker=$('cardGalleryFilter'),filters=galleryPlaying()?playingGalleryFilters:tarotGalleryFilters;
+ const blueprint=galleryBlueprint(),all=blueprint?TabulaDeckBlueprint.generate(blueprint):null;
+ const picker=$('cardGalleryFilter');
+ const customFilters=blueprint&&!galleryPlaying()?[
+  ['all','全'+all.length+'枚'],
+  ['pip','一般札 '+all.filter(c=>c.rankId&&!TabulaDeckBlueprint.isPlayingCourt(c)).length+'枚'],
+  ['court','人物相当札 '+all.filter(c=>TabulaDeckBlueprint.isPlayingCourt(c)).length+'枚'],
+  ['other','単独カード '+all.filter(c=>!c.suitId&&!c.rankId&&c.kind!=='joker').length+'枚'],
+  ...blueprint.suits.map(s=>[s.id,s.name+' '+all.filter(c=>c.suitId===s.id).length+'枚'])
+ ]:[];
+ const filters=blueprint?(galleryPlaying()?playingGalleryFilters:customFilters):tarotGalleryFilters;
  const old=picker.value;
- if(picker.options.length!==filters.length)picker.replaceChildren(...filters.map(([value,label])=>new Option(label,value)));
+ if(picker.options.length!==filters.length||[...picker.options].some((o,i)=>o.value!==filters[i][0]||o.textContent!==filters[i][1]))
+  picker.replaceChildren(...filters.map(([value,label])=>new Option(label,value)));
  picker.value=filters.some(([value])=>value===old)?old:'all';
  const gallery=$('cardGallery');
- gallery.querySelector('.gallery-brand').textContent=galleryPlaying()?blueprintFor(GALLERY.deckId)?.name:'TABULA TAROT';
- gallery.querySelector('.gallery-head small').textContent=galleryPlaying()?'THE CARDS · 54枚の図鑑':'THE CARDS · 78枚の図鑑';
- gallery.querySelector('.face-preferences').style.display=galleryPlaying()?'none':'';
+ gallery.querySelector('.gallery-brand').textContent=blueprint?.name||'TABULA TAROT';
+ gallery.querySelector('.gallery-head small').textContent='THE CARDS · '+(all?.length??galleryDeck()?.included.length??78)+'枚の図鑑';
+ gallery.querySelector('.face-preferences').style.display=blueprint?'none':'';
 }
 function galleryDeck(){return deckLibrary.find(d=>d.id===GALLERY.deckId)||null}
 function gallerySimple(){return GALLERY.deckId==='simple'||!!galleryDeck()&&galleryDeck().faceStyle==='simple'}
 function galleryCard(c){
- if(galleryPlaying()){const b=blueprintFor(GALLERY.deckId),set=activeBlueprintNameSet(b);return {...c,name:c.names?.[set]||(set==='primary'?c.name:TabulaDeckBlueprint.playingName(c,set))};}
+ if(galleryBlueprint()){const b=galleryBlueprint(),set=activeBlueprintNameSet(b);return {...c,name:galleryPlaying()?(c.names?.[set]||(set==='primary'?c.name:TabulaDeckBlueprint.playingName(c,set))):TabulaDeckBlueprint.nameOf(c,set)};}
  const d=galleryDeck();
  const language=d?.language||effectiveCardLanguage();
  return {...c,name:d?.names?.[c.id]||TabulaDeckStore.translatedName(c,language),
@@ -2867,7 +2878,7 @@ function galleryDeckOptions(){
  const picker=$('cardGalleryDeck'),previous=GALLERY.deckId;
  picker.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id));
  for(const deck of deckLibrary)picker.add(new Option(deck.name,deck.id));
- for(const deck of TabulaDeckBlueprint.load().filter(isPlayingBlueprint))picker.add(new Option(deck.name,deck.id));
+ for(const deck of TabulaDeckBlueprint.load())picker.add(new Option(deck.name+(isPlayingBlueprint(deck)?'（PLAYING CARD）':'（設計室）'),deck.id));
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
  picker.value=GALLERY.deckId;
 }
@@ -2894,22 +2905,39 @@ function gallerySimpleArtwork(c){
  gallerySimpleObserver?.observe(frame);
  return frame;
 }
+function galleryBlueprintArtwork(c){
+ // Scale the same 90 × 135 face that appears on the tabletop, including
+ // SVG courts, arbitrary suit symbols and multi-line oracle inscriptions.
+ const frame=document.createElement('div');
+ frame.className='card-art gallery-blueprint-face';
+ const face=document.createElement('div');
+ face.className='face front gallery-blueprint-inner';
+ face.innerHTML=blueprintCardMarkup(c);
+ face.style.transform='scale(1)';
+ frame.append(face);
+ frame.setAttribute('role','img');
+ frame.setAttribute('aria-label',galleryCard(c).name);
+ gallerySimpleObserver?.observe(frame);
+ return frame;
+}
 function galleryArtwork(c){
- if(galleryPlaying()){
-  const template=document.createElement('template');
-  template.innerHTML=blueprintCardMarkup(c);
-  const artwork=template.content.firstElementChild;
-  artwork.classList.add('card-art');
-  return artwork;
- }
+ if(galleryBlueprint())return galleryBlueprintArtwork(c);
  if(gallerySimple())return gallerySimpleArtwork(c);
  const img=document.createElement('img');
  return setCardArtwork(img,finishedCardSource(c,false,'standard',galleryDeck()));
 }
 function gallerySelection(){
  const v=$('cardGalleryFilter').value,d=galleryDeck();
- if(galleryPlaying())return TabulaDeckBlueprint.generate(blueprintFor(GALLERY.deckId)).map(c=>({...c,group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId,symbol:c.symbol||blueprintFor(GALLERY.deckId).suits.find(s=>s.id===c.suitId)?.symbol||'✦',cardColor:c.cardColor||blueprintFor(GALLERY.deckId).suits.find(s=>s.id===c.suitId)?.color||'black',rankLabel:c.number})).filter(c=>
-  v==='all'||v==='pip'&&c.group==='minor'||v==='court'&&c.group==='court'||v==='joker'&&c.kind==='joker'||c.suit===v);
+ if(galleryBlueprint()){
+  const blueprint=galleryBlueprint(),suits=new Map(blueprint.suits.map(s=>[s.id,s]));
+  return TabulaDeckBlueprint.generate(blueprint).map(c=>({
+   ...c,group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',
+   suit:c.suitId||null,symbol:c.symbol||suits.get(c.suitId)?.symbol||'✦',
+   cardColor:c.cardColor||suits.get(c.suitId)?.color||'black',rankLabel:c.number
+  })).filter(c=>v==='all'||v==='pip'&&!!c.rankId&&c.group==='minor'
+   ||v==='court'&&c.group==='court'||v==='joker'&&c.kind==='joker'
+   ||v==='other'&&!c.suitId&&!c.rankId&&c.kind!=='joker'||c.suit===v);
+ }
  return cards.filter(c=>{
   if(d&&!d.included.includes(c.id))return false;
   if(v==='all')return true;
@@ -2942,14 +2970,14 @@ function galleryShowLarge(index,origin){
  current.replaceWith(next);
  next.id='cardGalleryLarge';next.setAttribute('aria-label',name);
  if(next.tagName==='IMG')next.alt=name;
- textToggle.hidden=galleryPlaying();textEdit.hidden=galleryPlaying();
+ textToggle.hidden=!!galleryBlueprint();textEdit.hidden=!!galleryBlueprint();
  renderDetailText($('galleryCardText'),c);
  $('cardGalleryLabel').textContent=name+'  ·  '+(GALLERY.index+1)+' / '+all.length;
  $('cardGalleryLightbox').hidden=false;
 }
 function galleryRender(){
  galleryFilters();GALLERY.listed=gallerySelection();
- const total=galleryPlaying()?52:galleryDeck()?.included.length||78;
+ const total=galleryBlueprint()?TabulaDeckBlueprint.generate(galleryBlueprint()).length:galleryDeck()?.included.length||78;
  $('cardGalleryCount').textContent=GALLERY.listed.length+' / '+total+'枚';
  const root=$('cardGalleryGrid');root.replaceChildren();
  for(const [i,c] of GALLERY.listed.entries()){
@@ -2967,7 +2995,7 @@ function galleryRender(){
 function galleryOpen(){
  if(GALLERY.visible)return;GALLERY.visible=true;
  // On first opening, use the active deck as a convenient initial selection.
- GALLERY.deckId=isPlayingBlueprint(activeBlueprint())?settings.deckId:activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin');
+ GALLERY.deckId=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin');
  galleryDeckOptions();
  $('cardGallery').hidden=false;document.body.classList.add('gallery-open');
  $('cardGalleryLightbox').hidden=true;galleryRender();$('cardGalleryClose').focus();
