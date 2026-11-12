@@ -2058,6 +2058,31 @@ function inspectFourSeasonsCompletion(){
    if(el)el.animate([{filter:'brightness(1)'},{filter:'brightness(1.7)'},{filter:'brightness(1)'}],
      {duration:2500,delay:FOUR_SEASONS_FOUNDATIONS.indexOf(v.slot)*300,easing:'ease-in-out'});
   }
+  // Draw the four-season circuit only for the full four-foundation finale.
+  const zone=$('zone'),ns='http://www.w3.org/2000/svg';
+  zone.querySelectorAll('.four-seasons-finale').forEach(el=>el.remove());
+  const layer=document.createElementNS(ns,'svg');
+  layer.setAttribute('viewBox','0 0 100 100');
+  layer.setAttribute('preserveAspectRatio','none');
+  layer.setAttribute('class','four-seasons-finale');
+  layer.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5000;overflow:visible';
+  const points=FOUR_SEASONS_FOUNDATIONS.map(slot=>getSlots()[slot]);
+  for(let i=0;i<points.length;i++){
+   const a=points[i],b=points[(i+1)%points.length];
+   const line=document.createElementNS(ns,'path');
+   line.setAttribute('d','M'+a.x+' '+a.y+' L'+b.x+' '+b.y);
+   line.setAttribute('fill','none');
+   line.setAttribute('stroke','#eacb83');
+   line.setAttribute('stroke-width','0.65');
+   line.setAttribute('stroke-linecap','round');
+   line.setAttribute('pathLength','100');
+   line.style.filter='drop-shadow(0 0 4px #ffdc96)';
+   layer.append(line);
+   line.animate([{strokeDasharray:'0 100',opacity:0},{strokeDasharray:'100 0',opacity:1},{strokeDasharray:'100 0',opacity:0}],
+    {duration:2800,delay:i*260,easing:'ease-in-out',fill:'forwards'});
+  }
+  zone.append(layer);
+  setTimeout(()=>layer.remove(),4200);
   previewVisualEffect(true);
  }
  fourSeasonsWholeSeen=whole;
