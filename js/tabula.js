@@ -1564,7 +1564,7 @@ async function revealFourSeasonsStock(){
  const zone=$('zone'),stock=$('deck');
  const zr=zone.getBoundingClientRect(),sr=stock.getBoundingClientRect();
  const m=metrics(),w=m.w*(tableCamera.scale||1);
- const cx=sr.left+sr.width/2+w*1.5,cy=sr.top+sr.height/2;
+ const cx=sr.left+sr.width/2+w*.3,cy=sr.top+sr.height/2-m.h*(tableCamera.scale||1)*1.2;
  const x=Math.max(7,Math.min(93,(cx-zr.left)/zr.width*100));
  const y=Math.max(8,Math.min(92,(cy-zr.top)/zr.height*100));
  if(!applyDealRemoval())return;
