@@ -1540,9 +1540,27 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.leng
   // Refill the original registered location without creating a second card
   // location. Keep its ID, role and fan properties intact.
   const opening=settings.spread==='fourSeasons'||TabulaTablePiles.roleOf(refillPile)==='waste'||settings.dealFaceUp===true;
+  const sourceRect=$('deck').getBoundingClientRect();
   TabulaTablePiles.drawFromDeck(state,refillPile.id,opening);
   play('deal');render();saveLocal();
   setStatus((slot+1)+'番の空いた束に1枚補充しました。');
+  // Registered pile frames use a different DOM node from loose cards.
+  // Animate their newly dealt top face with the same 320-ms card flight.
+  if(animateArrival&&settings.spread==='fourSeasons'){
+   const face=[...$('zone').querySelectorAll('.table-pile')]
+    .find(el=>el.dataset.pileId===refillPile.id)?.querySelector('.table-pile-top');
+   if(face?.animate){
+    const end=face.getBoundingClientRect();
+    const dx=sourceRect.left+sourceRect.width/2-(end.left+end.width/2);
+    const dy=sourceRect.top+sourceRect.height/2-(end.top+end.height/2);
+    const motion=face.animate([
+     {transform:'translate('+dx+'px,'+dy+'px) scale(.96)',filter:'brightness(1.08)'},
+     {offset:.16,transform:'translate('+(dx*.85)+'px,'+(dy*.85-7)+'px) rotate(-3deg) scale(1.025)'},
+     {transform:'translate(0px,0px) scale(1)',filter:'brightness(1)'}
+    ],{duration:320,easing:'cubic-bezier(.22,.72,.25,1)'});
+    return motion.finished.catch(()=>{});
+   }
+  }
   return Promise.resolve();
  }
  const sourceRect=$(dualSession&&dualSession.activePile==='B'&&!isIndependentTables()?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:settings.dealFaceUp===true,dragOrder:nextPlacedStackOrder()});play('deal');render();
