@@ -120,7 +120,7 @@ function renderCards(){
  const cards=API.generate(def);$('cardCount').textContent=cards.length+'枚';
  const suits=new Map(def.suits.map(s=>[s.id,s]));
  $('cards').innerHTML=cards.map(c=>{
-  const suit=suits.get(c.suitId),symbol=suit?.symbol||'✦',color=suit?.color||'black';
+  const suit=suits.get(c.suitId),symbol=c.symbol||suit?.symbol||'✦',color=c.cardColor||suit?.color||'black';
   const artwork=API.playingFaceMarkup(c,symbol,color);
   const face=artwork||'<span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span>';
   return '<div class="playing-card '+(artwork?'playing-preview':'')+'" style="color:'+API.inkColor(color)+'">'+face+'<span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button type="button" data-card="'+esc(c.id)+'">編集</button></div>';
@@ -129,12 +129,16 @@ function renderCards(){
 function openCardEditor(card){
  const rank=def.ranks.find(r=>r.id===card.rankId);
  const isCourt=API.isPlayingCourt(card);
+ const isSingle=!card.suitId&&!card.rankId;
  const existing=def.cards.find(c=>c.id===card.id)||{};
  const dlg=document.createElement('dialog');dlg.className='card-editor';
  const style=existing.courtStyle||card.courtStyle||'text',emblem=existing.courtEmblem||card.courtEmblem||'crown',frame=existing.courtFrame||card.courtFrame||'shield';
  dlg.innerHTML='<form method="dialog"><h2>カードを編集</h2>'+
   '<label>カード名称<input name="name" maxlength="120" value="'+esc(API.nameOf(card,activeSet))+'"></label>'+
   '<label>番号・表示文字<input name="number" maxlength="24" value="'+esc(card.number)+'"></label>'+
+  (isSingle?'<label>シンボルプリセット<select name="symbolPreset">'+symbolOptions(card.symbol||'✦')+'</select></label>'+
+   '<label>シンボル（自由入力可能）<input name="symbol" maxlength="24" value="'+esc(card.symbol||'✦')+'"></label>'+
+   '<label>シンボルの色<select name="cardColor">'+selectOptions(API.COLORS.map(([id,label])=>[id,label]),card.cardColor||'black')+'</select></label>':'')+
   (isCourt?'<label>人物相当札の図像<select name="courtStyle">'+selectOptions(STYLE_OPTIONS,style)+'</select></label>'+
    '<label>中央の称号<input name="courtTitle" maxlength="48" placeholder="'+esc(rank?.courtTitle||rank?.name||'')+'" value="'+esc(existing.courtTitle||'')+'"></label>'+
    '<label>SVG紋章<select name="courtEmblem">'+selectOptions([['','ランク設定を使用'],...EMBLEMS],existing.courtEmblem||'')+'</select></label>'+
@@ -145,6 +149,7 @@ function openCardEditor(card){
  const close=()=>dlg.close();
  dlg.addEventListener('close',()=>dlg.remove(),{once:true});
  dlg.querySelector('[data-cancel]').onclick=close;
+ if(isSingle){const preset=dlg.querySelector('[name="symbolPreset"]'),free=dlg.querySelector('[name="symbol"]');preset.onchange=()=>{if(preset.value)free.value=preset.value};free.oninput=()=>{preset.value=SYMBOL_PRESETS.some(([value])=>value===free.value)?free.value:''};}
  dlg.querySelector('[data-save]').onclick=()=>{
   const get=name=>dlg.querySelector('[name="'+name+'"]')?.value;
   const update={...existing,id:card.id,number:get('number').trim(),names:{...(existing.names||{})}};
@@ -152,6 +157,7 @@ function openCardEditor(card){
   if(activeSet==='primary')update.name=value||card.name;
   else if(value)update.names[activeSet]=value;
   else delete update.names[activeSet];
+  if(isSingle){update.symbol=get('symbol').trim()||'✦';update.cardColor=get('cardColor');}
   if(isCourt){
    update.courtStyle=get('courtStyle');
    for(const key of ['courtTitle','courtEmblem','courtFrame']){const v=get(key).trim();if(v)update[key]=v;else delete update[key]}
@@ -209,7 +215,7 @@ $('newPlaying').onclick=()=>{if(dirty&&!confirm('未保存の変更を破棄し�
 $('newBlank').onclick=()=>{if(dirty&&!confirm('未保存の変更を破棄しますか？'))return;def=API.blank();savedId=null;dirty=false;activeSet='primary';render();alertStatus('白紙のデッキを用意しました')};
 $('addSuit').onclick=()=>{const i=def.suits.length+1;def.suits.push({id:'s'+Date.now().toString(36),name:'新しいスート'+i,symbol:'✦',color:'black'});setDirty();render()};
 $('addRank').onclick=()=>{const i=def.ranks.length+1;def.ranks.push({id:'r'+Date.now().toString(36),order:i,label:String(i),name:String(i)});setDirty();render()};
-$('addCard').onclick=()=>{const i=def.cards.length+1;def.cards.push({id:'single_'+Date.now().toString(36)+'_'+i,suitId:null,rankId:null,number:String(i),name:'新しいカード',names:{}});setDirty();render()};
+$('addCard').onclick=()=>{const i=def.cards.length+1;def.cards.push({id:'single_'+Date.now().toString(36)+'_'+i,suitId:null,rankId:null,number:String(i),name:'新しいカード',symbol:'✦',cardColor:'black',names:{}});setDirty();render()};
 $('save').onclick=()=>{def.name=$('deckName').value.trim();try{API.save(def);savedId=def.id;dirty=false;refreshSaved();alertStatus('デッキを保存しました（'+API.generate(def).length+'枚）')}catch(e){alertStatus(e.message)}};
 $('saved').onchange=e=>{const id=e.target.value;if(!id)return;if(dirty&&!confirm('未保存の変更を破棄しますか？')){refreshSaved();return}const found=API.load().find(d=>d.id===id);if(found){def=API.clone(found);savedId=id;dirty=false;activeSet='primary';render();alertStatus('保存済みデッキを読み込みました')}};
 $('delete').onclick=()=>{if(!savedId)return alertStatus('保存済みのデッキを選んでください');if(!confirm('このデッキを削除しますか？'))return;API.remove(savedId);savedId=null;def=API.blank();dirty=false;activeSet='primary';render();alertStatus('保存済みのデッキを削除しました')};

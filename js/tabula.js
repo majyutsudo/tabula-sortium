@@ -373,8 +373,8 @@ function blueprintCards(blueprint){
  const nameSet=activeBlueprintNameSet(blueprint);
  return TabulaDeckBlueprint.generate(blueprint).map(c=>{
   const suit=suits.get(c.suitId),rank=ranks.get(c.rankId);
-  return {...c,name:isPlayingBlueprint(blueprint)?(c.names?.[nameSet]||(nameSet==='primary'?c.name:TabulaDeckBlueprint.playingName(c,nameSet))):TabulaDeckBlueprint.nameOf(c,nameSet),group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId||null,symbol:suit?.symbol||'✦',
-   number:rank?.order||0,rankLabel:c.number??rank?.label??'',cardColor:suit?.color||'black'};
+  return {...c,name:isPlayingBlueprint(blueprint)?(c.names?.[nameSet]||(nameSet==='primary'?c.name:TabulaDeckBlueprint.playingName(c,nameSet))):TabulaDeckBlueprint.nameOf(c,nameSet),group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId||null,symbol:c.symbol||suit?.symbol||'✦',
+   number:rank?.order||0,rankLabel:c.number??rank?.label??'',cardColor:c.cardColor||suit?.color||'black'};
  });
 }
 function workingCard(id){return workingCards().find(c=>c.id===id)||null}
@@ -2886,7 +2886,7 @@ function galleryArtwork(c){
 }
 function gallerySelection(){
  const v=$('cardGalleryFilter').value,d=galleryDeck();
- if(galleryPlaying())return TabulaDeckBlueprint.generate(blueprintFor(GALLERY.deckId)).map(c=>({...c,group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId,symbol:blueprintFor(GALLERY.deckId).suits.find(s=>s.id===c.suitId)?.symbol||'✦',cardColor:blueprintFor(GALLERY.deckId).suits.find(s=>s.id===c.suitId)?.color||'black',rankLabel:c.number})).filter(c=>
+ if(galleryPlaying())return TabulaDeckBlueprint.generate(blueprintFor(GALLERY.deckId)).map(c=>({...c,group:c.kind==='joker'?'joker':TabulaDeckBlueprint.isPlayingCourt(c)?'court':'minor',suit:c.suitId,symbol:c.symbol||blueprintFor(GALLERY.deckId).suits.find(s=>s.id===c.suitId)?.symbol||'✦',cardColor:c.cardColor||blueprintFor(GALLERY.deckId).suits.find(s=>s.id===c.suitId)?.color||'black',rankLabel:c.number})).filter(c=>
   v==='all'||v==='pip'&&c.group==='minor'||v==='court'&&c.group==='court'||v==='joker'&&c.kind==='joker'||c.suit===v);
  return cards.filter(c=>{
   if(d&&!d.included.includes(c.id))return false;
