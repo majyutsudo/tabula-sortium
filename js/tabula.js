@@ -606,7 +606,9 @@ function initializePresetFrames(target,spreadId){const slots=presets[spreadId]||
  if(spreadId==='fourSeasons'){
   const old=[[29,17],[48,19],[33,48],[48,48],[63,48],[48,77],[68,17],[29,79],[68,79],[92,48]][i];
   const existing=target.tablePiles.find(p=>p.slot===i);
-  if(existing&&old&&((Math.abs(existing.x-old[0])<.01&&Math.abs(existing.y-old[1])<.01)||(i===9&&Math.abs(existing.x-12)<.01&&Math.abs(existing.y-48)<.01))){existing.x=slot.x;existing.y=slot.y}
+  const previous=[[39,17],[58,19],[43,48],[58,48],[73,48],[58,77],[78,17],[39,79],[78,79],[12,34]][i];
+  const at=(point)=>point&&Math.abs(existing.x-point[0])<.01&&Math.abs(existing.y-point[1])<.01;
+  if(existing&&(at(old)||at(previous)||(i===9&&at([12,48])))){existing.x=slot.x;existing.y=slot.y}
  }
  if(target.tablePiles.some(p=>p.slot===i))return;if(!['pile','tableau','foundation','waste','discard'].includes(role))return;let n=1;while(target.tablePiles.some(p=>p.id==='pile-'+n))n++;target.tablePiles.push({id:'pile-'+n,slot:i,x:slot.x,y:slot.y,role,fan:{dx:0,dy:0},cards:[]})})}
 function getSlots(){return presets[settings.spread]||[];
