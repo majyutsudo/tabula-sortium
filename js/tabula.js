@@ -532,7 +532,7 @@ async function animateMonteArrangement(action,order){
     const dx=old.left-next.left,dy=old.top-next.top;
     if(Math.abs(dx)+Math.abs(dy)<2)continue;
     const motion=node.animate(
-     [{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'translate(0px,0px)'}],
+     [{transform:'translate('+dx+'px,'+dy+'px) '+getComputedStyle(node).transform},{transform:getComputedStyle(node).transform}],
      {duration:330,delay:motions.length*85,easing:'cubic-bezier(.2,.7,.2,1)'});
     motions.push(motion.finished.catch(()=>{}));
    }
@@ -544,8 +544,10 @@ async function animateMonteArrangement(action,order){
    const oldKeys=new Set(before.map(c=>c.key));
    const newCards=state.placed.map((c,i)=>({c,i})).filter(v=>!oldKeys.has(v.c.instanceId||v.c.id));
    const deckRect=$('deck').getBoundingClientRect();
+   for(const {i} of newCards){const node=$('zone').querySelector('.card[data-index="'+i+'"]');if(node)node.style.visibility='hidden'}
    for(const {i} of newCards){
     if(settings.spread!==originalSpread)break;
+    const node=$('zone').querySelector('.card[data-index="'+i+'"]');if(node)node.style.visibility='';
     await animateCardFromDeck(i,deckRect);
     play('deal');
     await new Promise(resolve=>setTimeout(resolve,45));
