@@ -1115,12 +1115,19 @@ function tablePoint(clientX,clientY){
          y:Math.max(4,Math.min(96,(clientY-rect.top)/rect.height*100))};
 }
 function pileAtPoint(clientX,clientY,excludeId=null){
- for(const el of [...$('zone').querySelectorAll('.table-pile')].reverse()){
+ const candidates=[];
+ for(const el of $('zone').querySelectorAll('.table-pile')){
   if(el.dataset.pileId===excludeId)continue;
   const r=el.getBoundingClientRect();
-  if(clientX>=r.left-8&&clientX<=r.right+8&&clientY>=r.top-8&&clientY<=r.bottom+8)return el.dataset.pileId;
+  if(clientX>=r.left-8&&clientX<=r.right+8&&clientY>=r.top-8&&clientY<=r.bottom+8){
+   const dx=clientX-(r.left+r.right)/2,dy=clientY-(r.top+r.bottom)/2;
+   candidates.push({id:el.dataset.pileId,distance:dx*dx+dy*dy});
+  }
  }
- return null;
+ // Nearby physical frames overlap at large card sizes; never choose
+ // whichever happened to render last instead of the closest target.
+ candidates.sort((a,b)=>a.distance-b.distance);
+ return candidates[0]?.id||null;
 }
 function pileDropPosition(clientX,clientY){
  const point=tablePoint(clientX,clientY);
@@ -1339,8 +1346,8 @@ function renderTablePiles(zone,m){
 
   }else{
    const empty=document.createElement('span');empty.className='table-pile-empty';
-   empty.textContent=anchoredSlot?'空き位置 · クリックで補充':'ここへ札を重ねる';
-   if(anchoredSlot){
+   empty.textContent=anchoredSlot?(settings.spread==='fourSeasons'&&pile.slot>=6?'空き位置 · 札を重ねる':'空き位置 · クリックで補充'):'ここへ札を重ねる';
+   if(anchoredSlot&&!(settings.spread==='fourSeasons'&&pile.slot>=6)){
     empty.classList.add('refill-ready');
     empty.title='山札からこの位置に1枚補充';
     empty.addEventListener('click',event=>{
@@ -1394,7 +1401,9 @@ function renderTablePiles(zone,m){
     if(destination&&pile.cards.length){
      const count=pile.cards.length;
      TabulaTablePiles.transfer(state,pile.id,destination,count);
-     TabulaTablePiles.removeEmpty(state,pile.id);
+     // Registered Four Seasons locations survive moving their entire contents.
+     if(!(settings.spread==='fourSeasons'&&Number.isInteger(pile.slot)))
+      TabulaTablePiles.removeEmpty(state,pile.id);
      pileTakeCounts.delete(pile.id);
      setStatus('束ごと'+count+'枚を別の束の上に重ねました。');
     }else{
