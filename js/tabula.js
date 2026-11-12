@@ -1184,8 +1184,15 @@ function renderTablePiles(zone,m){
     face.style.top=(expanded?(pile.cards.length-1-i)*fan.dy*m.h:0)+'px';
     face.style.zIndex=String(10+pile.cards.length-1-i);
     face.style.setProperty('--rotation',((item.angle||0)+(item.reversed&&item.faceUp?180:0))+'deg');
-    if(item.faceUp&&card){face.innerHTML=cardMark(card,appearanceForCard(item));}
-    else{face.innerHTML='<div class="face back"></div>';applyPlayingBack(face.firstElementChild,item.sourceDeck);}
+    if(item.faceUp&&card){
+     // Pile faces have no .card wrapper: preserve the physical card's
+     // angle and reversal visually, including when the pile is fanned.
+     const artwork=document.createElement('div');
+     artwork.className='table-pile-artwork';
+     artwork.style.transform='rotate('+((item.angle||0)+(item.reversed?180:0))+'deg)';
+     artwork.innerHTML=cardMark(card,appearanceForCard(item));
+     face.append(artwork);
+    }else{face.innerHTML='<div class="face back"></div>';applyPlayingBack(face.firstElementChild,item.sourceDeck);}
     el.append(face);faces.push(face);
     return face;
    }
