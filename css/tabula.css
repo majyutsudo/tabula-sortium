@@ -613,7 +613,7 @@ body.gallery-open{overflow:hidden}
 .gallery-tile{background:transparent;border:none;padding:0 0 6px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:7px;color:#ddd0ad;box-shadow:none}
 .gallery-tile:hover{background:transparent}
 .gallery-tile > :is(img,svg.card-art){width:100%;height:auto;max-width:210px;aspect-ratio:2/3;flex:none;object-fit:contain;display:block;border-radius:5px;box-shadow:0 7px 13px #0009}
-.gallery-tile span{font:12px/1.4 'Yu Mincho',serif;text-align:center}
+.gallery-tile > span{font:12px/1.4 'Yu Mincho',serif;text-align:center}
 .gallery-tile:focus-visible :is(img,svg.card-art){outline:3px solid #dbbf7c;outline-offset:3px}
 .gallery-lightbox[hidden]{display:none!important}
 .gallery-lightbox{position:absolute;inset:0;z-index:2;background:#080b0bea;display:flex;flex-direction:column;align-items:center;padding:10px 8px calc(10px + env(safe-area-inset-bottom));gap:6px}
@@ -1643,4 +1643,23 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
   width:min(calc(100vw - 106px),440px,calc(50dvh * 2 / 3));
   max-height:50dvh;
  }
+}
+
+/* v0.489 — fixed 90 × 135 card typography; only the entire card scales.
+   VW-based typography would be multiplied AGAIN by the gallery transform,
+   clipping oracle inscriptions and over-enlarging the title. */
+.gallery-blueprint-inner .blueprint-card-face{width:100%;height:100%;min-height:0}
+.gallery-blueprint-inner .blueprint-card-rank{font-size:11px;line-height:1}
+.gallery-blueprint-inner .blueprint-card-symbol{font-size:27px;line-height:1}
+.gallery-blueprint-inner .blueprint-card-title{font-size:9px;line-height:1.2}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-emblem{font-size:11px;line-height:1;max-height:20%}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-content{gap:3px}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-title{font-size:12px;line-height:1.2}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-subtitle{font-size:8px;line-height:1.2}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-rule{font-size:7px;line-height:1;gap:3px}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-card-oracle-line{font-size:7px;line-height:1.45;max-height:5.8em;white-space:pre-line}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-footer{font-size:7px;line-height:1}
+@media(max-width:780px){
+ .gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-title{font-size:12px}
+ .gallery-blueprint-inner .blueprint-oracle-face .blueprint-card-oracle-line{font-size:7px}
 }
