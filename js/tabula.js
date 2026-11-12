@@ -567,20 +567,6 @@ $('quickCompactMonte').onclick=()=>executeArrangement('compact');
 function executeArrangement(action){
  if(dualSession||spreadWorkbench){setStatus('この卓のカード配置を編集中は整理できません。');return}
  if(autoDealBusy||openingBusy){setStatus('配札またはオープンが終わってから操作してください。');return}
- // Repair older Monte Carlo sessions whose off-board cards retained slot IDs.
- if(settings.spread==='monteCarlo'){
-  for(const pile of state.tablePiles||[]){
-   if(Number.isInteger(pile.slot)&&(pile.x<12||pile.x>88||pile.y<3||pile.y>97)){
-    pile.slot=null;
-    pile.cards.forEach(card=>{card.slot=null;card.manualMoved=true});
-   }
-  }
-  for(const card of state.placed){
-   if(Number.isInteger(card.slot)&&(card.x<12||card.x>88||card.y<3||card.y>97)){
-    card.slot=null;card.manualMoved=true;
-   }
-  }
- }
  const order=arrangementOrder();
  if(!order.length){setStatus('整理する配置枠がありません。右下から「＋束を置く」で枠を作れます。');return}
  if(settings.spread==='monteCarlo'&&!dualSession){animateMonteArrangement(action,order).catch(e=>setStatus(e.message));return}
@@ -600,17 +586,17 @@ function executeArrangement(action){
  }catch(e){setStatus(e.message)}
 }
 
-function initializePresetFrames(target,spreadId){const slots=presets[spreadId]||[];if(!Array.isArray(target.tablePiles))target.tablePiles=[];slots.forEach((slot,i)=>{const role=slot.frameRole;if(!role||role==='card')return;
- // Migrate only untouched v0.454 Four Seasons frame positions. Piles the
- // player has manually relocated keep their chosen coordinates.
- if(spreadId==='fourSeasons'){
-  const old=[[29,17],[48,19],[33,48],[48,48],[63,48],[48,77],[68,17],[29,79],[68,79],[92,48]][i];
-  const existing=target.tablePiles.find(p=>p.slot===i);
-  const previous=[[39,17],[58,19],[43,48],[58,48],[73,48],[58,77],[78,17],[39,79],[78,79],[12,34]][i];
-  const at=(point)=>point&&Math.abs(existing.x-point[0])<.01&&Math.abs(existing.y-point[1])<.01;
-  if(existing&&(at(old)||at(previous)||(i===9&&at([12,48]))||(i===6&&at([78,17]))||(i===8&&at([78,79])))){existing.x=slot.x;existing.y=slot.y}
- }
- if(target.tablePiles.some(p=>p.slot===i))return;if(!['pile','tableau','foundation','waste','discard'].includes(role))return;let n=1;while(target.tablePiles.some(p=>p.id==='pile-'+n))n++;target.tablePiles.push({id:'pile-'+n,slot:i,x:slot.x,y:slot.y,role,fan:{dx:0,dy:0},cards:[]})})}
+function initializePresetFrames(target,spreadId){
+ const slots=presets[spreadId]||[];
+ if(!Array.isArray(target.tablePiles))target.tablePiles=[];
+ slots.forEach((slot,i)=>{
+  const role=slot.frameRole;
+  if(!role||role==='card'||target.tablePiles.some(p=>p.slot===i))return;
+  if(!['pile','tableau','foundation','waste','discard'].includes(role))return;
+  let n=1;while(target.tablePiles.some(p=>p.id==='pile-'+n))n++;
+  target.tablePiles.push({id:'pile-'+n,slot:i,x:slot.x,y:slot.y,role,fan:{dx:0,dy:0},cards:[]});
+ });
+}
 function getSlots(){return presets[settings.spread]||[];
 }function metrics(){const rect=$('zone').getBoundingClientRect();const z={width:$('zone').offsetWidth,height:$('zone').offsetHeight};const scale=zoom;const pc=window.innerWidth>780;const w=(settings.spread==='monteCarlo'?Math.min(z.width*.105,z.height*.112,pc?72:55):Math.min(z.width*(pc?.129:.12),z.height*(pc?.268:.25),pc?92:85))*scale;return{w,h:w*1.52,z:rect}}function shortName(c){c=displayCard(c);if(activeDeck()&&activeDeck().names[c.id])return c.name;if(c.group==='major')return c.name;const nm={wands:'ワンド',cups:'カップ',swords:'ソード',pentacles:'ペンタクル'}[c.suit]||'';const rank=c.number<=10?(c.number===1?'A':String(c.number)):['ペイジ','ナイト','クイーン','キング'][c.number-11];return nm+(c.number<=10?rank:'の'+rank)}const TABULA_TAROT_IMAGES={"major_00":"images/decks/tabula-tarot/base/major_00.webp","major_01":"images/decks/tabula-tarot/base/major_01.webp","major_02":"images/decks/tabula-tarot/base/major_02.webp","major_03":"images/decks/tabula-tarot/base/major_03.webp","major_04":"images/decks/tabula-tarot/base/major_04.webp","major_05":"images/decks/tabula-tarot/base/major_05.webp","major_06":"images/decks/tabula-tarot/base/major_06.webp","major_07":"images/decks/tabula-tarot/base/major_07.webp","major_08":"images/decks/tabula-tarot/base/major_08.webp","major_09":"images/decks/tabula-tarot/base/major_09.webp","major_10":"images/decks/tabula-tarot/base/major_10.webp","major_11":"images/decks/tabula-tarot/base/major_11.webp","major_12":"images/decks/tabula-tarot/base/major_12.webp","major_13":"images/decks/tabula-tarot/base/major_13.webp","major_14":"images/decks/tabula-tarot/base/major_14.webp","major_15":"images/decks/tabula-tarot/base/major_15.webp","major_16":"images/decks/tabula-tarot/base/major_16.webp","major_17":"images/decks/tabula-tarot/base/major_17.webp","major_18":"images/decks/tabula-tarot/base/major_18.webp","major_19":"images/decks/tabula-tarot/base/major_19.webp","major_20":"images/decks/tabula-tarot/base/major_20.webp","major_21":"images/decks/tabula-tarot/base/major_21.webp","wands_14":"images/decks/tabula-tarot/base/wands_14.webp","wands_13":"images/decks/tabula-tarot/base/wands_13.webp","wands_12":"images/decks/tabula-tarot/base/wands_12.webp","wands_11":"images/decks/tabula-tarot/base/wands_11.webp","cups_14":"images/decks/tabula-tarot/base/cups_14.webp","cups_13":"images/decks/tabula-tarot/base/cups_13.webp","cups_12":"images/decks/tabula-tarot/base/cups_12.webp","cups_11":"images/decks/tabula-tarot/base/cups_11.webp","swords_14":"images/decks/tabula-tarot/base/swords_14.webp","swords_13":"images/decks/tabula-tarot/base/swords_13.webp","swords_12":"images/decks/tabula-tarot/base/swords_12.webp","swords_11":"images/decks/tabula-tarot/base/swords_11.webp","pentacles_14":"images/decks/tabula-tarot/base/pentacles_14.webp","pentacles_13":"images/decks/tabula-tarot/base/pentacles_13.webp","pentacles_12":"images/decks/tabula-tarot/base/pentacles_12.webp","pentacles_11":"images/decks/tabula-tarot/base/pentacles_11.webp","wands_01":"images/decks/tabula-tarot/base/wands_01.webp","wands_02":"images/decks/tabula-tarot/base/wands_02.webp","wands_03":"images/decks/tabula-tarot/base/wands_03.webp","wands_04":"images/decks/tabula-tarot/base/wands_04.webp","wands_05":"images/decks/tabula-tarot/base/wands_05.webp","wands_06":"images/decks/tabula-tarot/base/wands_06.webp","wands_07":"images/decks/tabula-tarot/base/wands_07.webp","wands_08":"images/decks/tabula-tarot/base/wands_08.webp","wands_09":"images/decks/tabula-tarot/base/wands_09.webp","wands_10":"images/decks/tabula-tarot/base/wands_10.webp","cups_01":"images/decks/tabula-tarot/base/cups_01.webp","cups_02":"images/decks/tabula-tarot/base/cups_02.webp","cups_03":"images/decks/tabula-tarot/base/cups_03.webp","cups_04":"images/decks/tabula-tarot/base/cups_04.webp","cups_05":"images/decks/tabula-tarot/base/cups_05.webp","cups_06":"images/decks/tabula-tarot/base/cups_06.webp","cups_07":"images/decks/tabula-tarot/base/cups_07.webp","cups_08":"images/decks/tabula-tarot/base/cups_08.webp","cups_09":"images/decks/tabula-tarot/base/cups_09.webp","cups_10":"images/decks/tabula-tarot/base/cups_10.webp","swords_01":"images/decks/tabula-tarot/base/swords_01.webp","swords_02":"images/decks/tabula-tarot/base/swords_02.webp","swords_03":"images/decks/tabula-tarot/base/swords_03.webp","swords_04":"images/decks/tabula-tarot/base/swords_04.webp","swords_05":"images/decks/tabula-tarot/base/swords_05.webp","swords_06":"images/decks/tabula-tarot/base/swords_06.webp","swords_07":"images/decks/tabula-tarot/base/swords_07.webp","swords_08":"images/decks/tabula-tarot/base/swords_08.webp","swords_09":"images/decks/tabula-tarot/base/swords_09.webp","swords_10":"images/decks/tabula-tarot/base/swords_10.webp","pentacles_01":"images/decks/tabula-tarot/base/pentacles_01.webp","pentacles_02":"images/decks/tabula-tarot/base/pentacles_02.webp","pentacles_03":"images/decks/tabula-tarot/base/pentacles_03.webp","pentacles_04":"images/decks/tabula-tarot/base/pentacles_04.webp","pentacles_05":"images/decks/tabula-tarot/base/pentacles_05.webp","pentacles_06":"images/decks/tabula-tarot/base/pentacles_06.webp","pentacles_07":"images/decks/tabula-tarot/base/pentacles_07.webp","pentacles_08":"images/decks/tabula-tarot/base/pentacles_08.webp","pentacles_09":"images/decks/tabula-tarot/base/pentacles_09.webp","pentacles_10":"images/decks/tabula-tarot/base/pentacles_10.webp"};
 function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint())return blueprintCardMarkup(c);
@@ -3030,7 +3016,6 @@ const labelCycleKey='tabula_label_cycle_v1';
 let labelCycleModes=['card','position','off'];
 try{const saved=JSON.parse(localStorage.getItem(labelCycleKey)||'null');if(Array.isArray(saved)){const valid=labelChoices.map(x=>x[0]).filter(id=>saved.includes(id));if(valid.length)labelCycleModes=valid;}}catch(e){}
 if(!labelChoices.some(c=>c[0]===labelMode))labelMode='card';
-// Preserve older saved display modes even when they were not in the default cycle.
 if(!labelCycleModes.includes(labelMode))labelCycleModes=labelChoices.map(x=>x[0]).filter(id=>labelCycleModes.includes(id)||id===labelMode);
 const labelSelect=document.createElement('select');labelSelect.id='tableLabelMode';labelSelect.setAttribute('aria-label','現在の卓上ラベル');labelSelect.hidden=true;
 for(const [value,name] of labelChoices){const o=document.createElement('option');o.value=value;o.textContent=name;labelSelect.append(o)}
