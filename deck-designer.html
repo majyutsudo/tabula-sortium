@@ -6,26 +6,41 @@
 .playing-card.playing-preview{aspect-ratio:auto;align-self:start;gap:4px;background:transparent;color:#eae2d2;border:0;padding:0;box-shadow:none}
 .playing-preview .playing-card-face-svg{display:block;width:100%;height:auto;box-shadow:0 3px 9px #0006;border-radius:6px}
 .playing-preview button{background:#353131}
+.playing-preview .card-title{color:#eee1c8!important;min-height:32px;display:flex;align-items:center;justify-content:center;text-align:center;font:12px/1.4 sans-serif;padding:0 2px;overflow-wrap:anywhere}
+.playing-preview button[data-card]{color:#f5e5cb!important;border:1px solid #a58b67!important;background:#354039!important;min-height:29px;width:100%;font:12px sans-serif}
+.playing-preview button[data-card]:hover{background:#52604c!important}
+.line.rank{grid-template-columns:minmax(52px,1fr) minmax(68px,1fr) minmax(88px,1fr) auto}
+.rank-court-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;border:1px solid #5c584d;border-radius:6px;padding:9px;margin:0 0 11px;background:#292d30}
+.rank-court-settings label{font-size:11px}.rank-court-settings input,.rank-court-settings select{width:100%}
+@media(max-width:800px){.line.rank{grid-template-columns:minmax(40px,1fr) minmax(48px,1fr) minmax(85px,1fr) auto}}
+dialog.card-editor{width:min(440px,calc(100vw - 24px));max-height:90dvh;overflow:auto;color:#f1e3d0;background:#282b2b;border:1px solid #b69b70;border-radius:10px;box-shadow:0 20px 60px #000a;padding:20px}
+dialog.card-editor::backdrop{background:#090e11bd}
+.card-editor form{display:grid;gap:11px}.card-editor label{display:grid;gap:4px}.card-editor input,.card-editor select{width:100%}.card-editor-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.card-editor-help{color:#c9bea8;font:12px/1.5 sans-serif;margin:0}
 </style></head><body>
 <header><a href="index.html">← TABULA の卓へ戻る</a><h1>デッキ設計室 <small>試作</small></h1><p>スートとランクからカードを生成し、一枚ずつ名称や番号を編集できます。保存後にTABULAの卓へ戻り、「使用デッキ」から選ぶと配札できます。</p></header>
 <main><section>
 <div class="panel"><h2>デッキ</h2><label>保存済みデッキ<select id="saved"></select></label><div class="actions"><button id="newPlaying">トランプ52枚の雛形</button><button id="newBlank">白紙から作成</button></div><label>デッキ名<input id="deckName" maxlength="80"></label><div class="actions"><button id="save">保存</button><button id="export">JSONを書き出し</button><button id="delete">保存済みを削除</button></div><div id="status" role="status"></div><p class="hint">この段階の保存先は使用中のブラウザーです。別端末で使うにはJSONの書き出しをご利用ください。</p></div>
 <div class="panel"><h2>カード名称セット</h2><p class="hint">翻訳、別名、象徴名などを自由に登録できます。未入力なら基本名称を表示します。</p><label>編集中の名称セット<select id="nameSet"></select></label><div class="actions"><button id="addNameSet">＋ 名称セット</button><button id="renameNameSet">名前を変更</button><button id="removeNameSet">削除</button></div></div>
 <div class="panel"><h2>スート（独立定義）</h2><div id="suits"></div><button id="addSuit">＋ スート</button><p class="hint">スートIDはカードの識別に使用します。名称と記号は自由に変更できます。</p></div>
-<div class="panel"><h2>ランク（独立定義）</h2><div id="ranks"></div><button id="addRank">＋ ランク</button></div>
+<div class="panel"><h2>ランク（独立定義）</h2><p class="hint">任意のランクを人物相当札に指定できます。文字紋章はSVGで描画し、札ごとにも変更できます。</p><div id="ranks"></div><button id="addRank">＋ ランク</button></div>
 <div class="panel"><h2>単独カード</h2><p class="hint">スート×ランクに当てはまらないカードも一枚ずつ追加できます。</p><button id="addCard">＋ カードを一枚追加</button></div>
 </section><section><div class="panel"><div class="card-list-title"><h2>カード一覧 <span id="cardCount"></span></h2><span class="hint">カードを押して個別編集</span></div><div id="cards" class="cards"></div></div></section></main>
-<script src="js/deck-blueprint.js?v=0380"></script>
+<script src="js/deck-blueprint.js?v=0479"></script>
 <script>
 (()=>{'use strict';
 const API=TabulaDeckBlueprint,$=id=>document.getElementById(id);
 let def=API.playingCards(),savedId=null,dirty=false,activeSet='primary';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const selectOptions=(items,selected)=>items.map(([value,label])=>'<option value="'+esc(value)+'"'+(selected===value?' selected':'')+'>'+esc(label)+'</option>').join('');
+const EMBLEMS=API.COURT_EMBLEMS,FRAMES=API.COURT_FRAMES;
+const STYLE_OPTIONS=[['portrait','従来の人物画（標準トランプのみ）'],['text','文字＋SVG紋章']];
+const RANK_KINDS=[['pip','数札・一般札'],['court','人物相当札']];
 const SYMBOL_PRESETS=[
  ['','自由入力'],
  ['♠','♠ スペード'],['♥','♥ ハート'],['♦','♦ ダイヤ'],['♣','♣ クラブ'],
  ['★','★ 星（塗り）'],['☆','☆ 星（輪郭）'],['✦','✦ 四芒星'],['✧','✧ 四芒星（輪郭）'],
- ['⛤','⛤ 五芒星'],['⛥','⛥ 逆五芒星'],
+ ['⛤','⛤ 五芒星'],
  ['☀','☀ 太陽'],['☼','☼ 太陽（光線）'],['☾','☾ 三日月'],['☽','☽ 月（反転）'],
  ['☿','☿ 水星'],['♀','♀ 金星'],['♂','♂ 火星'],['♃','♃ 木星'],['♄','♄ 土星'],
  ['☉','☉ 太陽（天文）'],['☯','☯ 陰陽'],
@@ -48,9 +63,11 @@ function render(){
  for(const [kind,items] of [['suits',def.suits],['ranks',def.ranks]]){
   $(kind).innerHTML=items.map((item,i)=>{
    const columns=kind==='suits'?
-     '<label>名称<input data-kind="suits" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>記号<select data-symbol-preset data-i="'+i+'">'+symbolOptions(item.symbol)+'</select><input data-kind="suits" data-i="'+i+'" data-prop="symbol" value="'+esc(item.symbol)+'" aria-label="記号を自由入力"></label><label>色<select data-kind="suits" data-i="'+i+'" data-prop="color">'+API.COLORS.map(([id,label,ink])=>'<option value="'+id+'" '+(item.color===id?'selected':'')+'>'+label+'</option>').join('')+'</select></label>':
-     '<label>表示<input data-kind="ranks" data-i="'+i+'" data-prop="label" value="'+esc(item.label)+'"></label><label>名称<input data-kind="ranks" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label>';
-   return '<div class="line '+(kind==='ranks'?'rank':'')+'">'+columns+'<button data-remove="'+kind+'" data-i="'+i+'" title="削除">×</button></div>';
+     '<label>名称<input data-kind="suits" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>記号<select data-symbol-preset data-i="'+i+'">'+symbolOptions(item.symbol)+'</select><input data-kind="suits" data-i="'+i+'" data-prop="symbol" value="'+esc(item.symbol)+'" aria-label="記号を自由入力"></label><label>色<select data-kind="suits" data-i="'+i+'" data-prop="color">'+API.COLORS.map(([id,label])=>'<option value="'+id+'" '+(item.color===id?'selected':'')+'>'+label+'</option>').join('')+'</select></label>':
+     '<label>表示<input data-kind="ranks" data-i="'+i+'" data-prop="label" value="'+esc(item.label)+'"></label><label>名称<input data-kind="ranks" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>種類<select data-kind="ranks" data-i="'+i+'" data-prop="faceKind">'+selectOptions(RANK_KINDS,item.faceKind==='court'?'court':'pip')+'</select></label>';
+   const extra=kind==='ranks'&&item.faceKind==='court'?
+     '<div class="rank-court-settings"><label>人物札の図像<select data-kind="ranks" data-i="'+i+'" data-prop="courtStyle">'+selectOptions(STYLE_OPTIONS,item.courtStyle||'text')+'</select></label><label>中央の称号<input data-kind="ranks" data-i="'+i+'" data-prop="courtTitle" maxlength="48" value="'+esc(item.courtTitle||item.name)+'"></label><label>紋章<select data-kind="ranks" data-i="'+i+'" data-prop="courtEmblem">'+selectOptions(EMBLEMS,item.courtEmblem||'crown')+'</select></label><label>紋章枠<select data-kind="ranks" data-i="'+i+'" data-prop="courtFrame">'+selectOptions(FRAMES,item.courtFrame||'shield')+'</select></label></div>':'';
+   return '<div class="line '+(kind==='ranks'?'rank':'')+'">'+columns+'<button data-remove="'+kind+'" data-i="'+i+'" title="削除">×</button></div>'+extra;
   }).join('');
  }
  renderCards();
@@ -62,14 +79,50 @@ function renderCards(){
   const suit=suits.get(c.suitId),symbol=suit?.symbol||'✦',color=suit?.color||'black';
   const artwork=API.playingFaceMarkup(c,symbol,color);
   const face=artwork||'<span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span>';
-  return '<div class="playing-card '+(artwork?'playing-preview':'')+'" style="color:'+API.inkColor(color)+'">'+face+'<span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button data-card="'+esc(c.id)+'">編集</button></div>';
+  return '<div class="playing-card '+(artwork?'playing-preview':'')+'" style="color:'+API.inkColor(color)+'">'+face+'<span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button type="button" data-card="'+esc(c.id)+'">編集</button></div>';
  }).join('');
+}
+function openCardEditor(card){
+ const rank=def.ranks.find(r=>r.id===card.rankId);
+ const isCourt=API.isPlayingCourt(card);
+ const existing=def.cards.find(c=>c.id===card.id)||{};
+ const dlg=document.createElement('dialog');dlg.className='card-editor';
+ const style=existing.courtStyle||card.courtStyle||'text',emblem=existing.courtEmblem||card.courtEmblem||'crown',frame=existing.courtFrame||card.courtFrame||'shield';
+ dlg.innerHTML='<form method="dialog"><h2>カードを編集</h2>'+
+  '<label>カード名称<input name="name" maxlength="120" value="'+esc(API.nameOf(card,activeSet))+'"></label>'+
+  '<label>番号・表示文字<input name="number" maxlength="24" value="'+esc(card.number)+'"></label>'+
+  (isCourt?'<label>人物相当札の図像<select name="courtStyle">'+selectOptions(STYLE_OPTIONS,style)+'</select></label>'+
+   '<label>中央の称号<input name="courtTitle" maxlength="48" placeholder="'+esc(rank?.courtTitle||rank?.name||'')+'" value="'+esc(existing.courtTitle||'')+'"></label>'+
+   '<label>SVG紋章<select name="courtEmblem">'+selectOptions([['','ランク設定を使用'],...EMBLEMS],existing.courtEmblem||'')+'</select></label>'+
+   '<label>紋章枠<select name="courtFrame">'+selectOptions([['','ランク設定を使用'],...FRAMES],existing.courtFrame||'')+'</select></label>'+
+   '<p class="card-editor-help">称号・紋章・枠を空欄／標準にするとランク共通の設定を使用します。人物画は標準スートのJ・Q・Kで使用できます。</p>':'')+
+  '<div class="card-editor-actions"><button type="button" data-cancel>キャンセル</button><button type="button" data-save>変更を適用</button></div></form>';
+ document.body.append(dlg);
+ const close=()=>dlg.close();
+ dlg.addEventListener('close',()=>dlg.remove(),{once:true});
+ dlg.querySelector('[data-cancel]').onclick=close;
+ dlg.querySelector('[data-save]').onclick=()=>{
+  const get=name=>dlg.querySelector('[name="'+name+'"]')?.value;
+  const update={...existing,id:card.id,number:get('number').trim(),names:{...(existing.names||{})}};
+  const value=get('name').trim();
+  if(activeSet==='primary')update.name=value||card.name;
+  else if(value)update.names[activeSet]=value;
+  else delete update.names[activeSet];
+  if(isCourt){
+   update.courtStyle=get('courtStyle');
+   for(const key of ['courtTitle','courtEmblem','courtFrame']){const v=get(key).trim();if(v)update[key]=v;else delete update[key]}
+  }
+  const index=def.cards.findIndex(v=>v.id===card.id);
+  if(index<0)def.cards.push(update);else def.cards[index]=update;
+  setDirty();renderCards();close();
+ };
+ dlg.showModal();
 }
 function updateField(e){
  const t=e.target,kind=t.dataset.kind,i=Number(t.dataset.i),key=t.dataset.prop;
  if(!key||!def[kind]?.[i])return;
  def[kind][i][key]=t.value;
- setDirty();renderCards();
+ setDirty();if(kind==='ranks'&&key==='faceKind')render();else renderCards();
 }
 document.addEventListener('change',e=>{
  const preset=e.target.closest('[data-symbol-preset]');
@@ -86,16 +139,7 @@ document.addEventListener('click',e=>{
  const remove=e.target.closest('[data-remove]');if(remove){const k=remove.dataset.remove,i=Number(remove.dataset.i);def[k].splice(i,1);setDirty();render();return}
  const card=e.target.closest('[data-card]');if(!card)return;
  const c=API.generate(def).find(v=>v.id===card.dataset.card);if(!c)return;
- const title=activeSet==='primary'?'基本名称':'「'+API.nameSets(def).find(v=>v.id===activeSet).label+'」の名称（空欄なら基本名称）';
- const name=prompt(title,API.nameOf(c,activeSet));if(name===null)return;
- const number=prompt('カードの番号・表示',c.number);if(number===null)return;
- const previous=def.cards.findIndex(v=>v.id===c.id);
- const update={...c,number:number.trim(),names:{...(c.names||{})}};
- if(activeSet==='primary')update.name=name.trim()||c.name;
- else if(name.trim())update.names[activeSet]=name.trim();
- else delete update.names[activeSet];
- if(previous<0)def.cards.push(update);else def.cards[previous]=update;
- setDirty();renderCards();
+ openCardEditor(c);
 });
 $('nameSet').onchange=e=>{activeSet=e.target.value;render()};
 $('addNameSet').onclick=()=>{

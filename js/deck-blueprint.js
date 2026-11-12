@@ -23,7 +23,7 @@ function playingCards(id=newBlueprintId(),name='プレイングカード（52枚
   {id:'spades',name:'スペード',symbol:'♠',color:'black'},
   {id:'diamonds',name:'ダイヤ',symbol:'♦',color:'red'}
  ];
- const ranks=Array.from({length:13},(_,i)=>({id:'r'+(i+1),order:i+1,label:['A','2','3','4','5','6','7','8','9','10','J','Q','K'][i],name:['エース','2','3','4','5','6','7','8','9','10','ジャック','クイーン','キング'][i]}));
+ const ranks=Array.from({length:13},(_,i)=>({...{id:'r'+(i+1),order:i+1,label:['A','2','3','4','5','6','7','8','9','10','J','Q','K'][i],name:['エース','2','3','4','5','6','7','8','9','10','ジャック','クイーン','キング'][i]},...(i>=10?{faceKind:'court',courtStyle:'portrait',courtTitle:['JACK','QUEEN','KING'][i-10],courtEmblem:['fleur','crown','crown'][i-10],courtFrame:'shield'}:{})}));
  return {id,name,suits,ranks,cards:[],nameSets:[{id:'primary',label:'基本名称'}],version:1};
 }
 // Two distinct physical cards sharing one approved artwork. A Joker belongs to
@@ -77,7 +77,7 @@ function generate(def){
  const overrides=new Map(def.cards.map(c=>[c.id,c]));
  for(const suit of def.suits)for(const rank of def.ranks){
   const id='c_'+suit.id+'_'+rank.id;
-  list.push({...{id,suitId:suit.id,rankId:rank.id,number:rank.label,name:suit.name+'の'+rank.name,names:{}},...clone(overrides.get(id)||{})});
+  list.push({...{id,suitId:suit.id,rankId:rank.id,number:rank.label,name:suit.name+'の'+rank.name,names:{},faceKind:rank.faceKind||undefined,courtStyle:rank.courtStyle||undefined,courtTitle:rank.courtTitle||rank.name,courtEmblem:rank.courtEmblem||'crown',courtFrame:rank.courtFrame||'shield'},...clone(overrides.get(id)||{})});
   ids.add(id);
  }
  for(const c of def.cards){
@@ -88,7 +88,7 @@ function generate(def){
 // The 52-card template keeps its suit and rank IDs even when labels change.
 const playingSuitIds=new Set(['spades','hearts','diamonds','clubs']);
 const courtRanks=new Map([['r11','j'],['r12','q'],['r13','k']]);
-const isPlayingCourt=card=>playingSuitIds.has(card.suitId)&&courtRanks.has(card.rankId);
+const isPlayingCourt=card=>card.faceKind==='court'||(card.faceKind!=='pip'&&playingSuitIds.has(card.suitId)&&courtRanks.has(card.rankId));
 const pipRanks=new Map(Array.from({length:10},(_,i)=>['r'+(i+1),i+1]));
 const center=y=>[60,y];
 const sides=(...rows)=>rows.flatMap(y=>[[38,y],[82,y]]);
@@ -120,9 +120,38 @@ function courtArtwork(card){
  const half=`<g clip-path="url(#${clip})"><image href="${file}" x="4" y="5" width="112" height="97" preserveAspectRatio="none"/></g>`;
  return `<defs><clipPath id="${clip}"><path d="M0 0H120V80.45L0 100.45Z"/></clipPath></defs><g class="playing-card-court">${half}<g transform="rotate(180 60 90)">${half}</g></g>`;
 }
+const COURT_EMBLEMS=Object.freeze([
+ ['crown','王冠'],['fleur','百合紋'],['sun','太陽'],['moon','三日月'],
+ ['star','星章'],['hex','六芒星'],['tower','塔'],['leaf','植物紋']
+]);
+const COURT_FRAMES=Object.freeze([['shield','盾形'],['circle','円形'],['oval','楕円形'],['none','枠なし']]);
+function emblemShape(id){
+ switch(id){
+ case 'crown':return '<path d="M-19 8-22-12-10-4 0-19 10-4 22-12 19 8Z M-19 14H19V19H-19Z"/><circle cx="-22" cy="-12" r="2"/><circle cy="-19" r="2"/><circle cx="22" cy="-12" r="2"/>';
+ case 'fleur':return '<path d="M0-22C-11-11-8-3 0 5C8-3 11-11 0-22ZM-23-3C-20-18-5-10-4 7C-13 4-20 4-23-3ZM23-3C20-18 5-10 4 7C13 4 20 4 23-3ZM-5 5H5V18H-5ZM-13 12H13"/>';
+ case 'sun':return '<circle r="11"/>'+Array.from({length:12},(_,i)=>'<path d="M0-17V-23" transform="rotate('+(i*30)+')"/>').join('');
+ case 'moon':return '<path d="M10-22A23 23 0 1 0 10 22A17 17 0 1 1 10-22Z"/>';
+ case 'star':return '<path d="'+Array.from({length:16},(_,i)=>{const a=-Math.PI/2+i*Math.PI/8,r=i%2?9:22;return (i?'L':'M')+(Math.cos(a)*r).toFixed(2)+' '+(Math.sin(a)*r).toFixed(2)}).join(' ')+'Z"/>';
+ case 'hex':return '<path d="M0-21 19 11H-19Z M0 21-19-11H19Z"/>';
+ case 'tower':return '<path d="M-16 20V-12H-21V-22H-12V-15H-5V-22H5V-15H12V-22H21V-12H16V20Z M-5 20V4A5 5 0 0 1 5 4V20 M-11-7H-5 M5-7H11"/>';
+ case 'leaf':return '<path d="M-3 22C-5 8-1-6 13-19 M-3 11C-19 6-20-6-17-14C-4-13 1-3-3 11ZM3 1C18 0 23-10 21-21C8-20 1-12 3 1Z M-3 18C6 8 13 9 19 12C15 22 7 24-3 18Z"/>';
+ default:return emblemShape('crown');
+ }
+}
+function courtTextArtwork(card){
+ const title=String(card.courtTitle||card.number||'COURT').slice(0,48);
+ const n=Array.from(title).length;
+ const fontSize=n>13?8:n>9?10:n>6?12:n>4?15:18;
+ const shape=emblemShape(card.courtEmblem||'crown');
+ const frame=card.courtFrame||'shield';
+ const outlines={shield:'M-29-29H29V5Q25 30 0 39Q-25 30-29 5Z',circle:'M0-32A32 32 0 1 0 0 32A32 32 0 1 0 0-32Z',oval:'M0-34C-42-34-42 34 0 34C42 34 42-34 0-34Z'};
+ const border=frame==='none'?'':('<path d="'+(outlines[frame]||outlines.shield)+'" fill="none" stroke="currentColor" stroke-width=".8" opacity=".7"/>');
+ const half='<g transform="translate(60 0)"><text x="0" y="32" font-size="'+fontSize+'" font-weight="600" letter-spacing=".4">'+xml(title)+'</text><g transform="translate(0 69) scale(.63)" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+border+'<g>'+shape+'</g></g><path d="M-20 86H20" fill="none" stroke="currentColor" stroke-width=".65" opacity=".65"/></g>';
+ return '<g class="playing-card-heraldic" fill="currentColor" stroke="none">'+half+'<g transform="rotate(180 60 90)">'+half+'</g></g>';
+}
 function needsOrientationMark(card,symbol){
- if(!playingSuitIds.has(card.suitId))return false;
  if(isPlayingCourt(card))return true;
+ if(!playingSuitIds.has(card.suitId))return false;
  const count=pipRanks.get(card.rankId);
  // Seven is asymmetric in its placement, even with a symmetric suit glyph.
  return !!count&&count!==7&&(count%2===0||symbol==='♦'||!suitPaths.has(symbol));
@@ -136,7 +165,7 @@ function playingFaceMarkup(card,symbol,color,rankLabel=card.number,showOrientati
  }
  const count=pipRanks.get(card.rankId);
  const court=isPlayingCourt(card);
- if(!playingSuitIds.has(card.suitId)||(!count&&!court))return '';
+ if((!playingSuitIds.has(card.suitId)&&!court)||(!count&&!court))return '';
  const rank=String(rankLabel??'');
  const rankSize=Math.min(18,36/Math.max(1,Array.from(rank).length));
  const glyph=suitPaths.has(symbol)
@@ -144,14 +173,14 @@ function playingFaceMarkup(card,symbol,color,rankLabel=card.number,showOrientati
   :`<text x="0" y="0" dominant-baseline="central" font-size="24">${xml(symbol)}</text>`;
  const ink=inkColor(color);
  const index=`<text x="13" y="20" font-size="${rankSize}" font-weight="700">${xml(rank)}</text><g transform="translate(13 31) scale(.48)">${glyph}</g>`;
- const design=court?courtArtwork(card):pipLayouts[count].map(([x,y])=>{
+ const design=court?(card.courtStyle==='text'||!playingSuitIds.has(card.suitId)||!courtRanks.has(card.rankId)?courtTextArtwork(card):courtArtwork(card)):pipLayouts[count].map(([x,y])=>{
   const orientation=y>90?' rotate(180)':'';
   const size=count===1?' scale(2)':'';
   return `<g class="playing-card-pip" transform="translate(${x} ${y})${orientation}${size}">${glyph}</g>`;
  }).join('');
  const mark=showOrientationMark&&needsOrientationMark(card,symbol)
   ?'<circle class="playing-card-orientation-mark" cx="107" cy="13" r="2.35" fill="#514940"/>':'';
- return `<svg class="playing-card-face-svg" viewBox="0 0 120 180" aria-hidden="true" focusable="false"><rect x=".75" y=".75" width="118.5" height="178.5" rx="6" fill="#faf5e9" stroke="#c6b79e" stroke-width="1.5"/><g fill="${ink}" text-anchor="middle" font-family="Georgia, serif">${design}${mark}<g class="playing-card-index">${index}</g><g class="playing-card-index" transform="rotate(180 60 90)">${index}</g></g></svg>`;
+ return `<svg class="playing-card-face-svg" viewBox="0 0 120 180" aria-hidden="true" focusable="false"><rect x=".75" y=".75" width="118.5" height="178.5" rx="6" fill="#faf5e9" stroke="#c6b79e" stroke-width="1.5"/><g fill="${ink}" color="${ink}" text-anchor="middle" font-family="Georgia, serif">${design}${mark}<g class="playing-card-index">${index}</g><g class="playing-card-index" transform="rotate(180 60 90)">${index}</g></g></svg>`;
 }
 function nameSets(def){
  const raw=Array.isArray(def.nameSets)?def.nameSets:[];
@@ -177,5 +206,5 @@ function validate(def){
 function load(){try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(saved)?saved:[]}catch{return []}}
 function save(def){validate(def);const all=load().filter(item=>item.id!==def.id);all.push(clone(def));localStorage.setItem(KEY,JSON.stringify(all));return all}
 function remove(id){localStorage.setItem(KEY,JSON.stringify(load().filter(d=>d.id!==id)))}
-root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,needsOrientationMark,nameSets,nameOf,playingName,COLORS,inkColor,validate,load,save,remove,clone});
+root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,needsOrientationMark,nameSets,nameOf,playingName,COURT_EMBLEMS,COURT_FRAMES,COLORS,inkColor,validate,load,save,remove,clone});
 })(globalThis);
