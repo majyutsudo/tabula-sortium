@@ -1550,3 +1550,18 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .table-card-controls #rotateDragMode[aria-pressed="true"]{background:#665239;border-color:#e4c98f;color:#fff2cd}
 #zone .table-pile.is-rotation-selected{outline:2px solid #d4b47b;outline-offset:2px}
 #zone .card.is-selected,#zone .table-pile.is-rotation-selected{touch-action:none}
+
+/* v0.469: external precision rotation grip, shared by cards and physical piles. */
+#zone .rotation-handle{
+ position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);
+ width:38px;height:38px;min-width:38px;min-height:38px;
+ display:flex;align-items:center;justify-content:center;
+ padding:0;border:2px solid #f0cb82;border-radius:50%;
+ background:#26352ff2;color:#ffe1a0;font:26px/1 sans-serif;
+ box-shadow:0 2px 12px #000b;z-index:2500;
+ cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+ -webkit-tap-highlight-color:transparent;
+}
+#zone .rotation-handle:active{cursor:grabbing;background:#4d5234}
+#zone .rotation-handle:focus-visible{outline:3px solid #ffe1a0;outline-offset:3px}
+@media(max-width:780px){#zone .rotation-handle{width:44px;height:44px;min-width:44px;min-height:44px;left:calc(100% + 15px)}}

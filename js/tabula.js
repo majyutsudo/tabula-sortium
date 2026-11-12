@@ -691,17 +691,32 @@ function updateCardSelection(){
  const panel=$('cardControls');
  if(panel)panel.hidden=!(cardValid||pile);
  document.querySelectorAll('#zone .card').forEach(el=>el.classList.toggle('is-selected',cardValid&&Number(el.dataset.index)===i));
+ document.querySelectorAll('#zone .rotation-handle').forEach(el=>el.remove());
  document.querySelectorAll('#zone .table-pile').forEach(el=>el.classList.toggle('is-rotation-selected',!!pile&&el.dataset.pileId===pile.id));
  const toggle=$('rotateDragMode');
  toggle.setAttribute('aria-pressed',String(rotationDragMode));
  toggle.textContent=rotationDragMode?'回転終了':'回転モード';
- toggle.title=rotationDragMode?'通常のカード移動に戻る':'選択したカード・束をドラッグで自由回転';
+ toggle.title=rotationDragMode?'通常のカード移動に戻る':'選択したカード・束の外側のハンドルで自由回転';
  if(!(cardValid||pile))return;
  const target=pile||state.placed[i];
  const definition=!pile?workingCard(target.id):null;
  $('cardSelectionName').textContent=pile?'選択中：'+(pile.slot!=null?'配置 '+(pile.slot+1)+' · ':'')+'束 '+pile.id.replace('pile-',''):
   '選択中：'+(target.faceUp&&definition?definition.name:'伏せ札');
  $('cardAngle').textContent=((Number(target.angle||0)%360)+360)%360+'°';
+ if(rotationDragMode){
+  const element=pile
+   ?$('zone').querySelector('.table-pile[data-pile-id="'+pile.id+'"]')
+   :$('zone').querySelector('.card[data-index="'+i+'"]');
+  if(element){
+   const handle=document.createElement('button');
+   handle.type='button';handle.className='rotation-handle';
+   handle.textContent='⟳';handle.setAttribute('aria-label','ドラッグして回転（直角に吸着）');
+   handle.title='このハンドルをドラッグして回転（0°・90°・180°・270°に吸着）';
+   handle.addEventListener('pointerdown',e=>beginRotationGesture(e,element,target,handle));
+   handle.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
+   element.append(handle);
+  }
+ }
 }
 function selectCard(index){selectedPileId=null;state.selected=index;updateCardSelection()}
 function selectPile(id){selectedPileId=id;state.selected=null;updateCardSelection()}
@@ -709,39 +724,45 @@ function rotateSelected(delta,reset=false){const item=selectedRotationTarget();i
 $('rotateDragMode').addEventListener('click',()=>{
  rotationDragMode=!rotationDragMode;
  updateCardSelection();
- if(rotationDragMode)setStatus('回転モード：選択したカードまたは束をドラッグして角度を調整します。もう一度ボタンを押すと通常操作に戻ります。');
+ if(rotationDragMode)setStatus('回転モード：カード・束の外側に表示される ⟳ ハンドルで角度を調整できます。直角付近では自動吸着します。');
  else setStatus('回転モードを終了しました。');
 });
-// Capture rotation before the usual move, flip, stack and fan handlers.
-// The card stays in place, and a pile rotates as a physical unit.
-function beginRotationGesture(e,element,target){
+// Rotation is initiated exclusively from the external handle. Its capture
+// prevents ordinary card flipping, moving, and pile withdrawal from starting.
+function beginRotationGesture(e,element,target,handle){
  if(!rotationDragMode||e.button!==0||!target)return false;
- e.preventDefault();e.stopImmediatePropagation();
+ e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
  const bounds=element.getBoundingClientRect(),cx=(bounds.left+bounds.right)/2,cy=(bounds.top+bounds.bottom)/2;
  const initial=Number(target.angle)||0;
  const pointerStart=Math.atan2(e.clientY-cy,e.clientX-cx);
  const pointerId=e.pointerId;
- element.setPointerCapture(pointerId);
+ const snapAngle=degrees=>{
+  const normalized=((degrees%360)+360)%360;
+  const nearest=Math.round(normalized/90)*90;
+  const distance=Math.abs(((normalized-nearest+540)%360)-180);
+  return distance<=7?nearest%360:Math.round(normalized*10)/10;
+ };
+ handle.setPointerCapture(pointerId);
  const move=ev=>{
   if(ev.pointerId!==pointerId)return;
+  ev.stopPropagation();
   const diff=(Math.atan2(ev.clientY-cy,ev.clientX-cx)-pointerStart)*180/Math.PI;
-  const degrees=Math.round((initial+diff)*10)/10;
-  target.angle=((degrees%360)+360)%360;
+  target.angle=snapAngle(initial+diff);
   if(element.classList.contains('table-pile'))element.style.transform='translate(-50%,-50%) rotate('+target.angle+'deg)';
   else element.style.setProperty('--rotation',cardDisplayRotation(target)+'deg');
-  $('cardAngle').textContent=Math.round(target.angle*10)/10+'°';
+  $('cardAngle').textContent=target.angle+'°';
  };
- const finish=ev=>{if(ev.pointerId!==pointerId)return;cleanup();render();saveLocal()};
- const cancel=ev=>{if(ev.pointerId!==pointerId)return;target.angle=initial;cleanup();render()};
+ const finish=ev=>{if(ev.pointerId!==pointerId)return;ev.stopPropagation();cleanup();render();saveLocal()};
+ const cancel=ev=>{if(ev.pointerId!==pointerId)return;ev.stopPropagation();target.angle=initial;cleanup();render()};
  const cleanup=()=>{
-  element.removeEventListener('pointermove',move,true);
-  element.removeEventListener('pointerup',finish,true);
-  element.removeEventListener('pointercancel',cancel,true);
-  if(element.hasPointerCapture(pointerId))element.releasePointerCapture(pointerId);
+  handle.removeEventListener('pointermove',move);
+  handle.removeEventListener('pointerup',finish);
+  handle.removeEventListener('pointercancel',cancel);
+  if(handle.hasPointerCapture(pointerId))handle.releasePointerCapture(pointerId);
  };
- element.addEventListener('pointermove',move,true);
- element.addEventListener('pointerup',finish,true);
- element.addEventListener('pointercancel',cancel,true);
+ handle.addEventListener('pointermove',move);
+ handle.addEventListener('pointerup',finish);
+ handle.addEventListener('pointercancel',cancel);
  return true;
 }
 $('rotateLeft').addEventListener('click',()=>rotateSelected(-90));$('rotateFineLeft').addEventListener('click',()=>rotateSelected(-15));$('rotateZero').addEventListener('click',()=>rotateSelected(0,true));$('rotateFineRight').addEventListener('click',()=>rotateSelected(15));$('rotateRight').addEventListener('click',()=>rotateSelected(90));
@@ -1065,7 +1086,7 @@ function updateStackIntent(active,node){
 function cardHTML(item,index){const c=workingCard(item.id)||workingCards()[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;node.dataset.appearance=appearanceForCard(item);if(node.dataset.appearance==='worn'){node.dataset.wearVariant=wearVariant(item);if(wornMaterialAvailable(item.id))node.dataset.wornAsset='true'}if(item.sourceDeck){node.dataset.sourceDeck=item.sourceDeck;node.dataset.backTone=dualBackTone(item.sourceDeck)}if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
- node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;applyPlayingBack(node.querySelector('.face.back'),item.sourceDeck);node.addEventListener('pointerdown',e=>{if(rotationDragMode&&state.selected===index&&!selectedPileId)beginRotationGesture(e,node,item)},true);node.addEventListener('pointerdown',e=>{if(pilePlacementArmed||e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;drag.longPress=armCardLongPress(e,()=>selectCard(index));node.setPointerCapture(e.pointerId);
+ node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;applyPlayingBack(node.querySelector('.face.back'),item.sourceDeck);node.addEventListener('pointerdown',e=>{if(pilePlacementArmed||e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;drag.longPress=armCardLongPress(e,()=>selectCard(index));node.setPointerCapture(e.pointerId);
 // Each grab raises the selected card to the highest persistent stack layer.
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
@@ -1190,7 +1211,7 @@ function renderTablePiles(zone,m){
  for(const pile of TabulaTablePiles.piles(state)){
   const el=document.createElement('div');el.className='table-pile';el.dataset.pileId=pile.id;
   el.style.left=pile.x+'%';el.style.top=pile.y+'%';el.style.width=m.w+'px';el.style.height=m.h+'px';el.style.transform='translate(-50%,-50%) rotate('+(Number(pile.angle)||0)+'deg)';
-  el.addEventListener('pointerdown',e=>{if(rotationDragMode&&selectedPileId===pile.id)beginRotationGesture(e,el,pile)},true);
+  
   const title=document.createElement('button');title.type='button';title.className='table-pile-handle';
   const roleLabels={pile:'束',tableau:'場札',foundation:'組札',waste:'タロン',discard:'捨て札'};
   const role=TabulaTablePiles.roleOf(pile);
