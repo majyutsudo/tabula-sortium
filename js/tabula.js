@@ -492,6 +492,14 @@ $('quickCompactMonte').onclick=()=>executeArrangement('compact');
 function executeArrangement(action){
  if(dualSession||spreadWorkbench){setStatus('この卓のカード配置を編集中は整理できません。');return}
  if(autoDealBusy||openingBusy){setStatus('配札またはオープンが終わってから操作してください。');return}
+ // Repair older Monte Carlo sessions whose off-board cards retained slot IDs.
+ if(settings.spread==='monteCarlo'){
+  for(const card of state.placed){
+   if(Number.isInteger(card.slot)&&(card.x<12||card.x>88||card.y<3||card.y>97)){
+    card.slot=null;card.manualMoved=true;
+   }
+  }
+ }
  const order=arrangementOrder();
  if(!order.length){setStatus('整理する配置枠がありません。右下から「＋束を置く」で枠を作れます。');return}
  try{
