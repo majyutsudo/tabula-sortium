@@ -1045,7 +1045,7 @@ if(dragMoved&&settings.spread==='monteCarlo'&&Number.isInteger(item.slot)){
   setStatus('盤面の外に出した札を配列から外しました。詰め直しには使われません。');
  }
 }
-if(dragMoved&&item.fourSeasonsReveal===true)item.fourSeasonsReveal=false;
+
 if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);if(dragMoved&&settings.spread==='monteCarlo')maybeTriggerCompletionEffect();
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
@@ -1537,7 +1537,7 @@ function installPhysicalCardPicker(){
  },true);
 }
 function nextPlacedStackOrder(){return Math.max(0,...state.placed.map(c=>Number(c.dragOrder)||0))+1}
-function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread==='fourSeasons'&&slot!==null&&slot>=6){setStatus('フォー・シーズンズの自動配札先は①〜⑥のみです。');return}if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
+function drawAt(slot=null,x=null,y=null,animateArrival=true){if(settings.spread==='fourSeasons'&&fourSeasonsHandGuard())return;if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread==='fourSeasons'&&slot!==null&&slot>=6){setStatus('フォー・シーズンズの自動配札先は①〜⑥のみです。');return}if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
  const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
  if(duplicate){setStatus('同じカードが重複しています（'+duplicate.id+'）。新しい占いを始めるかバックアップを確認してください。');return}
  if(!applyDealRemoval())return;
@@ -1579,11 +1579,23 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.leng
 let autoDealBusy=false;
 // Four Seasons exposes the next stock card beside the physical stock instead
 // of dealing it to a foundation, tableau, or talon automatically.
+// A Four Seasons stock card must be placed in one of the ten registered
+// physical frames before another card can leave the stock. Spatial movement
+// alone never clears the outstanding hand.
+function fourSeasonsHasUnplacedHand(){
+ return state.placed.some(c=>!Number.isInteger(c.slot))
+  ||(state.tablePiles||[]).some(p=>!Number.isInteger(p.slot)&&p.cards.length>0);
+}
+function fourSeasonsHandGuard(){
+ if(settings.spread==='fourSeasons'&&!dualSession&&fourSeasonsHasUnplacedHand()){
+  setStatus('枠外に開いた手札があります。まずファウンデーション・場札・タロンのいずれかへ移してください。');
+  return true;
+ }
+ return false;
+}
 async function revealFourSeasonsStock(){
  if(!state.deck.length){setStatus('山札がありません。');return}
- if(state.placed.some(c=>c.fourSeasonsReveal===true)){
-  setStatus('山札の隣に開いた札があります。まずその札を移動してください。');return;
- }
+ if(fourSeasonsHandGuard())return;
  const zone=$('zone'),stock=$('deck');
  const zr=zone.getBoundingClientRect(),sr=stock.getBoundingClientRect();
  const m=metrics(),w=m.w*(tableCamera.scale||1);
@@ -1606,6 +1618,7 @@ async function dealAuto(){
  // The Four Seasons preset always uses its six registered deal targets,
  // regardless of any user-configured dealing workbench.
  if(settings.spread==='fourSeasons'&&!dualSession){
+  if(fourSeasonsHandGuard())return;
   if(!state.deck.length){setStatus('山札がありません。');return}
   const vacancies=getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i));
   if(!vacancies.length){await revealFourSeasonsStock();return}
@@ -2583,13 +2596,14 @@ pile.addEventListener('pointerup',e=>{
   drag=null;clearDeckPreview();
   if(!dragMoved){
    if(settings.spread==='fourSeasons'&&!dualSession){
-    if(autoDealBusy||openingBusy)return;
+    if(autoDealBusy||openingBusy||fourSeasonsHandGuard())return;
     const next=nextDealSlot();
     if(next>=0)drawAt(next);
     else revealFourSeasonsStock();
    }else drawAt();
    return;
   }
+  if(fourSeasonsHandGuard())return;
   const r=$('zone').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
   if(x<0||x>100||y<0||y>100)return;
   // A stock card may land directly on an existing pile, without an
