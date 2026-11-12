@@ -497,7 +497,7 @@ function executeArrangement(action){
  try{
   const result=action==='compact'
    ?TabulaTableArrangement.compact(state,getSlots(),order)
-   :TabulaTableArrangement.refill(state,getSlots(),order,{faceUp:settings.dealFaceUp===true});
+   :TabulaTableArrangement.refill(state,getSlots(),order,{faceUp:settings.spread==='monteCarlo'||settings.dealFaceUp===true});
   const count=action==='compact'?result.moves:result.dealt;
   if(!count){setStatus(action==='compact'?'詰め直す空き位置がありません。':'補充する空き位置がないか、山札がありません。');return}
   state.placed=result.state.placed;
@@ -1423,6 +1423,9 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.leng
 let autoDealBusy=false;
 async function dealAuto(){
  if(autoDealBusy)return;
+ // Monte Carlo replenishes the existing fixed 25 positions; do not let a
+ // configured deal workbench intercept the shortcut or start a fresh deal.
+ if(settings.spread==='monteCarlo'&&!dualSession){executeArrangement('refill');return;}
  if(!dualSession&&dealWorkbenchController?.executeSelected())return;
  if(!state.deck.length)return;
  if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}
