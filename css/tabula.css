@@ -1518,3 +1518,17 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 
 /* Stock drag: indicate the card that will receive the dropped stock card. */
 .card.deck-stack-hover{outline:3px solid #f2d58b;outline-offset:3px;filter:drop-shadow(0 0 12px rgba(255,215,120,.95));z-index:9999!important}
+
+/* Dedicated spread editing workspace: distinguish it from ordinary menus. */
+.spread-workbench{border:2px solid #c7a66d;box-shadow:0 0 0 3px #171c18,0 8px 25px #0007}
+.spread-workbench-head{padding:10px 12px;margin:-12px -15px 10px;background:#394437;border-bottom:2px solid #c7a66d}
+.spread-workbench-head strong{font-size:15px;letter-spacing:.04em}
+.spread-workbench-mode-note{font:12px/1.65 sans-serif;color:#e2d1aa;margin:0 0 12px}
+@media(max-width:780px){
+ body.spread-workbench-active .shell>aside{display:none!important}
+ body.spread-workbench-active .spread-workbench{border-width:3px;padding:12px;margin:10px 0 16px;box-shadow:0 0 0 4px #101812,0 8px 22px #0009}
+ body.spread-workbench-active .spread-workbench-head{margin:-12px -12px 12px;padding:13px 12px;display:block}
+ body.spread-workbench-active .spread-workbench-head strong{display:block;font-size:16px;margin-bottom:8px}
+ body.spread-workbench-active .spread-workbench-head span{display:block;line-height:1.5}
+ body.spread-workbench-active .spread-workbench-mode-note{font-size:12px}
+}
