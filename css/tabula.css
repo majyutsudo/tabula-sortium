@@ -1545,3 +1545,8 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 /* Render an individual card's original orientation inside a fixed pile frame. */
 .table-pile-artwork{position:absolute;inset:0;width:100%;height:100%;transform-origin:center center;pointer-events:none}
 .table-pile-artwork>.card-art,.table-pile-artwork>svg{width:100%;height:100%;max-height:100%;display:block}
+
+/* Selection-only rotation mode; no permanent grip competing with the fan handle. */
+.table-card-controls #rotateDragMode[aria-pressed="true"]{background:#665239;border-color:#e4c98f;color:#fff2cd}
+#zone .table-pile.is-rotation-selected{outline:2px solid #d4b47b;outline-offset:2px}
+#zone .card.is-selected,#zone .table-pile.is-rotation-selected{touch-action:none}
