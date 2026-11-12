@@ -17,8 +17,17 @@ dialog.card-editor{width:min(440px,calc(100vw - 24px));max-height:90dvh;overflow
 dialog.card-editor::backdrop{background:#090e11bd}
 .card-editor form{display:grid;gap:11px}.card-editor label{display:grid;gap:4px}.card-editor input,.card-editor select{width:100%}.card-editor-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
 .card-editor-help{color:#c9bea8;font:12px/1.5 sans-serif;margin:0}
-.playing-card .oracle-preview-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;color:#77614e;font:9px/1.4 Georgia,"Yu Mincho",serif;max-width:100%;overflow-wrap:anywhere;text-align:center;white-space:normal;padding:2px 1px}
-.playing-card:has(.oracle-preview-line){justify-content:space-between;gap:3px}
+/* Oracle inscriptions use the centered title, subtitle and rule of the emblem-book design. */
+.oracle-preview .oracle-card-face{width:100%;aspect-ratio:2/3;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:3px;background:#faf0dd;border:5px double #ad956d;border-radius:6px;padding:5px 5px 6px;box-shadow:0 3px 9px #0006;overflow:hidden}
+.oracle-preview .oracle-card-emblem{font:18px/1 Georgia,serif;align-self:center;max-height:24%;overflow:hidden}
+.oracle-preview .oracle-card-content{width:100%;min-height:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;overflow:hidden}
+.oracle-preview .oracle-card-heading{font:bold clamp(12px,1.6vw,20px)/1.2 Georgia,"Yu Mincho",serif;overflow-wrap:anywhere;max-width:100%}
+.oracle-preview .oracle-card-subtitle{font:8px/1.2 Georgia,serif;letter-spacing:.07em;overflow-wrap:anywhere;max-width:100%}
+.oracle-preview .oracle-card-rule{width:75%;font:9px/1 Georgia,serif;display:flex;align-items:center;gap:4px;opacity:.55}
+.oracle-preview .oracle-card-rule::before,.oracle-preview .oracle-card-rule::after{content:"";height:1px;background:currentColor;flex:1}
+.oracle-preview .oracle-preview-line{font:9px/1.35 Georgia,"Yu Mincho",serif;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;overflow-wrap:anywhere;max-width:100%;opacity:.85}
+.oracle-preview .oracle-card-footer{font:9px/1 Georgia,serif;opacity:.6}
+@media(max-width:800px){.oracle-preview .oracle-card-heading{font-size:13px}.oracle-preview .oracle-preview-line{font-size:8px}}
 .collapsible-panel{padding:0;overflow:hidden}
 .collapsible-panel>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;cursor:pointer;list-style:none;color:#e1ccab;font:600 17px/1.5 Georgia,"Yu Mincho",serif}
 .collapsible-panel>summary::-webkit-details-marker{display:none}
@@ -124,8 +133,11 @@ function renderCards(){
  $('cards').innerHTML=cards.map(c=>{
   const suit=suits.get(c.suitId),symbol=c.symbol||suit?.symbol||'✦',color=c.cardColor||suit?.color||'black';
   const artwork=API.playingFaceMarkup(c,symbol,color);
-  const face=artwork||'<span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span>'+(c.suitId===null&&c.rankId===null&&c.oracleLine?.trim()?'<span class="oracle-preview-line">'+esc(c.oracleLine.trim())+'</span>':'');
-  return '<div class="playing-card '+(artwork?'playing-preview':'')+'" style="color:'+API.inkColor(color)+'">'+face+'<span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button type="button" data-card="'+esc(c.id)+'">編集</button></div>';
+  const line=(!c.suitId&&!c.rankId&&typeof c.oracleLine==='string')?c.oracleLine.trim():'';
+  const subtitle=String(c.number??'').trim();
+  const oracleFace=line?'<div class="oracle-card-face" style="color:'+API.inkColor(color)+'"><div class="oracle-card-emblem">'+esc(symbol)+'</div><div class="oracle-card-content"><span class="oracle-card-heading">'+esc(API.nameOf(c,activeSet))+'</span>'+(subtitle?'<span class="oracle-card-subtitle">'+esc(subtitle)+'</span>':'')+'<span class="oracle-card-rule" aria-hidden="true">◇</span><span class="oracle-preview-line">'+esc(line)+'</span></div><span class="oracle-card-footer" aria-hidden="true">✦</span></div>':'';
+  const face=artwork||oracleFace||'<span class="corner">'+esc(c.number)+'</span><span class="mark">'+esc(symbol)+'</span>';
+  return '<div class="playing-card '+(artwork||oracleFace?'playing-preview':'')+(oracleFace?' oracle-preview':'')+'" style="color:'+API.inkColor(color)+'">'+face+'<span class="card-title">'+esc(API.nameOf(c,activeSet))+'</span><button type="button" data-card="'+esc(c.id)+'">編集</button></div>';
  }).join('');
 }
 function openCardEditor(card){

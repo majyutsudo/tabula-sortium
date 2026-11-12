@@ -600,9 +600,12 @@ function blueprintCardMarkup(c){
  const artwork=TabulaDeckBlueprint.playingFaceMarkup(c,c.symbol,c.cardColor,c.rankLabel,settings.playingOrientationMarks===true);
  if(artwork)return artwork;
  const line=(!c.suitId&&!c.rankId&&typeof c.oracleLine==='string')?c.oracleLine.trim():'';
- const label='<span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span>';
- const bottom=line?'<div class="blueprint-card-bottom">'+label+'<span class="blueprint-card-oracle-line">'+escapeHTML(line)+'</span></div>':label;
- return '<div class="blueprint-card-face'+(line?' has-oracle-line':'')+'" style="color:'+TabulaDeckBlueprint.inkColor(c.cardColor)+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span>'+bottom+'</div>';
+ const ink=TabulaDeckBlueprint.inkColor(c.cardColor);
+ if(line){
+  const subtitle=String(c.rankLabel??'').trim();
+  return '<div class="blueprint-card-face blueprint-oracle-face" style="color:'+ink+'"><span class="blueprint-oracle-emblem">'+escapeHTML(c.symbol||'✦')+'</span><div class="blueprint-oracle-content"><span class="blueprint-oracle-title">'+escapeHTML(c.name||'名称未設定')+'</span>'+(subtitle?'<span class="blueprint-oracle-subtitle">'+escapeHTML(subtitle)+'</span>':'')+'<span class="blueprint-oracle-rule" aria-hidden="true">◇</span><span class="blueprint-card-oracle-line">'+escapeHTML(line)+'</span></div><span class="blueprint-oracle-footer" aria-hidden="true">✦</span></div>';
+ }
+ return '<div class="blueprint-card-face" style="color:'+ink+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span><span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span></div>';
 }
 /* Shared by the actual table cards and the simple-deck gallery. */
 // One compact, fixed-proportion design for tabletop and encyclopedia.

@@ -1586,10 +1586,18 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  .toolbar .mobile-cockpit-actions>#newSessionStandalone{grid-column:2 / -1;grid-row:2;width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;margin:0!important}
 }
 
-/* v0.482: optional short inscription on independently defined oracle cards. */
-.blueprint-card-face .blueprint-card-bottom{display:flex;flex-direction:column;align-items:center;justify-content:end;gap:4px;width:100%;min-width:0;max-height:42%;overflow:hidden}
-.blueprint-card-face .blueprint-card-oracle-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;max-width:100%;font:clamp(7px,.9vw,10px)/1.35 Georgia,"Yu Mincho",serif;text-align:center;overflow-wrap:anywhere;white-space:normal;opacity:.85}
-.blueprint-card-face.has-oracle-line .blueprint-card-symbol{flex:0 1 auto;min-height:0}
-.blueprint-card-view .blueprint-card-bottom{gap:9px;max-height:43%}
-.blueprint-card-view .blueprint-card-oracle-line{font-size:13px;line-height:1.4;-webkit-line-clamp:3;line-clamp:3}
-@media(max-width:780px){.front .blueprint-card-oracle-line{font-size:clamp(6px,2vw,9px)}}
+/* v0.483: antique emblem-book layout for inscribed standalone oracle cards. */
+.blueprint-card-face.blueprint-oracle-face{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;padding:6px 5px 5px}
+.blueprint-oracle-face .blueprint-oracle-emblem{flex:none;font:clamp(13px,1.45vw,19px)/1 Georgia,serif;max-height:22%;overflow:hidden}
+.blueprint-oracle-face .blueprint-oracle-content{width:100%;min-height:0;min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center}
+.blueprint-oracle-face .blueprint-oracle-title{font:bold clamp(12px,2vw,26px)/1.2 Georgia,"Yu Mincho",serif;max-width:100%;overflow-wrap:anywhere}
+.blueprint-oracle-face .blueprint-oracle-subtitle{font:clamp(8px,1vw,12px)/1.3 Georgia,serif;letter-spacing:.07em;max-width:100%;overflow-wrap:anywhere}
+.blueprint-oracle-face .blueprint-oracle-rule{width:78%;display:flex;align-items:center;gap:5px;font:10px/1 Georgia,serif;opacity:.55}
+.blueprint-oracle-face .blueprint-oracle-rule::before,.blueprint-oracle-face .blueprint-oracle-rule::after{content:"";height:1px;background:currentColor;flex:1}
+.blueprint-oracle-face .blueprint-card-oracle-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;max-width:100%;font:clamp(8px,.95vw,11px)/1.45 Georgia,"Yu Mincho",serif;text-align:center;overflow-wrap:anywhere;white-space:normal;opacity:.85}
+.blueprint-oracle-face .blueprint-oracle-footer{flex:none;font:10px/1 Georgia,serif;opacity:.6}
+.blueprint-card-view .blueprint-oracle-face .blueprint-oracle-emblem{font-size:22px}
+.blueprint-card-view .blueprint-oracle-face .blueprint-oracle-title{font-size:32px}
+.blueprint-card-view .blueprint-oracle-face .blueprint-oracle-subtitle{font-size:14px}
+.blueprint-card-view .blueprint-oracle-face .blueprint-card-oracle-line{font-size:13px;line-height:1.5}
+@media(max-width:780px){.front .blueprint-oracle-face .blueprint-oracle-title{font-size:clamp(11px,3.5vw,18px)}.front .blueprint-oracle-face .blueprint-card-oracle-line{font-size:clamp(7px,2vw,10px)}}
