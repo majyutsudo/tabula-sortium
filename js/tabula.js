@@ -3558,8 +3558,9 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
  status:setStatus
 });
 function installTableActionSettings(){
- const shuffleChoice=$('quickShuffleChoice');
+ const shuffleChoice=$('quickShuffleChoice'),dealChoice=$('quickDealChoice');
  if(shuffleChoice)$('tableShuffleChoiceSlot').append(shuffleChoice);
+ if(dealChoice)$('tableDealChoiceSlot').append(dealChoice);
  const washDirection=$('tableWashDirection'),washRounds=$('tableWashRounds'),cutCount=$('tableCutCount');
  const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3)};
  washDirection.onchange=()=>{settings.quickWashDirection=washDirection.value;$('quickWashDirection').value=washDirection.value;updateStandaloneAvailability();saveLocal()};
