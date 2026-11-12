@@ -580,7 +580,7 @@ function executeArrangement(action){
   state.deck=result.state.deck;
   state.selected=null;
   state.completionShown=false;
-  play('deal');render();saveLocal();
+  play('deal');commitTableChange();
   setStatus(action==='compact'?count+'か所のカードを指定順に詰め直しました。':count+'か所の空き位置に山札から補充しました。');
  }catch(e){setStatus(e.message)}
 }
@@ -1116,7 +1116,7 @@ function cardHTML(item,index){const c=workingCard(item.id)||workingCards()[0];co
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
 node.style.setProperty('--z',String(1000+nextOrder));
-node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;recordTiltSample(drag,e);moveCardLongPress(drag.longPress,e);const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item);updateStackIntent(drag,node)}});node.addEventListener('pointerup',e=>{if(pilePlacementArmed||!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';recordTiltSample(drag,e);const releasedDrag=drag;cancelCardLongPress();const stackIndex=releasedDrag.stackArmed?Number(releasedDrag.stackCandidate):null;const stackTarget=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;const stackReady=!!stackTarget&&stackCandidate(node)===stackTarget;clearStackIntent(releasedDrag);drag=null;if(stackReady&&!dualSession&&!spreadWorkbench){TabulaTablePiles.stackPlaced(state,index,stackIndex);render();saveLocal();setStatus('重ねた2枚を束にしました。');return}if(dragMoved&&!dualSession&&!spreadWorkbench){const pileId=pileAtPoint(e.clientX,e.clientY);if(pileId){TabulaTablePiles.deposit(state,index,pileId);render();saveLocal();setStatus('カードを束に重ねました。');return}}if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}
+node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;recordTiltSample(drag,e);moveCardLongPress(drag.longPress,e);const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item);updateStackIntent(drag,node)}});node.addEventListener('pointerup',e=>{if(pilePlacementArmed||!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';recordTiltSample(drag,e);const releasedDrag=drag;cancelCardLongPress();const stackIndex=releasedDrag.stackArmed?Number(releasedDrag.stackCandidate):null;const stackTarget=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;const stackReady=!!stackTarget&&stackCandidate(node)===stackTarget;clearStackIntent(releasedDrag);drag=null;if(stackReady&&!dualSession&&!spreadWorkbench){TabulaTablePiles.stackPlaced(state,index,stackIndex);commitTableChange();setStatus('重ねた2枚を束にしました。');return}if(dragMoved&&!dualSession&&!spreadWorkbench){const pileId=pileAtPoint(e.clientX,e.clientY);if(pileId){TabulaTablePiles.deposit(state,index,pileId);commitTableChange();setStatus('カードを束に重ねました。');return}}if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}
 if(dragMoved&&settings.spread==='monteCarlo'&&!spreadWorkbench&&!dualSession){
  // Resolve the physical drop against the 25 visible frames, not the card's
  // original slot metadata. A free target becomes its new registered location.
@@ -1404,7 +1404,7 @@ function renderTablePiles(zone,m){
      if(!dragged){
       if(heldSelected)return;
       TabulaTablePiles.flipCard(state,pile.id,index);
-      play('flip');render();saveLocal();
+      play('flip');commitTableChange();
       setStatus('束の'+(index+1)+'枚目のカードを'+(pile.cards[index].faceUp?'表':'裏')+'向きにしました。');
       return;
      }
@@ -1429,7 +1429,7 @@ function renderTablePiles(zone,m){
        pileTakeCounts.delete(pile.id);
        setStatus('束から一番上のカードを取り出しました。');
       }
-      render();saveLocal();
+      commitTableChange();
      }catch(err){render();setStatus(err.message)}
     };
     const clear=()=>{
@@ -1522,7 +1522,7 @@ function renderTablePiles(zone,m){
       pile.cards.forEach(card=>{card.slot=null;card.manualMoved=true});
      }
     }
-    render();saveLocal();
+    commitTableChange();
    };
    const cancel=()=>{clear();render()};
    title.addEventListener('pointermove',move);title.addEventListener('pointerup',end);title.addEventListener('pointercancel',cancel);
@@ -2284,6 +2284,12 @@ function isCoreSpreadOpen(){
  }
  const target=coreTargetCount();return target>0&&coreFaceUpCount()>=target
 }function updateCompletionAura(){const stage=$('stage');if(!stage)return;stage.classList.remove('spread-complete-ritual','spread-complete-mystic','spread-complete-psychic');if(!isCoreSpreadOpen())return;const preset=settings.effectPreset;if(preset==='ritual')stage.classList.add('spread-complete-ritual');else if(preset==='mystic')stage.classList.add('spread-complete-mystic');else if(preset==='psychic')stage.classList.add('spread-complete-psychic')}function maybeTriggerCompletionEffect(force=false){if(settings.spread==='fourSeasons'){inspectFourSeasonsCompletion();return}if(isCoreSpreadOpen()){updateCompletionAura();if(force||!state.completionShown){state.completionShown=true;if(settings.effectPreset!=='silent')previewVisualEffect(true)}}else{state.completionShown=false;updateCompletionAura()}}
+function commitTableChange(){
+ // A single post-commit path for physically moving, stacking and withdrawing cards.
+ render();
+ maybeTriggerCompletionEffect();
+ saveLocal();
+}
 
 function activateDeck(id,ask=true){
  if(dualSession){setStatus('二組モードのデッキ定義はこの試作では共通です。一組モードで変更してください。');refreshDeckPicker();return false}
