@@ -488,6 +488,74 @@ function arrangementOrder(){
   .sort((a,b)=>a.p.y-b.p.y||a.p.x-b.p.x||a.i-b.i)
   .map(v=>v.key);
 }
+
+// Monte Carlo uses the same fixed-slot arrangement engine as the manual
+// controls, but presents each physical move instead of teleporting the grid.
+async function animateMonteArrangement(action,order){
+ if(autoDealBusy||openingBusy)return;
+ const slots=getSlots();
+ const before=state.placed.map((c,i)=>({key:c.instanceId||c.id,slot:c.slot,index:i}));
+ const initialCount=before.filter(c=>Number.isInteger(c.slot)).length;
+ const originalSpread=settings.spread;
+ const initialDeck=state.deck.length;
+ const result=action==='compact'
+  ?TabulaTableArrangement.compact(state,slots,order)
+  :TabulaTableArrangement.refill(state,slots,order,{faceUp:true});
+ const count=action==='compact'?result.moves:result.dealt;
+ if(!count){setStatus(action==='compact'?'詰め直す空き位置がありません。':'補充する空き位置がないか、山札がありません。');return}
+ const oldPositions=new Map();
+ if(action==='compact'){
+  const nodes=[...$('zone').querySelectorAll('.card[data-index]')];
+  for(const item of before){
+   if(!Number.isInteger(item.slot))continue;
+   const node=nodes.find(n=>Number(n.dataset.index)===item.index);
+   if(node)oldPositions.set(item.key,node.getBoundingClientRect());
+  }
+ }
+ autoDealBusy=true;
+ try{
+  // Commit one atomic arrangement result. Animation only changes presentation.
+  state.placed=result.state.placed;
+  state.tablePiles=result.state.tablePiles;
+  state.deck=result.state.deck;
+  state.selected=null;state.completionShown=false;
+  render();saveLocal();
+  if(action==='compact'){
+   const motions=[];
+   for(let i=0;i<state.placed.length;i++){
+    const card=state.placed[i],key=card.instanceId||card.id;
+    const old=oldPositions.get(key);
+    if(!old||!Number.isInteger(card.slot))continue;
+    const node=$('zone').querySelector('.card[data-index="'+i+'"]');
+    if(!node||!node.animate)continue;
+    const next=node.getBoundingClientRect();
+    const dx=old.left-next.left,dy=old.top-next.top;
+    if(Math.abs(dx)+Math.abs(dy)<2)continue;
+    const motion=node.animate(
+     [{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'translate(0px,0px)'}],
+     {duration:330,delay:motions.length*85,easing:'cubic-bezier(.2,.7,.2,1)'});
+    motions.push(motion.finished.catch(()=>{}));
+   }
+   play('deal');
+   await Promise.all(motions);
+  }else{
+   // The stock has already been updated atomically; animate each newly dealt
+   // card from its physical deck position with the existing arrival motion.
+   const oldKeys=new Set(before.map(c=>c.key));
+   const newCards=state.placed.map((c,i)=>({c,i})).filter(v=>!oldKeys.has(v.c.instanceId||v.c.id));
+   const deckRect=$('deck').getBoundingClientRect();
+   for(const {i} of newCards){
+    if(settings.spread!==originalSpread)break;
+    await animateCardFromDeck(i,deckRect);
+    play('deal');
+    await new Promise(resolve=>setTimeout(resolve,45));
+   }
+  }
+  if(settings.spread===originalSpread)setStatus(action==='compact'
+   ?count+'か所を順番に詰め直しました。'
+   :count+'か所に山札から補充しました。');
+ }finally{autoDealBusy=false}
+}
 $('quickCompactMonte').onclick=()=>executeArrangement('compact');
 function executeArrangement(action){
  if(dualSession||spreadWorkbench){setStatus('この卓のカード配置を編集中は整理できません。');return}
@@ -508,6 +576,7 @@ function executeArrangement(action){
  }
  const order=arrangementOrder();
  if(!order.length){setStatus('整理する配置枠がありません。右下から「＋束を置く」で枠を作れます。');return}
+ if(settings.spread==='monteCarlo'&&!dualSession){animateMonteArrangement(action,order).catch(e=>setStatus(e.message));return}
  try{
   const result=action==='compact'
    ?TabulaTableArrangement.compact(state,getSlots(),order)
