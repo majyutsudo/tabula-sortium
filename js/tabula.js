@@ -1340,7 +1340,7 @@ function renderTablePiles(zone,m){
    }
    el.append(empty);
    const close=document.createElement('button');close.type='button';close.className='table-pile-remove';close.textContent='×';close.title='空の束を削除';
-   close.onclick=()=>{TabulaTablePiles.removeEmpty(state,pile.id);render();saveLocal()};el.append(close);
+   close.onclick=()=>{if(settings.spread==='fourSeasons'&&Number.isInteger(pile.slot)){setStatus('フォー・シーズンズの枠は削除せず、そのまま再利用できます。');return}TabulaTablePiles.removeEmpty(state,pile.id);render();saveLocal()};if(settings.spread==='fourSeasons'&&Number.isInteger(pile.slot))close.hidden=true;el.append(close);
   }
   title.addEventListener('pointerdown',e=>{
    if(e.button!==0)return;e.preventDefault();e.stopPropagation();
