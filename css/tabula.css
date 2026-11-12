@@ -1532,3 +1532,8 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  body.spread-workbench-active .spread-workbench-head span{display:block;line-height:1.5}
  body.spread-workbench-active .spread-workbench-mode-note{font-size:12px}
 }
+
+/* Monte Carlo contextual action: a full-width second-row shortcut, without shrinking the five primary actions. */
+.table-shortcuts #quickCompactMonte[hidden]{display:none!important}
+.table-shortcuts #quickCompactMonte:not([hidden]){grid-column:1/-1;grid-row:2;min-height:42px;order:10;background:#455040;border-color:#b89b65}
+@media(max-width:780px){.table-shortcuts #quickCompactMonte:not([hidden]){flex-direction:row;min-height:42px;font-size:14px}}
