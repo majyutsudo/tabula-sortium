@@ -1067,38 +1067,18 @@ function renderTablePiles(zone,m){
     fanGrip.addEventListener('pointermove',update);fanGrip.addEventListener('pointerup',finish);fanGrip.addEventListener('pointercancel',cancel);
    });
    el.append(fanGrip);
-   const take=document.createElement('select');
-   take.className='table-pile-take-count';
-   take.setAttribute('aria-label','上から移す枚数：'+pile.id);
-   take.title='束の上からまとめて移動する枚数';
-   for(let number=1;number<=pile.cards.length;number++){
-    const option=document.createElement('option');option.value=String(number);
-    option.textContent='上から'+number+'枚';take.append(option);
-   }
-   take.value=String(Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1));
-   take.onchange=()=>pileTakeCounts.set(pile.id,Number(take.value));
-   take.addEventListener('pointerdown',e=>e.stopPropagation());
-   take.hidden=expanded||!pileTakeOpen.has(pile.id);
-   const takeToggle=document.createElement('button');
-   takeToggle.type='button';takeToggle.className='table-pile-take-toggle';takeToggle.hidden=expanded;
-   takeToggle.textContent=pileTakeOpen.has(pile.id)?'枚数を閉じる':'枚数指定 ▾';
-   takeToggle.title='束の上からまとめて移動する枚数を指定';
-   takeToggle.setAttribute('aria-expanded',String(pileTakeOpen.has(pile.id)));
-   takeToggle.onclick=e=>{
-    e.stopPropagation();
-    if(pileTakeOpen.has(pile.id))pileTakeOpen.delete(pile.id);
-    else pileTakeOpen.add(pile.id);
-    take.hidden=!pileTakeOpen.has(pile.id);
-    takeToggle.textContent=pileTakeOpen.has(pile.id)?'枚数を閉じる':'枚数指定 ▾';
-    takeToggle.setAttribute('aria-expanded',String(pileTakeOpen.has(pile.id)));
-   };
-   takeToggle.addEventListener('pointerdown',e=>e.stopPropagation());
-   el.append(takeToggle,take);
+   // Count is informational only; selecting several cards happens by
+   // spreading the pile and dragging the desired depth.
+   const countBadge=document.createElement('span');
+   countBadge.className='table-pile-count-badge';
+   countBadge.textContent=pile.cards.length+'枚';
+   countBadge.setAttribute('aria-hidden','true');
+   el.append(countBadge);
    for(const face of faces)face.addEventListener('pointerdown',e=>{
     if(e.button!==0)return;e.preventDefault();e.stopPropagation();
     const startX=e.clientX,startY=e.clientY;let dragged=false;
     const index=Number(face.dataset.pileIndex);
-    const count=expanded?index+1:Math.min(pile.cards.length,pileTakeCounts.get(pile.id)||1);
+    const count=expanded?index+1:1;
     const moving=expanded?faces.filter(node=>Number(node.dataset.pileIndex)<=index):[face];
     // Consistent with independent-card dwell: a stationary intentional overlap
     // arms stack creation, while a quick release preserves ordinary withdrawal.
