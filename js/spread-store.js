@@ -2,7 +2,7 @@
 (function(root){'use strict';
 function validSpread(v){
   return !!(v&&typeof v.id==='string'&&Array.isArray(v.slots)
-    &&v.slots.length<=52&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)));
+    &&v.slots.length<=52&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
 }
 function read(storage,key){
   try{
