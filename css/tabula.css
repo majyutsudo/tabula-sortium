@@ -1517,4 +1517,4 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 @media(max-width:780px){.table-pile-count-badge{height:20px;min-width:22px;right:-6px;bottom:-8px;font-size:10px}}
 
 /* Stock drag: indicate the card that will receive the dropped stock card. */
-.table-zone .card.deck-stack-hover{outline:3px solid #f2d58b;outline-offset:3px;filter:drop-shadow(0 0 12px rgba(255,215,120,.95));z-index:9999!important}
+.card.deck-stack-hover{outline:3px solid #f2d58b;outline-offset:3px;filter:drop-shadow(0 0 12px rgba(255,215,120,.95));z-index:9999!important}
