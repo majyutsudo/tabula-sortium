@@ -323,3 +323,28 @@ test('invalid pile-to-single-card stack is atomic',()=>{
  assert.throws(()=>P.stackFromPile(state,p.id,0,0));
  assert.equal(JSON.stringify(state),before);
 });
+
+test('stock dragged onto a registered single card forms a two-card pile',()=>{
+ const state=fresh(),before=ids(state).sort();
+ const pile=P.stackFromDeck(state,1,false);
+ assert.equal(pile.slot,1);
+ assert.deepEqual(Array.from(pile.cards,c=>c.instanceId),['A:c','A:b']);
+ assert.deepEqual(Array.from(pile.cards,c=>c.faceUp),[false,false]);
+ assert.equal(state.placed.length,1);
+ assert.equal(state.deck.length,0);
+ assert.deepEqual(ids(state).sort(),before);
+ assert.equal(I.ensureSingle(state),state);
+});
+test('stock on loose single preserves its face state and leaves no extra placed card',()=>{
+ const state=fresh();state.placed[0].slot=null;
+ const original=state.placed[0].instanceId;
+ const pile=P.stackFromDeck(state,0,true);
+ assert.equal(pile.slot,undefined);
+ assert.deepEqual(Array.from(pile.cards,c=>c.instanceId),['A:c',original]);
+ assert.equal(pile.cards[0].faceUp,true);
+ assert.equal(pile.cards[1].faceUp,true);
+ assert.equal(state.placed.length,1);
+ const before=JSON.stringify(state);
+ assert.throws(()=>P.stackFromDeck(state,99));
+ assert.equal(JSON.stringify(state),before);
+});
