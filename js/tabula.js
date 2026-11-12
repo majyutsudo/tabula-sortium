@@ -2268,6 +2268,28 @@ pile.addEventListener('pointerup',e=>{
     setStatus('山札から束の一番上へ1枚配札しました。');
     return;
   }
+  // Dropping stock onto a single card makes a physical two-card pile,
+  // without going through a second loose-card placement.
+  if(!dualSession&&!spreadWorkbench){
+   let targetIndex=-1,bestOrder=-Infinity;
+   for(const node of $('zone').querySelectorAll('.card[data-index]')){
+    const rect=node.getBoundingClientRect();
+    if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)continue;
+    const index=Number(node.dataset.index),card=state.placed[index];
+    if(!card)continue;
+    const order=Number(card.dragOrder)||index;
+    if(order>=bestOrder){targetIndex=index;bestOrder=order}
+   }
+   if(targetIndex>=0){
+    if(!applyDealRemoval())return;
+    try{
+     TabulaTablePiles.stackFromDeck(state,targetIndex,settings.dealFaceUp===true);
+     play('deal');render();saveLocal();
+     setStatus('山札の1枚を単体の札に重ね、束を作りました。');
+    }catch(error){setStatus(error.message)}
+    return;
+   }
+  }
   const before=state.placed.length;
   if(settings.spread==='free'||getSlots().every((_,i)=>hasOccupiedSpreadSlot(i))){
     const p=snapFreePosition(x,y);
