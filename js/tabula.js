@@ -2217,7 +2217,22 @@ deckMoveHandle.addEventListener('click',e=>{e.preventDefault();e.stopPropagation
 // A lightweight preview follows the finger while drawing a card from the deck.
 // The actual card is removed from the deck only when released over the table.
 let deckPreview=null;
-function clearDeckPreview(){if(deckPreview){deckPreview.remove();deckPreview=null}}
+let deckHoverTarget=null;
+function clearDeckHoverTarget(){
+ if(deckHoverTarget){deckHoverTarget.classList.remove('deck-stack-hover');deckHoverTarget=null}
+}
+function updateDeckHoverTarget(e){
+ const next=(!dualSession&&!spreadWorkbench&&dragMoved)
+  ? [...$('zone').querySelectorAll('.card[data-index]')].filter(node=>{
+      const r=node.getBoundingClientRect();
+      return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+    }).sort((a,b)=>(Number(state.placed[Number(b.dataset.index)]?.dragOrder)||Number(b.dataset.index))-(Number(state.placed[Number(a.dataset.index)]?.dragOrder)||Number(a.dataset.index)))[0]||null
+  : null;
+ if(next===deckHoverTarget)return;
+ clearDeckHoverTarget();
+ if(next){deckHoverTarget=next;next.classList.add('deck-stack-hover')}
+}
+function clearDeckPreview(){clearDeckHoverTarget();if(deckPreview){deckPreview.remove();deckPreview=null}}
 function moveDeckPreview(e){if(!deckPreview)return;deckPreview.style.left=e.clientX+'px';deckPreview.style.top=e.clientY+'px'}
 function beginDeckPreview(e){
   if(deckPreview)return;
@@ -2246,7 +2261,7 @@ pile.addEventListener('pointermove',e=>{
   if(!dragMoved&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>8){
     dragMoved=true;beginDeckPreview(e);
   }
-  if(dragMoved){recordTiltSample(drag,e);moveDeckPreview(e);}
+  if(dragMoved){recordTiltSample(drag,e);moveDeckPreview(e);updateDeckHoverTarget(e);}
 });
 pile.addEventListener('pointerup',e=>{
   if(drag?.type!=='deck'||drag.pointerId!==e.pointerId)return;
