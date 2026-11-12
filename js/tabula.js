@@ -533,7 +533,7 @@ async function animateMonteArrangement(action,order){
     if(Math.abs(dx)+Math.abs(dy)<2)continue;
     const motion=node.animate(
      [{transform:'translate('+dx+'px,'+dy+'px) '+getComputedStyle(node).transform},{transform:getComputedStyle(node).transform}],
-     {duration:330,delay:motions.length*85,easing:'cubic-bezier(.2,.7,.2,1)'});
+     {duration:520,delay:motions.length*150,easing:'cubic-bezier(.2,.7,.2,1)'});
     motions.push(motion.finished.catch(()=>{}));
    }
    play('deal');
