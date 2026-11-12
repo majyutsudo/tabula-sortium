@@ -1502,3 +1502,16 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  .table-pile-handle{left:-12px;top:-15px;width:26px;min-width:26px;height:26px;min-height:26px;font-size:14px}
  .table-pile-role-select{top:-16px}
 }
+
+/* v0.434: the pile count is a quiet, noninteractive annotation. */
+.table-pile-count-badge{
+ position:absolute;right:-7px;bottom:-9px;z-index:570;
+ min-width:23px;height:21px;padding:0 5px;box-sizing:border-box;
+ display:flex;align-items:center;justify-content:center;
+ border:1px solid #ad9166;border-radius:11px;
+ background:#25352de8;color:#ebdec3;
+ box-shadow:0 1px 5px #0008;
+ font:11px/1.1 Georgia,"Yu Mincho",serif;
+ white-space:nowrap;pointer-events:none;user-select:none;
+}
+@media(max-width:780px){.table-pile-count-badge{height:20px;min-width:22px;right:-6px;bottom:-8px;font-size:10px}}
