@@ -79,6 +79,22 @@ function stackPlaced(state,movingIndex,targetIndex){
  state.selected=null;state.completionShown=false;
  return next;
 }
+/* A stock card dropped onto a single loose or positioned card creates a
+   real physical stack. Stock card is on top; target card is on bottom. */
+function stackFromDeck(state,targetIndex,faceUp=false){
+ validate(state);
+ if(!Array.isArray(state.deck)||!state.deck.length)fail('empty deck');
+ if(!Number.isInteger(targetIndex)||targetIndex<0||targetIndex>=state.placed.length)fail('invalid target card');
+ const target=state.placed[targetIndex];
+ if(!Number.isFinite(target.x)||!Number.isFinite(target.y))fail('invalid target position');
+ const result=create(state,target.x,target.y);
+ if(Number.isInteger(target.slot)&&target.slot>=0)result.slot=target.slot;
+ const top=state.deck.shift();
+ const [bottom]=state.placed.splice(targetIndex,1);
+ result.cards.push({...top,faceUp:faceUp===true,slot:null,manualMoved:true},bottom);
+ state.selected=null;state.completionShown=false;
+ return result;
+}
 /* Place the top N cards of a pile onto a single loose or positioned card,
    forming a new ordered pile at that card's position. No visual neighbors
    are absorbed. Source frame remains even when empty. */
@@ -158,5 +174,5 @@ function collect(state){
  const returned=piles(state).flatMap(p=>p.cards);
  state.tablePiles=[];return returned;
 }
-root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,stackFromPile,closedTopCards,flipCard,withdraw,transfer,split,relocate,removeEmpty,collect});
+root.TabulaTablePiles=Object.freeze({piles,validate,create,find,roleOf,setRole,fanOf,setFan,deposit,drawFromDeck,stackPlaced,stackFromDeck,stackFromPile,closedTopCards,flipCard,withdraw,transfer,split,relocate,removeEmpty,collect});
 })(typeof globalThis!=='undefined'?globalThis:this);
