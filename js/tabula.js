@@ -477,7 +477,7 @@ function hasOccupiedSpreadSlot(slot){return occupiedSpreadSlots().has(slot)}
 function nextDealSlot(){const occupied=occupiedSpreadSlots();return getDealOrder().find(slot=>!occupied.has(slot))??-1}
 function arrangementOrder(){
  const slots=getSlots();
- const keys=TabulaTableArrangement.locationOrder(state,slots,slots.length?getDealOrder():[]);
+ const keys=settings.spread==='monteCarlo'?getDealOrder().map(i=>'slot:'+i):TabulaTableArrangement.locationOrder(state,slots,slots.length?getDealOrder():[]);
  const preference=document.getElementById('arrangementOrderChoice')?.value||'defined';
  if(preference!=='spatial')return keys;
  const point=key=>{
@@ -494,6 +494,12 @@ function executeArrangement(action){
  if(autoDealBusy||openingBusy){setStatus('配札またはオープンが終わってから操作してください。');return}
  // Repair older Monte Carlo sessions whose off-board cards retained slot IDs.
  if(settings.spread==='monteCarlo'){
+  for(const pile of state.tablePiles||[]){
+   if(Number.isInteger(pile.slot)&&(pile.x<12||pile.x>88||pile.y<3||pile.y>97)){
+    pile.slot=null;
+    pile.cards.forEach(card=>{card.slot=null;card.manualMoved=true});
+   }
+  }
   for(const card of state.placed){
    if(Number.isInteger(card.slot)&&(card.x<12||card.x>88||card.y<3||card.y>97)){
     card.slot=null;card.manualMoved=true;
@@ -1280,6 +1286,11 @@ function renderTablePiles(zone,m){
      setStatus('束ごと'+count+'枚を別の束の上に重ねました。');
     }else{
      TabulaTablePiles.relocate(state,pile.id,pt.x,pt.y);
+     if(settings.spread==='monteCarlo'&&Number.isInteger(pile.slot)&&
+        (pile.x<12||pile.x>88||pile.y<3||pile.y>97)){
+      pile.slot=null;
+      pile.cards.forEach(card=>{card.slot=null;card.manualMoved=true});
+     }
     }
     render();saveLocal();
    };
