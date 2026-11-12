@@ -1049,6 +1049,7 @@ if(dragMoved&&settings.spread==='monteCarlo'&&Number.isInteger(item.slot)){
   setStatus('盤面の外に出した札を配列から外しました。詰め直しには使われません。');
  }
 }
+if(dragMoved&&item.fourSeasonsReveal===true)item.fourSeasonsReveal=false;
 if(!dragMoved&&!wasLong){item.faceUp=!item.faceUp;play('flip')}if(dragMoved||wasLong)selectCard(index);if(dragMoved&&settings.spread==='monteCarlo')maybeTriggerCompletionEffect();
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
@@ -1553,6 +1554,27 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(!state.deck.leng
 // especially on the first deal after a spread switch. Wait for each flying
 // card to complete before scheduling the next one.
 let autoDealBusy=false;
+// Four Seasons exposes the next stock card beside the physical stock instead
+// of dealing it to a foundation, tableau, or talon automatically.
+async function revealFourSeasonsStock(){
+ if(!state.deck.length){setStatus('山札がありません。');return}
+ if(state.placed.some(c=>c.fourSeasonsReveal===true)){
+  setStatus('山札の隣に開いた札があります。まずその札を移動してください。');return;
+ }
+ const zone=$('zone'),stock=$('deck');
+ const zr=zone.getBoundingClientRect(),sr=stock.getBoundingClientRect();
+ const m=metrics(),w=m.w*(tableCamera.scale||1);
+ const cx=sr.left+sr.width/2+w*1.5,cy=sr.top+sr.height/2;
+ const x=Math.max(7,Math.min(93,(cx-zr.left)/zr.width*100));
+ const y=Math.max(8,Math.min(92,(cy-zr.top)/zr.height*100));
+ if(!applyDealRemoval())return;
+ const source=stock.getBoundingClientRect(),card=state.deck.shift();
+ state.placed.push({...card,slot:null,x,y,angle:0,origin:{x,y,angle:0},
+  faceUp:true,manualMoved:true,fourSeasonsReveal:true,dragOrder:nextPlacedStackOrder()});
+ play('deal');render();saveLocal();
+ await animateCardFromDeck(state.placed.length-1,source);
+ setStatus('山札から1枚開きました。タロンまたは場札へドラッグしてください。');
+}
 async function dealAuto(){
  if(autoDealBusy)return;
  // Monte Carlo replenishes the existing fixed 25 positions; do not let a
@@ -1563,7 +1585,7 @@ async function dealAuto(){
  if(settings.spread==='fourSeasons'&&!dualSession){
   if(!state.deck.length){setStatus('山札がありません。');return}
   const vacancies=getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i));
-  if(!vacancies.length){setStatus('①〜⑥はすべて埋まっています。山札からタロンへは手動で配れます。');return}
+  if(!vacancies.length){await revealFourSeasonsStock();return}
   autoDealBusy=true;
   try{
    for(const slot of vacancies){
@@ -2531,7 +2553,7 @@ pile.addEventListener('pointerup',e=>{
   recordTiltSample(drag,e);
   const releasedDrag=drag;
   drag=null;clearDeckPreview();
-  if(!dragMoved){drawAt();return}
+  if(!dragMoved){if(settings.spread==='fourSeasons'&&!dualSession)dealAuto();else drawAt();return}
   const r=$('zone').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
   if(x<0||x>100||y<0||y>100)return;
   // A stock card may land directly on an existing pile, without an
