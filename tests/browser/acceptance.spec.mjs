@@ -206,6 +206,27 @@ test('Open reveals only the top card in each pile, including expanded piles',asy
  expect(cards.map(c=>c.faceUp)).toEqual([true,false,false]);
  await expect(pile.locator('.table-pile-top.is-face-up')).toHaveCount(1);
 });
+test('dragging stock onto a single card makes a two-card pile rather than a loose draw',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.locator('#quickDeal').click();
+ await expect.poll(async ()=>((await saved(page,WORKSPACE)).state.placed.length)).toBe(1);
+ const before=(await saved(page,WORKSPACE)).state;
+ const target=await page.locator('#zone .card').first().boundingBox();
+ const stock=await page.locator('#deck').boundingBox();
+ await page.mouse.move(stock.x+stock.width/2,stock.y+stock.height/2);
+ await page.mouse.down();
+ await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:14});
+ await page.mouse.up();
+ const after=(await saved(page,WORKSPACE)).state;
+ expect(after.placed).toHaveLength(0);
+ expect(after.tablePiles).toHaveLength(1);
+ expect(after.tablePiles[0].cards).toHaveLength(2);
+ expect(after.tablePiles[0].cards[1].instanceId).toBe(before.placed[0].instanceId);
+ expect(after.tablePiles[0].cards[0].instanceId).toBe(before.deck[0].instanceId);
+ expect(after.deck.length).toBe(before.deck.length-1);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.tablePiles[0].cards).toHaveLength(2);
+});
 test('dragging a pile top onto a single card creates a new pile after dwell',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('free');
  await page.evaluate(key=>{
