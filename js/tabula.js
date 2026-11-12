@@ -2299,7 +2299,7 @@ function activateDeck(id,ask=true){
  const blueprint=blueprintFor(id);
  if(ask&&(state.placed.length||(state.removed||[]).length)&&!confirm('デッキを変更すると、現在の配札を片付けて新しい山札を作ります。続けますか？')){refreshDeckPicker();return false}
  settings.deckId=blueprint?.id||deck?.id||(id==='simple'?'simple':'builtin');
- settings.pool='all';
+ settings.pool=blueprint?.id===BUILTIN_PLAYING.id?'fiftyTwo':'all';
  customIds=(blueprint?TabulaDeckBlueprint.generate(blueprint):cards).map(c=>c.id);
  settings.cardDesign=blueprint?'simple':deck?.faceStyle||(id==='simple'?'simple':'standard');
  if(deck?.backColor)settings.cardBackColor=deck.backColor;
@@ -3608,7 +3608,7 @@ function validAppearance(value){return APPEARANCES.includes(value)?value:'standa
 const DECK_CAPABILITY_DEFAULTS=Object.freeze({
  standard:{appearances:['standard','pocket','worn'],pipBackground:true,backColor:true},
  simple:{appearances:['standard','pocket'],pipBackground:false,backColor:false},
- blueprint:{appearances:['standard','pocket','worn'],pipBackground:false,backColor:false}
+ blueprint:{appearances:['standard','pocket'],pipBackground:false,backColor:false}
 });
 function independentTableForSource(source){
  if(!isIndependentTables())return null;
