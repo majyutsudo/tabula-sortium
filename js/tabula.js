@@ -599,7 +599,10 @@ function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint()
 function blueprintCardMarkup(c){
  const artwork=TabulaDeckBlueprint.playingFaceMarkup(c,c.symbol,c.cardColor,c.rankLabel,settings.playingOrientationMarks===true);
  if(artwork)return artwork;
- return '<div class="blueprint-card-face" style="color:'+TabulaDeckBlueprint.inkColor(c.cardColor)+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span><span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span></div>';
+ const line=(!c.suitId&&!c.rankId&&typeof c.oracleLine==='string')?c.oracleLine.trim():'';
+ const label='<span class="blueprint-card-title">'+escapeHTML(c.name||'名称未設定')+'</span>';
+ const bottom=line?'<div class="blueprint-card-bottom">'+label+'<span class="blueprint-card-oracle-line">'+escapeHTML(line)+'</span></div>':label;
+ return '<div class="blueprint-card-face'+(line?' has-oracle-line':'')+'" style="color:'+TabulaDeckBlueprint.inkColor(c.cardColor)+'"><span class="blueprint-card-rank">'+escapeHTML(String(c.rankLabel??''))+'</span><span class="blueprint-card-symbol">'+escapeHTML(c.symbol||'✦')+'</span>'+bottom+'</div>';
 }
 /* Shared by the actual table cards and the simple-deck gallery. */
 // One compact, fixed-proportion design for tabletop and encyclopedia.
