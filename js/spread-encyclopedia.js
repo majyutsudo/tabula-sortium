@@ -1,6 +1,7 @@
 /* TABULA SORTIUM — shared spread encyclopedia definitions and vector diagrams. */
 (function(root){'use strict';
 const BUILTIN={
+ monteCarlo:{name:'モンテカルロ（5×5）',alternate:'Monte Carlo Solitaire',overview:'52枚のプレイングカードを用いる、25枚を5行5列に並べる一般的なモンテカルロ・ソリティアの盤面。カードの組を取り除き、残りを詰め直して補充する。TABULAは操作の正否を自動判定しない。',method:'最初に25枚を左上から右へ、上から下へ5×5に並べる。縦・横・斜めに隣接する同じランクの2枚を取り除く。残ったカードを左上から行方向の順序を保って詰め、空き位置に山札から補充する。取り除ける組がなくなるまで繰り返す。山札が尽きたら補充せず続ける。盤面をすべて取り除けば成功。変種により細部は異なる。'},
  free:{name:'フリースプレッド',alternate:'Free spread',overview:'カードを卓上へ自由に配置する方式。配置の意味や形は使用者が決めます。'},
  one:{name:'ワンカード',alternate:'One-card spread',overview:'一つの問いに一枚のカードで応じる、簡潔な展開法。'},
  three:{name:'スリーカード',alternate:'Three-card spread',overview:'過去・現在・未来の三つの位置を用いて、状況の推移を読む展開法。'},
