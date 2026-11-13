@@ -225,8 +225,8 @@ const playingDefaultTexts=Object.freeze(Object.assign(
    Object.freeze({body:'一般的な意味\n'+description+'\n\nキーワード\n'+keywords,source:''})
   ]))),
  {
-  'playing-joker-1':Object.freeze({body:'TABULA独自の補助札\n通常の52枚にない予期せぬ出来事や偶然の介入を表す。定型的な伝統解釈ではない。\n\nキーワード\n偶然、予想外、逸脱、例外',source:''}),
-  'playing-joker-2':Object.freeze({body:'TABULA独自の補助札\n相談者を表す自由な指示札、または未定の可能性を示す補助札として使う。定型的な伝統解釈ではない。\n\nキーワード\n相談者、未定、自由札、可能性',source:''})
+  'playing-joker-1':Object.freeze({body:"ジョーカーは19世紀半ばのアメリカで、カードゲーム「ユーカー」の最高位の切り札として生まれ、のちに他のゲームでもワイルドカードなどとして用いられるようになった。",source:''}),
+  'playing-joker-2':Object.freeze({body:"ジョーカーは19世紀半ばのアメリカで、カードゲーム「ユーカー」の最高位の切り札として生まれ、のちに他のゲームでもワイルドカードなどとして用いられるようになった。",source:''})
  }
 ));
 root.TabulaDeckBlueprint=Object.freeze({KEY,builtInPlaying,playingDefaultTexts,playingCards,blank,generate,playingFaceMarkup,isPlayingCourt,needsOrientationMark,nameSets,nameOf,playingName,COURT_EMBLEMS,COURT_FRAMES,COLORS,inkColor,validate,load,save,remove,clone});
