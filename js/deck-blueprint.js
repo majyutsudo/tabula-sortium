@@ -83,6 +83,12 @@ function generate(def){
  for(const c of def.cards){
   if(!ids.has(c.id)){list.push(clone(c));ids.add(c.id)}
  }
+ // A copied LENORMAND deck retains its 36 canonical card definitions but may
+ // choose a subset for dealing; never filter the immutable built-in blueprint.
+ if(def.lenormandFamily===true&&Array.isArray(def.included)){
+  const allowed=new Set(def.included);
+  return list.filter(card=>allowed.has(card.id));
+ }
  return list;
 }
 // The 52-card template keeps its suit and rank IDs even when labels change.
