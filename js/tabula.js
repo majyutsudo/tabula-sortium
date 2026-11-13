@@ -513,7 +513,7 @@ async function animateMonteArrangement(action,order){
  const initialDeck=state.deck.length;
  const result=action==='compact'
   ?TabulaTableArrangement.compact(state,slots,order)
-  :TabulaTableArrangement.refill(state,slots,order,{faceUp:true});
+  :TabulaTableArrangement.refill(state,slots,order,{faceUp:settings.dealFaceUp===true});
  const count=action==='compact'?result.moves:result.dealt;
  if(!count){setStatus(action==='compact'?'詰め直す空き位置がありません。':'補充する空き位置がないか、山札がありません。');return}
  const oldPositions=new Map();
@@ -581,7 +581,7 @@ function executeArrangement(action){
  try{
   const result=action==='compact'
    ?TabulaTableArrangement.compact(state,getSlots(),order)
-   :TabulaTableArrangement.refill(state,getSlots(),order,{faceUp:settings.spread==='monteCarlo'||settings.dealFaceUp===true});
+   :TabulaTableArrangement.refill(state,getSlots(),order,{faceUp:settings.dealFaceUp===true});
   const count=action==='compact'?result.moves:result.dealt;
   if(!count){setStatus(action==='compact'?'詰め直す空き位置がありません。':'補充する空き位置がないか、山札がありません。');return}
   state.placed=result.state.placed;
@@ -1574,7 +1574,7 @@ function render(){
   settings.deckPosition=null;
  }
  lastRenderedSpread=settings.spread;
- syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');$('surface').classList.toggle('four-seasons-spread',settings.spread==='fourSeasons');updateLiveResults();const m=metrics(),zone=$('zone');$('deck')?.style.setProperty('--deck-tool-size',Math.max(16,Math.min(30,Math.round(m.w*0.18)))+'px');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set([...occupiedSpreadSlots(),...(state.tablePiles||[]).map(pile=>pile.slot).filter(Number.isInteger)]);getSlots().forEach((p,i)=>{if(assigned.has(i)&&settings.spread!=='monteCarlo')return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}renderTablePiles(zone,m);updateCardSelection();const deck=$('deck');const renderedDeckSource=dualSession?.mixed?state.deck[0]?.sourceDeck:(isIndependentTables()?dualSession.activePile:'A');applyPlayingBack(deck,renderedDeckSource);deck.dataset.appearance=appearanceForPile(renderedDeckSource);if(deck.dataset.appearance==='worn')deck.dataset.wearVariant=wearVariant(dualSession?.mixed?state.deck[0]:(isIndependentTables()?state.deck[0]:(dualSession?.piles.A[0]||state.deck[0])));else delete deck.dataset.wearVariant;if(dualSession){deck.dataset.backTone=dualSession.mixed?dualBackTone(state.deck[0]?.sourceDeck):dualBackTone(isIndependentTables()?dualSession.activePile:'A')}else delete deck.dataset.backTone;deck.classList.toggle('empty',dualSession&&!dualSession.mixed&&!isIndependentTables()?dualSession.piles.A.length===0:state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyDeckPosition();positionSecondDeck();$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');applyPlayingBack(removedPile.querySelector('.removed-pile-card'),state.removed?.at(-1)?.sourceDeck);removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=workingCard(p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
+ syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');$('surface').classList.toggle('four-seasons-spread',settings.spread==='fourSeasons');updateLiveResults();const m=metrics(),zone=$('zone');$('deck')?.style.setProperty('--deck-tool-size',Math.max(16,Math.min(30,Math.round(m.w*0.18)))+'px');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set([...occupiedSpreadSlots(),...(state.tablePiles||[]).map(pile=>pile.slot).filter(Number.isInteger)]);getSlots().forEach((p,i)=>{if(assigned.has(i)&&settings.spread!=='monteCarlo')return;const n=document.createElement('div');n.className='slot';n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}renderTablePiles(zone,m);updateCardSelection();const deck=$('deck');const renderedDeckSource=dualSession?.mixed?state.deck[0]?.sourceDeck:(isIndependentTables()?dualSession.activePile:'A');applyPlayingBack(deck,renderedDeckSource);deck.dataset.appearance=appearanceForPile(renderedDeckSource);if(deck.dataset.appearance==='worn')deck.dataset.wearVariant=wearVariant(dualSession?.mixed?state.deck[0]:(isIndependentTables()?state.deck[0]:(dualSession?.piles.A[0]||state.deck[0])));else delete deck.dataset.wearVariant;if(dualSession){deck.dataset.backTone=dualSession.mixed?dualBackTone(state.deck[0]?.sourceDeck):dualBackTone(isIndependentTables()?dualSession.activePile:'A')}else delete deck.dataset.backTone;deck.classList.toggle('empty',dualSession&&!dualSession.mixed&&!isIndependentTables()?dualSession.piles.A.length===0:state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');deck.style.width=m.w+'px';deck.style.height=m.h+'px';applyDeckPosition();positionSecondDeck();$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / ディール ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');applyPlayingBack(removedPile.querySelector('.removed-pile-card'),state.removed?.at(-1)?.sourceDeck);removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=workingCard(p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
  const plan=new Map(),raw=String(value||'').trim();if(!raw)return plan;
  for(const token of raw.split(/[,，、;；\n]+/)){
   const t=token.trim();if(!t)continue;
@@ -1694,7 +1694,7 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(settings.spread=
  if(refillPile){
   // Refill the original registered location without creating a second card
   // location. Keep its ID, role and fan properties intact.
-  const opening=settings.spread==='fourSeasons'||TabulaTablePiles.roleOf(refillPile)==='waste'||settings.dealFaceUp===true;
+  const opening=TabulaTablePiles.roleOf(refillPile)==='waste'||settings.dealFaceUp===true;
   const sourceRect=$('deck').getBoundingClientRect();
   TabulaTablePiles.drawFromDeck(state,refillPile.id,opening);
   play('deal');render();saveLocal();
@@ -1760,11 +1760,10 @@ async function revealFourSeasonsStock(){
  await animateCardFromDeck(state.placed.length-1,source);
  setStatus('山札から1枚開きました。タロンまたは場札へドラッグしてください。');
 }
+let dealCancelRequested=false;
+function syncDealButton(){const button=$('quickDeal');if(!button)return;const active=autoDealBusy;button.title=active?'進行中のディールを中断（配ったカードは残します）':'スプレッドへディール';const parts=button.querySelectorAll('span');if(parts[0])parts[0].textContent=active?'■':'▧';if(parts[1])parts[1].textContent=active?'中断':'ディール';}
 async function dealAuto(){
- if(autoDealBusy)return;
- // Monte Carlo replenishes the existing fixed 25 positions; do not let a
- // configured deal workbench intercept the shortcut or start a fresh deal.
- if(settings.spread==='monteCarlo'&&!dualSession){executeArrangement('refill');return;}
+ if(autoDealBusy){dealCancelRequested=true;setStatus('ディールを中断します。現在の1枚が配り終わるまでお待ちください。');return;}
  // The Four Seasons preset always uses its six registered deal targets,
  // regardless of any user-configured dealing workbench.
  if(settings.spread==='fourSeasons'&&!dualSession){
@@ -1772,14 +1771,14 @@ async function dealAuto(){
   if(!state.deck.length){setStatus('山札がありません。');return}
   const vacancies=getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i));
   if(!vacancies.length){await revealFourSeasonsStock();return}
-  autoDealBusy=true;
+  autoDealBusy=true;dealCancelRequested=false;syncDealButton();
   try{
    for(const slot of vacancies){
-    if(settings.spread!=='fourSeasons'||!state.deck.length)break;
+    if(dealCancelRequested||settings.spread!=='fourSeasons'||!state.deck.length)break;
     await drawAt(slot);
     await new Promise(resolve=>setTimeout(resolve,25));
    }
-  }finally{autoDealBusy=false}
+  }finally{autoDealBusy=false;syncDealButton();if(dealCancelRequested)setStatus('ディールを中断しました。配札済みのカードは残っています。')}
   return;
  }
  if(!dualSession&&dealWorkbenchController?.executeSelected())return;
@@ -1788,21 +1787,22 @@ async function dealAuto(){
  const unfilled=getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i));
  if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}
  const startingSpread=settings.spread,startingSession=dualSession;
- autoDealBusy=true;
+ autoDealBusy=true;dealCancelRequested=false;syncDealButton();
  if(dualSession)dualDealBusy=true;
  try{
   // Let the new spread's DOM/layout paint before launching the first card.
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   for(const slot of unfilled){
-   if(settings.spread!==startingSpread||dualSession!==startingSession||!state.deck.length)break;
+   if(dealCancelRequested||settings.spread!==startingSpread||dualSession!==startingSession||!state.deck.length)break;
    await drawAt(slot);
    // Maintain approximately the old deliberate 340-ms rhythm, while
    // preventing work on a blocked main thread from bunching card arrivals.
    await new Promise(resolve=>setTimeout(resolve,20));
   }
  }finally{
-  autoDealBusy=false;
+  autoDealBusy=false;syncDealButton();
   if(startingSession)dualDealBusy=false;
+  if(dealCancelRequested)setStatus('ディールを中断しました。配札済みのカードは残っています。');
  }
  // The final arrival animation is complete; check face-up spreads once.
  if(!startingSession&&settings.spread===startingSpread&&settings.dealFaceUp===true){maybeTriggerCompletionEffect();saveLocal();}
