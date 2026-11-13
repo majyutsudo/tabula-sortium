@@ -1710,6 +1710,9 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  }
 }
 
-/* v0.512 — TABULA LENORMAND: illustrated full-bleed 2:3 faces. */
-.face.front .lenormand-face-art{display:block;width:100%;height:100%;object-fit:fill;border:0;margin:0;padding:0;border-radius:inherit;pointer-events:none}
-.gallery-blueprint-inner .lenormand-face-art{display:block;width:90px;height:135px;object-fit:fill;max-width:none;box-shadow:none;border-radius:0}
+/* v0.513 — Lenormand faces use original PNG artwork plus shared SVG ornaments. */
+.face.front:has(> .lenormand-face-svg){padding:0!important;gap:0!important;border:0;background:#f7e8c5;overflow:hidden}
+.face.front:has(> .lenormand-face-svg):before{display:none}
+.front .lenormand-face-svg,.gallery-blueprint-inner .lenormand-face-svg,.blueprint-card-view .lenormand-face-svg{display:block;width:100%;height:100%;pointer-events:none;user-select:none;flex:none}
+.gallery-blueprint-inner:has(> .lenormand-face-svg){padding:0!important;gap:0!important;border:0!important;background:#f7e8c5!important}
+.gallery-blueprint-inner:has(> .lenormand-face-svg):before{display:none!important}
