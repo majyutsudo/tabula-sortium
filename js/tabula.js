@@ -577,7 +577,7 @@ function executeArrangement(action){
  if(autoDealBusy||openingBusy){setStatus('配札またはオープンが終わってから操作してください。');return}
  const order=arrangementOrder();
  if(!order.length){setStatus('整理する配置枠がありません。右下から「＋束を置く」で枠を作れます。');return}
- if(settings.spread==='monteCarlo'&&!dualSession){animateMonteArrangement(action,order).catch(e=>setStatus(e.message));return}
+ if(settings.spread==='monteCarlo'&&action==='compact'&&!dualSession){animateMonteArrangement(action,order).catch(e=>setStatus(e.message));return}
  try{
   const result=action==='compact'
    ?TabulaTableArrangement.compact(state,getSlots(),order)
