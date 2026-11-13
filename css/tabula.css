@@ -1698,3 +1698,14 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  filter:drop-shadow(0 0 12px rgba(255,215,120,.9));
  z-index:1900!important;
 }
+
+/* v0.496: stock movement uses the same card-relative size as pile tools. */
+@media(max-width:780px) and (pointer:coarse){
+ .table-surface .deck .deck-move-handle{
+  width:var(--deck-tool-size,26px);height:var(--deck-tool-size,26px);
+  min-width:0;min-height:0;
+  top:calc(var(--deck-tool-size,26px) * -0.56 - 3px);
+  right:calc(var(--deck-tool-size,26px) * -0.46);
+  font-size:calc(var(--deck-tool-size,26px) * 0.54);
+ }
+}
