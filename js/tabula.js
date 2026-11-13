@@ -1250,6 +1250,7 @@ function renderTablePiles(zone,m){
  if(dualSession||spreadWorkbench)return;
  for(const pile of TabulaTablePiles.piles(state)){
   const el=document.createElement('div');el.className='table-pile';el.dataset.pileId=pile.id;el.classList.toggle('pile-has-multiple',pile.cards.length>1);
+  el.style.setProperty('--pile-tool-size',Math.max(18,Math.min(34,Math.round(m.w*0.22)))+'px');
   el.style.left=pile.x+'%';el.style.top=pile.y+'%';el.style.width=m.w+'px';el.style.height=m.h+'px';el.style.transform='translate(-50%,-50%) rotate('+(Number(pile.angle)||0)+'deg)';
   
   const title=document.createElement('button');title.type='button';title.className='table-pile-handle';
