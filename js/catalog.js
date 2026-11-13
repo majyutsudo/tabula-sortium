@@ -23,7 +23,7 @@ if(typeof window!=='undefined'){
     const col=i%cols;
     const centeredCol=id==='grandTableau8'&&i>=32?i-33.5:col-(cols-1)/2;
     const firstY=id==='grandTableau8'?13:15;
-    slot.x=50+centeredCol*9.2;
+    slot.x=50+centeredCol*9.4;
     slot.y=firstY+Math.floor(i/cols)*17.1;
    });
   }
