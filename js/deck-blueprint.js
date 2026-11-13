@@ -176,7 +176,7 @@ function playingFaceMarkup(card,symbol,color,rankLabel=card.number,showOrientati
  const indexGlyph=symbol==='♠'
   ?'<path d="M0-13C-4-7-13-3-13 3a6.3 6.3 0 0 0 11 3c-.4 2-1.3 4-3 6H5c-1.7-2-2.6-4-3-6a6.3 6.3 0 0 0 11-3C13-3 4-7 0-13Z"/>'
   :symbol==='♣'
-  ?'<circle cx="0" cy="-7" r="6"/><circle cx="-7" cy="4" r="6"/><circle cx="7" cy="4" r="6"/><path d="M-2 5H2L3 10 6 12H-6L-3 10Z"/>'
+  ?'<path d="M0-12a6 6 0 0 1 5 9 6 6 0 1 1-3 10c.4 2 1.3 4 3 5H-5c1.7-1 2.6-3 3-5a6 6 0 1 1-3-10 6 6 0 0 1 5-9Z"/>'
   :glyph;
  const indexScale=symbol==='♠'||symbol==='♣'?'.59':'.48';
  const index=`<text x="13" y="20" font-size="${rankSize}" font-weight="700">${xml(rank)}</text><g transform="translate(13 31) scale(${indexScale})">${indexGlyph}</g>`;
