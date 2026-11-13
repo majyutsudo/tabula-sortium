@@ -83,3 +83,10 @@
 .playing-direct-editor-active .playing-editor-row input{width:100%;min-width:0;padding:7px 6px}
 .playing-direct-editor-active #playingEditorDelete[hidden]{display:none}
 @media(max-width:600px){.playing-direct-editor-active .playing-editor-row{grid-template-columns:22px 55px minmax(0,1fr);gap:5px}.playing-direct-editor-active .playing-editor-row input{font-size:16px}}
+
+/* LENORMAND uses the same direct editor layout as PLAYING CARD. */
+.lenormand-direct-editor-active .lenormand-editor-row{grid-template-columns:24px 42px minmax(0,1fr)}
+.lenormand-direct-editor-active .lenormand-editor-row>input[type="checkbox"]{width:18px;height:18px;margin:auto;accent-color:#bfaa79}
+.lenormand-direct-editor-active .lenormand-editor-number{font:14px Georgia,serif;color:#dfc79f;text-align:center;font-variant-numeric:tabular-nums}
+.lenormand-direct-editor-active #lenormandEditorDelete[hidden]{display:none}
+@media(max-width:600px){.lenormand-direct-editor-active .lenormand-editor-row{grid-template-columns:23px 34px minmax(0,1fr)}}
