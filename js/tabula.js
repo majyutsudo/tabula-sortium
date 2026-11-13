@@ -355,7 +355,7 @@ function installDesktopTableViews(){
 let customIds=cards.map(c=>c.id);
 let deckLibrary=TabulaDeckStore.read(localStorage,cards);
 function activeDeck(){return deckLibrary.find(d=>d.id===settings.deckId)||null}
-const BUILTIN_PLAYING=TabulaDeckBlueprint.builtInPlaying;
+const BUILTIN_PLAYING=TabulaDeckBlueprint.builtInPlaying;const BUILTIN_LENORMAND=TabulaLenormand.blueprint;
 function activeBlueprint(){return blueprintFor(settings.deckId)}
 // The reversal preference belongs to each deck identity, not to the tabletop.
 // Only the two built-in Tarot choices start enabled; every playing/custom deck starts disabled.
@@ -398,7 +398,7 @@ function effectivePipBackground(){return activeDeck()?.pipBackground||settings.p
 function displayCard(c){if(activeBlueprint())return workingCard(c.id)||c;const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
 function tableCardName(c){const lang=settings.tableCardLanguage||'linked';if(activeBlueprint()){if(activeBlueprint().id===BUILTIN_PLAYING.id&&lang!=='linked')return TabulaDeckBlueprint.playingName(c,lang);return displayCard(c).name;}return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
-function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+(isPlayingBlueprint(d)?'（PLAYING CARD）':'（設計室）'),d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
+function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+(isPlayingBlueprint(d)?'（PLAYING CARD）':'（設計室）'),d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
 const randomize=TabulaShuffle.randomize;
 // French-suited historic packs. Each list identifies actual ranks, never an
@@ -634,6 +634,7 @@ function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint()
  return simpleCardMarkup(c);
 }
 function blueprintCardMarkup(c){
+ if(c.id.startsWith('lenormand-'))return TabulaLenormand.faceMarkup(c);
  const artwork=TabulaDeckBlueprint.playingFaceMarkup(c,c.symbol,c.cardColor,c.rankLabel,settings.playingOrientationMarks===true);
  if(artwork)return artwork;
  const line=(!c.suitId&&!c.rankId&&typeof c.oracleLine==='string')?c.oracleLine.trim():'';
@@ -1920,9 +1921,10 @@ function exportAllData(){
  }catch(e){setStatus('バックアップを作成できませんでした：'+e.message)}
 }
 const validateReading=v=>TabulaStorage.validateReading(v);
-function isBlueprintId(deckId){return deckId===BUILTIN_PLAYING.id||typeof deckId==='string'&&deckId.startsWith('blueprint_')}
+function isBlueprintId(deckId){return deckId===BUILTIN_LENORMAND.id||deckId===BUILTIN_PLAYING.id||typeof deckId==='string'&&deckId.startsWith('blueprint_')}
 function blueprintFor(deckId,library){
  if(deckId===BUILTIN_PLAYING.id)return BUILTIN_PLAYING;
+ if(deckId===BUILTIN_LENORMAND.id)return BUILTIN_LENORMAND;
  return isBlueprintId(deckId)?(library??TabulaDeckBlueprint.load()).find(d=>d.id===deckId)||null:null;
 }
 function catalogueFor(deckId,library){
@@ -2911,7 +2913,7 @@ function galleryCard(c){
 }
 function galleryDeckOptions(){
  const picker=$('cardGalleryDeck'),previous=GALLERY.deckId;
- picker.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id));
+ picker.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
  for(const deck of deckLibrary)picker.add(new Option(deck.name,deck.id));
  for(const deck of TabulaDeckBlueprint.load())picker.add(new Option(deck.name+(isPlayingBlueprint(deck)?'（PLAYING CARD）':'（設計室）'),deck.id));
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
@@ -3789,7 +3791,7 @@ function dualBackTone(deck){const tone=dualSession?.backColors?.[deck]||DUAL_BAC
 function isIndependentTables(){return !!dualSession&&dualSession.workspaceKind==='independent'}
 function independentDeckChoices(){
  const p=$('independentDeckSelect');if(!p)return;const old=p.value;
- p.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id));
+ p.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
  for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
  for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+(isPlayingBlueprint(d)?'（PLAYING CARD）':'（設計室）'),d.id));
  p.value=Array.from(p.options).some(o=>o.value===old)?old:'builtin';
