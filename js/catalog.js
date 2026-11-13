@@ -7,7 +7,7 @@ const presets={fourSeasons:[{"x":39,"y":17,"angle":0,"name":"ファウンデー�
 if(typeof window!=='undefined'){
  const desktop=window.innerWidth>780;
  if(desktop){
-  for(const [id,cols,top,step,xStep] of [['grandTableau8',8,13,18,10.2],['grandTableau9',9,15,18,9.7]]){
+  for(const [id,cols,top,step,xStep] of [['grandTableau8',8,13,17,10.2],['grandTableau9',9,15,17,9.7]]){
    presets[id].forEach((slot,i)=>{
     const col=i%cols;
     if(id==='grandTableau8'&&i>=32)slot.x=50+(i-33.5)*xStep;
@@ -16,6 +16,14 @@ if(typeof window!=='undefined'){
    });
   }
  }else{
+  // A subtle increase in spacing on mobile; preserve the center of each row.
+  for(const [id,cols] of [['grandTableau8',8],['grandTableau9',9]]){
+   presets[id].forEach((slot,i)=>{
+    slot.x=50+(slot.x-50)*1.025;
+    const row=Math.floor(i/cols);
+    slot.y=50+(slot.y-50)*1.025;
+   });
+  }
   presets.monteCarlo.forEach((slot,i)=>{
    slot.x=50+(i%5-2)*12.5;
    slot.y=50+(Math.floor(i/5)-2)*19.5;
