@@ -7,29 +7,29 @@ const presets={fourSeasons:[{"x":39,"y":17,"angle":0,"name":"ファウンデー�
 if(typeof window!=='undefined'){
  const desktop=window.innerWidth>780;
  if(desktop){
-  // Match Monte Carlo's exact center-to-center spacing on PC.
+  // Bring columns slightly closer than the previous desktop layout.
   for(const [id,cols,top] of [['grandTableau8',8,13],['grandTableau9',9,15]]){
    presets[id].forEach((slot,i)=>{
     const col=i%cols;
     const centeredCol=id==='grandTableau8'&&i>=32?i-33.5:col-(cols-1)/2;
-    slot.x=50+centeredCol*12;
+    slot.x=50+centeredCol*11.5;
     slot.y=top+Math.floor(i/cols)*18.5;
    });
   }
  }else{
-  // Only +0.1 percentage point per column/row compared with v0.506.
+  // Mobile tableau: slightly wider columns and visibly tighter rows.
   for(const [id,cols] of [['grandTableau8',8],['grandTableau9',9]]){
    presets[id].forEach((slot,i)=>{
     const col=i%cols;
     const centeredCol=id==='grandTableau8'&&i>=32?i-33.5:col-(cols-1)/2;
     const firstY=id==='grandTableau8'?13:15;
-    slot.x=50+centeredCol*9.1;
-    slot.y=firstY+Math.floor(i/cols)*19.1;
+    slot.x=50+centeredCol*9.2;
+    slot.y=firstY+Math.floor(i/cols)*17.1;
    });
   }
   presets.monteCarlo.forEach((slot,i)=>{
    slot.x=50+(i%5-2)*12.5;
-   slot.y=50+(Math.floor(i/5)-2)*19.5;
+   slot.y=50+(Math.floor(i/5)-2)*21;
   });
  }
 }
