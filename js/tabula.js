@@ -398,7 +398,7 @@ function effectivePipBackground(){return activeDeck()?.pipBackground||settings.p
 function displayCard(c){if(activeBlueprint())return workingCard(c.id)||c;const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
 function tableCardName(c){const lang=settings.tableCardLanguage||'linked';if(activeBlueprint()){if(activeBlueprint().id===BUILTIN_PLAYING.id&&lang!=='linked')return TabulaDeckBlueprint.playingName(c,lang);return displayCard(c).name;}return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
-function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));for(const d of deckLibrary)picker.add(new Option(d.name,d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+(isPlayingBlueprint(d)?'（PLAYING CARD）':'（設計室）'),d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
+function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('SIMPLE TAROT（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));for(const d of deckLibrary)picker.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+'（'+TabulaDeckBlueprint.generate(d).length+'枚）',d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
 const randomize=TabulaShuffle.randomize;
 // French-suited historic packs. Each list identifies actual ranks, never an
@@ -2941,9 +2941,9 @@ function galleryCard(c){
 }
 function galleryDeckOptions(){
  const picker=$('cardGalleryDeck'),previous=GALLERY.deckId;
- picker.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
- for(const deck of deckLibrary)picker.add(new Option(deck.name,deck.id));
- for(const deck of TabulaDeckBlueprint.load())picker.add(new Option(deck.name+(isPlayingBlueprint(deck)?'（PLAYING CARD）':'（設計室）'),deck.id));
+ picker.replaceChildren(new Option('SIMPLE TAROT（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
+ for(const deck of deckLibrary)picker.add(new Option(deck.name+'（'+deck.included.length+'枚）',deck.id));
+ for(const deck of TabulaDeckBlueprint.load())picker.add(new Option(deck.name+'（'+TabulaDeckBlueprint.generate(deck).length+'枚）',deck.id));
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
  picker.value=GALLERY.deckId;
 }
@@ -3840,9 +3840,9 @@ function dualBackTone(deck){const tone=dualSession?.backColors?.[deck]||DUAL_BAC
 function isIndependentTables(){return !!dualSession&&dualSession.workspaceKind==='independent'}
 function independentDeckChoices(){
  const p=$('independentDeckSelect');if(!p)return;const old=p.value;
- p.replaceChildren(new Option('SIMPLE TAROT','simple'),new Option('TABULA TAROT（標準）','builtin'),new Option(BUILTIN_PLAYING.name,BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
+ p.replaceChildren(new Option('SIMPLE TAROT（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
  for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
- for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+(isPlayingBlueprint(d)?'（PLAYING CARD）':'（設計室）'),d.id));
+ for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+'（'+TabulaDeckBlueprint.generate(d).length+'枚）',d.id));
  p.value=Array.from(p.options).some(o=>o.value===old)?old:'builtin';
  updateIndependentPool();
 }
