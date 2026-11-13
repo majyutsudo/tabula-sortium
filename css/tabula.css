@@ -1691,3 +1691,10 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  }
  .table-pile:not(.pile-has-multiple) > .table-pile-count-badge{display:none}
 }
+
+/* v0.495: a pile glows only when the current drop-point resolves to it. */
+#zone .table-pile.pile-drop-target{
+ outline:3px solid #f2d58b;outline-offset:3px;
+ filter:drop-shadow(0 0 12px rgba(255,215,120,.9));
+ z-index:1900!important;
+}
