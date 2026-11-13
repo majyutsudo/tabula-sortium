@@ -2385,7 +2385,7 @@ function activateDeck(id,ask=true){
   const fallback=settings.deckId===BUILTIN_LENORMAND.id?'green':'sepia';
   const saved=settings.deckBackColors?.[settings.deckId];
   settings.cardBackColor=Object.hasOwn(TABULA_BACK_PALETTE,saved)?saved:fallback;
- }else if(blueprint)settings.cardBackColor='sepia';
+ }else if(blueprint)settings.cardBackColor=isLenormandBlueprint(blueprint)?'green':'sepia';
  finishedCache.clear();
  sync();initialize();
  setStatus((blueprint?.name||deck?.name||(id==='simple'?'SIMPLE TAROT':'TABULA TAROT（標準）'))+' を読み込みました。');
