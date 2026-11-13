@@ -3,9 +3,8 @@
    Pocket geometry, dual-deck identity, and move handles are preserved. */
 
 /* Pocket */
-#zone .card[data-appearance="pocket"]{width:calc(var(--cw) * .82);height:calc(var(--ch) * .82)}
+/* Pocket dimensions are supplied by applyPhysicalCardDimensions for every physical card. */
 .table-surface .deck[data-appearance="pocket"]{
-  width:calc(var(--cw) * .82);height:calc(var(--ch) * .82);
   box-shadow:3px 3px 0 #aaa49b,5px 5px 0 #53534f,6px 7px 7px #0008;
 }
 .deck-drag-preview[data-appearance="pocket"]{transform:translate(-50%,-50%) scale(.82)}
