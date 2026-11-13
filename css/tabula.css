@@ -1664,7 +1664,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  .gallery-blueprint-inner .blueprint-oracle-face .blueprint-card-oracle-line{font-size:7px}
 }
 
-/* v0.493: keep the original corner arrangement and scale the visual controls
+/* v0.494: keep the original corner arrangement and scale the visual controls
    with the rendered card width. All controls remain immediately available. */
 @media(max-width:780px) and (pointer:coarse){
  .table-pile > .table-pile-handle,
@@ -1676,6 +1676,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  }
  .table-pile > .table-pile-handle{
   left:calc(var(--pile-tool-size,26px) * -0.46);
+  top:calc(var(--pile-tool-size,26px) * -0.56 - 3px);
   font-size:calc(var(--pile-tool-size,26px) * 0.54);
  }
  .table-pile > .table-pile-fan-grip{
