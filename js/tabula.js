@@ -1214,7 +1214,9 @@ function playingBackPreference(){
 }
 function applyPlayingBack(element,source=null){
  const playing=usesPlayingBack(source);
+ const lenormand=usesLenormandBack(source);
  element.toggleAttribute('data-playing-back',playing);
+ element.toggleAttribute('data-lenormand-back',lenormand);
  if(playing){
   const tone=dualSession?dualBackTone(source||dualSession.activePile):playingBackPreference();
   element.style.setProperty('--playing-back-base',TABULA_BACK_PALETTE[tone]);
@@ -3700,6 +3702,9 @@ function independentTableForSource(source){
 function usesPlayingBack(source=null){
  return isPlayingBlueprint(blueprintFor(independentTableForSource(source)?.deckId||settings.deckId));
 }
+function usesLenormandBack(source=null){
+ return (independentTableForSource(source)?.deckId||settings.deckId)===BUILTIN_LENORMAND.id;
+}
 function deckCapabilities(source=null){
  const table=independentTableForSource(source);
  const deckId=table?.deckId||settings.deckId;
@@ -3776,7 +3781,7 @@ function updateAppearanceControls(){
  }
  const backField=$('cardBackColorField');
  if(backField){
-  const canChoose=caps.backColor&&!(usesPlayingBack()&&dualSession?.mixed);
+  const canChoose=caps.backColor&&!usesLenormandBack()&&!(usesPlayingBack()&&dualSession?.mixed);
   backField.hidden=!canChoose;
   backField.style.display=canChoose?'':'none';
  }
