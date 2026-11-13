@@ -373,6 +373,7 @@ function setDeckReversals(enabled){
  settings.reversals=!!enabled;
 }
 function isPlayingBlueprint(b){return !!b&&(b.id===BUILTIN_PLAYING.id||b.playingFamily===true)}
+function isLenormandBlueprint(b){return !!b&&(b.id===BUILTIN_LENORMAND.id||b.lenormandFamily===true)}
 function activeBlueprintNameSet(blueprint=activeBlueprint()){
  if(!blueprint)return 'primary';
  const selected=settings.blueprintNameSets?.[blueprint.id]||'primary';
@@ -2470,10 +2471,101 @@ function openPlayingDeckEditor(source=BUILTIN_PLAYING,createCopy=false){
  };
  render();
 }
+function openLenormandDeckEditor(source=BUILTIN_LENORMAND,createCopy=false){
+ const API=TabulaDeckBlueprint,original=source.id===BUILTIN_LENORMAND.id;
+ const existing=!createCopy&&!original&&source.lenormandFamily===true;
+ const clone=value=>JSON.parse(JSON.stringify(value));
+ const newDraft=(from=BUILTIN_LENORMAND)=>{
+  const copy=clone(from);
+  copy.id='blueprint_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  copy.lenormandFamily=true;
+  copy.name=from.id===BUILTIN_LENORMAND.id?'新しいLENORMAND':from.name+'（複製）';
+  copy.nameSets=clone(BUILTIN_LENORMAND.nameSets);
+  if(!Array.isArray(copy.included))copy.included=copy.cards.map(c=>c.id);
+  return copy;
+ };
+ let draft=existing?clone(source):newDraft(createCopy?source:BUILTIN_LENORMAND);
+ if(!Array.isArray(draft.included))draft.included=draft.cards.map(c=>c.id);
+ let saved=existing,dirty=false,language='primary';
+ const getCardName=c=>language==='primary'?c.name:(c.names?.en||'');
+ const status=message=>{const node=$('lenormandEditorStatus');if(node)node.textContent=message};
+ const dirtyMark=()=>{dirty=true;status('未保存の変更があります。')};
+ function renderCards(){
+  const box=$('lenormandEditorCards');if(!box)return;
+  const included=new Set(draft.included);
+  $('lenormandEditorCount').textContent='（収録'+included.size+'/36枚）';
+  box.replaceChildren(...draft.cards.map(card=>{
+   const row=document.createElement('div');row.className='playing-editor-row lenormand-editor-row';
+   const check=document.createElement('input');check.type='checkbox';check.checked=included.has(card.id);
+   check.setAttribute('aria-label',card.name+' を収録する');
+   check.onchange=()=>{
+    const ids=new Set(draft.included);
+    if(check.checked)ids.add(card.id);else ids.delete(card.id);
+    draft.included=draft.cards.filter(c=>ids.has(c.id)).map(c=>c.id);
+    $('lenormandEditorCount').textContent='（収録'+draft.included.length+'/36枚）';dirtyMark();
+   };
+   const number=document.createElement('span');number.textContent=String(card.lenormandNumber||Number(card.id.slice(-2))).padStart(2,'0');
+   number.className='lenormand-editor-number';
+   const name=document.createElement('input');name.type='text';name.maxLength=120;name.value=getCardName(card);
+   name.setAttribute('aria-label',card.id+' のカード名');
+   name.oninput=()=>{
+    if(language==='primary')card.name=name.value;
+    else{card.names??={};card.names.en=name.value}
+    dirtyMark();
+   };
+   row.append(check,number,name);return row;
+  }));
+ }
+ function render(){
+  $('lenormandEditorName').value=draft.name;
+  $('lenormandEditorLanguage').value=language;
+  $('lenormandEditorDelete').hidden=!saved;
+  renderCards();
+ }
+ let markup='<h2>LENORMAND — デッキ編集</h2><p class="note">標準36枚を元にカード名・表示言語・収録カードを編集できます。標準デッキと図像は変更しません。</p>';
+ markup+='<nav class="editor-nav tarot-editor-nav" aria-label="編集画面の移動"><button type="button" id="lenormandEditorBack">← TABULAへ戻る</button><a href="deck-designer.html" id="lenormandEditorDesigner">デッキ設計室</a></nav>';
+ markup+='<div class="tarot-edit-manage"><div class="tarot-edit-actions"><button type="button" id="lenormandEditorStandard">標準から新規作成</button><button type="button" id="lenormandEditorCopy">現在の内容を複製</button></div><p class="note">編集内容はブラウザーに保存され、標準の36枚には影響しません。</p></div>';
+ markup+='<label class="field">デッキ名<input id="lenormandEditorName" maxlength="80"></label>';
+ markup+='<label class="field">カード名の言語<select id="lenormandEditorLanguage"><option value="primary">日本語</option><option value="en">English</option></select></label>';
+ markup+='<h3 class="playing-editor-heading">収録カードと名称 <span id="lenormandEditorCount"></span></h3>';
+ markup+='<div class="playing-editor-rows" id="lenormandEditorCards"></div>';
+ markup+='<p class="note">左のチェックで収録札を選択します。番号・プレイングカードのインセット・標準図像は固定です。意味の文章はカード図鑑から編集できます。</p>';
+ markup+='<div class="row deck-editor-footer"><button type="button" id="lenormandEditorCancel">キャンセル</button><button type="button" id="lenormandEditorDelete">このデッキを削除</button><button type="button" class="primary" id="lenormandEditorSave">デッキを保存</button></div><p class="note" id="lenormandEditorStatus" role="status"></p>';
+ modal(markup);$('modalBg').classList.add('tarot-deck-editor-active','playing-direct-editor-active','lenormand-direct-editor-active');
+ $('lenormandEditorBack').onclick=closeModal;
+ $('lenormandEditorCancel').onclick=closeModal;
+ $('lenormandEditorDesigner').onclick=e=>{if(dirty&&!confirm('未保存の変更を破棄してデッキ設計室へ移動しますか？'))e.preventDefault()};
+ $('lenormandEditorName').oninput=e=>{draft.name=e.target.value;dirtyMark()};
+ $('lenormandEditorLanguage').onchange=e=>{language=e.target.value;renderCards()};
+ $('lenormandEditorStandard').onclick=()=>{
+  if(dirty&&!confirm('未保存の変更を破棄して標準36枚から始めますか？'))return;
+  draft=newDraft();saved=false;dirty=false;language='primary';render();status('標準36枚から新しいデッキを作成します。');
+ };
+ $('lenormandEditorCopy').onclick=()=>{
+  draft=newDraft(draft);saved=false;dirty=true;render();status('現在の内容を複製しました。');
+ };
+ $('lenormandEditorSave').onclick=()=>{
+  draft.name=$('lenormandEditorName').value.trim();
+  if(!draft.name){status('デッキ名を入力してください。');return}
+  if(draft.included.length===0){status('少なくとも1枚を収録してください。');return}
+  if(draft.cards.some(c=>!c.name?.trim())){status('日本語のカード名を入力してください。');return}
+  try{
+   API.save(draft);saved=true;dirty=false;
+   refreshDeckPicker();render();status('「'+draft.name+'」を保存しました。デッキ一覧から選べます。');
+  }catch(err){status('保存できませんでした：'+err.message)}
+ };
+ $('lenormandEditorDelete').onclick=()=>{
+  if(!saved||!confirm('「'+draft.name+'」を削除しますか？'))return;
+  API.remove(draft.id);saved=false;draft=newDraft();dirty=false;
+  refreshDeckPicker();render();status('保存済みデッキを削除しました。');
+ };
+ render();
+}
 function openDeckEditor(createCopy=false,fromStandard=false){
  if(activeBlueprint()){
  const b=activeBlueprint();
  if(isPlayingBlueprint(b)){openPlayingDeckEditor(b,createCopy);return;}
+ if(isLenormandBlueprint(b)){openLenormandDeckEditor(b,createCopy);return;}
  window.location.href='deck-designer.html'+(createCopy?'':'?deck='+encodeURIComponent(b.id));return;
 }
  const existing=createCopy||fromStandard?null:activeDeck();
@@ -3736,7 +3828,7 @@ function usesPlayingBack(source=null){
  return isPlayingBlueprint(blueprintFor(independentTableForSource(source)?.deckId||settings.deckId));
 }
 function usesLenormandBack(source=null){
- return (independentTableForSource(source)?.deckId||settings.deckId)===BUILTIN_LENORMAND.id;
+ return isLenormandBlueprint(blueprintFor(independentTableForSource(source)?.deckId||settings.deckId));
 }
 function deckCapabilities(source=null){
  const table=independentTableForSource(source);
