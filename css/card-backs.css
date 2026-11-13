@@ -129,14 +129,20 @@ body:has(#surface) [data-playing-back]::after{
  display:none!important;
 }
 
-/* TABULA LENORMAND: approved single green back, independent of the tarot
-   and playing-card back palettes. A single data attribute is attached by
-   applyPlayingBack to the stock, dealt cards, piles and animation surfaces. */
+/* TABULA LENORMAND: one chosen engraved design in seven tint variants.
+   The back belongs to the physical deck, including independent second decks,
+   not to the global TAROT back theme. */
+[data-lenormand-back-tone="sepia"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/sepia.webp?v=0518")}
+[data-lenormand-back-tone="green"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/green.webp?v=0518")}
+[data-lenormand-back-tone="burgundy"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/burgundy.webp?v=0518")}
+[data-lenormand-back-tone="navy"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/navy.webp?v=0518")}
+[data-lenormand-back-tone="purple"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/purple.webp?v=0518")}
+[data-lenormand-back-tone="black"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/black.webp?v=0518")}
+[data-lenormand-back-tone="ivory"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/ivory.webp?v=0518")}
 body:has(#surface) [data-lenormand-back],
-body:has(#surface).dual-enabled [data-lenormand-back],
-body[data-tabula-back="on"].dual-enabled [data-lenormand-back]{
+body:has(#surface)[data-tabula-back="on"].dual-enabled :is(.face.back,.deck,.removed-pile-card,.shuffle-card,.cut-stack)[data-lenormand-back]{
  background-color:#123629!important;
- background-image:url("../images/decks/tabula-lenormand/backs/green.webp?v=0516")!important;
+ background-image:var(--lenormand-back-image)!important;
  background-size:100% 100%!important;
  background-position:center!important;
  background-repeat:no-repeat!important;
@@ -144,5 +150,6 @@ body[data-tabula-back="on"].dual-enabled [data-lenormand-back]{
 }
 body:has(#surface) [data-lenormand-back]::before,
 body:has(#surface) [data-lenormand-back]::after{
- content:none!important;display:none!important;
+ content:none!important;
+ display:none!important;
 }
