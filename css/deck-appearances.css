@@ -40,7 +40,7 @@ body[data-tabula-back="on"] [data-back-tone="sepia"]{--worn-back-image:url("../i
 body[data-tabula-back="on"][data-tabula-back-tone="green"],
 body[data-tabula-back="on"] [data-back-tone="green"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/green.webp?v=0186");}
 body[data-tabula-back="on"][data-tabula-back-tone="burgundy"],
-body[data-tabula-back="on"] [data-back-tone="burgundy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0186");}
+body[data-tabula-back="on"] [data-back-tone="burgundy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0516");}
 body[data-tabula-back="on"][data-tabula-back-tone="navy"],
 body[data-tabula-back="on"] [data-back-tone="navy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/navy.webp?v=0186");}
 body[data-tabula-back="on"][data-tabula-back-tone="purple"],
@@ -129,4 +129,17 @@ body:has(#surface) #zone .card[data-appearance="worn"]:not([data-worn-asset="tru
  border-radius:inherit;
  background:url("../images/ui/worn-microtexture.svg") center / 100% 100% no-repeat;
  opacity:.35;
+}
+
+/* Built-in LENORMAND has one approved engraved back for all appearances.
+   Override Worn's tarot/weathering layers without altering the selected art. */
+body:has(#surface) [data-lenormand-back][data-appearance="worn"],
+body:has(#surface) .card[data-appearance="worn"] .face.back[data-lenormand-back],
+body[data-tabula-back="on"].dual-enabled [data-lenormand-back][data-appearance="worn"]{
+ background-image:url("../images/decks/tabula-lenormand/backs/green.webp?v=0516")!important;
+ background-color:#123629!important;
+ background-size:100% 100%!important;
+ background-position:center!important;
+ background-repeat:no-repeat!important;
+ border:0!important;
 }
