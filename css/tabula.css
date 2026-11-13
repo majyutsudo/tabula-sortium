@@ -1388,9 +1388,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  z-index:1;
  will-change:transform,left,top;
 }
-.table-surface .deck.deal-pile-card[data-appearance="pocket"]{
- width:calc(var(--cw) * .82);height:calc(var(--ch) * .82);
-}
+/* Temporary dealing piles are clones of the stock and retain its computed dimensions. */
 .table-surface .deck.deal-pile-card .deal-pile-caption{
  position:absolute;left:50%;top:calc(100% + 7px);
  transform:translateX(-50%);
