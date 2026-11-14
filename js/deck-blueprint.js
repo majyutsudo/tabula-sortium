@@ -173,7 +173,12 @@ function playingFaceMarkup(card,symbol,color,rankLabel=card.number,showOrientati
  const court=isPlayingCourt(card);
  if((!playingSuitIds.has(card.suitId)&&!court)||(!count&&!court))return '';
  const rank=String(rankLabel??'');
- const rankSize=Math.min(18,36/Math.max(1,Array.from(rank).length));
+ // Keep the vertical height of the corner numerals consistent. Long Roman
+ // numerals are fitted horizontally inside the 22px corner-index region.
+ const rankSize=17;
+ const estimatedWidth=Array.from(rank).reduce((width,char)=>width+
+  (char==='I'?0.36:['V','X','L','C','D','M'].includes(char)?0.73:0.64)*rankSize,0);
+ const fitRank=estimatedWidth>21?' textLength="21" lengthAdjust="spacingAndGlyphs"':'';
  const glyph=suitPaths.has(symbol)
   ?`<path d="${suitPaths.get(symbol)}"/>`
   :`<text x="0" y="0" dominant-baseline="central" font-size="24">${xml(symbol)}</text>`;
@@ -185,7 +190,7 @@ function playingFaceMarkup(card,symbol,color,rankLabel=card.number,showOrientati
   ?'<path d="M0-12a6 6 0 0 1 5 9 6 6 0 1 1-3 10c.4 2 1.3 4 3 5H-5c1.7-1 2.6-3 3-5a6 6 0 1 1-3-10 6 6 0 0 1 5-9Z"/>'
   :glyph;
  const indexScale=symbol==='♠'||symbol==='♣'?'.59':'.48';
- const index=`<text x="13" y="20" font-size="${rankSize}" font-weight="700">${xml(rank)}</text><g transform="translate(13 31) scale(${indexScale})">${indexGlyph}</g>`;
+ const index=`<text x="13" y="20" font-size="${rankSize}" font-weight="700"${fitRank}>${xml(rank)}</text><g transform="translate(13 31) scale(${indexScale})">${indexGlyph}</g>`;
  const design=court?(card.courtStyle==='text'||!playingSuitIds.has(card.suitId)||!courtRanks.has(card.rankId)?courtTextArtwork(card):courtArtwork(card)):pipLayouts[count].map(([x,y])=>{
   const orientation=y>90?' rotate(180)':'';
   const size=count===1?' scale(2)':'';
