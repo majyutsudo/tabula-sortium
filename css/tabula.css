@@ -1812,3 +1812,25 @@ aside .section :is(button,select,input,textarea),
 }
 #zone .card.body-rotating *,
 #zone .table-pile.body-rotating *{cursor:grabbing!important;}
+
+/* v0.552 — Remove positions in the spread editor without disturbing others. */
+.spread-workbench-position-row{
+ grid-column:1/-1;
+ display:grid;grid-template-columns:minmax(0,1.3fr) minmax(130px,.8fr) auto;
+ align-items:center;gap:7px;padding:4px 0;
+ border-bottom:1px solid rgba(182,163,122,.21);
+}
+.spread-workbench-position-row label{min-width:0;}
+.spread-workbench-position-row select{min-width:0;width:100%;}
+.spread-workbench-position-row .spread-position-remove{
+ min-width:52px;min-height:32px;padding:5px 8px;
+ background:#352b29;border:1px solid #9c796d;color:#f0d5bc;
+ font:12px var(--tabula-ui-font,Arial,sans-serif);
+}
+.spread-workbench-position-row .spread-position-remove:disabled{opacity:.35;cursor:not-allowed;}
+.spread-position-unassigned{font-size:12px;color:#bba98b;}
+@media(max-width:780px){
+ .spread-workbench-position-row{grid-template-columns:minmax(0,1fr) auto;}
+ .spread-workbench-position-row select{grid-column:1;}
+ .spread-workbench-position-row .spread-position-remove{grid-column:2;grid-row:1 / span 2;}
+}
