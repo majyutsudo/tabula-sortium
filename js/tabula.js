@@ -139,7 +139,7 @@ function spreadCapture(){
   names[index]='束'+(i+1);
  });
  state.tablePiles=[];
- spreadWorkbench={previousCardSize,original,chosen:[],names,roles,title:'新しいスプレッド',savedSession,circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};
+ spreadWorkbench={previousCardSize,original:JSON.parse(JSON.stringify(state.placed)),originalIndices:state.placed.map((_,i)=>i),chosen:[],names,roles,title:'新しいスプレッド',savedSession,circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};
  $('spreadSave').textContent='スプレッドを登録';
  document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;
  spreadSnap=true;$('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');
@@ -159,12 +159,27 @@ function openStoredSpreadWorkbench(source){
  state.placed=slots.map((slot,i)=>({id:sourceCards[i%sourceCards.length].id,reversed:false,faceUp:false,slot:null,x:Number(slot.x)||0,y:Number(slot.y)||0,angle:Number(slot.angle)||0,manualMoved:false,dragOrder:i}));
  state.selected=null;
  const original=JSON.parse(JSON.stringify(state.placed));
- spreadWorkbench={previousCardSize,original,chosen:slots.map((_,i)=>i),names:Object.fromEntries(slots.map((v,i)=>[i,v.name||'位置'+(i+1)])),roles:Object.fromEntries(slots.map((v,i)=>[i,v.frameRole||'card'])),title:source.name,editingId:source.id,savedSession,details:slots.map(v=>v.detail||''),circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};
+ spreadWorkbench={previousCardSize,original,originalIndices:state.placed.map((_,i)=>i),chosen:slots.map((_,i)=>i),names:Object.fromEntries(slots.map((v,i)=>[i,v.name||'位置'+(i+1)])),roles:Object.fromEntries(slots.map((v,i)=>[i,v.frameRole||'card'])),title:source.name,editingId:source.id,savedSession,details:slots.map(v=>v.detail||''),circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};
  document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;
  $('spreadSave').textContent='変更を保存';spreadSnap=true;
  $('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');
  $('zone').style.setProperty('--workgrid',($('spreadGridSize').value||24)+'px');
  refreshWorkbench();render();$('spreadWorkbench').scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function spreadRemovePosition(index){
+ const w=spreadWorkbench;
+ if(!w||!Number.isInteger(index)||index<0||index>=state.placed.length)return;
+ if(state.placed.length<=1){setStatus('スプレッドには少なくとも1つの位置が必要です。');return}
+ state.placed.splice(index,1);
+ w.chosen=w.chosen.filter(i=>i!==index).map(i=>i>index?i-1:i);
+ const shift=entries=>Object.fromEntries(Object.entries(entries||{}).filter(([key])=>Number(key)!==index).map(([key,value])=>[Number(key)>index?Number(key)-1:Number(key),value]));
+ w.names=shift(w.names);w.roles=shift(w.roles);
+ if(Array.isArray(w.details))w.details.splice(index,1);
+ if(Array.isArray(w.originalIndices))w.originalIndices.splice(index,1);
+ state.selected=null;
+ if(w.circle)w.circle.active=false;
+ refreshWorkbench();render();
+ setStatus('位置を1つ削除しました。残りのカードの位置・角度・サイズは維持されます。');
 }
 function spreadChoose(index){if(!spreadWorkbench)return;const w=spreadWorkbench;if(!w.chosen.includes(index))w.chosen.push(index);refreshWorkbench();render()}
 const normalizeAngle=TabulaSpreadGeometry.normalizeAngle;
@@ -174,13 +189,44 @@ const describeCircleFacing=TabulaSpreadGeometry.describeCircleFacing;
 const circleFacingAngle=TabulaSpreadGeometry.circleFacingAngle;
 function updateSpreadCircleUi(){const w=spreadWorkbench,status=$('spreadCircleStatus'),sel=$('spreadCircleFacing');if(!status||!sel)return;if(!w){status.textContent='円形整列：未実行';return}const facing=(w.circle&&w.circle.facing)||sel.value||'radial';sel.value=facing;if(!w.circle||!w.circle.active){status.textContent='円形整列：未実行';return}const radius=Math.round(Number(w.circle.radiusPx)||0);const rotation=Math.round(normalizeAngle(w.circle.rotation||0));status.textContent=`円形整列：半径 ${radius}px ／ 回転 ${rotation}° ／ ${describeCircleFacing(facing)}`;}
 function applyWorkbenchCircle(opts={}){const w=spreadWorkbench;if(!w)return;const arr=state.placed,chosen=workbenchTargets();if(!chosen.length)return;const rect=$('zone').getBoundingClientRect();if(!w.circle)w.circle={active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')};const bounds=getWorkbenchCircleBounds(chosen.length);if(opts.facing)w.circle.facing=opts.facing;if(!w.circle.active||opts.auto||!Number.isFinite(Number(w.circle.radiusPx))){w.circle.radiusPx=bounds.initial;if(!Number.isFinite(Number(w.circle.rotation)))w.circle.rotation=0;}if(typeof opts.radiusDelta==='number')w.circle.radiusPx=Number(w.circle.radiusPx||bounds.initial)+opts.radiusDelta;if(typeof opts.rotationDelta==='number')w.circle.rotation=normalizeAngle((Number(w.circle.rotation)||0)+opts.rotationDelta);w.circle.radiusPx=Math.max(bounds.min,Math.min(bounds.max,Number(w.circle.radiusPx)||bounds.initial));w.circle.active=true;TabulaSpreadGeometry.placeOnCircle(arr,chosen,w.circle.radiusPx,w.circle.rotation,w.circle.facing,rect.width,rect.height);updateSpreadCircleUi();render()}
-function refreshWorkbench(){const w=spreadWorkbench;if(!w)return;$('spreadWorkbenchHint').textContent=w.chosen.length===state.placed.length?'番号付け完了。名前や配置を調整して登録できます。':`${w.chosen.length+1}番にするカードをタップ（${w.chosen.length}/${state.placed.length}）`;updateSpreadCircleUi();const fields=$('spreadWorkbenchFields');fields.replaceChildren();const title=document.createElement('label');title.textContent='名前';const ti=document.createElement('input');ti.value=w.title;ti.placeholder='スプレッド名';ti.oninput=()=>w.title=ti.value;title.append(ti);fields.append(title);const sizeLabel=document.createElement('label');sizeLabel.textContent='カードサイズ';const sizeInput=document.createElement('input');sizeInput.type='range';sizeInput.id='spreadCardSize';sizeInput.min='.8';sizeInput.max='2.3';sizeInput.step='.05';sizeInput.value=zoom;sizeInput.setAttribute('aria-label','スプレッドに保存するカードサイズ');sizeInput.oninput=()=>{setCardSize(Number(sizeInput.value));render();applyTableCamera()};sizeLabel.append(sizeInput);fields.append(sizeLabel);w.chosen.forEach((index,i)=>{const label=document.createElement('label');label.textContent=(i+1)+'番';const inp=document.createElement('input');inp.value=w.names[index]??('位置'+(i+1));inp.oninput=()=>w.names[index]=inp.value;label.append(inp);fields.append(label);const role=document.createElement('select');role.setAttribute('aria-label',(i+1)+'番の配置枠の種類');[['card','単札の位置'],['pile','空の束（積み重ね可能）'],['tableau','場札の束'],['foundation','組札の束'],['waste','捨て札の束']].forEach(([value,text])=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;role.append(opt)});role.value=w.roles?.[index]||'card';role.onchange=()=>{w.roles[index]=role.value};fields.append(role)})}
+function refreshWorkbench(){const w=spreadWorkbench;if(!w)return;$('spreadWorkbenchHint').textContent=w.chosen.length===state.placed.length?'番号付け完了。名前や配置を調整して登録できます。':`${w.chosen.length+1}番にするカードをタップ（${w.chosen.length}/${state.placed.length}）`;updateSpreadCircleUi();const fields=$('spreadWorkbenchFields');fields.replaceChildren();const title=document.createElement('label');title.textContent='名前';const ti=document.createElement('input');ti.value=w.title;ti.placeholder='スプレッド名';ti.oninput=()=>w.title=ti.value;title.append(ti);fields.append(title);const sizeLabel=document.createElement('label');sizeLabel.textContent='カードサイズ';const sizeInput=document.createElement('input');sizeInput.type='range';sizeInput.id='spreadCardSize';sizeInput.min='.8';sizeInput.max='2.3';sizeInput.step='.05';sizeInput.value=zoom;sizeInput.setAttribute('aria-label','スプレッドに保存するカードサイズ');sizeInput.oninput=()=>{setCardSize(Number(sizeInput.value));render();applyTableCamera()};sizeLabel.append(sizeInput);fields.append(sizeLabel);const appendPosition=(index,number)=>{
+ const row=document.createElement('div');row.className='spread-workbench-position-row';
+ const label=document.createElement('label');label.textContent=number===null?'未採番':(number+1)+'番';
+ if(number!==null){
+  const inp=document.createElement('input');inp.value=w.names[index]??('位置'+(number+1));
+  inp.oninput=()=>w.names[index]=inp.value;label.append(inp);
+ }else{
+  const note=document.createElement('span');note.className='spread-position-unassigned';
+  note.textContent='カード '+(index+1);label.append(note);
+ }
+ row.append(label);
+ if(number!==null){
+  const role=document.createElement('select');role.setAttribute('aria-label',(number+1)+'番の配置枠の種類');
+  [['card','単札の位置'],['pile','空の束（積み重ね可能）'],['tableau','場札の束'],['foundation','組札の束'],['waste','捨て札の束']].forEach(([value,text])=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;role.append(opt)});
+  role.value=w.roles?.[index]||'card';role.onchange=()=>{w.roles[index]=role.value};row.append(role);
+ }
+ const remove=document.createElement('button');remove.type='button';remove.className='spread-position-remove';
+ remove.textContent='削除';remove.setAttribute('aria-label',(number===null?'未採番カード '+(index+1):(number+1)+'番の位置')+'を削除');
+ remove.title='この位置を削除（ほかのカードは動かしません）';
+ remove.disabled=state.placed.length<=1;
+ remove.onclick=()=>spreadRemovePosition(index);
+ row.append(remove);fields.append(row);
+};
+w.chosen.forEach((index,i)=>appendPosition(index,i));
+state.placed.forEach((_,index)=>{if(!w.chosen.includes(index))appendPosition(index,null)});}
 function workbenchAlign(kind){const w=spreadWorkbench;if(!w)return;const arr=state.placed,chosen=workbenchTargets();if(!chosen.length)return;if(kind==='circle'){applyWorkbenchCircle({auto:true});return}TabulaSpreadGeometry.alignPositions(chosen.map(i=>arr[i]),kind);if(w.circle)w.circle.active=false;updateSpreadCircleUi();render()}
 function spreadEnd(restore=true){if(!spreadWorkbench)return;const previousCardSize=spreadWorkbench.previousCardSize;if(spreadWorkbench.savedSession)state=spreadWorkbench.savedSession;else if(restore)state.placed=spreadWorkbench.original;spreadWorkbench=null;setCardSize(previousCardSize);document.body.classList.remove('spread-workbench-active');$('spreadWorkbench').hidden=true;$('zone').classList.remove('spread-grid');updateSpreadCircleUi();render();saveLocal()}
 $('spreadUndoNumber').onclick=()=>{if(spreadWorkbench){spreadWorkbench.chosen.pop();refreshWorkbench();render()}};
 $('spreadNumberReset').onclick=()=>{if(spreadWorkbench){spreadWorkbench.chosen=[];refreshWorkbench();render()}};
 $('spreadAlignX').onclick=()=>workbenchAlign('x');$('spreadAlignY').onclick=()=>workbenchAlign('y');$('spreadSpaceX').onclick=()=>workbenchAlign('spaceX');$('spreadSpaceY').onclick=()=>workbenchAlign('spaceY');$('spreadCircle').onclick=()=>workbenchAlign('circle');$('spreadCircleWider').onclick=()=>applyWorkbenchCircle({radiusDelta:24});$('spreadCircleTighter').onclick=()=>applyWorkbenchCircle({radiusDelta:-24});$('spreadCircleRotateLeft').onclick=()=>applyWorkbenchCircle({rotationDelta:-15});$('spreadCircleRotateRight').onclick=()=>applyWorkbenchCircle({rotationDelta:15});$('spreadCircleFacing').onchange=()=>{if(!spreadWorkbench)return;if(!spreadWorkbench.circle)spreadWorkbench.circle={active:false,radiusPx:null,rotation:0,facing:'radial'};spreadWorkbench.circle.facing=$('spreadCircleFacing').value;if(spreadWorkbench.circle.active)applyWorkbenchCircle({facing:spreadWorkbench.circle.facing});else updateSpreadCircleUi()};$('spreadGridSize').onchange=()=>$('zone').style.setProperty('--workgrid',$('spreadGridSize').value+'px');$('spreadSnapToggle').onclick=()=>{spreadSnap=!spreadSnap;$('spreadSnapToggle').textContent='グリッド吸着：'+(spreadSnap?'ON':'OFF');$('zone').classList.toggle('spread-grid',spreadSnap)};
-$('spreadRestoreLayout').onclick=()=>{if(spreadWorkbench){state.placed=JSON.parse(JSON.stringify(spreadWorkbench.original));if(spreadWorkbench.circle)spreadWorkbench.circle.active=false;updateSpreadCircleUi();render()}};
+$('spreadRestoreLayout').onclick=()=>{if(spreadWorkbench){
+ const w=spreadWorkbench;
+ state.placed=state.placed.map((p,i)=>{
+  const original=w.original?.[w.originalIndices?.[i]??i];
+  return original?{...p,x:original.x,y:original.y,angle:original.angle,manualMoved:original.manualMoved}:p;
+ });
+ if(w.circle)w.circle.active=false;updateSpreadCircleUi();render();
+}};
 $('spreadCancel').onclick=()=>spreadEnd(true);
 $('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(spreadLibrary.some(v=>v.name===name&&v.id!==w.editingId)){alert('同名のスプレッドがあります。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした。');return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}const id='custom_'+Date.now();spreadLibrary.push({id,name,slots,cardSize:zoom});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした。');return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。展開法から選択できます。')};
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
