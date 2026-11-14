@@ -22,6 +22,17 @@ function placeOnCircle(positions,indices,radiusPx,rotation,facing,width,height){
     if(facing!=='keep')p.angle=circleFacingAngle(thetaDeg,facing,p.angle);
   });
 }
+// Shift every card centre by one shared delta; never move cards independently.
+function translatePositions(positions,dx,dy){
+ if(!Array.isArray(positions)||!positions.length||![dx,dy].every(Number.isFinite))return{x:0,y:0};
+ // Keep all card centres visible, while retaining their exact relative offsets.
+ const minX=Math.min(...positions.map(p=>p.x)),maxX=Math.max(...positions.map(p=>p.x));
+ const minY=Math.min(...positions.map(p=>p.y)),maxY=Math.max(...positions.map(p=>p.y));
+ const x=Math.max(-minX,Math.min(100-maxX,dx));
+ const y=Math.max(-minY,Math.min(100-maxY,dy));
+ for(const p of positions){p.x+=x;p.y+=y;}
+ return{x,y};
+}
 function fitGridColumns(slots,zoneWidth,cardWidth,marginPx=6){
  const output=(Array.isArray(slots)?slots:[]).map(p=>({...p}));
  if(!(zoneWidth>0&&cardWidth>0)||output.length<12)return output;
@@ -49,5 +60,5 @@ function fitGridColumns(slots,zoneWidth,cardWidth,marginPx=6){
  for(const p of output)p.x=50+(p.x-50)*factor;
  return output;
 }
-root.TabulaSpreadGeometry=Object.freeze({normalizeAngle,describeCircleFacing,circleFacingAngle,alignPositions,placeOnCircle,fitGridColumns});
+root.TabulaSpreadGeometry=Object.freeze({normalizeAngle,describeCircleFacing,circleFacingAngle,alignPositions,placeOnCircle,translatePositions,fitGridColumns});
 })(globalThis);
