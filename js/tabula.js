@@ -772,32 +772,18 @@ function updateCardSelection(){
  const panel=$('cardControls');
  if(panel)panel.hidden=!(cardValid||pile);
  document.querySelectorAll('#zone .card').forEach(el=>el.classList.toggle('is-selected',cardValid&&Number(el.dataset.index)===i));
- document.querySelectorAll('#zone .rotation-handle').forEach(el=>el.remove());
+ $('zone').classList.toggle('rotation-mode-active',rotationDragMode);
  document.querySelectorAll('#zone .table-pile').forEach(el=>el.classList.toggle('is-rotation-selected',!!pile&&el.dataset.pileId===pile.id));
  const toggle=$('rotateDragMode');
  toggle.setAttribute('aria-pressed',String(rotationDragMode));
  toggle.textContent=rotationDragMode?'回転終了':'回転モード';
- toggle.title=rotationDragMode?'通常のカード移動に戻る':'選択したカード・束の外側のハンドルで自由回転';
+ toggle.title=rotationDragMode?'通常のカード移動に戻る':'回転モード中はカード・束を直接ドラッグして回す';
  if(!(cardValid||pile))return;
  const target=pile||state.placed[i];
  const definition=!pile?workingCard(target.id):null;
  $('cardSelectionName').textContent=pile?'選択中：'+(pile.slot!=null?'配置 '+(pile.slot+1)+' · ':'')+'束 '+pile.id.replace('pile-',''):
   '選択中：'+(target.faceUp&&definition?definition.name:'伏せ札');
  $('cardAngle').textContent=((Number(target.angle||0)%360)+360)%360+'°';
- if(rotationDragMode){
-  const element=pile
-   ?$('zone').querySelector('.table-pile[data-pile-id="'+pile.id+'"]')
-   :$('zone').querySelector('.card[data-index="'+i+'"]');
-  if(element){
-   const handle=document.createElement('button');
-   handle.type='button';handle.className='rotation-handle';
-   handle.textContent='⟳';handle.setAttribute('aria-label','ドラッグして回転（直角に吸着）');
-   handle.title='このハンドルをドラッグして回転（0°・90°・180°・270°に吸着）';
-   handle.addEventListener('pointerdown',e=>beginRotationGesture(e,element,target,handle));
-   handle.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
-   element.append(handle);
-  }
- }
 }
 function selectCard(index){selectedPileId=null;state.selected=index;updateCardSelection()}
 function selectPile(id){selectedPileId=id;state.selected=null;updateCardSelection()}
@@ -805,47 +791,80 @@ function rotateSelected(delta,reset=false){const item=selectedRotationTarget();i
 $('rotateDragMode').addEventListener('click',()=>{
  rotationDragMode=!rotationDragMode;
  updateCardSelection();
- if(rotationDragMode)setStatus('回転モード：カード・束の外側に表示される ⟳ ハンドルで角度を調整できます。直角付近では自動吸着します。');
+ if(rotationDragMode)setStatus('回転モード：カード本体または束の札をドラッグして回転します。もう一度押すと通常の移動に戻ります。');
  else setStatus('回転モードを終了しました。');
 });
-// Rotation is initiated exclusively from the external handle. Its capture
-// prevents ordinary card flipping, moving, and pile withdrawal from starting.
-function beginRotationGesture(e,element,target,handle){
- if(!rotationDragMode||e.button!==0||!target)return false;
- e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
- const bounds=element.getBoundingClientRect(),cx=(bounds.left+bounds.right)/2,cy=(bounds.top+bounds.bottom)/2;
- const initial=Number(target.angle)||0;
- const pointerStart=Math.atan2(e.clientY-cy,e.clientX-cx);
+// Rotation mode takes priority over ordinary card/pile dragging. Capture the
+// pointer before per-card listeners can flip, move, stack or withdraw cards.
+let activeBodyRotation=null,ignoreRotationClickUntil=0;
+function startBodyRotation(e,element,target){
+ if(activeBodyRotation||!rotationDragMode||e.button!==0||!target)return;
+ cancelCardLongPress();
+ e.preventDefault();e.stopImmediatePropagation();
+ const rect=element.getBoundingClientRect();
+ const cx=(rect.left+rect.right)/2,cy=(rect.top+rect.bottom)/2;
+ const initial=Number(target.angle)||0,startX=e.clientX;
+ const nearCenter=Math.hypot(startX-cx,e.clientY-cy)<18;
+ let previous=Math.atan2(e.clientY-cy,e.clientX-cx),total=0;
  const pointerId=e.pointerId;
- const snapAngle=degrees=>{
-  const normalized=((degrees%360)+360)%360;
-  const nearest=Math.round(normalized/90)*90;
-  const distance=Math.abs(((normalized-nearest+540)%360)-180);
-  return distance<=7?nearest%360:Math.round(normalized*10)/10;
- };
- handle.setPointerCapture(pointerId);
- const move=ev=>{
+ const stop=ev=>{ev.preventDefault();ev.stopImmediatePropagation()};
+ const update=ev=>{
   if(ev.pointerId!==pointerId)return;
-  ev.stopPropagation();
-  const diff=(Math.atan2(ev.clientY-cy,ev.clientX-cx)-pointerStart)*180/Math.PI;
-  target.angle=snapAngle(initial+diff);
+  stop(ev);
+  if(nearCenter){
+   // Avoid the singularity when a card is grabbed near its exact centre.
+   total=(ev.clientX-startX)*.75;
+  }else{
+   const angle=Math.atan2(ev.clientY-cy,ev.clientX-cx);
+   const step=Math.atan2(Math.sin(angle-previous),Math.cos(angle-previous));
+   total+=step*180/Math.PI;previous=angle;
+  }
+  const normalized=((initial+total)%360+360)%360;
+  target.angle=Math.round(normalized*10)/10;
   if(element.classList.contains('table-pile'))element.style.transform='translate(-50%,-50%) rotate('+target.angle+'deg)';
   else element.style.setProperty('--rotation',cardDisplayRotation(target)+'deg');
   $('cardAngle').textContent=target.angle+'°';
  };
- const finish=ev=>{if(ev.pointerId!==pointerId)return;ev.stopPropagation();cleanup();render();saveLocal()};
- const cancel=ev=>{if(ev.pointerId!==pointerId)return;ev.stopPropagation();target.angle=initial;cleanup();render()};
  const cleanup=()=>{
-  handle.removeEventListener('pointermove',move);
-  handle.removeEventListener('pointerup',finish);
-  handle.removeEventListener('pointercancel',cancel);
-  if(handle.hasPointerCapture(pointerId))handle.releasePointerCapture(pointerId);
+  for(const [name,listener] of [['pointermove',update],['pointerup',finish],['pointercancel',cancel],['lostpointercapture',cancel]])element.removeEventListener(name,listener,true);
+  if(element.hasPointerCapture(pointerId))element.releasePointerCapture(pointerId);
+  element.classList.remove('body-rotating');
+  activeBodyRotation=null;
  };
- handle.addEventListener('pointermove',move);
- handle.addEventListener('pointerup',finish);
- handle.addEventListener('pointercancel',cancel);
- return true;
+ const finish=ev=>{
+  if(ev.pointerId!==pointerId)return;
+  stop(ev);ignoreRotationClickUntil=Date.now()+300;
+  cleanup();render();saveLocal();
+ };
+ const cancel=ev=>{
+  if(ev.pointerId!==pointerId)return;
+  stop(ev);target.angle=initial;cleanup();render();
+ };
+ activeBodyRotation={pointerId,element,cancel};
+ element.classList.add('body-rotating');
+ for(const [name,listener] of [['pointermove',update],['pointerup',finish],['pointercancel',cancel],['lostpointercapture',cancel]])element.addEventListener(name,listener,true);
+ element.setPointerCapture(pointerId);
 }
+$('zone').addEventListener('pointerdown',e=>{
+ if(!rotationDragMode||pilePlacementArmed||spreadWorkbench||inspectionEnabled()||e.button!==0)return;
+ if(e.target.closest('button,select,input,textarea,.table-pile-fan-grip,.table-pile-role-select'))return;
+ const card=e.target.closest('.card');
+ const pile=e.target.closest('.table-pile');
+ if(card){
+  const index=Number(card.dataset.index),item=state.placed[index];
+  if(!item)return;
+  selectCard(index);startBodyRotation(e,card,item);
+ }else if(pile){
+  const item=(state.tablePiles||[]).find(p=>p.id===pile.dataset.pileId);
+  if(!item)return;
+  selectPile(item.id);startBodyRotation(e,pile,item);
+ }
+},true);
+$('zone').addEventListener('click',e=>{
+ if(rotationDragMode&&Date.now()<ignoreRotationClickUntil&&e.target.closest('.card,.table-pile')){
+  e.preventDefault();e.stopImmediatePropagation();
+ }
+},true);
 $('rotateLeft').addEventListener('click',()=>rotateSelected(-90));$('rotateFineLeft').addEventListener('click',()=>rotateSelected(-15));$('rotateZero').addEventListener('click',()=>rotateSelected(0,true));$('rotateFineRight').addEventListener('click',()=>rotateSelected(15));$('rotateRight').addEventListener('click',()=>rotateSelected(90));
 $('zone').addEventListener('contextmenu',e=>e.preventDefault());
 $('surface').addEventListener('contextmenu',e=>e.preventDefault());
