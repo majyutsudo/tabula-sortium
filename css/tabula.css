@@ -2144,3 +2144,26 @@ aside .section :is(button,select,input,textarea),
   max-width:100%;
  }
 }
+
+/* v0.588 — one tabletop arrangement toolbar; optional frame toggle
+   shares spacing and appearance with compact/refill actions. */
+#surface #quickFrameAction{
+ min-height:34px;padding:6px 13px;border:1px solid #ad9266;
+ border-radius:5px;background:#26372fe8;color:#f0deb5;
+ box-shadow:0 2px 9px #0008;font:12px/1.2 Georgia,"Yu Mincho",serif;
+ white-space:nowrap;touch-action:manipulation;
+}
+#surface #quickFrameAction[hidden]{display:none!important}
+#surface #quickFrameAction[aria-pressed="true"]{
+ background:#43503ae8;border-color:#d3b77e;
+}
+#surface #tableArrangementShortcuts > #quickFrameAction{
+ position:static;flex:0 0 auto;pointer-events:auto;
+}
+@media(max-width:780px){
+ #surface #tableArrangementShortcuts{
+  display:flex;flex-wrap:wrap;justify-content:flex-end;
+  max-width:calc(100% - 60px);
+ }
+ #surface #quickFrameAction{min-height:38px;padding:7px 12px;font-size:12px}
+}
