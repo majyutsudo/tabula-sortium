@@ -882,3 +882,39 @@ test('imported reading can register its own spread with slot names, order and de
  await page.reload();
  await expect(page.locator('#spreadQuickSelect option').filter({hasText:'祭壇の再登録'})).toHaveCount(1);
 });
+
+
+// Regression: a flight to a rotated frame must retain the original card's
+// dimensions; getBoundingClientRect() is an axis-aligned ROTATED bounding box.
+test('rotated card flight preserves physical aspect ratio and animates its angle',async ({page})=>{
+ await page.setViewportSize({width:1280,height:850});
+ await page.locator('#spreadQuickSelect').selectOption('celtic');
+ await page.evaluate(()=>{
+  window.__flightGeometry=[];
+  const nativeAnimate=Element.prototype.animate;
+  Element.prototype.animate=function(frames,options){
+   if(this.matches('body > .card')){
+    const dest=document.querySelector('#zone .card[data-index="'+this.dataset.index+'"]');
+    const angle=Number.parseFloat(getComputedStyle(dest).getPropertyValue('--rotation'))||0;
+    window.__flightGeometry.push({
+     angle,ghostWidth:this.getBoundingClientRect().width,ghostHeight:this.getBoundingClientRect().height,
+     actualWidth:dest.offsetWidth,actualHeight:dest.offsetHeight,
+     frames:frames.map(frame=>frame.transform)
+    });
+   }
+   return nativeAnimate.call(this,frames,options);
+  };
+ });
+ await page.locator('#quickDeal').click();
+ await expect.poll(()=>page.evaluate(()=>window.__flightGeometry.some(f=>Math.abs(f.angle)>20)),{timeout:12000}).toBe(true);
+ const flights=await page.evaluate(()=>window.__flightGeometry.filter(f=>Math.abs(f.angle)>20));
+ for(const flight of flights){
+  // The ghost is evaluated before its Web Animation starts (its own transform
+  // is rotated, but the dimensions must equal the unrotated actual card).
+  expect(flight.ghostWidth).toBeGreaterThan(0);
+  expect(flight.ghostHeight).toBeGreaterThan(0);
+  expect(flight.ghostWidth/flight.ghostHeight).toBeCloseTo(flight.actualWidth/flight.actualHeight,1);
+  expect(flight.frames[0]).toContain('rotate(0deg)');
+  expect(flight.frames.at(-1)).toContain('rotate(');
+ }
+});
