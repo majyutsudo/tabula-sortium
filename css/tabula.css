@@ -1855,3 +1855,11 @@ aside .section :is(button,select,input,textarea),
  .spread-translate-title{flex:1 0 100%;text-align:center;margin:0;}
  .spread-workbench-actions .spread-translate-controls button{width:34px;flex-basis:34px;}
 }
+
+/* v0.560: Hide only the visual frames, never slot geometry, card faces or hit targets. */
+#zone > .slot{transition:opacity .32s ease}
+#zone.frames-hidden > .slot{opacity:0;pointer-events:none}
+#zone.frames-hidden > .table-pile{border-color:transparent;background:transparent;box-shadow:none}
+#zone.frames-hidden > .table-pile::before{border-color:transparent}
+#zone.frames-hidden .table-pile-empty{border-color:transparent;background:transparent}
+#zone.frames-hidden .table-pile-depth-sheet{border-color:transparent}
