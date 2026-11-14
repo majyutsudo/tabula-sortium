@@ -28,21 +28,21 @@ test('SPIN performs two turns and finishes at an arbitrary target angle',()=>{
  }
 });
 
-test('SLOW SPIN preserves SPIN path and full turns over SERPENT length',()=>{
+test('SLOW SPIN uses uninterrupted linear travel and rotation',()=>{
  for(const angle of [-155,0,45,90,170]){
   const fast=animation.create('spin',{dx:285,dy:-120,arrivalAngle:angle});
   const slow=animation.create('spinSlow',{dx:285,dy:-120,arrivalAngle:angle});
   assert.equal(fast.duration,680);
+  assert.equal(fast.frames.length,4);
   assert.equal(slow.duration,7800);
-  assert.equal(fast.easing,'cubic-bezier(.18,.64,.2,1)');
   assert.equal(slow.easing,'linear');
-  assert.equal(slow.frames.length,fast.frames.length);
-  assert.deepEqual(Array.from(slow.frames.map(f=>f.transform)),Array.from(fast.frames.map(f=>f.transform)));
-  assert.equal(slow.frames[0].easing,fast.easing);
-  assert.equal(slow.frames[1].easing,fast.easing);
-  assert.equal(slow.frames[2].easing,'linear');
-  assert.equal(fast.frames[2].easing,undefined);
-  assert.ok(slow.frames.at(-1).transform.includes('rotate('+(720+angle)+'deg)'));
+  assert.equal(slow.frames.length,2,'no intermediate pause-inducing keyframes');
+  assert.equal(slow.frames[0].offset,0);
+  assert.equal(slow.frames[1].offset,1);
+  assert.equal(slow.frames[0].easing,undefined);
+  assert.equal(slow.frames[0].transform,fast.frames[0].transform);
+  assert.equal(slow.frames[1].transform,fast.frames.at(-1).transform);
+  assert.ok(slow.frames[1].transform.includes('rotate('+(720+angle)+'deg)'));
  }
 });
 
