@@ -4,7 +4,7 @@
    and a final rotation matching the actual destination card. */
 (function(root){
  'use strict';
- const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petalSoft:'PETAL — 緩やかな螺旋',serpent:'SERPENT — 蛇行'});
+ const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',spinSlow:'SLOW SPIN — 緩やかな回転',petalSoft:'PETAL — 緩やかな螺旋',serpent:'SERPENT — 蛇行'});
  function normalize(mode){return mode==='petal'||mode==='petalVortex'?'petalSoft':Object.hasOwn(MODES,mode)?mode:'standard'}
  function create(mode,{dx,dy,arrivalAngle=0,wind=0,bounds=null}={}){
   mode=normalize(mode);
@@ -12,8 +12,8 @@
   const t=(px,py)=>'translate(calc(-50% + '+px+'px),calc(-50% + '+py+'px))';
   const transform=(px,py,angle,scale=1)=>t(px,py)+' rotate('+angle+'deg) scale('+scale+')';
   const finish={transform:transform(0,0,a),filter:'brightness(1)'};
-  if(mode==='spin')return {
-   duration:680,easing:'cubic-bezier(.18,.64,.2,1)',
+  if(mode==='spin'||mode==='spinSlow')return {
+   duration:mode==='spinSlow'?7800:680,easing:'cubic-bezier(.18,.64,.2,1)',
    frames:[
     {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)'},
     {offset:.43,transform:transform(x*.58,y*.58,360+a*.26,1.025),filter:'brightness(1.10)'},
