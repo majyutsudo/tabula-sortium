@@ -1051,12 +1051,14 @@ function refillShortcutShown(){
 }
 function syncCompactShortcut(){
  const surface=$('surface');if(!surface)return;
+ let tray=$('tableArrangementShortcuts');
+ if(!tray){tray=document.createElement('div');tray.id='tableArrangementShortcuts';surface.append(tray)}
  let shortcut=$('quickCompactAction');
  if(!shortcut){
   shortcut=document.createElement('button');shortcut.id='quickCompactAction';shortcut.type='button';
   shortcut.textContent='▥ 詰める';shortcut.title='メニューの「空きを詰める」を実行';
   shortcut.onclick=()=>executeArrangement('compact');
-  surface.append(shortcut);
+  tray.append(shortcut);
  }
  shortcut.hidden=!compactShortcutShown()||!!spreadWorkbench;
  let refill=$('quickRefillAction');
@@ -1064,10 +1066,9 @@ function syncCompactShortcut(){
   refill=document.createElement('button');refill.id='quickRefillAction';refill.type='button';
   refill.textContent='▥ 一括補充';refill.title='メニューの「空きを一括補充」を実行';
   refill.onclick=()=>executeArrangement('refill');
-  surface.append(refill);
+  tray.append(refill);
  }
  refill.hidden=!refillShortcutShown()||!!spreadWorkbench;
- refill.classList.toggle('above-compact',!shortcut.hidden);
  const checkbox=$('compactShortcutVisibility');
  if(checkbox)checkbox.checked=compactShortcutShown();
  const refillCheckbox=$('refillShortcutVisibility');
