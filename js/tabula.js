@@ -251,7 +251,27 @@ $('spreadRestoreLayout').onclick=()=>{if(spreadWorkbench){
 $('spreadCancel').onclick=()=>spreadEnd(true);
 $('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(spreadLibrary.some(v=>v.name===name&&v.id!==w.editingId)){alert('同名のスプレッドがあります。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした。');return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}const id='custom_'+Date.now();spreadLibrary.push({id,name,slots,cardSize:zoom});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした。');return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。展開法から選択できます。')};
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
-const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';let settings={cutCount:3,shuffleMethod:'overhand',pool:'all',reversalsByDeck:{},cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',dealAnimation:'standard',openMode:'normal',framesVisible:false,initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:'',dealFaceUp:false,spreadDealOrders:{},compactShortcutVisibility:{}};let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};let dualSession=null,dualSingleBackup=null,dualDealBusy=false;const DUAL_SESSION_KEY='tabula_sortium_dual_session_v1';const DUAL_RESTORE_ONCE_KEY='tabula_sortium_dual_restore_once_v1';let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;const quick=$('quickShuffleChoice');if(quick){quick.replaceChildren();const single=recipes.find(r=>r.id==='single');const currentMethod=single?.steps?.[0]?.method||settings.shuffleMethod||'overhand';for(const [method,label] of [['hindu','ヒンズー'],['overhand','オーバーハンド'],['riffle','リフル'],['pile','パイル（山分け）']]){const option=document.createElement('option');option.value='method:'+method;option.textContent=label;quick.append(option)}const custom=recipes.filter(r=>r.id!=='single');if(custom.length){const group=document.createElement('optgroup');group.label='登録済みシャッフル手順';custom.forEach(r=>{const option=document.createElement('option');option.value='recipe:'+r.id;option.textContent=r.name;group.append(option)});quick.append(group)}const editOption=document.createElement('option');editOption.value='__edit__';editOption.textContent='手順を編集・登録…';quick.append(editOption);quick.value=recipeId==='single'?'method:'+currentMethod:'recipe:'+recipeId}const tag=$('activeRecipeLabel');if(tag){const r=selectedRecipe();tag.textContent='シャッフル手順：'+(r?r.name:'単独シャッフル');tag.title='卓上のシャッフルボタンで実行される手順';}}function shuffleStepDefaults(method){return {method,reps:1,groups:method==='pile'?4:method==='hindu'||method==='overhand'?7:1,washDirection:'random'}}
+const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';/* One authoritative starting configuration for a new workspace and both reset paths.
+   Mutable preference maps are recreated for every use, never shared by reference. */
+const DEFAULT_SETTINGS=Object.freeze({
+ deckId:'builtin',cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',
+ spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',
+ sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',
+ dealAnimation:'standard',openMode:'normal',framesVisible:false,
+ initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,
+ dealSkipFirst:0,dealSkipSchedule:'',dealFaceUp:false,
+ cardLanguage:'original',tableCardLanguage:'linked',pipBackground:'landscape',
+ deckAppearance:'standard',cardBackColor:'sepia',playingOrientationMarks:false
+});
+function createDefaultSettings(overrides={}){
+ return {
+  ...DEFAULT_SETTINGS,
+  reversalsByDeck:{},spreadDealOrders:{},compactShortcutVisibility:{},
+  refillShortcutVisibility:{},deckBackColors:{builtin:'sepia'},
+  ...overrides
+ };
+}
+let settings=createDefaultSettings();let state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};let dualSession=null,dualSingleBackup=null,dualDealBusy=false;const DUAL_SESSION_KEY='tabula_sortium_dual_session_v1';const DUAL_RESTORE_ONCE_KEY='tabula_sortium_dual_restore_once_v1';let recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];let recipeId='single';const methods={wash:'ウォッシュ',hindu:'ヒンズー',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'};function selectedRecipe(){return recipes.find(r=>r.id===recipeId)||recipes[0]}function syncRecipes(){const el=$('shuffleRecipe');if(!el)return;el.replaceChildren(...recipes.map(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;return opt}));el.value=recipeId;const quick=$('quickShuffleChoice');if(quick){quick.replaceChildren();const single=recipes.find(r=>r.id==='single');const currentMethod=single?.steps?.[0]?.method||settings.shuffleMethod||'overhand';for(const [method,label] of [['hindu','ヒンズー'],['overhand','オーバーハンド'],['riffle','リフル'],['pile','パイル（山分け）']]){const option=document.createElement('option');option.value='method:'+method;option.textContent=label;quick.append(option)}const custom=recipes.filter(r=>r.id!=='single');if(custom.length){const group=document.createElement('optgroup');group.label='登録済みシャッフル手順';custom.forEach(r=>{const option=document.createElement('option');option.value='recipe:'+r.id;option.textContent=r.name;group.append(option)});quick.append(group)}const editOption=document.createElement('option');editOption.value='__edit__';editOption.textContent='手順を編集・登録…';quick.append(editOption);quick.value=recipeId==='single'?'method:'+currentMethod:'recipe:'+recipeId}const tag=$('activeRecipeLabel');if(tag){const r=selectedRecipe();tag.textContent='シャッフル手順：'+(r?r.name:'単独シャッフル');tag.title='卓上のシャッフルボタンで実行される手順';}}function shuffleStepDefaults(method){return {method,reps:1,groups:method==='pile'?4:method==='hindu'||method==='overhand'?7:1,washDirection:'random'}}
 function normStep(st){return TabulaShuffle.normStep(st,methods)}
 const applyShuffleMethod=TabulaShuffle.applyShuffleMethod;
 const washSequence=TabulaShuffle.washSequence;
@@ -426,7 +446,16 @@ const BUILTIN_PLAYING=TabulaDeckBlueprint.builtInPlaying;const BUILTIN_LENORMAND
 function activeBlueprint(){return blueprintFor(settings.deckId)}
 // The reversal preference belongs to each deck identity, not to the tabletop.
 // Only the two built-in Tarot choices start enabled; every playing/custom deck starts disabled.
-function defaultReversalsForDeck(id){return !id||id==='builtin'||id==='simple'}
+function initialDeckSettings(id){
+ const deckId=id||DEFAULT_SETTINGS.deckId;
+ return {
+  pool:deckId===BUILTIN_PLAYING.id?'fiftyTwo':'all',
+  reversals:deckId==='builtin'||deckId==='simple',
+  cardBackColor:deckId===BUILTIN_LENORMAND.id?'green':DEFAULT_SETTINGS.cardBackColor,
+  cardDesign:deckId==='simple'||!!blueprintFor(deckId)?'simple':'standard'
+ };
+}
+function defaultReversalsForDeck(id){return initialDeckSettings(id).reversals}
 function syncDeckReversals(){
  const id=settings.deckId||'builtin';
  const map=settings.reversalsByDeck;
@@ -2399,8 +2428,8 @@ function compareModal(){
  document.querySelectorAll('[data-register-spread]').forEach(b=>b.onclick=()=>registerSpreadFromReading(snapshots.find(x=>x.id===b.dataset.registerSpread)));
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
-function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings={cutCount:3,shuffleMethod:'overhand',deckId:settings.deckId,pool:settings.pool,reversalsByDeck:{},cardDesign:settings.cardDesign,spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',dealAnimation:'standard',openMode:'normal',framesVisible:false,initialOrder:'random',quickWashDirection:'random',quickWashRounds:1};recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
-function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings={cutCount:3,shuffleMethod:'overhand',pool:'all',reversalsByDeck:{},cardDesign:'standard',spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,dealSkipFirst:0,dealSkipSchedule:''};customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
+function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
+function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false){
  if(Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
  if(state.deck.length<2){setStatus('カットには2枚以上必要です。');return}
@@ -2628,15 +2657,15 @@ function activateDeck(id,ask=true){
  }
  settings.deckId=blueprint?.id||deck?.id||(id==='simple'?'simple':'builtin');
  syncDeckReversals();
- settings.pool=blueprint?.id===BUILTIN_PLAYING.id?'fiftyTwo':'all';
+ settings.pool=initialDeckSettings(settings.deckId).pool;
  customIds=(blueprint?TabulaDeckBlueprint.generate(blueprint):cards).map(c=>c.id);
  settings.cardDesign=blueprint?'simple':deck?.faceStyle||(id==='simple'?'simple':'standard');
  if(deck?.backColor)settings.cardBackColor=deck.backColor;
  else if(settings.deckId==='builtin'||settings.deckId===BUILTIN_LENORMAND.id){
-  const fallback=settings.deckId===BUILTIN_LENORMAND.id?'green':'sepia';
+  const fallback=initialDeckSettings(settings.deckId).cardBackColor;
   const saved=settings.deckBackColors?.[settings.deckId];
   settings.cardBackColor=Object.hasOwn(TABULA_BACK_PALETTE,saved)?saved:fallback;
- }else if(blueprint)settings.cardBackColor=isLenormandBlueprint(blueprint)?'green':'sepia';
+ }else if(blueprint)settings.cardBackColor=initialDeckSettings(settings.deckId).cardBackColor;
  finishedCache.clear();
  sync();initialize();
  setStatus((blueprint?.name||deck?.name||(id==='simple'?'SIMPLE TAROT':'TABULA TAROT（標準）'))+' を読み込みました。');
