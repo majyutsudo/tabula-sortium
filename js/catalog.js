@@ -33,6 +33,6 @@ if(typeof window!=='undefined'){
   });
  }
 }
-const builtinSpreadCardSizes={free:{desktop:1,mobile:1},one:{desktop:2,mobile:2},three:{desktop:1.3,mobile:1.5},fiveCross:{desktop:1.3,mobile:1.5},pentagram:{desktop:1.3,mobile:1.5},horseshoe:{desktop:1.3,mobile:1.5},celtic:{desktop:1,mobile:1.3},treeOfLife:{desktop:0.9,mobile:0.9},horoscope:{desktop:0.9,mobile:0.9},grandTableau8:{desktop:1,mobile:0.8},grandTableau9:{desktop:1,mobile:0.8},monteCarlo:{desktop:1,mobile:1},fourSeasons:{desktop:1.3,mobile:1.3}};
+const builtinSpreadCardSizes={free:{desktop:1,mobile:1},one:{desktop:2,mobile:2},three:{desktop:1.3,mobile:1.5},fiveCross:{desktop:1.3,mobile:1.5},pentagram:{desktop:1.3,mobile:1.5},horseshoe:{desktop:1.3,mobile:1.5},celtic:{desktop:1,mobile:1.3},treeOfLife:{desktop:0.9,mobile:0.9},horoscope:{desktop:0.9,mobile:0.9},grandTableau8:{desktop:0.8,mobile:0.8},grandTableau9:{desktop:0.8,mobile:0.8},monteCarlo:{desktop:0.8,mobile:0.8},fourSeasons:{desktop:1.3,mobile:1.3}};
 root.TabulaCatalog=Object.freeze({majors,suitDefs,ranks,cards,presets,colors,builtinSpreadCardSizes});
 })(globalThis);
