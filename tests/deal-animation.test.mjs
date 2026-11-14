@@ -28,32 +28,57 @@ test('SPIN performs two turns and finishes at an arbitrary target angle',()=>{
  }
 });
 
-test('three PETAL spirals have distinct timings, complete paths and exact arrivals',()=>{
- const modes=[['petalSoft',4300],['petal',3300],['petalVortex',2750]];
- for(const [mode,duration] of modes){
-  const flight=animation.create(mode,{dx:360,dy:180,arrivalAngle:-35,wind:.7});
-  assert.equal(flight.duration,duration);
-  assert.equal(flight.easing,'linear');
-  assert.equal(flight.frames.length,101);
-  assert.equal(flight.frames[0].offset,0);
-  assert.equal(flight.frames.at(-1).offset,1);
-  assert.match(flight.frames[0].transform,/360px/);
-  assert.match(flight.frames.at(-1).transform,/rotate\\(-35deg\\)/);
-  for(let i=1;i<flight.frames.length;i++)assert.ok(flight.frames[i].offset>flight.frames[i-1].offset);
- }
- const clockwise=animation.create('petal',{dx:360,dy:180,wind:.8});
- const counterclockwise=animation.create('petal',{dx:360,dy:180,wind:-.8});
- assert.notEqual(clockwise.frames[35].transform,counterclockwise.frames[35].transform);
- assert.equal(clockwise.frames.at(-1).transform,counterclockwise.frames.at(-1).transform);
+test('PETAL I remains the chosen slow spiral and legacy variants resolve to it',()=>{
+ assert.equal(animation.normalize('petal'),'petalSoft');
+ assert.equal(animation.normalize('petalVortex'),'petalSoft');
+ const a=animation.create('petalSoft',{dx:360,dy:180,arrivalAngle:-35,wind:.7});
+ const b=animation.create('petalVortex',{dx:360,dy:180,arrivalAngle:-35,wind:.7});
+ assert.equal(a.duration,4300);
+ assert.equal(b.duration,a.duration);
+ assert.equal(a.frames.length,101);
+ assert.equal(a.frames[0].offset,0);
+ assert.equal(a.frames.at(-1).offset,1);
+ assert.equal(a.frames.at(-1).transform,b.frames.at(-1).transform);
 });
 
-test('PETAL keeps each winding inside provided viewport-safe bounds',()=>{
+test('SERPENT is slower than PETAL, snakes across its path, and never spins',()=>{
+ const petal=animation.create('petalSoft',{dx:360,dy:180});
+ const flight=animation.create('serpent',{dx:360,dy:180,arrivalAngle:40,wind:.8});
+ assert.ok(flight.duration>petal.duration);
+ assert.equal(flight.duration,7800);
+ assert.equal(flight.frames.length,161);
+ assert.equal(flight.easing,'linear');
+ assert.equal(flight.frames[0].offset,0);
+ assert.equal(flight.frames.at(-1).offset,1);
+ assert.match(flight.frames.at(-1).transform,/rotate\\(40deg\\)/);
+ const extract=frame=>{
+  const match=frame.transform.match(/calc\\(-50% \\+ (-?[\\d.]+)px\\),calc\\(-50% \\+ (-?[\\d.]+)px\\)/);
+  assert.ok(match);
+  return {x:Number(match[1]),y:Number(match[2])};
+ };
+ // Perpendicular offsets should alternate across the stock-to-target line.
+ const offsets=flight.frames.slice(1,-1).map(frame=>{
+  const {x,y}=extract(frame);
+  return 360*y-180*x;
+ });
+ assert.ok(offsets.some(value=>value>3000),'left of the direct line');
+ assert.ok(offsets.some(value=>value< -3000),'right of the direct line');
+ const reverse=animation.create('serpent',{dx:360,dy:180,arrivalAngle:40,wind:-.8});
+ assert.notEqual(flight.frames[35].transform,reverse.frames[35].transform);
+ assert.equal(flight.frames.at(-1).transform,reverse.frames.at(-1).transform);
+ for(const frame of flight.frames){
+  const angle=Number(frame.transform.match(/rotate\\((-?[\\d.]+)deg\\)/)[1]);
+  assert.ok(angle>=-.01&&angle<=40.01,'no spin beyond destination angle');
+ }
+});
+
+test('SERPENT and PETAL respect viewport bounds where a path can fit',()=>{
  const bounds={minX:-200,maxX:145,minY:-260,maxY:170};
- for(const mode of ['petalSoft','petal','petalVortex']){
+ for(const mode of ['petalSoft','serpent']){
   const f=animation.create(mode,{dx:120,dy:-160,wind:.4,arrivalAngle:70,bounds});
   for(const frame of f.frames){
    const match=frame.transform.match(/calc\\(-50% \\+ (-?[\\d.]+)px\\),calc\\(-50% \\+ (-?[\\d.]+)px\\)/);
-   assert.ok(match,'position is a viewport translation');
+   assert.ok(match);
    const px=Number(match[1]),py=Number(match[2]);
    assert.ok(px>=bounds.minX-.02&&px<=bounds.maxX+.02,mode+' x='+px);
    assert.ok(py>=bounds.minY-.02&&py<=bounds.maxY+.02,mode+' y='+py);
@@ -62,7 +87,7 @@ test('PETAL keeps each winding inside provided viewport-safe bounds',()=>{
 });
 
 test('all flight modes end at exactly the same center and destination rotation',()=>{
- const finalTransforms=['standard','spin','petalSoft','petal','petalVortex'].map(mode=>
+ const finalTransforms=['standard','spin','petalSoft','serpent'].map(mode=>
   animation.create(mode,{dx:-295,dy:410,arrivalAngle:72,wind:.3}).frames.at(-1).transform);
  const suffix='translate(calc(-50% + 0px),calc(-50% + 0px))';
  finalTransforms.forEach(transform=>assert.ok(transform.startsWith(suffix)));
