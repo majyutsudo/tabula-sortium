@@ -2167,3 +2167,16 @@ aside .section :is(button,select,input,textarea),
  }
  #surface #quickFrameAction{min-height:38px;padding:7px 12px;font-size:12px}
 }
+
+/* Registered physical piles also have an optional, non-interactive placement frame. */
+#zone > .slot.registered-pile-frame{
+ pointer-events:none;
+ z-index:0;
+}
+#zone > .slot.registered-pile-frame .slot-num{
+ position:absolute;
+ top:2px;left:2px;
+ font-size:10px;
+ padding:2px 4px;
+ background:#1d241fd9;
+}
