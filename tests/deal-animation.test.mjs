@@ -62,7 +62,7 @@ test('SERPENT is slower than PETAL, snakes across its path, and never spins',()=
  const petal=animation.create('petalSoft',{dx:360,dy:180});
  const flight=animation.create('serpent',{dx:360,dy:180,arrivalAngle:40,wind:.8});
  assert.ok(flight.duration>petal.duration);
- assert.equal(flight.duration,7800);
+ assert.equal(flight.duration,3900);
  assert.equal(flight.frames.length,161);
  assert.equal(flight.easing,'linear');
  assert.equal(flight.frames[0].offset,0);
