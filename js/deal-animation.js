@@ -14,10 +14,11 @@
   const finish={transform:transform(0,0,a),filter:'brightness(1)'};
   if(mode==='spinSlow'){
    // Throw the card halfway to its destination over the first half-second,
-   // then make one continuous turn during the remaining levitating flight.
+   // then spin continuously at a speed approaching the original SPIN.
    // The final acceleration is unchanged; the launch remains linear.
    const releaseTime=.065; // roughly half a second of the 7.8s flight
    const releaseDistance=.50; // halfway to the destination
+   const aerialTurns=16; // 7.3s of flight: about 2.2 turns/s (SPIN: 2.94/s)
    return {
     duration:7800,easing:'linear',
     frames:[
@@ -25,7 +26,7 @@
      {offset:releaseTime,
       transform:transform(x*(1-releaseDistance),y*(1-releaseDistance),0,1),
       filter:'brightness(1.04)',easing:'cubic-bezier(.25,.25,.78,.55)'},
-     {offset:1,transform:transform(0,0,360+a),filter:'brightness(1)'}
+     {offset:1,transform:transform(0,0,360*aerialTurns+a),filter:'brightness(1)'}
     ]
    };
   }
