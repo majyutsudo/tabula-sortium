@@ -8,17 +8,30 @@ function validateReading(v,cards){
  const allowed=cards&&new Set(cards.map(c=>c.id));
  const validCard=p=>p&&typeof p.id==='string'&&p.id.trim()&&(!allowed||allowed.has(p.id));
  const validList=list=>Array.isArray(list)&&list.length<=800&&list.every(validCard);
+ const piles=v?.tablePiles??[];
+ const validPiles=Array.isArray(piles)&&piles.length<=200&&piles.every(p=>
+  p&&typeof p.id==='string'&&p.id.length>0&&Number.isFinite(p.x)&&p.x>=-200&&p.x<=300
+  &&Number.isFinite(p.y)&&p.y>=-200&&p.y<=300
+  &&(p.slot==null||Number.isInteger(p.slot)&&p.slot>=0&&p.slot<80)
+  &&validList(p.cards));
+ const slotList=[
+  ...(Array.isArray(v?.placed)?v.placed:[]).filter(c=>Number.isInteger(c.slot)).map(c=>c.slot),
+  ...(Array.isArray(piles)?piles:[]).filter(p=>Number.isInteger(p?.slot)).map(p=>p.slot)
+ ];
+ const uniqueSlots=new Set(slotList).size===slotList.length;
+ const uniquePiles=Array.isArray(piles)&&new Set(piles.map(p=>p?.id)).size===piles.length;
  return !!(v&&typeof v==='object'&&!Array.isArray(v)&&validList(v.placed)
   &&v.placed.every(p=>Number(p.x)>=-200&&Number(p.x)<=300&&Number(p.y)>=-200&&Number(p.y)<=300
    &&(p.angle==null||typeof p.angle==='number'&&Number.isFinite(p.angle))
    &&(p.slot==null||Number.isInteger(p.slot)&&p.slot>=0&&p.slot<80))
+  &&validPiles&&uniquePiles&&uniqueSlots
   &&[v.deck,v.removed,v.dealCheckpoint].every(list=>list==null||validList(list))
   &&(v.cardNames===undefined||Array.isArray(v.cardNames)&&v.cardNames.length===v.placed.length
    &&v.cardNames.every(name=>typeof name==='string')));
 }
 function matchesDeck(reading,cards){
  if(!Array.isArray(reading?.deck)||!validateReading(reading,cards))return false;
- const stock=[...reading.deck,...reading.placed,...(reading.removed||[])];
+ const stock=[...reading.deck,...reading.placed,...(reading.removed||[]),...(reading.tablePiles||[]).flatMap(p=>p.cards)];
  const ids=new Set(stock.map(c=>c.id));
  const checkpoint=reading.dealCheckpoint||[];
  return stock.length===cards.length&&ids.size===stock.length
