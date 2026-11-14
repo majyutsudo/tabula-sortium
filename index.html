@@ -39,7 +39,24 @@
 <section id="cardGallery" hidden role="dialog" aria-modal="true" aria-label="TABULA TAROT カード図鑑">
   <div class="gallery-head"><div><div class="gallery-brand">TABULA TAROT</div><small>THE CARDS · 78枚の図鑑</small></div><button type="button" id="cardGalleryClose">図鑑を閉じる ×</button></div>
   <div class="gallery-controls"><label>デッキ <select id="cardGalleryDeck" aria-label="図鑑で表示するデッキ"><option value="simple">SIMPLE TAROT（78枚）</option><option value="builtin">TABULA TAROT（78枚）</option></select></label><label>表示 <select id="cardGalleryFilter"><option value="all">全78枚</option><option value="major">大アルカナ22枚</option><option value="minor">小アルカナ56枚</option><option value="pip">数札40枚</option><option value="court">コートカード16枚</option><option value="wands">杖14枚</option><option value="cups">聖杯14枚</option><option value="swords">剣14枚</option><option value="pentacles">金貨14枚</option></select></label><output id="cardGalleryCount">78 / 78枚</output><span class="mini">カードを選ぶと拡大します</span></div>
-  <div class="gallery-scroll" id="cardGalleryScroll"><div class="gallery-grid" id="cardGalleryGrid"></div></div>
+  <div class="gallery-scroll" id="cardGalleryScroll">
+    <section class="gallery-deck-intro" id="galleryDeckIntro" hidden aria-label="デッキ解説">
+      <button type="button" class="gallery-deck-intro-toggle" id="galleryDeckIntroToggle" aria-expanded="true" aria-controls="galleryDeckIntroBody"><span>デッキ解説</span><span id="galleryDeckIntroChevron" aria-hidden="true">⌃</span></button>
+      <div id="galleryDeckIntroBody" class="gallery-deck-intro-body"><p id="galleryDeckIntroText"></p></div>
+    </section>
+    <div class="gallery-deck-intro-actions"><button type="button" id="galleryDeckIntroEdit" aria-controls="galleryDeckIntroEditor" aria-expanded="false">解説を編集</button></div>
+    <section id="galleryDeckIntroEditor" class="gallery-deck-intro-editor" hidden aria-label="デッキ解説の編集">
+      <label for="galleryDeckIntroInput">デッキの紹介文</label>
+      <textarea id="galleryDeckIntroInput" rows="5" placeholder="このデッキの特徴や制作意図など。空欄で保存すると解説欄を非表示にします。"></textarea>
+      <div class="gallery-deck-intro-editor-actions">
+        <button type="button" id="galleryDeckIntroDefault">標準の解説に戻す</button>
+        <button type="button" id="galleryDeckIntroCancel">キャンセル</button>
+        <button type="button" id="galleryDeckIntroSave">保存</button>
+      </div>
+      <p class="gallery-deck-intro-editor-status" id="galleryDeckIntroStatus" role="status"></p>
+    </section>
+    <div class="gallery-grid" id="cardGalleryGrid"></div>
+  </div>
   <div class="gallery-lightbox" id="cardGalleryLightbox" hidden role="dialog" aria-label="カード拡大表示"><div class="gallery-lightbox-bar"><strong id="cardGalleryLabel"></strong><button type="button" id="cardGalleryBack">一覧へ戻る ×</button></div><div class="gallery-lightbox-view"><button type="button" id="cardGalleryPrev" aria-label="前のカード">‹</button><img id="cardGalleryLarge" alt=""><button type="button" id="cardGalleryNext" aria-label="次のカード">›</button></div></div>
 </section>
 <script src="js/storage-format.js?v=0356"></script><script src="js/physical-identity.js?v=0403"></script><script src="js/table-piles.js?v=0435"></script><script src="js/table-arrangement.js?v=0431"></script><script src="js/multi-workspace.js?v=0185"></script><script src="js/catalog.js?v=0511"></script><script src="js/spread-store.js?v=0437"></script><script src="js/spread-geometry.js?v=0185"></script><script src="js/spread-encyclopedia.js?v=0527"></script><script src="js/deck-store.js?v=0185"></script><script src="js/deck-blueprint.js?v=0528"></script><script src="js/lenormand.js?v=0519"></script><script src="js/card-rules.js?v=0185"></script><script src="js/shuffle.js?v=0185"></script><script src="js/reading-history.js?v=0356"></script><script src="js/ui-format.js?v=0185"></script><script src="js/deal-workflow.js?v=0394"></script>
