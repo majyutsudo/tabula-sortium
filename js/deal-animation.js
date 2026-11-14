@@ -13,14 +13,13 @@
   const transform=(px,py,angle,scale=1)=>t(px,py)+' rotate('+angle+'deg) scale('+scale+')';
   const finish={transform:transform(0,0,a),filter:'brightness(1)'};
   if(mode==='spinSlow'){
-   // Throw the card halfway to its destination over the first half-second,
-   // then spin continuously at a speed approaching the original SPIN.
-   // The final acceleration is unchanged; the launch remains linear.
-   const releaseTime=.065; // roughly half a second of the 7.8s flight
+   // A quick throw to the halfway point, followed by one continuous
+   // aerial rotation and a slight pull-in at the very end.
+   const releaseTime=.20; // 152ms of the 760ms flight
    const releaseDistance=.50; // halfway to the destination
-   const aerialTurns=16; // 7.3s of flight: about 2.2 turns/s (SPIN: 2.94/s)
+   const aerialTurns=1;
    return {
-    duration:7800,easing:'linear',
+    duration:760,easing:'linear',
     frames:[
      {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)',easing:'linear'},
      {offset:releaseTime,
