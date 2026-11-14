@@ -1,0 +1,120 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+const source=fs.readFileSync(new URL('../js/deal-animation.js',import.meta.url),'utf8');
+const context=vm.createContext({});
+vm.runInContext(source,context);
+const {TabulaDealAnimation:animation}=context;
+
+test('the existing STANDARD deal remains the default',()=>{
+ assert.equal(animation.normalize(undefined),'standard');
+ assert.equal(animation.normalize('missing'),'standard');
+ const flight=animation.create('standard',{dx:120,dy:64,arrivalAngle:45});
+ assert.equal(flight.duration,320);
+ assert.equal(flight.frames.length,3);
+ assert.match(flight.frames[0].transform,/rotate\(0deg\)/);
+ assert.match(flight.frames.at(-1).transform,/rotate\(45deg\)/);
+});
+
+test('SPIN performs two turns and finishes at an arbitrary target angle',()=>{
+ for(const angle of [-155,0,45,90,170]){
+  const flight=animation.create('spin',{dx:285,dy:-120,arrivalAngle:angle});
+  assert.equal(flight.duration,680);
+  assert.equal(flight.frames.length,4);
+  assert.match(flight.frames.at(-1).transform,new RegExp('rotate\\('+(720+angle)+'deg\\)'));
+  assert.match(flight.frames.at(-1).transform,/calc\(-50% \+ 0px\)/);
+ }
+});
+
+test('renamed modes preserve their existing animation paths and durations',()=>{
+ assert.deepEqual(Object.keys(animation.MODES),['standard','spin','serpentQuick','serpent','petalSoft']);
+ assert.equal(animation.MODES.petalSoft,'SPIRAL — 緩やかな螺旋');
+ assert.equal(animation.MODES.serpent,'PETAL — 蛇行');
+ assert.equal(animation.MODES.serpentQuick,'SERPENT — 通常ディール速度');
+ assert.equal(animation.normalize('serpentFast'),'serpent');
+ assert.equal(animation.normalize('spinSlow'),'standard');
+ for(const angle of [-135,0,65,170]){
+  for(const wind of [-.8,.8]){
+   const options={dx:285,dy:-120,arrivalAngle:angle,wind,bounds:{minX:-300,maxX:320,minY:-240,maxY:270}};
+   const petal=animation.create('serpent',options);
+   const serpent=animation.create('serpentQuick',options);
+   const spiral=animation.create('petalSoft',options);
+   assert.equal(spiral.duration,4300);
+   assert.equal(petal.duration,3900);
+   assert.equal(serpent.duration,320);
+   assert.equal(serpent.easing,petal.easing);
+   assert.equal(JSON.stringify(serpent.frames),JSON.stringify(petal.frames));
+   assert.equal(serpent.frames.length,161);
+   assert.ok(serpent.frames.at(-1).transform.includes('rotate('+angle+'deg)'));
+  }
+ }
+});
+
+test('SPIRAL retains the original slow spiral and legacy variants resolve to it',()=>{
+ assert.equal(animation.normalize('petal'),'petalSoft');
+ assert.equal(animation.normalize('petalVortex'),'petalSoft');
+ const a=animation.create('petalSoft',{dx:360,dy:180,arrivalAngle:-35,wind:.7});
+ const b=animation.create('petalVortex',{dx:360,dy:180,arrivalAngle:-35,wind:.7});
+ assert.equal(a.duration,4300);
+ assert.equal(b.duration,a.duration);
+ assert.equal(a.frames.length,101);
+ assert.equal(a.frames[0].offset,0);
+ assert.equal(a.frames.at(-1).offset,1);
+ assert.equal(a.frames.at(-1).transform,b.frames.at(-1).transform);
+});
+
+test('PETAL snakes across its path and never spins',()=>{
+ const petal=animation.create('petalSoft',{dx:360,dy:180});
+ const flight=animation.create('serpent',{dx:360,dy:180,arrivalAngle:40,wind:.8});
+ assert.ok(flight.duration<petal.duration);
+ assert.equal(flight.duration,3900);
+ assert.equal(flight.frames.length,161);
+ assert.equal(flight.easing,'linear');
+ assert.equal(flight.frames[0].offset,0);
+ assert.equal(flight.frames.at(-1).offset,1);
+ assert.match(flight.frames.at(-1).transform,/rotate\\(40deg\\)/);
+ const extract=frame=>{
+  const match=frame.transform.match(/calc\\(-50% \\+ (-?[\\d.]+)px\\),calc\\(-50% \\+ (-?[\\d.]+)px\\)/);
+  assert.ok(match);
+  return {x:Number(match[1]),y:Number(match[2])};
+ };
+ // Perpendicular offsets should alternate across the stock-to-target line.
+ const offsets=flight.frames.slice(1,-1).map(frame=>{
+  const {x,y}=extract(frame);
+  return 360*y-180*x;
+ });
+ assert.ok(offsets.some(value=>value>3000),'left of the direct line');
+ assert.ok(offsets.some(value=>value< -3000),'right of the direct line');
+ const reverse=animation.create('serpent',{dx:360,dy:180,arrivalAngle:40,wind:-.8});
+ assert.notEqual(flight.frames[35].transform,reverse.frames[35].transform);
+ assert.equal(flight.frames.at(-1).transform,reverse.frames.at(-1).transform);
+ for(const frame of flight.frames){
+  const angle=Number(frame.transform.match(/rotate\\((-?[\\d.]+)deg\\)/)[1]);
+  assert.ok(angle>=-.01&&angle<=40.01,'no spin beyond destination angle');
+ }
+});
+
+test('SPIRAL and PETAL respect viewport bounds where a path can fit',()=>{
+ const bounds={minX:-200,maxX:145,minY:-260,maxY:170};
+ for(const mode of ['petalSoft','serpent']){
+  const f=animation.create(mode,{dx:120,dy:-160,wind:.4,arrivalAngle:70,bounds});
+  for(const frame of f.frames){
+   const match=frame.transform.match(/calc\\(-50% \\+ (-?[\\d.]+)px\\),calc\\(-50% \\+ (-?[\\d.]+)px\\)/);
+   assert.ok(match);
+   const px=Number(match[1]),py=Number(match[2]);
+   assert.ok(px>=bounds.minX-.02&&px<=bounds.maxX+.02,mode+' x='+px);
+   assert.ok(py>=bounds.minY-.02&&py<=bounds.maxY+.02,mode+' y='+py);
+  }
+ }
+});
+
+test('all flight modes end at exactly the same center and destination rotation',()=>{
+ const finalTransforms=['standard','spin','serpentQuick','serpent','petalSoft'].map(mode=>
+  animation.create(mode,{dx:-295,dy:410,arrivalAngle:72,wind:.3}).frames.at(-1).transform);
+ const suffix='translate(calc(-50% + 0px),calc(-50% + 0px))';
+ finalTransforms.forEach(transform=>assert.ok(transform.startsWith(suffix)));
+ for(const transform of finalTransforms.slice(2))assert.equal(finalTransforms[0],transform);
+ assert.match(finalTransforms[1],/rotate\(792deg\)/);
+});

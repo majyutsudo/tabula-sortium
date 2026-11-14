@@ -1,5 +1,5 @@
 
-:root{font-family:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;color:#e8ddc5;background:#141a19;font-size:14px}*{box-sizing:border-box}body{margin:0}button,select,input,textarea{font:inherit}button,select{cursor:pointer}button{background:#25352f;color:#ebdfc7;border:1px solid #6b6550;border-radius:5px;padding:9px 12px}button:hover{background:#36483e}button:disabled{opacity:.4;cursor:default}.primary{background:#76623a;border-color:#bc9f66;color:#fff6df}select,input,textarea{background:#202b27;color:#eee1c9;border:1px solid #615f50;border-radius:4px;padding:8px;max-width:100%}input[type=checkbox]{accent-color:#c3a46a}.shell{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh}aside{background:#1d2724;border-right:1px solid #535343;padding:20px;max-height:100vh;overflow-y:auto}h1{font-size:23px;letter-spacing:.18em;font-weight:normal;margin:0}header small,.subtle{color:#a9a28e}.version{font:11px sans-serif;letter-spacing:.15em;color:#baa67f}.section{border-top:1px solid #46483d;margin-top:18px;padding-top:14px}h2{font-size:13px;font-weight:normal;color:#d8c496;letter-spacing:.12em;margin:0 0 12px}.stack{display:grid;gap:8px}.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}.row button{flex:1}.field{display:grid;gap:5px;color:#c8c1ae}.field select{width:100%}.choice{display:flex;gap:7px;align-items:center;font:12px sans-serif;color:#d7cebb}.mini{font:11px/1.5 sans-serif;color:#b8b19e}.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.swatch{padding:0;width:33px;height:28px;border:2px solid #777;box-shadow:inset 0 0 0 1px #222}.swatch.active{outline:2px solid #d7c28b;outline-offset:2px}.main{display:flex;flex-direction:column;min-width:0}.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;background:#1b2421;border-bottom:1px solid #454b3e}.toolbar .status{flex:1;font:12px sans-serif;color:#c8bfa8}.toolbar button{padding:7px 10px}.stage-shell{flex:1;min-height:70vh;position:relative;overflow:hidden;background:#2b211b}.stage{position:absolute;inset:0;overflow:hidden;touch-action:none;background:radial-gradient(ellipse at center,#59483a 0,#271f19 100%)}.cloth{position:absolute;left:5%;top:13%;width:90%;height:80%;border:8px solid rgba(0,0,0,.17);box-shadow:0 15px 34px #0009,inset 0 0 65px #0004;border-radius:3px;background-color:var(--cloth,#171719);background-image:repeating-linear-gradient(90deg,#fff1 0px,transparent 1px,transparent 4px),repeating-linear-gradient(0deg,#0001 0px,transparent 1px,transparent 4px)}.cloth:after{content:'';position:absolute;inset:12px;border:1px solid #ffffff30;pointer-events:none}.altar{position:absolute;inset:0;pointer-events:none}.candle{position:absolute;top:2%;width:24px;height:70px;background:linear-gradient(90deg,#a99c80,#eee0bd 40%,#8a795a);box-shadow:0 6px 15px #0008;border-radius:3px}.candle:before{content:'';position:absolute;width:12px;height:22px;left:6px;top:-24px;background:#f4b54a;border-radius:70% 20% 65% 45%;transform:rotate(8deg);box-shadow:0 0 18px 8px #edab4770;animation:flicker 1.9s ease-in-out infinite alternate}.candle:after{content:'';position:absolute;bottom:-4px;left:-17px;width:58px;height:9px;background:linear-gradient(#ae8650,#59462f);border-radius:50%}.candle.left{left:16%}.candle.right{right:16%}@keyframes flicker{from{transform:scale(.9) rotate(-7deg);opacity:.8}to{transform:scale(1.12) rotate(12deg);opacity:1}}.table-zone{position:absolute;left:50%;transform:translateX(-50%);top:17%;width:88%;max-width:790px;height:74%;border-radius:4px}.slot{position:absolute;width:var(--cw);height:var(--ch);border:1px dashed #f5e4be89;background:#ffffff10;transform:translate(-50%,-50%) rotate(var(--angle));border-radius:4px;display:flex;justify-content:center;align-items:center;color:#f8e9c7;cursor:pointer}.slot .slot-num{font:14px sans-serif;background:#1d241f9e;border-radius:50%;padding:3px 7px}.card{position:absolute;width:var(--cw);height:var(--ch);transform:translate(-50%,-50%) rotate(var(--rotation));border-radius:4px;cursor:grab;user-select:none;touch-action:none;filter:drop-shadow(2px 5px 3px #000a);transition:left .48s cubic-bezier(.2,.7,.2,1),top .48s cubic-bezier(.2,.7,.2,1),transform .5s ease;z-index:var(--z,2)}.card.dragging{transition:none;cursor:grabbing}.card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .56s}.card.faceup .card-inner{transform:rotateY(180deg)}.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:4px;border:2px solid #e1cfaa;overflow:hidden}.back{background:repeating-linear-gradient(45deg,#274740 0,#274740 4px,#19342f 4px,#19342f 8px);display:grid;place-items:center}.back:before{content:'✧';position:absolute;inset:5px;border:1px solid #c0a476;display:grid;place-items:center;font-size:28px;color:#c2a574}.front{transform:rotateY(180deg);background:#eee1c3;color:#342a23;border:3px double #756444;padding:5px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:4px}.front .symbol{font-size:25px}.front .card-name{font-size:clamp(8px,1.1vw,13px);font-weight:bold;line-height:1.3}.front .card-id{font:9px sans-serif;color:#67523d}.front:before{content:'';position:absolute;inset:4px;border:1px solid #897252;pointer-events:none}.zone-label{position:absolute;transform:translateX(-50%);font:11px sans-serif;white-space:nowrap;color:#fff5d6;background:#17241fc9;padding:3px 6px;border-radius:3px;pointer-events:none;z-index:300}.deck{position:absolute;left:3%;top:82%;width:var(--cw);height:var(--ch);border-radius:4px;background:repeating-linear-gradient(45deg,#274740 0,#274740 4px,#19342f 4px,#19342f 8px);border:3px double #d6b980;box-shadow:4px 4px 0 #b1aa98,7px 7px 0 #5e615b,8px 10px 8px #0008;display:grid;place-items:center;cursor:grab;z-index:4;color:#cdb78a}.deck:after{content:'✧';font-size:25px}.deck.empty{opacity:.3;cursor:default}.deck-label{position:absolute;left:2%;top:97%;font:11px sans-serif;color:#eeddb7}.info{min-height:52px;background:#1b2421;border-top:1px solid #4c4e40;padding:12px 18px;font:13px/1.7 sans-serif;color:#ddd2bd}.log{font:11px sans-serif;color:#a7a391}.modal-bg{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:999;padding:16px}.modal-bg.open{display:flex}.modal{width:min(600px,100%);max-height:85vh;overflow:auto;padding:24px;background:#24312b;border:1px solid #a88c60;border-radius:8px;box-shadow:0 20px 60px #0009}.modal h2{font-size:19px}.modal p{line-height:1.7}.close{float:right}.cut-piles{display:flex;gap:12px;justify-content:center;margin:20px 0}.cut-piles button{min-width:100px;min-height:80px;font-size:15px}.note{font:12px sans-serif;color:#cfc3a9}.legend{font:12px sans-serif}.spacer{flex:1}.hidden{display:none!important}@media(max-width:780px){.shell{grid-template-columns:1fr}aside{max-height:none;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}aside header{grid-column:1/-1}aside .section{margin-top:0;padding-top:8px}h1{font-size:19px}.stage-shell{min-height:62vh}.toolbar{padding:8px}.toolbar .status{flex-basis:100%}.zone-label{font-size:9px}.front .symbol{font-size:15px}.front .card-name{font-size:9px}.front .card-id{display:none}.candle{transform:scale(.7);transform-origin:top}}@media(max-width:460px){aside{grid-template-columns:1fr}.stage-shell{min-height:58vh}.card{border-radius:2px}.front{padding:2px}.front .symbol{font-size:13px}}
+:root{font-family:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;color:#e8ddc5;background:#141a19;font-size:14px}*{box-sizing:border-box}body{margin:0}button,select,input,textarea{font:inherit}button,select{cursor:pointer}button{background:#25352f;color:#ebdfc7;border:1px solid #6b6550;border-radius:5px;padding:9px 12px}button:hover{background:#36483e}button:disabled{opacity:.4;cursor:default}.primary{background:#76623a;border-color:#bc9f66;color:#fff6df}select,input,textarea{background:#202b27;color:#eee1c9;border:1px solid #615f50;border-radius:4px;padding:8px;max-width:100%}input[type=checkbox]{accent-color:#c3a46a}.shell{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh}aside{background:#1d2724;border-right:1px solid #535343;padding:20px;max-height:100vh;overflow-y:auto}h1{font-size:23px;letter-spacing:.18em;font-weight:normal;margin:0}header small,.subtle{color:#a9a28e}.version{font:11px sans-serif;letter-spacing:.15em;color:#baa67f}.section{border-top:1px solid #46483d;margin-top:18px;padding-top:14px}h2{font-size:13px;font-weight:normal;color:#d8c496;letter-spacing:.12em;margin:0 0 12px}.stack{display:grid;gap:8px}.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}.row button{flex:1}.field{display:grid;gap:5px;color:#c8c1ae}.field select{width:100%}.choice{display:flex;gap:7px;align-items:center;font:12px sans-serif;color:#d7cebb}.mini{font:11px/1.5 sans-serif;color:#b8b19e}.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.swatch{padding:0;width:33px;height:28px;border:2px solid #777;box-shadow:inset 0 0 0 1px #222}.swatch.active{outline:2px solid #d7c28b;outline-offset:2px}.main{display:flex;flex-direction:column;min-width:0}.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;background:#1b2421;border-bottom:1px solid #454b3e}.toolbar .status{flex:1;font:12px sans-serif;color:#c8bfa8}.toolbar button{padding:7px 10px}.stage-shell{flex:1;min-height:70vh;position:relative;overflow:hidden;background:#2b211b}.stage{position:absolute;inset:0;overflow:hidden;touch-action:none;background:radial-gradient(ellipse at center,#59483a 0,#271f19 100%)}.cloth{position:absolute;left:5%;top:13%;width:90%;height:80%;border:8px solid rgba(0,0,0,.17);box-shadow:0 15px 34px #0009,inset 0 0 65px #0004;border-radius:3px;background-color:var(--cloth,#171719);background-image:repeating-linear-gradient(90deg,#fff1 0px,transparent 1px,transparent 4px),repeating-linear-gradient(0deg,#0001 0px,transparent 1px,transparent 4px)}.cloth:after{content:'';position:absolute;inset:12px;border:1px solid #ffffff30;pointer-events:none}.altar{position:absolute;inset:0;pointer-events:none}.candle{position:absolute;top:2%;width:24px;height:70px;background:linear-gradient(90deg,#a99c80,#eee0bd 40%,#8a795a);box-shadow:0 6px 15px #0008;border-radius:3px}.candle:before{content:'';position:absolute;width:12px;height:22px;left:6px;top:-24px;background:#f4b54a;border-radius:70% 20% 65% 45%;transform:rotate(8deg);box-shadow:0 0 18px 8px #edab4770;animation:flicker 1.9s ease-in-out infinite alternate}.candle:after{content:'';position:absolute;bottom:-4px;left:-17px;width:58px;height:9px;background:linear-gradient(#ae8650,#59462f);border-radius:50%}.candle.left{left:16%}.candle.right{right:16%}@keyframes flicker{from{transform:scale(.9) rotate(-7deg);opacity:.8}to{transform:scale(1.12) rotate(12deg);opacity:1}}.table-zone{position:absolute;left:50%;transform:translateX(-50%);top:17%;width:88%;max-width:790px;height:74%;border-radius:4px}.slot{position:absolute;width:var(--cw);height:var(--ch);border:1px dashed #f5e4be89;background:#ffffff10;transform:translate(-50%,-50%) rotate(var(--angle));border-radius:4px;display:flex;justify-content:center;align-items:center;color:#f8e9c7;cursor:pointer}.slot .slot-num{font:14px sans-serif;background:#1d241f9e;border-radius:50%;padding:3px 7px}.card{position:absolute;width:var(--cw);height:var(--ch);transform:translate(-50%,-50%) rotate(var(--rotation));border-radius:4px;cursor:grab;user-select:none;touch-action:none;filter:drop-shadow(2px 5px 3px #000a);transition:left .48s cubic-bezier(.2,.7,.2,1),top .48s cubic-bezier(.2,.7,.2,1),transform .5s ease;z-index:var(--z,2)}.card.dragging{transition:none;cursor:grabbing}.card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .56s}.card.faceup .card-inner{transform:rotateY(180deg)}.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:4px;border:2px solid #e1cfaa;overflow:hidden}.back{background:repeating-linear-gradient(45deg,#274740 0,#274740 4px,#19342f 4px,#19342f 8px);display:grid;place-items:center}.back:before{content:'✧';position:absolute;inset:5px;border:1px solid #c0a476;display:grid;place-items:center;font-size:28px;color:#c2a574}.front{transform:rotateY(180deg);background:#eee1c3;color:#342a23;border:3px double #756444;padding:5px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:4px}.front .symbol{font-size:25px}.front .card-name{font-size:clamp(8px,1.1vw,13px);font-weight:bold;line-height:1.3}.front .card-id{font:9px sans-serif;color:#67523d}.front:before{content:'';position:absolute;inset:4px;border:1px solid #897252;pointer-events:none}.zone-label{position:absolute;transform:translateX(-50%);font:11px sans-serif;white-space:nowrap;color:#fff5d6;background:#17241fc9;padding:3px 6px;border-radius:3px;pointer-events:none;z-index:300}.deck{position:absolute;left:3%;top:82%;width:var(--cw);height:var(--ch);border-radius:4px;background:repeating-linear-gradient(45deg,#274740 0,#274740 4px,#19342f 4px,#19342f 8px);border:2px solid #d6b980;box-shadow:4px 4px 0 #b1aa98,7px 7px 0 #5e615b,8px 10px 8px #0008;display:grid;place-items:center;cursor:grab;z-index:4;color:#cdb78a}.deck:after{content:'✧';font-size:25px}.deck.empty{opacity:.3;cursor:default}.deck-label{position:absolute;left:2%;top:97%;font:11px sans-serif;color:#eeddb7}.info{min-height:52px;background:#1b2421;border-top:1px solid #4c4e40;padding:12px 18px;font:13px/1.7 sans-serif;color:#ddd2bd}.log{font:11px sans-serif;color:#a7a391}.modal-bg{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:999;padding:16px}.modal-bg.open{display:flex}.modal{width:min(600px,100%);max-height:85vh;overflow:auto;padding:24px;background:#24312b;border:1px solid #a88c60;border-radius:8px;box-shadow:0 20px 60px #0009}.modal h2{font-size:19px}.modal p{line-height:1.7}.close{float:right}.cut-piles{display:flex;gap:12px;justify-content:center;margin:20px 0}.cut-piles button{min-width:100px;min-height:80px;font-size:15px}.note{font:12px sans-serif;color:#cfc3a9}.legend{font:12px sans-serif}.spacer{flex:1}.hidden{display:none!important}@media(max-width:780px){.shell{grid-template-columns:1fr}aside{max-height:none;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}aside header{grid-column:1/-1}aside .section{margin-top:0;padding-top:8px}h1{font-size:19px}.stage-shell{min-height:62vh}.toolbar{padding:8px}.toolbar .status{flex-basis:100%}.zone-label{font-size:9px}.front .symbol{font-size:15px}.front .card-name{font-size:9px}.front .card-id{display:none}.candle{transform:scale(.7);transform-origin:top}}@media(max-width:460px){aside{grid-template-columns:1fr}.stage-shell{min-height:58vh}.card{border-radius:2px}.front{padding:2px}.front .symbol{font-size:13px}}
 
 .stage-shell{min-height:800px;}
 .stage{display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -613,7 +613,7 @@ body.gallery-open{overflow:hidden}
 .gallery-tile{background:transparent;border:none;padding:0 0 6px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:7px;color:#ddd0ad;box-shadow:none}
 .gallery-tile:hover{background:transparent}
 .gallery-tile > :is(img,svg.card-art){width:100%;height:auto;max-width:210px;aspect-ratio:2/3;flex:none;object-fit:contain;display:block;border-radius:5px;box-shadow:0 7px 13px #0009}
-.gallery-tile span{font:12px/1.4 'Yu Mincho',serif;text-align:center}
+.gallery-tile > span{font:12px/1.4 'Yu Mincho',serif;text-align:center}
 .gallery-tile:focus-visible :is(img,svg.card-art){outline:3px solid #dbbf7c;outline-offset:3px}
 .gallery-lightbox[hidden]{display:none!important}
 .gallery-lightbox{position:absolute;inset:0;z-index:2;background:#080b0bea;display:flex;flex-direction:column;align-items:center;padding:10px 8px calc(10px + env(safe-area-inset-bottom));gap:6px}
@@ -849,7 +849,7 @@ aside .section #cardGalleryOpen{width:100%;min-height:40px;justify-content:cente
 
 /* The label settings disclosure uses the same button surface as its neighbors. */
 .table-utility-actions .label-cycle-settings{flex:1 1 30%;width:auto;min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;box-sizing:border-box}
-.table-utility-actions .label-cycle-settings>summary{position:relative;display:flex;align-items:center;justify-content:center;min-height:43px;width:100%;box-sizing:border-box;padding:8px 22px 8px 10px;border:1px solid #827357;border-radius:5px;background:#373a32;color:#f3e5cb;font:inherit;font-size:12px;line-height:1.3;list-style:none;white-space:normal;cursor:pointer;text-align:center;word-break:keep-all}
+.table-utility-actions .label-cycle-settings>summary{position:relative;display:flex;align-items:center;justify-content:center;min-height:43px;width:100%;box-sizing:border-box;padding:8px 22px 8px 10px;border:1px solid #53614f;border-radius:5px;background:#29332c;color:#c7cdbd;font:inherit;font-size:12px;line-height:1.3;list-style:none;white-space:normal;cursor:pointer;text-align:center;word-break:keep-all}
 .table-utility-actions .label-cycle-settings>summary::-webkit-details-marker{display:none}
 .table-utility-actions .label-cycle-settings>summary::after{content:"▾";position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;opacity:.85}
 .table-utility-actions .label-cycle-settings[open]>summary::after{content:"▴"}
@@ -1069,6 +1069,8 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .table-select-with-color{display:flex;align-items:center;gap:8px;min-width:0}
 .table-select-with-color select{flex:1;min-width:0}
 .dual-deck-fields{display:grid;gap:7px;min-width:0;padding-top:9px;border-top:1px solid rgba(189,163,116,.26)}
+/* The pile selector already has a bottom divider. Avoid a second line above deck A. */
+.dual-deck-fields:first-child{border-top:0;padding-top:0}
 .dual-deck-fields strong{font-size:12px;color:#dcc89f;font-weight:600}
 .dual-table-identity{display:none!important}
 @media(max-width:780px){.dual-table-setup,.dual-deck-settings{width:100%}.dual-table-setup label,.dual-deck-fields label{grid-template-columns:64px minmax(0,1fr)}}
@@ -1308,3 +1310,596 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .front .simple-minor-symbol svg{display:block;width:100%;height:100%;max-width:60px}
 .front .simple-minor-rule{position:absolute;top:73%;left:23%;right:23%;height:1px;background:#b5a27f}
 .front .simple-minor-rank{position:absolute;left:3px;right:3px;bottom:7%;height:18%;display:flex;align-items:center;justify-content:center;font:700 25px/1 Georgia,serif;color:#3b3025}
+
+/* Sliding cards must track physics positions immediately; the normal .48s
+   left/top transition otherwise makes impacts appear to occur at a distance. */
+.card.sliding{transition:none!important}
+
+
+/* Compact simple-deck typography: the desktop 90x135 title dimensions
+   otherwise overlap on narrow mobile tabletop cards. */
+@media (max-width:780px){
+ .card .front .simple-major-number{
+  top:5%;height:22%;font-size:clamp(14px,4.2vw,19px);
+ }
+ .card .front .simple-major-name{
+  top:31%;bottom:14%;left:2px;right:2px;
+  font-size:clamp(9px,2.55vw,11.5px)!important;
+  line-height:1.12;gap:0;overflow-wrap:anywhere;
+ }
+ .card .front .simple-major-flourish{
+  bottom:5%;font-size:8px;
+ }
+ .card .front .simple-minor-rank{
+  font-size:clamp(16px,4.8vw,22px);
+ }
+}
+
+/* Deck capability-controlled fields must stay hidden even if grid styles apply. */
+#pipBackgroundField[hidden]{display:none!important}
+
+/* Independent deck blueprint placeholders: printed title, rank and suit glyph. */
+.front .blueprint-card-face{display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;height:100%;min-height:0;padding:6px 3px;box-sizing:border-box;color:#2c2823;overflow:hidden}
+.front .blueprint-card-face.red{color:#982d32}
+.front .blueprint-card-rank{align-self:flex-start;font:bold clamp(11px,1.8vw,21px)/1 Georgia,serif}
+.front .blueprint-card-symbol{font:clamp(22px,3.9vw,48px)/1 Georgia,serif}
+.front .blueprint-card-title{font:bold clamp(9px,1.25vw,13px)/1.2 Georgia,'Yu Mincho',serif;text-align:center;overflow-wrap:anywhere;max-width:100%}
+.blueprint-card-view{background:#eee1c3;border:6px double #766143;color:#2c2823;border-radius:7px;width:min(60vw,260px);height:auto;aspect-ratio:2/3;display:flex;padding:10px;box-sizing:border-box;box-shadow:0 6px 20px #0008}
+.blueprint-card-view .blueprint-card-face{display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;height:100%;color:#2c2823;padding:8px;box-sizing:border-box}
+.blueprint-card-view .blueprint-card-face.red{color:#982d32}
+.blueprint-card-view .blueprint-card-rank{align-self:flex-start;font:bold 27px Georgia,serif}
+.blueprint-card-view .blueprint-card-symbol{font:64px Georgia,serif}
+.blueprint-card-view .blueprint-card-title{font:bold 19px Georgia,'Yu Mincho',serif;text-align:center;overflow-wrap:anywhere}
+@media(max-width:780px){
+ .front .blueprint-card-rank{font-size:clamp(10px,3vw,15px)}
+ .front .blueprint-card-symbol{font-size:clamp(19px,6vw,30px)}
+ .front .blueprint-card-title{font-size:clamp(8px,2.6vw,11px)}
+}
+
+/* English-pattern pip faces share the same proportions on the table and in the viewer. */
+.front:has(> .playing-card-face-svg){padding:0!important;gap:0!important;border:0;background:#faf5e9}
+.front:has(> .playing-card-face-svg):before{display:none}
+.blueprint-card-view:has(> .playing-card-face-svg){padding:0;border:0;background:#faf5e9;overflow:hidden}
+.front .playing-card-face-svg,.blueprint-card-view .playing-card-face-svg{display:block;width:100%;height:100%;pointer-events:none}
+
+/* v0.398: align settings with the five tabletop actions; two columns on phones. */
+.table-action-settings{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:780px){.table-action-settings{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#zone .card.instant-faceup .card-inner{transition:none!important}
+
+/* v0.393 — readable stacked controls in the custom deal editor. */
+.deal-workbench-panel .deal-step-form,.deal-workbench-panel .deal-step-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:stretch;min-width:0}
+.deal-workbench-panel .deal-step-form>span,.deal-workbench-panel .deal-step-fields>span{display:block;min-width:0;font:13px/1.5 sans-serif;color:#e6d5b6;margin:2px 0 0}
+.deal-workbench-panel .deal-step-form select,.deal-workbench-panel .deal-step-form input{box-sizing:border-box;display:block;width:100%;min-width:0;max-width:100%;margin:0;font-size:16px}
+.deal-workbench-panel .deal-step-form>button{justify-self:start;max-width:100%;white-space:normal}
+
+/* v0.394 — visible physical pile stages for custom deal actions. */
+.deal-pile-layer{position:absolute;inset:0;z-index:680;pointer-events:none;overflow:hidden}
+/* Shared stock rendering: retain .deck, including identical artwork and appearance. */
+.table-surface .deck.deal-pile-card{
+ position:absolute;
+ width:var(--cw);height:var(--ch);
+ min-width:0;
+ box-sizing:border-box;
+ display:block;
+ pointer-events:none;
+ cursor:default;
+ opacity:1;
+ z-index:1;
+ will-change:transform,left,top;
+}
+/* Temporary dealing piles are clones of the stock and retain its computed dimensions. */
+.table-surface .deck.deal-pile-card .deal-pile-caption{
+ position:absolute;left:50%;top:calc(100% + 7px);
+ transform:translateX(-50%);
+ white-space:nowrap;text-align:center;
+ color:#f2dfb7;font:600 12px/1.25 sans-serif;
+ text-shadow:1px 1px 4px #000,0 0 8px #000;
+ min-width:75px;
+}
+@media(max-width:600px){
+ .table-surface .deck.deal-pile-card .deal-pile-caption{font-size:10px;min-width:55px}
+}
+
+/* v0.411: Explicit, movable physical tabletop piles.
+   Overlapping tarot cards remain independent unless manually dropped here. */
+.table-zone.pile-placement-armed{cursor:crosshair}
+.table-pile{position:absolute;z-index:1600;transform:translate(-50%,-50%);box-sizing:border-box;border:2px dashed #d6b57c;border-radius:6px;background:#191d1bdd;box-shadow:0 4px 12px #0009;touch-action:none}
+.table-pile::before{content:"";position:absolute;inset:4px;pointer-events:none;border:1px solid #ab8c59;border-radius:4px}
+.table-pile-handle{position:absolute;left:-2px;right:-2px;top:-29px;width:calc(100% + 4px);min-height:25px;border:1px solid #a18b62;border-radius:6px 6px 0 0;background:#29362d;color:#ead9b5;font:11px/1.2 Arial,sans-serif;z-index:3;cursor:grab;touch-action:none;white-space:nowrap;padding:3px 1px}
+.table-pile-top{position:absolute;inset:0;z-index:2;overflow:hidden;border-radius:5px;cursor:grab;touch-action:none;user-select:none;background:#e1d1aa}
+.table-pile-top.is-face-down{background:#423329}
+.table-pile-top>.face.back{display:block;position:absolute;inset:0;width:100%;height:100%;transform:none;backface-visibility:visible}
+.table-pile-top .card-art,.table-pile-top svg{width:100%;height:100%;max-height:100%;display:block}
+.table-pile-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;color:#e1c995;font:11px/1.4 sans-serif;pointer-events:none}
+.table-pile-remove{position:absolute;z-index:2;right:-9px;bottom:-9px;width:25px;height:25px;padding:0;border:1px solid #d5b678;border-radius:50%;background:#27362c;color:#eee0c6;cursor:pointer}
+.table-utility-actions #addTablePile[aria-pressed="true"]{border-color:#d7ae63;background:#59432b;color:#fff0c9}
+@media(max-width:780px){.table-pile-handle{font-size:10px;min-height:24px;top:-27px}.table-pile-empty{font-size:9px}}
+
+/* v0.413: choose the number of top cards to lift from an ordered pile. */
+.table-pile-take-count{position:absolute;top:calc(100% + 33px);left:50%;transform:translateX(-50%);z-index:5;width:max(112px,100%);min-width:112px;height:27px;box-sizing:border-box;border:1px solid #a58c60;border-radius:5px;background:#29362d;color:#f2e5c5;font:12px/1.2 Arial,sans-serif;text-align:center;text-align-last:center;padding:2px 18px 2px 8px;cursor:pointer;touch-action:manipulation}
+.table-pile-take-count:focus-visible{outline:2px solid #e6bd72;outline-offset:2px}
+@media(max-width:780px){.table-pile-take-count{font-size:11px;height:25px;top:calc(100% + 31px);min-width:108px}}
+
+/* A compact control leaves pile counts unobtrusive until explicitly requested. */
+.table-pile-take-toggle{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);z-index:5;min-width:78px;height:24px;padding:2px 8px;border:1px solid #8b7753;border-radius:5px;background:#29362d;color:#e2d4b8;font:11px/1.2 Arial,sans-serif;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.table-pile-take-count[hidden]{display:none}
+@media(max-width:780px){.table-pile-take-toggle{height:22px;font-size:10px}}
+
+/* v0.419: a small gesture grip opens a pile at any angle; expanded cards
+   retain their own physical identity and remain full-size surfaces. */
+.table-pile-top{width:100%;height:100%;right:auto;bottom:auto;box-sizing:border-box}
+.table-pile-fan-grip{position:absolute;right:-13px;top:3px;z-index:500;width:25px;height:25px;border:1px solid #ae966b;border-radius:50%;background:#26332ae8;color:#f2e4c4;font:17px/1 sans-serif;padding:0;cursor:grab;touch-action:none}
+.table-pile-fan-grip:active{cursor:grabbing}
+.table-pile-handle{z-index:450}
+.table-pile-take-toggle,.table-pile-take-count{z-index:460}
+
+/* v0.420: a lifted sequence must appear above destination piles during drag. */
+.table-pile.pile-drag-active{z-index:2100}
+
+/* v0.423: role selection is disclosed by the existing pile handle.
+   It remains absent from the tabletop until the handle is clicked. */
+.table-pile-role-select{position:absolute;top:0;left:0;width:100%;height:30px;z-index:650;
+ box-sizing:border-box;border:1px solid #b59b68;border-radius:4px;background:#26392f;color:#f0dfc1;
+ font:12px Arial,sans-serif;cursor:pointer}
+.table-pile-role-select[hidden]{display:none}
+
+/* v0.424 — accessible pile creation and deliberate stack gesture */
+.table-shortcuts{grid-template-columns:repeat(6,minmax(0,1fr))}
+.table-shortcuts #addTablePile[aria-pressed="true"]{border-color:#d7ae63;background:#59432b;color:#fff0c9}
+.stack-hover-target{outline:3px solid #d7bc83;outline-offset:3px;box-shadow:0 0 0 4px #3b302a77,0 0 18px #d7bc83a8}
+@media(max-width:780px){.table-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* v0.425: keep five introductory shortcuts; advanced pile creation lives in
+   the bottom-right placement popover beside manual placement and hand mode. */
+.table-shortcuts{grid-template-columns:repeat(5,minmax(0,1fr))}
+#placementToolsContent .placement-add-pile{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:35px;padding:6px 9px;border:1px solid #9d8862;border-radius:5px;background:#29392e;color:#e5d9bf;font:12px/1.3 Georgia,'Yu Mincho',serif;cursor:pointer}
+#placementToolsContent .placement-add-pile[aria-pressed="true"]{border-color:#d7ae63;background:#59432b;color:#fff0c9}
+#placementToolsContent .placement-add-pile .quick-symbol{font-size:16px}
+@media(max-width:780px){.table-shortcuts{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+/* v0.427 — consistent placement tools, arranged by purpose */
+#placementToolsContent{min-width:188px}
+#placementToolsContent .placement-tools-layout{display:flex;flex-direction:column;gap:10px;min-width:178px}
+#placementToolsContent .placement-tools-group{display:flex;flex-direction:column;gap:5px}
+#placementToolsContent .placement-tools-group+.placement-tools-group{border-top:1px solid #665e49;padding-top:9px}
+#placementToolsContent .placement-tools-heading{font:11px/1.4 Georgia,'Yu Mincho',serif;letter-spacing:.1em;color:#cbb68a;padding:0 2px 2px}
+#placementToolsContent .placement-tools-button,
+#placementToolsContent .placement-add-pile{display:flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;width:100%;min-width:0;min-height:36px;padding:7px 10px;border:1px solid #857354;border-radius:5px;background:#29392e;color:#eddfc3;font:12px/1.3 Georgia,'Yu Mincho',serif;text-align:center;white-space:nowrap;cursor:pointer}
+#placementToolsContent .placement-tools-button[aria-pressed="true"]{border-color:#bb995b;background:#4c4430;color:#fff0ca}
+#placementToolsContent .placement-tools-button[hidden]{display:none!important}
+#placementToolsContent .placement-tools-button .quick-symbol{font-size:16px;color:inherit}
+
+/* v0.430: registered empty piles remain usable refill targets. Other empty
+   piles retain their previous passive placeholder behavior. */
+.table-pile-empty.refill-ready{pointer-events:auto;cursor:pointer;touch-action:manipulation;border:1px dashed #b69d6b;border-radius:4px;background:#2631269e;color:#f0deb5}
+.table-pile-empty.refill-ready:hover{background:#384536d9;border-color:#d8bc7e}
+
+/* v0.431 — location ordering, compaction and refill share the placement popup */
+#placementToolsContent .placement-tools-order-label{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#d6c49e;font:11px/1.4 Georgia,'Yu Mincho',serif;padding:1px 0}
+#placementToolsContent #arrangementOrderChoice{min-width:0;flex:1;height:34px;padding:4px 7px;border:1px solid #857354;border-radius:5px;background:#29392e;color:#eddfc3;font:12px/1.3 Georgia,'Yu Mincho',serif}
+#placementToolsContent #arrangementCompact,#placementToolsContent #arrangementRefill{min-height:36px}
+
+/* v0.433 — tactile cards, with the role/move control separate from labels.
+   A covered multi-card pile shows up to three fine paper edges; the face
+   still has the original dimensions and pointer interactions. */
+.table-pile:has(>.table-pile-top){border-color:transparent;background:transparent;box-shadow:none}
+.table-pile:has(>.table-pile-top)::before{border-color:transparent}
+.table-pile-depth{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:visible}
+.table-pile-depth-sheet{position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;
+ left:calc(var(--depth-index) * 2.5px);top:calc(var(--depth-index) * 3px);
+ border:1px solid #a58c64;border-radius:5px;background:linear-gradient(90deg,#eee0be 0%,#cdb993 60%,#977b58 100%);
+ box-shadow:1px 2px 3px #0006;pointer-events:none}
+.table-pile-handle{left:-13px;right:auto;top:-17px;width:28px;min-width:28px;height:28px;min-height:28px;
+ padding:0;border:1px solid #b39a6b;border-radius:50%;display:grid;place-items:center;
+ background:#28392fee;color:#f0dcb8;font:15px/1 Georgia,serif;box-shadow:0 2px 6px #0008;
+ white-space:nowrap;z-index:550}
+.table-pile-role-select{left:12px;top:-19px;width:max(115px,100%);min-width:115px;height:30px;z-index:650}
+.table-zone .zone-label.unified-label.pile-label{pointer-events:none;z-index:2500}
+@media(max-width:780px){
+ .table-pile-handle{left:-12px;top:-15px;width:26px;min-width:26px;height:26px;min-height:26px;font-size:14px}
+ .table-pile-role-select{top:-16px}
+}
+
+/* v0.434: the pile count is a quiet, noninteractive annotation. */
+.table-pile-count-badge{
+ position:absolute;right:-7px;bottom:-9px;z-index:570;
+ min-width:23px;height:21px;padding:0 5px;box-sizing:border-box;
+ display:flex;align-items:center;justify-content:center;
+ border:1px solid #ad9166;border-radius:11px;
+ background:#25352de8;color:#ebdec3;
+ box-shadow:0 1px 5px #0008;
+ font:11px/1.1 Georgia,"Yu Mincho",serif;
+ white-space:nowrap;pointer-events:none;user-select:none;
+}
+@media(max-width:780px){.table-pile-count-badge{height:20px;min-width:22px;right:-6px;bottom:-8px;font-size:10px}}
+
+/* Stock drag: indicate the card that will receive the dropped stock card. */
+.card.deck-stack-hover{outline:3px solid #f2d58b;outline-offset:3px;filter:drop-shadow(0 0 12px rgba(255,215,120,.95));z-index:9999!important}
+
+/* Dedicated spread editing workspace: distinguish it from ordinary menus. */
+.spread-workbench{border:2px solid #c7a66d;box-shadow:0 0 0 3px #171c18,0 8px 25px #0007}
+.spread-workbench-head{padding:10px 12px;margin:-12px -15px 10px;background:#394437;border-bottom:2px solid #c7a66d}
+.spread-workbench-head strong{font-size:15px;letter-spacing:.04em}
+.spread-workbench-mode-note{font:12px/1.65 sans-serif;color:#e2d1aa;margin:0 0 12px}
+@media(max-width:780px){
+ body.spread-workbench-active .shell>aside{display:none!important}
+ body.spread-workbench-active .spread-workbench{border-width:3px;padding:12px;margin:10px 0 16px;box-shadow:0 0 0 4px #101812,0 8px 22px #0009}
+ body.spread-workbench-active .spread-workbench-head{margin:-12px -12px 12px;padding:13px 12px;display:block}
+ body.spread-workbench-active .spread-workbench-head strong{display:block;font-size:16px;margin-bottom:8px}
+ body.spread-workbench-active .spread-workbench-head span{display:block;line-height:1.5}
+ body.spread-workbench-active .spread-workbench-mode-note{font-size:12px}
+}
+
+
+/* Four Seasons physical frames recede while the stock is washed, shuffled or cut. */
+#surface.four-seasons-spread.shuffle-in-progress .table-pile,
+#surface.four-seasons-spread.cut-in-progress .table-pile{visibility:hidden!important}
+
+/* Render an individual card's original orientation inside a fixed pile frame. */
+.table-pile-artwork{position:absolute;inset:0;width:100%;height:100%;transform-origin:center center;pointer-events:none}
+.table-pile-artwork>.card-art,.table-pile-artwork>svg{width:100%;height:100%;max-height:100%;display:block}
+
+/* Selection-only rotation mode; no permanent grip competing with the fan handle. */
+.table-card-controls #rotateDragMode[aria-pressed="true"]{background:#665239;border-color:#e4c98f;color:#fff2cd}
+#zone .table-pile.is-rotation-selected{outline:2px solid #d4b47b;outline-offset:2px}
+#zone .card.is-selected,#zone .table-pile.is-rotation-selected{touch-action:none}
+
+/* v0.469: external precision rotation grip, shared by cards and physical piles. */
+#zone .rotation-handle{
+ position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);
+ width:38px;height:38px;min-width:38px;min-height:38px;
+ display:flex;align-items:center;justify-content:center;
+ padding:0;border:2px solid #f0cb82;border-radius:50%;
+ background:#26352ff2;color:#ffe1a0;font:26px/1 sans-serif;
+ box-shadow:0 2px 12px #000b;z-index:2500;
+ cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+ -webkit-tap-highlight-color:transparent;
+}
+#zone .rotation-handle:active{cursor:grabbing;background:#4d5234}
+#zone .rotation-handle:focus-visible{outline:3px solid #ffe1a0;outline-offset:3px}
+@media(max-width:780px){#zone .rotation-handle{width:44px;height:44px;min-width:44px;min-height:44px;left:calc(100% + 15px)}}
+
+/* v0.470: shared contextual compact shortcut. */
+#surface #quickCompactAction{position:absolute;right:45px;bottom:12px;z-index:10001;min-height:34px;padding:6px 13px;border:1px solid #ad9266;border-radius:5px;background:#26372fe8;color:#f0deb5;box-shadow:0 2px 9px #0008;font:12px/1.2 Georgia,"Yu Mincho",serif;white-space:nowrap;touch-action:manipulation}
+#surface #quickCompactAction[hidden]{display:none!important}
+#surface:has(#placementToolsContent:not([hidden])) #quickCompactAction{display:none!important}
+#placementToolsContent .compact-shortcut-toggle{display:flex;align-items:center;gap:7px;padding:5px 2px;font:11px/1.4 Georgia,"Yu Mincho",serif;color:#ddcda8;cursor:pointer}
+#placementToolsContent .compact-shortcut-toggle input{width:16px;height:16px;flex:none;accent-color:#b99b65}
+@media(max-width:780px){#surface #quickCompactAction{right:47px;bottom:12px;min-height:38px;padding:7px 12px;font-size:12px}}
+
+/* v0.477: sound shortcut in the toolbar, including narrow phone layouts. */
+.toolbar #toolbarSoundToggle{width:42px;min-width:42px;height:42px;min-height:42px;flex:0 0 42px;padding:8px;box-sizing:border-box;border:1px solid #8b7851;border-radius:5px;background:#27342d;color:#d2c09c;cursor:pointer}
+.toolbar #toolbarSoundToggle svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.toolbar #toolbarSoundToggle[aria-pressed="true"]{background:#62502e;color:#f1d68b;border-color:#c2a46a}
+@media(max-width:780px){
+ /* Preserve the previous wide spread selector: first row is spread + inspect + notebook. */
+ .toolbar .mobile-cockpit-actions{grid-template-columns:44px minmax(0,1fr) 44px 44px;grid-template-rows:44px 42px;gap:6px}
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut{grid-column:1 / 3;grid-row:1;min-width:0}
+ .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut select{font-size:12px;padding-left:8px;padding-right:19px;min-width:0}
+ .toolbar .mobile-cockpit-actions>#inspectCards{grid-column:3;grid-row:1}
+ .toolbar .mobile-cockpit-actions>#spreadNotebook{grid-column:4;grid-row:1}
+ /* The sound control shares the bottom action row instead of shrinking the spread selector. */
+ .toolbar .mobile-cockpit-actions>#toolbarSoundToggle{grid-column:1;grid-row:2;width:44px!important;min-width:0!important;max-width:44px!important;height:42px!important;min-height:42px!important;margin:0!important;padding:7px!important}
+ .toolbar .mobile-cockpit-actions>#newSessionStandalone{grid-column:2 / -1;grid-row:2;width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;margin:0!important}
+}
+
+/* v0.483: antique emblem-book layout for inscribed standalone oracle cards. */
+.blueprint-card-face.blueprint-oracle-face{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;padding:6px 5px 5px}
+.blueprint-oracle-face .blueprint-oracle-emblem{flex:none;font:clamp(13px,1.45vw,19px)/1 Georgia,serif;max-height:22%;overflow:hidden}
+.blueprint-oracle-face .blueprint-oracle-content{width:100%;min-height:0;min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center}
+.blueprint-oracle-face .blueprint-oracle-title{font:bold clamp(12px,2vw,26px)/1.2 Georgia,"Yu Mincho",serif;max-width:100%;overflow-wrap:anywhere}
+.blueprint-oracle-face .blueprint-oracle-subtitle{font:clamp(8px,1vw,12px)/1.3 Georgia,serif;letter-spacing:.07em;max-width:100%;overflow-wrap:anywhere}
+.blueprint-oracle-face .blueprint-oracle-rule{width:78%;display:flex;align-items:center;gap:5px;font:10px/1 Georgia,serif;opacity:.55}
+.blueprint-oracle-face .blueprint-oracle-rule::before,.blueprint-oracle-face .blueprint-oracle-rule::after{content:"";height:1px;background:currentColor;flex:1}
+.blueprint-oracle-face .blueprint-card-oracle-line{display:block;white-space:pre-line;overflow:hidden;max-width:100%;max-height:5.8em;font:clamp(8px,.95vw,11px)/1.45 Georgia,"Yu Mincho",serif;text-align:center;overflow-wrap:anywhere;opacity:.85}
+.blueprint-oracle-face .blueprint-oracle-footer{flex:none;font:10px/1 Georgia,serif;opacity:.6}
+.blueprint-card-view .blueprint-oracle-face .blueprint-oracle-emblem{font-size:22px}
+.blueprint-card-view .blueprint-oracle-face .blueprint-oracle-title{font-size:32px}
+.blueprint-card-view .blueprint-oracle-face .blueprint-oracle-subtitle{font-size:14px}
+.blueprint-card-view .blueprint-oracle-face .blueprint-card-oracle-line{font-size:13px;line-height:1.5}
+@media(max-width:780px){.front .blueprint-oracle-face .blueprint-oracle-title{font-size:clamp(11px,3.5vw,18px)}.front .blueprint-oracle-face .blueprint-card-oracle-line{font-size:clamp(7px,2vw,10px)}}
+
+/* v0.487: the deck designer's generated card faces in the encyclopedia. */
+.gallery-tile>.gallery-blueprint-face,.gallery-lightbox-view>.gallery-blueprint-face{
+ position:relative;display:block;box-sizing:border-box;aspect-ratio:2/3;
+ overflow:hidden;flex:none;border:0;border-radius:5px;background:#faf5e9;
+}
+.gallery-tile>.gallery-blueprint-face{width:100%;height:auto;max-width:210px;box-shadow:0 7px 13px #0009}
+.gallery-lightbox-view>.gallery-blueprint-face{width:min(76vw,440px,calc(70dvh * 2 / 3));height:auto;max-height:100%;box-shadow:0 8px 30px #000a}
+.gallery-blueprint-face>.gallery-blueprint-inner{
+ position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;
+ box-sizing:border-box;width:90px!important;height:135px!important;
+ transform-origin:top left!important;backface-visibility:visible!important;margin:0!important;
+}
+.gallery-tile:focus-visible>.gallery-blueprint-face{outline:3px solid #dbbf7c;outline-offset:3px}
+@media(max-width:500px){.gallery-lightbox-view>.gallery-blueprint-face{width:min(76vw,calc(62dvh * 2 / 3))}}
+
+/* v0.488: gallery lightbox artwork is INSIDE .detail-body, not a direct
+   child of .gallery-lightbox-view. Without an explicit flex width the
+   generated DIV faces collapse to zero width in the enlarged viewer. */
+.gallery-lightbox-view .detail-body > :is(.gallery-simple-face,.gallery-blueprint-face){
+ display:block;
+ position:relative;
+ box-sizing:border-box;
+ flex:0 0 auto;
+ width:min(76vw,440px,calc(70dvh * 2 / 3));
+ height:auto;
+ aspect-ratio:2/3;
+ max-height:70dvh;
+ min-width:0;
+ overflow:hidden;
+ border-radius:5px;
+ box-shadow:0 8px 30px #000a;
+}
+@media(max-width:700px){
+ .gallery-lightbox-view .detail-body > :is(.gallery-simple-face,.gallery-blueprint-face){
+  width:min(calc(100vw - 106px),440px,calc(62dvh * 2 / 3));
+  max-height:62dvh;
+ }
+ .gallery-lightbox-view .detail-body.has-copy > :is(.gallery-simple-face,.gallery-blueprint-face){
+  width:min(calc(100vw - 106px),440px,calc(50dvh * 2 / 3));
+  max-height:50dvh;
+ }
+}
+
+/* v0.489 — fixed 90 × 135 card typography; only the entire card scales.
+   VW-based typography would be multiplied AGAIN by the gallery transform,
+   clipping oracle inscriptions and over-enlarging the title. */
+.gallery-blueprint-inner .blueprint-card-face{width:100%;height:100%;min-height:0}
+.gallery-blueprint-inner .blueprint-card-rank{font-size:11px;line-height:1}
+.gallery-blueprint-inner .blueprint-card-symbol{font-size:27px;line-height:1}
+.gallery-blueprint-inner .blueprint-card-title{font-size:9px;line-height:1.2}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-emblem{font-size:11px;line-height:1;max-height:20%}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-content{gap:3px}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-title{font-size:12px;line-height:1.2}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-subtitle{font-size:8px;line-height:1.2}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-rule{font-size:7px;line-height:1;gap:3px}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-card-oracle-line{font-size:7px;line-height:1.45;max-height:5.8em;white-space:pre-line}
+.gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-footer{font-size:7px;line-height:1}
+@media(max-width:780px){
+ .gallery-blueprint-inner .blueprint-oracle-face .blueprint-oracle-title{font-size:12px}
+ .gallery-blueprint-inner .blueprint-oracle-face .blueprint-card-oracle-line{font-size:7px}
+}
+
+/* v0.494: keep the original corner arrangement and scale the visual controls
+   with the rendered card width. All controls remain immediately available. */
+@media(max-width:780px) and (pointer:coarse){
+ .table-pile > .table-pile-handle,
+ .table-pile > .table-pile-fan-grip{
+  width:var(--pile-tool-size,26px);min-width:0;
+  height:var(--pile-tool-size,26px);min-height:0;
+  top:calc(var(--pile-tool-size,26px) * -0.56);
+  opacity:1;visibility:visible;pointer-events:auto;
+ }
+ .table-pile > .table-pile-handle{
+  left:calc(var(--pile-tool-size,26px) * -0.46);
+  top:calc(var(--pile-tool-size,26px) * -0.56 - 3px);
+  font-size:calc(var(--pile-tool-size,26px) * 0.54);
+ }
+ .table-pile > .table-pile-fan-grip{
+  right:calc(var(--pile-tool-size,26px) * -0.46);
+  font-size:calc(var(--pile-tool-size,26px) * 0.65);
+ }
+ .table-pile > .table-pile-count-badge{
+  right:-5px;bottom:-7px;
+  min-width:calc(var(--pile-tool-size,26px) * 0.70);
+  height:calc(var(--pile-tool-size,26px) * 0.65);
+  padding:0 3px;font-size:calc(var(--pile-tool-size,26px) * 0.38);
+ }
+ .table-pile:not(.pile-has-multiple) > .table-pile-count-badge{display:none}
+}
+
+/* v0.495: a pile glows only when the current drop-point resolves to it. */
+#zone .table-pile.pile-drop-target{
+ outline:3px solid #f2d58b;outline-offset:3px;
+ filter:drop-shadow(0 0 12px rgba(255,215,120,.9));
+ z-index:1900!important;
+}
+
+/* v0.496: stock movement uses the same card-relative size as pile tools. */
+@media(max-width:780px) and (pointer:coarse){
+ .table-surface .deck .deck-move-handle{
+  width:var(--deck-tool-size,26px);height:var(--deck-tool-size,26px);
+  min-width:0;min-height:0;
+  top:calc(var(--deck-tool-size,26px) * -0.56 - 3px);
+  right:calc(var(--deck-tool-size,26px) * -0.46);
+  font-size:calc(var(--deck-tool-size,26px) * 0.54);
+ }
+}
+
+/* v0.513 — Lenormand faces use original PNG artwork plus shared SVG ornaments. */
+.face.front:has(> .lenormand-face-svg){padding:0!important;gap:0!important;border:0;background:#f7e8c5;overflow:hidden}
+.face.front:has(> .lenormand-face-svg):before{display:none}
+.front .lenormand-face-svg,.gallery-blueprint-inner .lenormand-face-svg,.blueprint-card-view .lenormand-face-svg{display:block;width:100%;height:100%;pointer-events:none;user-select:none;flex:none}
+.gallery-blueprint-inner:has(> .lenormand-face-svg){padding:0!important;gap:0!important;border:0!important;background:#f7e8c5!important}
+.gallery-blueprint-inner:has(> .lenormand-face-svg):before{display:none!important}
+
+/* v0.529 — restrained, collapsible deck introduction in the gallery. */
+#galleryDeckIntro[hidden],#galleryDeckIntroEditor[hidden]{display:none!important}
+.gallery-deck-intro,.gallery-deck-intro-actions,.gallery-deck-intro-editor{max-width:1200px;margin-left:auto;margin-right:auto;box-sizing:border-box}
+.gallery-deck-intro{border-block:1px solid #655b43;margin-bottom:3px;padding:3px 0}
+.gallery-deck-intro-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px;border:0;background:transparent;box-shadow:none;color:#d4bd8e;text-align:left;font:600 15px/1.45 'Yu Mincho','Hiragino Mincho ProN',serif;cursor:pointer}
+.gallery-deck-intro-toggle:hover{background:#ffffff08}
+.gallery-deck-intro-toggle>span:last-child{font:20px/1 sans-serif;color:#a48d61}
+.gallery-deck-intro-body{padding:3px 5px 13px}
+.gallery-deck-intro-body p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#e4d9c5;font:14px/1.95 'Yu Mincho','Hiragino Mincho ProN',serif}
+.gallery-deck-intro-actions{display:flex;justify-content:flex-end;margin-bottom:17px}
+.gallery-deck-intro-actions button{background:transparent;border:0;box-shadow:none;color:#b6a47d;padding:5px 4px;font:12px/1.4 sans-serif;text-decoration:underline;cursor:pointer}
+.gallery-deck-intro-editor{padding:14px;margin-top:-9px;margin-bottom:21px;border:1px solid #695c42;border-radius:6px;background:#222821}
+.gallery-deck-intro-editor>label{display:block;margin-bottom:8px;color:#e4cfaa;font:13px sans-serif}
+.gallery-deck-intro-editor textarea{display:block;width:100%;box-sizing:border-box;min-height:110px;resize:vertical;padding:10px;background:#151d18;border:1px solid #776746;border-radius:4px;color:#eee2cb;font:14px/1.7 'Yu Mincho',serif}
+.gallery-deck-intro-editor-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:12px}
+.gallery-deck-intro-editor-actions button{font:12px sans-serif}
+.gallery-deck-intro-editor-actions #galleryDeckIntroSave{background:#5c5239;color:#fff0d2;border-color:#b79b63}
+.gallery-deck-intro-editor-status{margin:8px 0 0;color:#dfc89e;font:12px sans-serif}
+@media(max-width:500px){.gallery-deck-intro-toggle{font-size:14px}.gallery-deck-intro-body p{font-size:13px}.gallery-deck-intro-editor{padding:10px}}
+
+/* Hide numeral selectors not relevant to the chosen gallery deck. */
+.face-preferences label[hidden],.face-preferences[hidden]{display:none!important}
+
+/* v0.543 — Each desktop toolbar item wraps naturally. Every resulting
+   flex line is right-aligned, instead of forcing a fixed two-group breakpoint.
+   Display-contents wrappers retain DOM order and mobile layout. */
+@media(min-width:781px){
+ .main>.toolbar{justify-content:flex-end;}
+ .main>.toolbar .toolbar-leading,
+ .main>.toolbar .toolbar-trailing,
+ .main>.toolbar .toolbar-trailing>.mobile-cockpit-actions{
+  display:contents;
+ }
+ .main>.toolbar .toolbar-leading>.status{
+  flex:1 1 180px;
+  min-width:105px;
+  margin:0;
+ }
+ .main>.toolbar .toolbar-leading>.workspace-switcher,
+ .main>.toolbar .toolbar-leading>.toolbar-card-size,
+ .main>.toolbar .toolbar-leading>#desktopTableViews,
+ .main>.toolbar .toolbar-trailing .toolbar-spread-shortcut{
+  flex-shrink:0;
+ }
+}
+@media(max-width:780px){
+ .main>.toolbar .toolbar-leading,
+ .main>.toolbar .toolbar-trailing{display:contents;}
+ .shell>.main>.toolbar .toolbar-leading>.status{display:none!important;}
+}
+
+/* v0.544 — Reflow the status message below the controls when the actual
+   available desktop width cannot fit a readable message and all controls. */
+@media(min-width:781px){
+ .main>.toolbar.status-on-second-row .toolbar-leading>.status{
+  order:99;
+  flex:0 0 100%;
+  width:100%;
+  min-width:0;
+  text-align:left;
+  padding-top:2px;
+ }
+}
+
+/* v0.548 — UI type is sans-serif; editorial, archival and card typography
+   intentionally remain Mincho/Georgia. This only targets interface controls. */
+:root{
+ --tabula-ui-font:Arial,'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;
+ --tabula-editorial-font:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;
+}
+.main>.toolbar :is(button,select,output,.status,.table-view-label,.toolbar-size-label,.toolbar-spread-shortcut>span,.workspace-switcher),
+.table-shortcuts button,
+.table-action-settings :is(button,select,label),
+.table-utility-actions button,
+.results-toggle-bar button,
+.table-record-actions button,
+.gallery-controls :is(button,select,label,output),
+aside .section :is(button,select,input,textarea),
+#modalBg :is(button,select,input,textarea){
+ font-family:var(--tabula-ui-font);
+}
+
+/* v0.551 — rotate the card or pile itself; no external grip.
+   Direct manipulation should not animate away from the pointer. */
+#zone.rotation-mode-active .card,
+#zone.rotation-mode-active .table-pile :is(.table-pile-top,.table-pile-empty){
+ cursor:grab;
+ touch-action:none;
+}
+#zone .card.body-rotating,
+#zone .table-pile.body-rotating{
+ transition:none!important;
+ animation:none!important;
+ cursor:grabbing!important;
+}
+#zone .card.body-rotating *,
+#zone .table-pile.body-rotating *{cursor:grabbing!important;}
+
+/* v0.552 — Remove positions in the spread editor without disturbing others. */
+.spread-workbench-position-row{
+ grid-column:1/-1;
+ display:grid;grid-template-columns:minmax(0,1.3fr) minmax(130px,.8fr) auto;
+ align-items:center;gap:7px;padding:4px 0;
+ border-bottom:1px solid rgba(182,163,122,.21);
+}
+.spread-workbench-position-row label{min-width:0;}
+.spread-workbench-position-row select{min-width:0;width:100%;}
+.spread-workbench-position-row .spread-position-remove{
+ min-width:52px;min-height:32px;padding:5px 8px;
+ background:#352b29;border:1px solid #9c796d;color:#f0d5bc;
+ font:12px var(--tabula-ui-font,Arial,sans-serif);
+}
+.spread-workbench-position-row .spread-position-remove:disabled{opacity:.35;cursor:not-allowed;}
+.spread-position-unassigned{font-size:12px;color:#bba98b;}
+@media(max-width:780px){
+ .spread-workbench-position-row{grid-template-columns:minmax(0,1fr) auto;}
+ .spread-workbench-position-row select{grid-column:1;}
+ .spread-workbench-position-row .spread-position-remove{grid-column:2;grid-row:1 / span 2;}
+}
+
+/* v0.553 — whole-spread translation, distinct from circle alignment. */
+.spread-workbench-actions .spread-translate-controls{
+ grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;
+ justify-content:center;gap:7px;padding:8px 9px;
+ border:1px solid #786a50;border-radius:5px;background:#27362d;
+}
+.spread-translate-title{font:12px var(--tabula-ui-font,Arial,sans-serif);color:#ead4a8;margin-right:auto;}
+.spread-workbench-actions .spread-translate-controls button{
+ width:36px;height:36px;min-height:36px;padding:0;
+ font-size:20px;line-height:1;flex:0 0 36px;
+}
+.spread-workbench-actions .spread-translate-controls select{
+ width:auto;max-width:136px;height:36px;min-width:0;padding:4px 6px;
+ font:12px var(--tabula-ui-font,Arial,sans-serif);
+}
+@media(max-width:780px){
+ .spread-workbench-actions .spread-translate-controls{gap:5px;padding:7px 5px;}
+ .spread-translate-title{flex:1 0 100%;text-align:center;margin:0;}
+ .spread-workbench-actions .spread-translate-controls button{width:34px;flex-basis:34px;}
+}
+
+/* v0.560: Hide only the visual frames, never slot geometry, card faces or hit targets. */
+#zone > .slot{transition:opacity .32s ease}
+#zone.frames-hidden > .slot{opacity:0;pointer-events:none}
+#zone.frames-hidden > .table-pile{border-color:transparent;background:transparent;box-shadow:none}
+#zone.frames-hidden > .table-pile::before{border-color:transparent}
+#zone.frames-hidden .table-pile-empty{border-color:transparent;background:transparent}
+#zone.frames-hidden .table-pile-depth-sheet{border-color:transparent}
+
+/* v0.575: Deal options open in a floating menu. The toolbar remains one row. */
+.table-action-settings{position:relative;z-index:15;overflow:visible}
+.table-action-settings>label{height:30px;min-height:30px;align-items:center}
+.table-action-settings .table-deal-control{position:relative;min-width:0;width:100%;height:30px}
+.table-action-settings #tableDealOptionsButton{box-sizing:border-box;display:block;width:100%;height:30px;min-height:30px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;padding:4px 23px 4px 7px;position:relative;border:1px solid #485849;border-radius:4px;background:#202a25;color:#bfc7b8;font:11px Georgia,'Yu Mincho',serif;cursor:pointer}
+.table-action-settings #tableDealOptionsButton[aria-expanded="true"]{border-color:#baa071;color:#f5e8c8}
+.table-action-settings #tableDealOptionsButton::after{content:'▾';position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:12px}
+.table-action-settings .table-deal-options{box-sizing:border-box;position:absolute;top:calc(100% + 5px);right:0;z-index:1700;width:clamp(220px,25vw,310px);max-width:calc(100vw - 22px);padding:12px;border:1px solid #8f7850;border-radius:6px;background:#202b25;box-shadow:0 9px 26px #000b;display:flex;flex-direction:column;gap:10px}
+.table-action-settings .table-deal-options[hidden]{display:none!important}
+.table-action-settings .table-deal-options>label{display:flex;flex-direction:column;align-items:stretch;gap:5px;font:11px Georgia,'Yu Mincho',serif;color:#e3cfa9}
+.table-action-settings #tableDealChoiceSlot{display:block;width:100%;min-width:0}
+.table-action-settings .table-deal-options select{width:100%;max-width:100%;height:32px;min-height:32px;font-size:12px;color:#bfc7b8;background:#202a25;border:1px solid #485849;border-radius:4px;appearance:auto;-webkit-appearance:menulist}
+.table-action-settings #tableOpenMode{display:block;width:100%;min-width:0}
+
+/* v0.575: animate actual front/back card faces in one synchronized pass. */
+@keyframes tabula-simultaneous-turn{
+ 0%{transform:translateY(0) rotateY(0deg);filter:brightness(1)}
+ 22%{transform:translateY(-27px) rotateY(0deg);filter:brightness(1.12)}
+ 55%{transform:translateY(-34px) rotateY(96deg);filter:brightness(1.2)}
+ 82%{transform:translateY(-20px) rotateY(170deg);filter:brightness(1.08)}
+ 100%{transform:translateY(0) rotateY(180deg);filter:brightness(1)}
+}
+#zone .card.faceup.simultaneous-opening .card-inner{
+ animation:tabula-simultaneous-turn 820ms cubic-bezier(.26,.5,.34,1) both!important;
+ transition:none!important;
+ transform-style:preserve-3d;
+}
+@keyframes tabula-simultaneous-pile-lift{
+ 0%,100%{transform:translateY(0);filter:brightness(1)}
+ 35%{transform:translateY(-29px);filter:brightness(1.14)}
+ 65%{transform:translateY(-29px);filter:brightness(1.12)}
+}
+#zone .table-pile-top.simultaneous-opening{
+ animation:tabula-simultaneous-pile-lift 820ms cubic-bezier(.26,.5,.34,1) both!important;
+}
+@media(prefers-reduced-motion:reduce){
+ #zone .card.faceup.simultaneous-opening .card-inner,
+ #zone .table-pile-top.simultaneous-opening{animation:none!important}
+}

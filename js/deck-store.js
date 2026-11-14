@@ -66,7 +66,7 @@ function validate(deck,cards){
 }
 function sanitize(deck,cards){
  if(!validate(deck,cards))return null;
- return {id:deck.id,name:deck.name.trim(),names:Object.fromEntries(Object.entries(deck.names).filter(([,v])=>v.trim()).map(([k,v])=>[k,v.trim()])),majorNumbers:{...deck.majorNumbers},included:[...deck.included],pipBackground:deck.pipBackground,backColor:deck.backColor,language:deck.language||'original',faceStyle:deck.faceStyle||'standard'};
+ return {id:deck.id,name:deck.name.trim(),names:Object.fromEntries(Object.entries(deck.names).filter(([,v])=>v.trim()).map(([k,v])=>[k,v.trim()])),majorNumbers:{...deck.majorNumbers},included:[...deck.included],pipBackground:deck.pipBackground,backColor:deck.backColor,language:deck.language||'original',faceStyle:deck.faceStyle||'standard',description:typeof deck.description==='string'?deck.description:''};
 }
 function read(storage,cards){try{const saved=JSON.parse(storage.getItem(KEY)||'[]');return Array.isArray(saved)?saved.map(d=>sanitize(d,cards)).filter(Boolean).slice(0,50):[]}catch{return []}}
 function write(storage,decks,cards){

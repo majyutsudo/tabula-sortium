@@ -22,5 +22,43 @@ function placeOnCircle(positions,indices,radiusPx,rotation,facing,width,height){
     if(facing!=='keep')p.angle=circleFacingAngle(thetaDeg,facing,p.angle);
   });
 }
-root.TabulaSpreadGeometry=Object.freeze({normalizeAngle,describeCircleFacing,circleFacingAngle,alignPositions,placeOnCircle});
+// Shift every card centre by one shared delta; never move cards independently.
+function translatePositions(positions,dx,dy){
+ if(!Array.isArray(positions)||!positions.length||![dx,dy].every(Number.isFinite))return{x:0,y:0};
+ // Keep all card centres visible, while retaining their exact relative offsets.
+ const minX=Math.min(...positions.map(p=>p.x)),maxX=Math.max(...positions.map(p=>p.x));
+ const minY=Math.min(...positions.map(p=>p.y)),maxY=Math.max(...positions.map(p=>p.y));
+ const x=Math.max(-minX,Math.min(100-maxX,dx));
+ const y=Math.max(-minY,Math.min(100-maxY,dy));
+ for(const p of positions){p.x+=x;p.y+=y;}
+ return{x,y};
+}
+function fitGridColumns(slots,zoneWidth,cardWidth,marginPx=6){
+ const output=(Array.isArray(slots)?slots:[]).map(p=>({...p}));
+ if(!(zoneWidth>0&&cardWidth>0)||output.length<12)return output;
+ const rows=new Map();
+ for(const p of output){
+  if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return output;
+  const key=Math.round(p.y*100)/100;
+  if(!rows.has(key))rows.set(key,[]);
+  rows.get(key).push(p.x);
+ }
+ const grouped=[...rows.values()],columns=Math.max(0,...grouped.map(row=>row.length));
+ const full=grouped.filter(row=>row.length===columns);
+ if(columns<4||full.length<3)return output;
+ const pattern=[...full[0]].sort((a,b)=>a-b);
+ if(full.some(row=>[...row].sort((a,b)=>a-b).some((x,i)=>Math.abs(x-pattern[i])>.1)))return output;
+ const minStep=Math.min(...pattern.slice(1).map((x,i)=>x-pattern[i]));
+ if(minStep<=0)return output;
+ const requested=(cardWidth+2)/zoneWidth*100/minStep;
+ if(requested<=1)return output;
+ const extent=Math.max(...output.map(p=>Math.abs(p.x-50)));
+ if(!extent)return output;
+ const room=50-(cardWidth/2+marginPx)/zoneWidth*100;
+ const factor=Math.min(requested,room/extent);
+ if(!(factor>1))return output;
+ for(const p of output)p.x=50+(p.x-50)*factor;
+ return output;
+}
+root.TabulaSpreadGeometry=Object.freeze({normalizeAngle,describeCircleFacing,circleFacingAngle,alignPositions,placeOnCircle,translatePositions,fitGridColumns});
 })(globalThis);

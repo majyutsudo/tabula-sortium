@@ -30,3 +30,36 @@ test('JSON filenames are sanitized without losing Unicode',()=>{
   assert.equal(storage.fileNamePart('星 / 月: 占い'),'星___月__占い');
   assert.equal(storage.fileNamePart(''), 'reading');
 });
+
+test('portable readings retain independent IDs and saved card names without a catalogue',()=>{
+  const reading={placed:[{id:'c_spades_r2',x:20,y:30}],deck:[{id:'c_hearts_r1'}],
+    removed:[{id:'c_clubs_r1'}],cardNames:['吊り橋']};
+  assert.equal(storage.validateReading(reading),true);
+  assert.equal(storage.validateReading({...reading,cardNames:[]}),false);
+  assert.equal(storage.validateReading({...reading,removed:[{}]}),false);
+  assert.equal(storage.validateReading({...reading,dealCheckpoint:[{}]}),false);
+});
+
+test('restore requires the same full inventory with no duplicate cards',()=>{
+  const reading={placed:[{id:'c_spades_r2',x:20,y:30}],deck:[{id:'c_hearts_r1'}],
+    removed:[{id:'c_clubs_r1'}],dealCheckpoint:[{id:'c_clubs_r1'},{id:'c_hearts_r1'}]};
+  const substitute=['c_hearts_r1','c_spades_r2','c_clubs_r1'].map(id=>({id,name:'別の表示名'}));
+  assert.equal(storage.matchesDeck(reading,substitute),true);
+  assert.equal(storage.matchesDeck(reading,[...substitute,{id:'joker'}]),false);
+  assert.equal(storage.matchesDeck(reading,[...substitute.slice(0,2),{id:'joker'}]),false);
+  assert.equal(storage.matchesDeck({...reading,deck:[{id:'c_spades_r2'}]},substitute),false);
+  assert.equal(storage.matchesDeck({...reading,dealCheckpoint:[{id:'joker'}]},substitute),false);
+  assert.equal(storage.matchesDeck({...reading,dealCheckpoint:[{id:'c_hearts_r1'},{id:'c_hearts_r1'}]},substitute),false);
+});
+
+test('pile-only readings count all cards when checking deck compatibility',()=>{
+ const cards=['a','b','c'].map(id=>({id}));
+ const reading={deck:[{id:'c'}],placed:[],removed:[],
+  tablePiles:[{id:'pile-1',x:48,y:35,role:'foundation',slot:0,cards:[{id:'a'},{id:'b'}]}]};
+ assert.equal(storage.validateReading(reading,cards),true);
+ assert.equal(storage.matchesDeck(reading,cards),true);
+ assert.equal(storage.matchesDeck({...reading,tablePiles:[{...reading.tablePiles[0],cards:[{id:'a'}]}]},cards),false);
+ assert.equal(storage.matchesDeck({...reading,tablePiles:[{...reading.tablePiles[0],cards:[{id:'a'},{id:'a'}]}]},cards),false);
+ assert.equal(storage.validateReading({...reading,tablePiles:[{...reading.tablePiles[0],cards:[{id:'unknown'}]}]},cards),false);
+ assert.equal(storage.validateReading({...reading,tablePiles:[reading.tablePiles[0],reading.tablePiles[0]]},cards),false);
+});

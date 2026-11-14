@@ -3,9 +3,8 @@
    Pocket geometry, dual-deck identity, and move handles are preserved. */
 
 /* Pocket */
-#zone .card[data-appearance="pocket"]{width:calc(var(--cw) * .82);height:calc(var(--ch) * .82)}
+/* Pocket dimensions are supplied by applyPhysicalCardDimensions for every physical card. */
 .table-surface .deck[data-appearance="pocket"]{
-  width:calc(var(--cw) * .82);height:calc(var(--ch) * .82);
   box-shadow:3px 3px 0 #aaa49b,5px 5px 0 #53534f,6px 7px 7px #0008;
 }
 .deck-drag-preview[data-appearance="pocket"]{transform:translate(-50%,-50%) scale(.82)}
@@ -41,7 +40,7 @@ body[data-tabula-back="on"] [data-back-tone="sepia"]{--worn-back-image:url("../i
 body[data-tabula-back="on"][data-tabula-back-tone="green"],
 body[data-tabula-back="on"] [data-back-tone="green"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/green.webp?v=0186");}
 body[data-tabula-back="on"][data-tabula-back-tone="burgundy"],
-body[data-tabula-back="on"] [data-back-tone="burgundy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0186");}
+body[data-tabula-back="on"] [data-back-tone="burgundy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0517");}
 body[data-tabula-back="on"][data-tabula-back-tone="navy"],
 body[data-tabula-back="on"] [data-back-tone="navy"]{--worn-back-image:url("../images/decks/tabula-tarot/backs/navy.webp?v=0186");}
 body[data-tabula-back="on"][data-tabula-back-tone="purple"],
@@ -98,3 +97,49 @@ body[data-tabula-back="on"] :is(
  .shuffle-card[data-appearance="worn"],
  #physicalCutOverlay .face.back[data-appearance="worn"]
 ){filter:sepia(.30) saturate(.69) contrast(.94) brightness(.91)}
+
+/* Playing-card Worn uses the same single shared back-weathering asset as TAROT.
+   It targets both dealt backs (appearance belongs to the card) and stock,
+   shuffle, cut, and drag back elements (appearance belongs to the element).
+   No 52-card set of duplicate worn bitmaps is required. */
+body:has(#surface) :is(
+ .card[data-appearance="worn"] .face.back[data-playing-back],
+ [data-playing-back][data-appearance="worn"]
+){
+ background-image:url("../images/ui/worn-back-weathering.svg"),
+   var(--playing-worn-art,none)!important;
+ background-position:center,center!important;
+ background-size:100% 100%,100% 100%!important;
+ background-repeat:no-repeat!important;
+ filter:sepia(.25) saturate(.73) contrast(.94) brightness(.94);
+}
+[data-playing-back-tone="sepia"]{--playing-worn-art:url("../images/decks/tabula-playing-cards/backs/sepia.webp?v=0364")}
+[data-playing-back-tone="green"]{--playing-worn-art:url("../images/decks/tabula-playing-cards/backs/green.webp?v=0364")}
+[data-playing-back-tone="burgundy"]{--playing-worn-art:url("../images/decks/tabula-playing-cards/backs/burgundy.webp?v=0364")}
+[data-playing-back-tone="navy"]{--playing-worn-art:url("../images/decks/tabula-playing-cards/backs/navy.webp?v=0364")}
+[data-playing-back-tone="purple"]{--playing-worn-art:url("../images/decks/tabula-playing-cards/backs/purple.webp?v=0364")}
+[data-playing-back-tone="black"]{--playing-worn-art:url("../images/decks/tabula-playing-cards/backs/black.webp?v=0364")}
+[data-playing-back-tone="ivory"]{--playing-worn-art:url("../images/decks/tabula-playing-cards/backs/ivory.webp?v=0364")}
+/* Common lightweight front patina for decks without per-card Worn assets. */
+body:has(#surface) #zone .card[data-appearance="worn"]:not([data-worn-asset="true"]) .face.front{
+ position:relative;
+}
+body:has(#surface) #zone .card[data-appearance="worn"]:not([data-worn-asset="true"]) .face.front::after{
+ content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+ border-radius:inherit;
+ background:url("../images/ui/worn-microtexture.svg") center / 100% 100% no-repeat;
+ opacity:.35;
+}
+
+/* Built-in LENORMAND has one approved engraved back for all appearances.
+   Override Worn's tarot/weathering layers without altering the selected art. */
+body:has(#surface) [data-lenormand-back][data-appearance="worn"],
+body:has(#surface) .card[data-appearance="worn"] .face.back[data-lenormand-back],
+body[data-tabula-back="on"].dual-enabled [data-lenormand-back][data-appearance="worn"]{
+ background-image:var(--lenormand-back-image)!important;
+ background-color:#123629!important;
+ background-size:100% 100%!important;
+ background-position:center!important;
+ background-repeat:no-repeat!important;
+ border:0!important;
+}

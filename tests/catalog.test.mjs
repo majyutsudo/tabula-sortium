@@ -82,3 +82,10 @@ test('card sizes are defined for desktop and mobile for every built-in spread',(
   }
   assert.equal(colors.length,18);
 });
+
+test('Monte Carlo and both Grand Tableaux default to 80 percent on both devices',()=>{
+ for(const id of ['monteCarlo','grandTableau8','grandTableau9']){
+  assert.equal(builtinSpreadCardSizes[id].desktop,0.8,id+' desktop');
+  assert.equal(builtinSpreadCardSizes[id].mobile,0.8,id+' mobile');
+ }
+});

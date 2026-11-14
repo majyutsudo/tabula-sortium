@@ -14,7 +14,7 @@ body[data-tabula-back="on"][data-tabula-back-tone="green"] :is(.face.back, .tabl
  background-image:url("../images/decks/tabula-tarot/backs/green.webp?v=0186")!important;
 }
 body[data-tabula-back="on"][data-tabula-back-tone="burgundy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
- background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0186")!important;
+ background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0517")!important;
 }
 body[data-tabula-back="on"][data-tabula-back-tone="navy"] :is(.face.back, .table-surface .deck, .removed-pile-card, .shuffle-card, .cut-stack){
  background-image:url("../images/decks/tabula-tarot/backs/navy.webp?v=0186")!important;
@@ -49,7 +49,7 @@ body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="se
 body[data-tabula-back="on"].dual-enabled .card[data-back-tone="green"] .face.back,
 body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="green"]{background-image:url("../images/decks/tabula-tarot/backs/green.webp?v=0186")!important;background-color:#0d3428!important}
 body[data-tabula-back="on"].dual-enabled .card[data-back-tone="burgundy"] .face.back,
-body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="burgundy"]{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0186")!important;background-color:#651622!important}
+body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="burgundy"]{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0517")!important;background-color:#651622!important}
 body[data-tabula-back="on"].dual-enabled .card[data-back-tone="navy"] .face.back,
 body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="navy"]{background-image:url("../images/decks/tabula-tarot/backs/navy.webp?v=0186")!important;background-color:#11234b!important}
 body[data-tabula-back="on"].dual-enabled .card[data-back-tone="purple"] .face.back,
@@ -62,7 +62,7 @@ body[data-tabula-back="on"].dual-enabled .table-surface .deck[data-back-tone="iv
 /* The card dragged from B keeps B's color during the preview animation. */
 body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="sepia"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/sepia.webp?v=0186")!important;background-color:#55331d!important}
 body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="green"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/green.webp?v=0186")!important;background-color:#0d3428!important}
-body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="burgundy"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0186")!important;background-color:#651622!important}
+body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="burgundy"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0517")!important;background-color:#651622!important}
 body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="navy"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/navy.webp?v=0186")!important;background-color:#11234b!important}
 body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="purple"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/purple.webp?v=0186")!important;background-color:#3b2458!important}
 body[data-tabula-back="on"].dual-enabled .deck-drag-preview[data-back-tone="black"] .face.back{background-image:url("../images/decks/tabula-tarot/backs/black.webp?v=0186")!important;background-color:#18191a!important}
@@ -74,7 +74,7 @@ body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-bac
 body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="green"],
 body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="green"]{background-image:url("../images/decks/tabula-tarot/backs/green.webp?v=0186")!important;background-color:#0d3428!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
 body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="burgundy"],
-body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="burgundy"]{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0186")!important;background-color:#651622!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="burgundy"]{background-image:url("../images/decks/tabula-tarot/backs/burgundy.webp?v=0517")!important;background-color:#651622!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
 body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="navy"],
 body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-back-tone="navy"]{background-image:url("../images/decks/tabula-tarot/backs/navy.webp?v=0186")!important;background-color:#11234b!important;background-position:center!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
 body[data-tabula-back="on"].dual-enabled .shuffle-card[data-back-tone="purple"],
@@ -89,4 +89,67 @@ body[data-tabula-back="on"].dual-enabled #physicalCutOverlay .face.back[data-bac
    Keep card selection outlines and deck-stack shadows intact. */
 body[data-tabula-back="on"] :is(.face.back, .table-surface .deck, .removed-pile-card){
   border:0!important;
+}
+
+/* PLAYING CARD: seven independent Victorian Arabesque WebP backs.
+   While a different tone downloads, reveal its solid background only.
+   The retired geometric SVG is deliberately not used as a fallback. */
+body:has(#surface) [data-playing-back]{
+ background-color:var(--playing-back-base)!important;
+ background-image:none!important;
+ background-position:center!important;
+ background-size:100% 100%!important;
+ background-repeat:no-repeat!important;
+ border:0!important;
+}
+body:has(#surface) [data-playing-back][data-playing-back-tone="sepia"]{
+ background-image:url("../images/decks/tabula-playing-cards/backs/sepia.webp?v=0364")!important;
+}
+body:has(#surface) [data-playing-back][data-playing-back-tone="green"]{
+ background-image:url("../images/decks/tabula-playing-cards/backs/green.webp?v=0364")!important;
+}
+body:has(#surface) [data-playing-back][data-playing-back-tone="burgundy"]{
+ background-image:url("../images/decks/tabula-playing-cards/backs/burgundy.webp?v=0364")!important;
+}
+body:has(#surface) [data-playing-back][data-playing-back-tone="navy"]{
+ background-image:url("../images/decks/tabula-playing-cards/backs/navy.webp?v=0364")!important;
+}
+body:has(#surface) [data-playing-back][data-playing-back-tone="purple"]{
+ background-image:url("../images/decks/tabula-playing-cards/backs/purple.webp?v=0364")!important;
+}
+body:has(#surface) [data-playing-back][data-playing-back-tone="black"]{
+ background-image:url("../images/decks/tabula-playing-cards/backs/black.webp?v=0364")!important;
+}
+body:has(#surface) [data-playing-back][data-playing-back-tone="ivory"]{
+ background-image:url("../images/decks/tabula-playing-cards/backs/ivory.webp?v=0364")!important;
+}
+body:has(#surface) [data-playing-back]::before,
+body:has(#surface) [data-playing-back]::after{
+ content:none!important;
+ display:none!important;
+}
+
+/* TABULA LENORMAND: one chosen engraved design in seven tint variants.
+   The back belongs to the physical deck, including independent second decks,
+   not to the global TAROT back theme. */
+[data-lenormand-back-tone="sepia"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/sepia.webp?v=0518")}
+[data-lenormand-back-tone="green"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/green.webp?v=0518")}
+[data-lenormand-back-tone="burgundy"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/burgundy.webp?v=0518")}
+[data-lenormand-back-tone="navy"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/navy.webp?v=0518")}
+[data-lenormand-back-tone="purple"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/purple.webp?v=0518")}
+[data-lenormand-back-tone="black"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/black.webp?v=0518")}
+[data-lenormand-back-tone="ivory"]{--lenormand-back-image:url("../images/decks/tabula-lenormand/backs/ivory.webp?v=0518")}
+body:has(#surface) [data-lenormand-back],
+body:has(#surface)[data-tabula-back="on"].dual-enabled :is(.face.back,.deck,.removed-pile-card,.shuffle-card,.cut-stack)[data-lenormand-back]{
+ background-color:#123629!important;
+ background-image:var(--lenormand-back-image)!important;
+ background-size:100% 100%!important;
+ background-position:center!important;
+ background-repeat:no-repeat!important;
+ border:0!important;
+}
+body:has(#surface) [data-lenormand-back]::before,
+body:has(#surface) [data-lenormand-back]::after{
+ content:none!important;
+ display:none!important;
 }

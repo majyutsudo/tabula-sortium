@@ -5,7 +5,13 @@ const HISTORY = 'tabula_sortium_history_v034';
 const SPREADS = 'tabula_sortium_spread_library_v1';
 
 async function saved(page, key) {
-  return page.evaluate(k => JSON.parse(localStorage.getItem(k)), key);
+  for(let attempt=0;attempt<5;attempt++){
+    try{return await page.evaluate(k => JSON.parse(localStorage.getItem(k)), key)}
+    catch(error){
+      if(attempt===4||!/Execution context was destroyed|navigation/i.test(error.message))throw error;
+      await page.waitForLoadState('domcontentloaded');
+    }
+  }
 }
 
 test.beforeEach(async ({ page }) => {
@@ -59,6 +65,32 @@ test('dealing cards persists identities and slots after reload', async ({ page }
   expect(after.state.deck).toEqual(before.state.deck);
 });
 
+test('physical IDs survive dealing, collection, next reading and reload', async ({ page }) => {
+  const initial = await saved(page, WORKSPACE);
+  const identities = new Map(initial.state.deck.map(c => [c.id, c.instanceId]));
+  expect(identities.size).toBe(78);
+  expect(new Set(identities.values()).size).toBe(78);
+  await page.locator('#spreadQuickSelect').selectOption('three');
+  await page.locator('#quickDeal').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(3);
+  const dealt = await saved(page, WORKSPACE);
+  for (const c of dealt.state.placed) expect(c.instanceId).toBe(identities.get(c.id));
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#quickCollect').click();
+  await expect.poll(async () => (await saved(page, WORKSPACE)).state.placed.length).toBe(0);
+  const collected = await saved(page, WORKSPACE);
+  expect(collected.state.deck.slice(0, 3).map(c => c.instanceId))
+    .toEqual(dealt.state.placed.map(c => c.instanceId));
+  const afterCollection = new Map(collected.state.deck.map(c => [c.id, c.instanceId]));
+  expect(afterCollection).toEqual(identities);
+  await page.locator('#newSessionStandalone').click();
+  const next = await saved(page, WORKSPACE);
+  expect(new Map(next.state.deck.map(c => [c.id, c.instanceId]))).toEqual(identities);
+  await page.reload();
+  const restored = await saved(page, WORKSPACE);
+  expect(restored.state.deck).toEqual(next.state.deck);
+});
+
 test('custom spreads retain positions, labels, and saved card size', async ({ page }) => {
   const custom = {
     id: 'custom_test_fixture',
@@ -92,7 +124,7 @@ test('full JSON backup keeps schema, readings and custom spreads', async ({ page
   let raw = '';
   for await (const chunk of file) raw += chunk.toString();
   const exported = JSON.parse(raw);
-  expect(exported).toMatchObject({ format: 'tabula-sortium', version: 1, kind: 'backup' });
+  expect(exported).toMatchObject({ format: 'tabula-sortium', version: 2, kind: 'backup' });
   expect(exported.workspace.schemaVersion).toBe(1);
   expect(exported.workspace.state.placed).toEqual(before.state.placed);
   expect(exported.snapshots).toEqual([]);
@@ -130,6 +162,9 @@ test('invalid JSON does not replace the current workspace', async ({ page }) => 
 });
 
 test('settings reset preserves the current reading', async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem('tabula-deal-actions-v1', JSON.stringify([{name:'初期化テスト用ディール',steps:[{type:'skip-deal',skip:1,times:2}],autoDeal:true}])));
+  await page.reload();
+  await expect(page.locator('#quickDealChoice option')).toContainText(['番号順（裏配り）','番号順（表配り）','初期化テスト用ディール','手順を編集・登録…']);
   await page.locator('.label-cycle-settings summary').click();
   await page.locator('.label-cycle-options input[value="number"]').check();
   await page.locator('#toolbarLabelToggle').click();
@@ -145,10 +180,15 @@ test('settings reset preserves the current reading', async ({ page }) => {
   expect(after.state.placed).toEqual(before.state.placed);
   expect(after.settings.spread).toBe('celtic');
   expect(after.settings.shuffleMethod).toBe('overhand');
+  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('tabula-deal-actions-v1')))).toHaveLength(1);
+  await expect(page.locator('#quickDealChoice option')).toHaveCount(4);
   await expect(page.locator('#tableLabelMode')).toHaveValue('card');
 });
 
 test('all-data reset discards readings and returns card size to its default', async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem('tabula-deal-actions-v1', JSON.stringify([{name:'初期化テスト用ディール',steps:[{type:'skip-deal',skip:1,times:2}],autoDeal:true}])));
+  await page.reload();
+  await expect(page.locator('#quickDealChoice option')).toContainText(['番号順（裏配り）','番号順（表配り）','初期化テスト用ディール','手順を編集・登録…']);
   await page.locator('.label-cycle-settings summary').click();
   await page.locator('.label-cycle-options input[value="number"]').check();
   await page.locator('#toolbarLabelToggle').click();
@@ -176,6 +216,9 @@ test('all-data reset discards readings and returns card size to its default', as
   for (let i = 1; i < rightColumn.length; i++)
     expect(rightColumn[i - 1].bottom).toBeLessThanOrEqual(rightColumn[i].top + 1);
 
+  expect(await page.evaluate(() => localStorage.getItem('tabula-deal-actions-v1'))).toBeNull();
+  await expect(page.locator('#quickDealChoice option')).toHaveCount(3);
+  await expect(page.locator('#quickDealChoice')).toHaveValue('');
   expect(await saved(page, HISTORY)).toBeNull();
   expect(await saved(page, SPREADS)).toBeNull();
   expect(Number(await page.evaluate(() => localStorage.getItem('tabula_card_size_v2')))).toBe(originalSize);
@@ -215,7 +258,7 @@ test('saved readings can be reopened and restored after page reload', async ({ p
 });
 
 test('custom Marseille-style deck saves French names, swaps VIII/XI, and restores full-area plain pips', async ({ page }) => {
- await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditCurrent').click();
  await expect(page.locator('#deckEditorName')).toBeVisible();
  await page.locator('#deckEditorName').fill('Tarot de Marseille — étude');
  await page.locator('#deckEditorLanguage').selectOption('fr');
@@ -240,8 +283,8 @@ test('custom Marseille-style deck saves French names, swaps VIII/XI, and restore
  await expect(page.locator('#deckLibrarySelect')).toHaveValue(decks[0].id);
  await page.locator('#cardGalleryOpen').click();
  await page.locator('#cardGalleryFilter').selectOption('major');
- await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(8)).toContainText('La Force');
- await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(11)).toContainText('La Justice');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(8)).toContainText('La Justice');
+ await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(11)).toContainText('La Force');
  await page.locator('#cardGalleryFilter').selectOption('pip');
  await expect(page.locator('#cardGalleryGrid .gallery-tile').first().locator('.ace-background')).toHaveCount(0);
  await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(0);
@@ -273,7 +316,7 @@ test('deck definitions validate unique major numbers and one or more included ca
 });
 
 test('numberless Fool, major numbering and independent language preset persist',async ({page})=>{
- await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditCurrent').click();
  await page.locator('#deckEditorName').fill('Le Mat sans numéro');
  await page.locator('#deckEditorLanguage').selectOption('fr');
  await page.locator('.deck-major-number[data-major="major_00"]').selectOption('none');
@@ -284,7 +327,7 @@ test('numberless Fool, major numbering and independent language preset persist',
  expect(deck.language).toBe('fr');
  await page.locator('#cardGalleryOpen').click();
  await page.locator('#cardGalleryFilter').selectOption('major');
- await page.locator('#cardGalleryGrid .gallery-tile').first().click();
+ await page.locator('#cardGalleryGrid .gallery-tile').filter({hasText:'Le Mat'}).click();
  await expect(page.locator('#cardGalleryLabel')).toContainText('Le Mat');
  const code=await page.locator('#cardGalleryLarge').evaluate(el=>el.outerHTML);
  expect(code).not.toMatch(/>0<\/text>/);
@@ -313,6 +356,122 @@ test('built-in deck language and traditional pip option can change without cloni
  await page.locator('#cardGalleryOpen').click();
  await page.locator('#cardGalleryFilter').selectOption('pip');
  await expect(page.locator('#cardGalleryGrid .gallery-tile').nth(1).locator('.pip-landscape')).toHaveCount(1);
+});
+
+test('manual pile holds a physical card, leaves a refillable slot, and survives reload',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('three');
+ await page.locator('#quickDeal').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(3);
+ const before=await saved(page,WORKSPACE);
+ const add=page.locator('#addTablePile');
+ await add.click();
+ await page.locator('#zone').scrollIntoViewIfNeeded();
+ const zone=await page.locator('#zone').boundingBox();
+ await page.mouse.click(zone.x+zone.width*.83,zone.y+zone.height*.28);
+ await expect(page.locator('.table-pile')).toHaveCount(1);
+ const pile=await page.locator('.table-pile').boundingBox();
+ const card=await page.locator('#zone .card[data-index="0"]').boundingBox();
+ await page.mouse.move(card.x+card.width/2,card.y+card.height/2);
+ await page.mouse.down();
+ await page.mouse.move(pile.x+pile.width/2,pile.y+pile.height/2,{steps:12});
+ await page.mouse.up();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.tablePiles[0].cards.length).toBe(1);
+ const deposited=await saved(page,WORKSPACE);
+ const original=deposited.state.tablePiles[0].cards[0];
+ expect(before.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(true);
+ expect(deposited.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(false);
+ expect(deposited.state.placed).toHaveLength(2);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.tablePiles[0].cards[0].instanceId).toBe(original.instanceId);
+ await page.locator('#quickDeal').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(3);
+ const refilled=await saved(page,WORKSPACE);
+ expect(refilled.state.placed.find(c=>c.slot===original.slot)?.instanceId).not.toBe(original.instanceId);
+ await page.locator('#zone').scrollIntoViewIfNeeded();
+ const visibleZone=await page.locator('#zone').boundingBox();
+ const top=await page.locator('.table-pile-top').boundingBox();
+ await page.mouse.move(top.x+top.width/2,top.y+top.height/2);
+ await page.mouse.down();
+ await page.mouse.move(visibleZone.x+visibleZone.width*.70,visibleZone.y+visibleZone.height*.70,{steps:12});
+ await page.mouse.up();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.tablePiles[0].cards.length).toBe(0);
+ const withdrawn=await saved(page,WORKSPACE);
+ expect(withdrawn.state.placed.some(c=>c.instanceId===original.instanceId)).toBe(true);
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#quickCollect').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.deck.length).toBe(78);
+ const collected=await saved(page,WORKSPACE);
+ expect(new Set(collected.state.deck.map(c=>c.instanceId)).size).toBe(78);
+ expect(collected.state.tablePiles).toHaveLength(0);
+});
+
+test('pile split, ordered multi-card transfer, and whole-pile merge preserve identities',async ({page})=>{
+ const seeded=await page.evaluate(key=>{
+  const data=JSON.parse(localStorage.getItem(key));
+  const cards=data.state.deck.splice(0,4);
+  data.state.tablePiles=[
+   {id:'pile-1',x:30,y:43,cards:cards.slice(0,3)},
+   {id:'pile-2',x:77,y:43,cards:cards.slice(3)}
+  ];
+  localStorage.setItem(key,JSON.stringify(data));
+  return {source:cards.slice(0,3).map(c=>c.instanceId),target:cards[3].instanceId};
+ },WORKSPACE);
+ await page.reload();
+ await page.locator('#zone').scrollIntoViewIfNeeded();
+ const p1=page.locator('.table-pile[data-pile-id="pile-1"]');
+ const p2=page.locator('.table-pile[data-pile-id="pile-2"]');
+ await expect(p1.locator('.table-pile-take-count')).toHaveValue('1');
+ const geometry=await p1.evaluate(el=>{
+  const select=el.querySelector('.table-pile-take-count').getBoundingClientRect();
+  const handle=el.querySelector('.table-pile-handle').getBoundingClientRect();
+  const card=el.querySelector('.table-pile-top').getBoundingClientRect();
+  return {selectorBottom:select.bottom,selectorWidth:select.width,handleTop:handle.top,cardTop:card.top};
+ });
+ expect(geometry.selectorBottom).toBeLessThanOrEqual(geometry.handleTop+1);
+ expect(geometry.handleTop).toBeLessThan(geometry.cardTop);
+ expect(geometry.selectorWidth).toBeGreaterThanOrEqual(108);
+ await expect(p1.locator('.table-pile-top')).toHaveAttribute('data-instance-id',seeded.source[0]);
+ await p1.locator('.table-pile-take-count').selectOption('2');
+ let src=await p1.locator('.table-pile-top').boundingBox(),dst=await p2.locator('.table-pile-top').boundingBox();
+ await page.mouse.move(src.x+src.width/2,src.y+src.height/2);
+ await page.mouse.down();
+ await page.mouse.move(dst.x+dst.width/2,dst.y+dst.height/2,{steps:12});
+ await page.mouse.up();
+ await expect.poll(async()=> (await saved(page,WORKSPACE)).state.tablePiles[1].cards.length).toBe(3);
+ let state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles[0].cards.map(c=>c.instanceId)).toEqual([seeded.source[2]]);
+ expect(state.tablePiles[1].cards.map(c=>c.instanceId)).toEqual([seeded.source[0],seeded.source[1],seeded.target]);
+ await expect(p2.locator('.table-pile-top')).toHaveAttribute('data-instance-id',seeded.source[0]);
+
+ await p2.locator('.table-pile-take-count').selectOption('2');
+ src=await p2.locator('.table-pile-top').boundingBox();
+ const zone=await page.locator('#zone').boundingBox();
+ await page.mouse.move(src.x+src.width/2,src.y+src.height/2);
+ await page.mouse.down();
+ await page.mouse.move(zone.x+zone.width*.54,zone.y+zone.height*.77,{steps:12});
+ await page.mouse.up();
+ await expect(page.locator('.table-pile')).toHaveCount(3);
+ state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles[2].cards.map(c=>c.instanceId)).toEqual(seeded.source.slice(0,2));
+ expect(state.tablePiles[1].cards.map(c=>c.instanceId)).toEqual([seeded.target]);
+
+ await page.locator('#zone').scrollIntoViewIfNeeded();
+ const p3=page.locator('.table-pile[data-pile-id="pile-3"]');
+ src=await p3.locator('.table-pile-handle').boundingBox();
+ dst=await p2.locator('.table-pile-top').boundingBox();
+ await page.mouse.move(src.x+src.width/2,src.y+src.height/2);
+ await page.mouse.down();
+ await page.mouse.move(dst.x+dst.width/2,dst.y+dst.height/2,{steps:12});
+ await page.mouse.up();
+ await expect(page.locator('.table-pile')).toHaveCount(2);
+ state=(await saved(page,WORKSPACE)).state;
+ expect(state.tablePiles.find(p=>p.id==='pile-2').cards.map(c=>c.instanceId)).toEqual([seeded.source[0],seeded.source[1],seeded.target]);
+ expect(state.tablePiles.find(p=>p.id==='pile-3')).toBeUndefined();
+ const all=[...state.deck,...state.placed,...state.tablePiles.flatMap(p=>p.cards)].map(c=>c.instanceId);
+ expect(all).toHaveLength(78);
+ expect(new Set(all).size).toBe(78);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.tablePiles.find(p=>p.id==='pile-2').cards.map(c=>c.instanceId)).toEqual([seeded.source[0],seeded.source[1],seeded.target]);
 });
 
 test('fresh and dealt cards are unique by physical ID',async ({page})=>{
@@ -369,7 +528,7 @@ test('language selection supersedes one-off preset names but keeps unique custom
 });
 
 test('deck editor Fool shortcut toggles unnumbered and zero and survives save',async ({page})=>{
- await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditCurrent').click();
  await expect(page.locator('#deckEditorUnnumbered')).toHaveText('愚者を番号なしに');
  await page.locator('#deckEditorUnnumbered').click();
  await expect(page.locator('.deck-major-number[data-major="major_00"]')).toHaveValue('none');
@@ -390,7 +549,7 @@ test('deck editor Fool shortcut toggles unnumbered and zero and survives save',a
 
 test('standard pip label is concise while deck editor preserves descriptive labels',async ({page})=>{
  await expect(page.locator('#pipBackground option[value="none"]')).toHaveText('シンプル');
- await page.locator('#deckEditNew').click();
+ await page.locator('#deckEditCurrent').click();
  await expect(page.locator('#deckEditorPip option[value="none"]')).toContainText('スートを全面に大きく配置');
  await expect(page.locator('#deckEditorSwap')).toHaveText('力 VIII ↔ 正義 XI');
 });
@@ -412,7 +571,8 @@ test('full artwork subtitles complement multilingual titles rather than duplicat
  const english=await page.locator('#cardGalleryLarge').evaluate(el=>decodeURIComponent(el.outerHTML));
  expect(english).toContain('Strength');
  expect(english).toContain('MAJOR ARCANA');
- await expect(page.locator('.deck-setting-heading').first()).toHaveText('デッキの選択');
+ await expect(page.locator('#cardGalleryLabel')).toContainText('Strength');
+ await expect(page.locator('.deck-setting-heading').filter({hasText:'デッキの選択'}).first()).toHaveText('デッキの選択');
 });
 
 test('tabletop label language can follow card names or use an independent language',async ({page})=>{
