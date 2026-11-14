@@ -1903,3 +1903,12 @@ aside .section :is(button,select,input,textarea),
  #zone .card.faceup.simultaneous-opening .card-inner,
  #zone .table-pile-top.simultaneous-opening{animation:none!important}
 }
+
+/* v0.577: Presentation settings belong to I. Table Management. */
+#tableDisplaySettings{margin-top:14px;padding-top:11px;border-top:1px solid var(--ui-border,#514b3a)}
+#tableDisplaySettings .label-cycle-settings{width:100%;box-sizing:border-box;margin:8px 0 12px}
+#tableDisplaySettings .field{margin:8px 0 10px}
+#tableDisplaySettings .table-display-frame-control{display:flex;align-items:center;gap:10px;margin-top:12px}
+#tableDisplaySettings .table-display-frame-control>span{font-size:12px;flex:1;min-width:0}
+#tableDisplaySettings #quickFrames{width:auto;min-width:113px;padding:7px 10px;font-size:12px;white-space:nowrap}
+#tableDisplaySettings>.mini{margin:6px 0 0}
