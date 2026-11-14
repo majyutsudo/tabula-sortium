@@ -1989,9 +1989,12 @@ aside .section :is(button,select,input,textarea),
 }
 .card-viewer-active .table-card-view #tableCardArtFrame .blueprint-card-view{
  flex:0 1 auto;
- width:min(60vw,260px);
+ /* Match the enlarged Tarot card, rather than the small 260px preview. */
+ width:min(43vw,400px,calc(70dvh * 2 / 3));
+ height:auto;
+ aspect-ratio:2/3;
  max-width:100%;
- max-height:100%;
+ max-height:min(70dvh,630px);
 }
 .card-viewer-active .table-card-view.has-copy #tableCardArtFrame{max-width:50%;flex:0 1 50%}
 @media(max-width:700px){
@@ -1999,6 +2002,6 @@ aside .section :is(button,select,input,textarea),
   flex:none;width:100%;max-width:100%;max-height:52dvh;
  }
  .card-viewer-active .table-card-view #tableCardArtFrame .blueprint-card-view{
-  max-height:52dvh;width:min(68vw,260px);
+  max-height:52dvh;width:min(86vw,calc(52dvh * 2 / 3));
  }
 }
