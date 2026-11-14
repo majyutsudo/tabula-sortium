@@ -1778,3 +1778,21 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
   padding-top:2px;
  }
 }
+
+/* v0.548 — UI type is sans-serif; editorial, archival and card typography
+   intentionally remain Mincho/Georgia. This only targets interface controls. */
+:root{
+ --tabula-ui-font:Arial,'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;
+ --tabula-editorial-font:Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;
+}
+.main>.toolbar :is(button,select,output,.status,.table-view-label,.toolbar-size-label,.toolbar-spread-shortcut>span,.workspace-switcher),
+.table-shortcuts button,
+.table-action-settings :is(button,select,label),
+.table-utility-actions button,
+.results-toggle-bar button,
+.table-record-actions button,
+.gallery-controls :is(button,select,label,output),
+aside .section :is(button,select,input,textarea),
+#modalBg :is(button,select,input,textarea){
+ font-family:var(--tabula-ui-font);
+}
