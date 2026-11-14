@@ -1091,7 +1091,7 @@ test('independent refill and compact shortcuts persist per spread and do not ove
  await expect(refill).toBeVisible();
  await refill.check();
  await expect(page.locator('#quickRefillAction')).toBeHidden();
- await page.locator('#placementTools > button[aria-label="配置設定を閉じる"]').click();
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
  await expect(page.locator('#quickRefillAction')).toBeVisible();
  await expect(page.locator('#quickCompactAction')).toBeHidden();
  let workspace=await saved(page,WORKSPACE);
@@ -1100,7 +1100,7 @@ test('independent refill and compact shortcuts persist per spread and do not ove
  await expect(page.locator('#quickRefillAction')).toBeVisible();
  await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
  await compact.check();
- await page.locator('#placementTools > button[aria-label="配置設定を閉じる"]').click();
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
  await expect(page.locator('#quickCompactAction')).toBeVisible();
  await expect(page.locator('#quickRefillAction')).toBeVisible();
  const rects=await page.evaluate(()=>['quickCompactAction','quickRefillAction'].map(id=>{
