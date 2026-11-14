@@ -897,7 +897,7 @@ test('rotated card flight preserves physical aspect ratio and animates its angle
     const dest=document.querySelector('#zone .card[data-index="'+this.dataset.index+'"]');
     const angle=Number.parseFloat(getComputedStyle(dest).getPropertyValue('--rotation'))||0;
     window.__flightGeometry.push({
-     angle,ghostWidth:this.getBoundingClientRect().width,ghostHeight:this.getBoundingClientRect().height,
+     angle,ghostWidth:Number.parseFloat(this.style.width),ghostHeight:Number.parseFloat(this.style.height),
      actualWidth:dest.offsetWidth,actualHeight:dest.offsetHeight,
      frames:frames.map(frame=>frame.transform)
     });
@@ -909,8 +909,7 @@ test('rotated card flight preserves physical aspect ratio and animates its angle
  await expect.poll(()=>page.evaluate(()=>window.__flightGeometry.some(f=>Math.abs(f.angle)>20)),{timeout:12000}).toBe(true);
  const flights=await page.evaluate(()=>window.__flightGeometry.filter(f=>Math.abs(f.angle)>20));
  for(const flight of flights){
-  // The ghost is evaluated before its Web Animation starts (its own transform
-  // is rotated, but the dimensions must equal the unrotated actual card).
+  // The ghost retains explicit unrotated dimensions even when visually rotated.
   expect(flight.ghostWidth).toBeGreaterThan(0);
   expect(flight.ghostHeight).toBeGreaterThan(0);
   expect(flight.ghostWidth/flight.ghostHeight).toBeCloseTo(flight.actualWidth/flight.actualHeight,1);
