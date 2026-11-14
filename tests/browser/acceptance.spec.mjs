@@ -921,7 +921,7 @@ test('rotated card flight preserves physical aspect ratio and animates its angle
 
 test('selectable deal animation uses spin and petal trajectories without spread mapping',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('one');
- for(const [mode,duration] of [['spin',680],['petalSoft',4300],['petal',3300],['petalVortex',2750]]){
+ for(const [mode,duration] of [['spin',680],['petalSoft',4300],['serpent',7800]]){
   await page.locator('#dealAnimation').selectOption(mode);
   await expect.poll(async()=> (await saved(page,WORKSPACE)).settings.dealAnimation).toBe(mode);
   await page.reload();
@@ -946,7 +946,7 @@ test('selectable deal animation uses spin and petal trajectories without spread 
   expect(flight.dimensions[0]).toBeGreaterThan(0);
   expect(flight.dimensions[1]).toBeGreaterThan(0);
   expect(flight.end).toContain('calc(-50% + 0px)');
-  expect(flight.count).toBe(mode==='spin'?4:101);
+  expect(flight.count).toBe(mode==='spin'?4:mode==='serpent'?161:101);
   await page.waitForTimeout(duration+100);
   await expect(page.locator('#zone > .card')).toHaveCount(1);
   // Clearing the table, not switching spreads, prepares a fresh animation.
