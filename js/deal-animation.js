@@ -4,7 +4,7 @@
    and a final rotation matching the actual destination card. */
 (function(root){
  'use strict';
- const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petalSoft:'PETAL — 緩やかな螺旋',serpent:'SERPENT — 蛇行',serpentFast:'SERPENT ×2 — 倍速'});
+ const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petalSoft:'PETAL — 緩やかな螺旋',serpent:'SERPENT — 蛇行',serpentFast:'SERPENT ×2 — 倍速',serpentQuick:'SERPENT QUICK — 通常ディール速度'});
  function normalize(mode){return mode==='petal'||mode==='petalVortex'?'petalSoft':Object.hasOwn(MODES,mode)?mode:'standard'}
  function create(mode,{dx,dy,arrivalAngle=0,wind=0,bounds=null}={}){
   mode=normalize(mode);
@@ -21,7 +21,7 @@
     {offset:1,...finish,transform:transform(0,0,720+a)}
    ]
   };
-  if(mode==='serpent'||mode==='serpentFast'){
+  if(mode==='serpent'||mode==='serpentFast'||mode==='serpentQuick'){
    // A single unbroken path: the card advances along the stock-to-target
    // axis, displaced sideways by a damped sine wave (the snake's body).
    // The card itself does not spin; only destination orientation is blended.
@@ -64,7 +64,7 @@
    }));
    frames[0]={offset:0,transform:transform(x,y,0,1),filter:'brightness(1)'};
    frames[frames.length-1]={offset:1,...finish};
-   return {duration:mode==='serpentFast'?1950:3900,easing:'linear',frames};
+   return {duration:mode==='serpentQuick'?320:mode==='serpentFast'?1950:3900,easing:'linear',frames};
   }
   if(mode==='petal'||mode==='petalSoft'||mode==='petalVortex'){
    // Spiral centred on the destination. s=0 is the stock; s=1 is the
