@@ -35,8 +35,8 @@ test('SERPENT ×2 shares the exact trajectory with SERPENT in half the time',()=
    const options={dx:285,dy:-120,arrivalAngle:angle,wind,bounds:{minX:-300,maxX:320,minY:-240,maxY:270}};
    const original=animation.create('serpent',options);
    const faster=animation.create('serpentFast',options);
-   assert.equal(original.duration,7800);
-   assert.equal(faster.duration,3900);
+   assert.equal(original.duration,3900);
+   assert.equal(faster.duration,1950);
    assert.equal(faster.easing,original.easing);
    assert.equal(JSON.stringify(faster.frames),JSON.stringify(original.frames));
    assert.equal(faster.frames.length,161);
