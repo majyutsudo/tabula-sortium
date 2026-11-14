@@ -711,6 +711,8 @@ test('pile-only reading saves and restores its physical cards after reload',asyn
  const identities=history[0].tablePiles[0].cards.map(c=>c.instanceId);
  await page.reload();
  await page.locator('#snapshotList').evaluate(button=>button.click());
+ await expect(page.locator('#snapViewA .snapshot-card')).toHaveCount(1);
+ await expect(page.locator('#snapViewA .snapshot-row')).toHaveCount(2);
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('#restoreA').click();
  const restored=(await saved(page,WORKSPACE)).state;
