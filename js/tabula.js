@@ -359,6 +359,9 @@ function installTableCamera(){
  function startPair(){const p=pair(),r=stage.getBoundingClientRect();gesture={...p,scale:tableCamera.scale,localX:(p.x-r.left-r.width/2-tableCamera.x)/tableCamera.scale,localY:(p.y-r.top-r.height/2-tableCamera.y)/tableCamera.scale}}
  function stopEvent(e){e.preventDefault();e.stopImmediatePropagation()}
  stage.addEventListener('pointerdown',e=>{
+  // The placement menu is independently scrollable and must not start
+  // the tabletop camera's drag or pinch capture.
+  if(e.target.closest('#placementToolsContent'))return;
   if(!mobileCameraEnabled()||pilePlacementArmed)return;
   if(e.pointerType==='touch'){
    // A new primary contact always starts a fresh gesture. On mobile Safari,
