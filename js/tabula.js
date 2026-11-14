@@ -1019,6 +1019,15 @@ function updateNaturalTiltButton(){
    checkbox.onchange=()=>{if(!settings.compactShortcutVisibility||typeof settings.compactShortcutVisibility!=='object')settings.compactShortcutVisibility={};settings.compactShortcutVisibility[settings.spread]=checkbox.checked;syncCompactShortcut();saveLocal()};
    visibility.append(checkbox,document.createTextNode('「詰める」を卓に表示'));
    arrangement.append(visibility);
+   const refillVisibility=document.createElement('label');refillVisibility.className='compact-shortcut-toggle';
+   const refillCheckbox=document.createElement('input');refillCheckbox.type='checkbox';refillCheckbox.id='refillShortcutVisibility';
+   refillCheckbox.onchange=()=>{
+    if(!settings.refillShortcutVisibility||typeof settings.refillShortcutVisibility!=='object')settings.refillShortcutVisibility={};
+    settings.refillShortcutVisibility[settings.spread]=refillCheckbox.checked;
+    syncCompactShortcut();saveLocal();
+   };
+   refillVisibility.append(refillCheckbox,document.createTextNode('「一括補充」を卓に表示'));
+   arrangement.append(refillVisibility);
    layout.append(arrangement);
   }
   const hand=document.getElementById('naturalTiltButton');
@@ -1036,6 +1045,10 @@ function compactShortcutShown(){
  if(overrides&&typeof overrides==='object'&&Object.hasOwn(overrides,settings.spread))return overrides[settings.spread]===true;
  return settings.spread==='monteCarlo';
 }
+function refillShortcutShown(){
+ const overrides=settings.refillShortcutVisibility;
+ return !!(overrides&&typeof overrides==='object'&&overrides[settings.spread]===true);
+}
 function syncCompactShortcut(){
  const surface=$('surface');if(!surface)return;
  let shortcut=$('quickCompactAction');
@@ -1046,8 +1059,19 @@ function syncCompactShortcut(){
   surface.append(shortcut);
  }
  shortcut.hidden=!compactShortcutShown()||!!spreadWorkbench;
+ let refill=$('quickRefillAction');
+ if(!refill){
+  refill=document.createElement('button');refill.id='quickRefillAction';refill.type='button';
+  refill.textContent='▥ 一括補充';refill.title='メニューの「空きを一括補充」を実行';
+  refill.onclick=()=>executeArrangement('refill');
+  surface.append(refill);
+ }
+ refill.hidden=!refillShortcutShown()||!!spreadWorkbench;
+ refill.classList.toggle('above-compact',!shortcut.hidden);
  const checkbox=$('compactShortcutVisibility');
  if(checkbox)checkbox.checked=compactShortcutShown();
+ const refillCheckbox=$('refillShortcutVisibility');
+ if(refillCheckbox)refillCheckbox.checked=refillShortcutShown();
 }
 function recordTiltSample(track,e){
  if(!track)return;
