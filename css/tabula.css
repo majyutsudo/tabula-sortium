@@ -2037,3 +2037,110 @@ aside .section :is(button,select,input,textarea),
 @media(max-width:780px){
  #surface #tableArrangementShortcuts{right:47px;bottom:12px;max-width:calc(100% - 60px);gap:6px}
 }
+
+
+/* v0.586 — mobile tabletop settings: independent grid cells, natural label
+   height, and an in-flow deal menu. Desktop popover behavior is unchanged. */
+@media(max-width:780px){
+ .main>.table-action-settings{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start;
+  column-gap:8px;
+  row-gap:12px;
+  padding:10px 10px 14px;
+ }
+ .main>.table-action-settings>label{
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  width:100%;
+  height:auto;
+  min-height:0;
+  min-width:0;
+  margin:0;
+  gap:6px;
+  white-space:normal;
+ }
+ .main>.table-action-settings>label::before{
+  display:block;
+  flex:none;
+  line-height:1.35;
+ }
+ .main>.table-action-settings>label:last-child::before{content:'オープン'}
+ .main>.table-action-settings>label>span,
+ .main>.table-action-settings #tableShuffleChoiceSlot,
+ .main>.table-action-settings .table-wash-controls{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+ }
+ .main>.table-action-settings .table-wash-controls{
+  display:flex;
+  align-items:stretch;
+  gap:5px;
+ }
+ .main>.table-action-settings .table-wash-controls #tableWashDirection{
+  flex:1 1 auto;
+  width:0;
+  min-width:0;
+ }
+ .main>.table-action-settings .table-wash-controls #tableWashRounds{
+  flex:0 0 60px;
+  width:60px;
+  min-width:0;
+ }
+ .main>.table-action-settings select{
+  box-sizing:border-box;
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  height:36px;
+  min-height:36px;
+  font-size:12px;
+ }
+ .main>.table-action-settings .table-deal-control{
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  min-width:0;
+  width:100%;
+  height:auto;
+  min-height:0;
+  gap:0;
+ }
+ .main>.table-action-settings .table-deal-control::before{
+  content:'ディール';
+  display:block;
+  margin-bottom:6px;
+  font:11px/1.35 Arial,'Hiragino Kaku Gothic ProN',sans-serif;
+  color:var(--ui-text,#d6c9a6);
+  opacity:.85;
+ }
+ .main>.table-action-settings #tableDealOptionsButton{
+  height:36px;
+  min-height:36px;
+  font-size:12px;
+ }
+ .main>.table-action-settings .table-deal-options{
+  position:static;
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  margin-top:7px;
+  box-shadow:none;
+  padding:9px;
+ }
+ .main>.table-action-settings .table-deal-control:has(#tableDealOptions:not([hidden])){
+  grid-column:1/-1;
+ }
+ .main>.table-action-settings .table-deal-options select{
+  min-width:0;
+  max-width:100%;
+ }
+}
