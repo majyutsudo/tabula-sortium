@@ -1863,3 +1863,11 @@ aside .section :is(button,select,input,textarea),
 #zone.frames-hidden > .table-pile::before{border-color:transparent}
 #zone.frames-hidden .table-pile-empty{border-color:transparent;background:transparent}
 #zone.frames-hidden .table-pile-depth-sheet{border-color:transparent}
+
+/* v0.574: Two related deal choices share the deal column; open has its own mode. */
+.table-action-settings>label{height:auto;min-height:30px;align-items:flex-start}
+.table-action-settings .table-deal-controls{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0;width:100%}
+.table-action-settings #tableDealChoiceSlot{display:block;width:100%;min-width:0}
+.table-action-settings #quickDealChoice{width:100%;max-width:100%}
+.table-action-settings #dealAnimation,.table-action-settings #tableOpenMode{width:100%;min-width:0}
+.table-action-settings #tableOpenMode{display:block}
