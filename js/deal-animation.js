@@ -4,9 +4,9 @@
    and a final rotation matching the actual destination card. */
 (function(root){
  'use strict';
- const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petal:'PETAL — 浮遊'});
+ const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petalSoft:'PETAL I — 緩やかな螺旋',petal:'PETAL II — 螺旋収束',petalVortex:'PETAL III — 強い吸引'});
  function normalize(mode){return Object.hasOwn(MODES,mode)?mode:'standard'}
- function create(mode,{dx,dy,arrivalAngle=0,wind=0}={}){
+ function create(mode,{dx,dy,arrivalAngle=0,wind=0,bounds=null}={}){
   mode=normalize(mode);
   const x=Number(dx)||0,y=Number(dy)||0,a=Number(arrivalAngle)||0;
   const t=(px,py)=>'translate(calc(-50% + '+px+'px),calc(-50% + '+py+'px))';
@@ -21,24 +21,64 @@
     {offset:1,...finish,transform:transform(0,0,720+a)}
    ]
   };
-  if(mode==='petal'){
-   // A restrained wind variation changes the drift without affecting arrival.
-   const w=Math.max(-1,Math.min(1,Number(wind)||0));
-   const distance=Math.hypot(x,y);
-   const arc=Math.max(48,Math.min(150,distance*.35));
-   const side=arc*(w>=0?1:-1);
-   const flutter=15*w;
-   return {
-    duration:3400,easing:'linear',
-    frames:[
-     {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)',easing:'cubic-bezier(.2,0,.4,1)'},
-     {offset:.16,transform:transform(x*.94+side*.28,y*.93-arc,.9*-16+flutter,.99),filter:'brightness(1.11)',easing:'ease-in-out'},
-     {offset:.43,transform:transform(x*.65+side,y*.55-arc*.75,23+flutter,1.015),filter:'brightness(1.09)',easing:'ease-in-out'},
-     {offset:.70,transform:transform(x*.33-side*.26,y*.22+arc*.3,-24+flutter*.5,1.02),filter:'brightness(1.06)',easing:'cubic-bezier(.25,.15,.35,1)'},
-     {offset:.89,transform:transform(x*.08,y*.05-14,10+a*.7,1.005),filter:'brightness(1.03)',easing:'ease-out'},
-     {offset:1,...finish}
-    ]
+  if(mode==='petal'||mode==='petalSoft'||mode==='petalVortex'){
+   // Spiral centred on the destination. s=0 is the stock; s=1 is the
+   // destination, so every preset finishes exactly at the real card's centre.
+   // The same trajectory can be used for custom spread positions.
+   const variants={
+    petalSoft:{duration:4300,turns:.9,power:1.45,tilt:7,inward:1.17},
+    petal:{duration:3300,turns:1.4,power:1.9,tilt:12,inward:1.05},
+    petalVortex:{duration:2750,turns:2.1,power:2.35,tilt:16,inward:.95}
    };
+   const spec=variants[mode],distance=Math.hypot(x,y);
+   const phase=Math.atan2(y,x);
+   const direction=(Number(wind)||0)<0?-1:1;
+   const variation=Math.min(.12,Math.abs(Number(wind)||0)*.12);
+   const turns=spec.turns*(1+variation);
+   const count=100;
+   const smooth=(n)=>Math.round(n*10000)/10000;
+   const sample=(t)=>{
+    // Advancing through the curve starts slowly and accelerates as the
+    // destination becomes dominant. A short ease-out avoids a hard stop.
+    const q=t<.94?Math.pow(t/.94,spec.power)*.975:
+     .975+.025*(1-Math.pow((1-t)/.06,2));
+    const r=distance*Math.pow(Math.max(0,1-q),spec.inward);
+    const theta=phase+direction*Math.PI*2*turns*q;
+    return {q,x:r*Math.cos(theta),y:r*Math.sin(theta)};
+   };
+   const samples=Array.from({length:count+1},(_,i)=>sample(i/count));
+   // A diagonal or near-edge destination may place the full spiral outside
+   // the viewport. Reduce only the curved displacement relative to the
+   // stock-to-target segment, never the source or destination coordinates.
+   // bounds are viewport-safe offsets relative to the target centre.
+   let amplitude=1;
+   if(bounds&&[bounds.minX,bounds.maxX,bounds.minY,bounds.maxY].every(Number.isFinite)){
+    for(const p of samples){
+     const bx=x*(1-p.q),by=y*(1-p.q);
+     const vx=p.x-bx,vy=p.y-by;
+     const cap=(base,v,min,max)=>{
+      if(Math.abs(v)<1e-8)return 1;
+      return Math.max(0,Math.min(1,(v>0?max-base:min-base)/v));
+     };
+     amplitude=Math.min(amplitude,cap(bx,vx,bounds.minX,bounds.maxX),cap(by,vy,bounds.minY,bounds.maxY));
+    }
+   }
+   const frames=samples.map((p,i)=>{
+    const t=i/count,q=p.q;
+    const bx=x*(1-q),by=y*(1-q);
+    const px=bx+(p.x-bx)*amplitude,py=by+(p.y-by)*amplitude;
+    const flutter=Math.sin(q*Math.PI*2*turns)*spec.tilt*(1-q);
+    const angle=a*q+flutter;
+    const scale=1-.04*Math.pow(1-q,1.2);
+    return {
+     offset:smooth(t),
+     transform:transform(smooth(px),smooth(py),smooth(angle),smooth(scale)),
+     filter:'brightness('+smooth(1+.08*(1-q))+')'
+    };
+   });
+   frames[0]={offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)'};
+   frames[frames.length-1]={offset:1,...finish};
+   return {duration:spec.duration,easing:'linear',frames};
   }
   return {
    duration:320,easing:'cubic-bezier(.22,.72,.25,1)',
