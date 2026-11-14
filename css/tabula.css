@@ -1757,7 +1757,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  .main>.toolbar .toolbar-leading>#desktopTableViews{
   flex-shrink:0;
  }
- .main>.toolbar .toolbar-trailing{flex:0 0 auto;}
+ .main>.toolbar .toolbar-trailing{flex:0 0 auto;margin-left:auto;justify-content:flex-end;}
  .main>.toolbar .toolbar-trailing>.mobile-cockpit-actions{display:contents;}
  .main>.toolbar .toolbar-trailing .toolbar-spread-shortcut{flex:0 0 auto;}
 }
