@@ -1977,3 +1977,28 @@ aside .section :is(button,select,input,textarea),
  font-family:var(--tabula-ui-font);
  font-size:12px;
 }
+
+/* v0.580: Blueprint cards share the enlarged reading view with their text. */
+.card-viewer-active .table-card-view #tableCardArtFrame{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ min-width:0;
+ flex:0 1 auto;
+ max-width:100%;
+}
+.card-viewer-active .table-card-view #tableCardArtFrame .blueprint-card-view{
+ flex:0 1 auto;
+ width:min(60vw,260px);
+ max-width:100%;
+ max-height:100%;
+}
+.card-viewer-active .table-card-view.has-copy #tableCardArtFrame{max-width:50%;flex:0 1 50%}
+@media(max-width:700px){
+ .card-viewer-active .table-card-view.has-copy #tableCardArtFrame{
+  flex:none;width:100%;max-width:100%;max-height:52dvh;
+ }
+ .card-viewer-active .table-card-view #tableCardArtFrame .blueprint-card-view{
+  max-height:52dvh;width:min(68vw,260px);
+ }
+}
