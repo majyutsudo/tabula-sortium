@@ -3992,7 +3992,10 @@ function openTableCard(index){
    frame.querySelectorAll('.blueprint-card-view').forEach(el=>el.remove());
    const visual=document.createElement('div');visual.className='blueprint-card-view';visual.innerHTML=blueprintCardMarkup(displayCard(c));
    visual.style.transform=p.reversed?'rotate(180deg)':'';frame.append(visual);
-   const detail=$('tableCardText');detail.hidden=true;return;
+   // Blueprint cards (playing, Lenormand, and custom decks) use the same
+   // card-ID text records as the atlas. Do not return before rendering text.
+   renderDetailText($('tableCardText'),c);
+   return;
   }
   setCardArtwork($('tableCardLarge'),finishedCardSource(c,false,appearance));
   renderDetailText($('tableCardText'),c);
@@ -4011,7 +4014,7 @@ function openTableCard(index){
   }
  };update();
 
- const copyToggle=document.createElement('button');copyToggle.type='button';copyToggle.textContent=detailTextVisible?'文章：表示':'文章：非表示';copyToggle.hidden=!!activeBlueprint();copyToggle.onclick=()=>{if(activeBlueprint())return;detailTextVisible=!detailTextVisible;copyToggle.textContent=detailTextVisible?'文章：表示':'文章：非表示';renderDetailText($('tableCardText'),c)};$('tableCardNext').parentElement.after(copyToggle);
+ const copyToggle=document.createElement('button');copyToggle.type='button';copyToggle.textContent=detailTextVisible?'文章：表示':'文章：非表示';copyToggle.hidden=false;copyToggle.onclick=()=>{detailTextVisible=!detailTextVisible;copyToggle.textContent=detailTextVisible?'文章：表示':'文章：非表示';renderDetailText($('tableCardText'),c)};$('tableCardNext').parentElement.after(copyToggle);
  const visible=state.placed.map((p,i)=>p.faceUp?i:-1).filter(i=>i>=0),at=visible.indexOf(index);
  $('tableCardPrev').disabled=visible.length<2;$('tableCardNext').disabled=visible.length<2;
  $('tableCardPrev').onclick=()=>openTableCard(visible[(at-1+visible.length)%visible.length]);$('tableCardNext').onclick=()=>openTableCard(visible[(at+1)%visible.length]);
