@@ -4344,10 +4344,30 @@ function installTableActionSettings(){
  const shuffleChoice=$('quickShuffleChoice'),dealChoice=$('quickDealChoice');
  if(shuffleChoice)$('tableShuffleChoiceSlot').append(shuffleChoice);
  if(dealChoice)$('tableDealChoiceSlot').append(dealChoice);
+ const dealToggle=$('tableDealOptionsButton'),dealPanel=$('tableDealOptions'),animationChoice=$('dealAnimation');
+ const syncDealSummary=()=>{
+  const dealText=dealChoice?.selectedOptions?.[0]?.textContent?.trim()||'配り方';
+  const animationText=animationChoice.selectedOptions?.[0]?.textContent?.split(/[—-]/)[0]?.trim()||'STANDARD';
+  dealToggle.textContent=dealText+' · '+animationText;
+  dealToggle.title='配り方とアニメーション：'+dealText+' / '+animationText;
+ };
+ const closeDealPanel=()=>{dealPanel.hidden=true;dealToggle.setAttribute('aria-expanded','false')};
+ dealToggle.onclick=()=>{
+  const show=dealPanel.hidden;dealPanel.hidden=!show;
+  dealToggle.setAttribute('aria-expanded',String(show));
+ };
+ document.addEventListener('pointerdown',event=>{
+  if(!dealPanel.hidden&&!dealToggle.contains(event.target)&&!dealPanel.contains(event.target))closeDealPanel();
+ });
+ document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!dealPanel.hidden){closeDealPanel();dealToggle.focus()}
+ });
+ dealChoice?.addEventListener('change',syncDealSummary);
+ animationChoice.addEventListener('change',syncDealSummary);
  const openMode=$('tableOpenMode');
  openMode.onchange=()=>{settings.openMode=['normal','quick','all'].includes(openMode.value)?openMode.value:'normal';saveLocal();setStatus('オープン方式を変更しました。')};
  const washDirection=$('tableWashDirection'),washRounds=$('tableWashRounds'),cutCount=$('tableCutCount');
- const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3);openMode.value=['normal','quick','all'].includes(settings.openMode)?settings.openMode:'normal'};
+ const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3);openMode.value=['normal','quick','all'].includes(settings.openMode)?settings.openMode:'normal';syncDealSummary()};
  washDirection.onchange=()=>{settings.quickWashDirection=washDirection.value;$('quickWashDirection').value=washDirection.value;updateStandaloneAvailability();saveLocal()};
  washRounds.onchange=()=>{settings.quickWashRounds=Number(washRounds.value);$('quickWashRounds').value=washRounds.value;updateStandaloneAvailability();saveLocal()};
  cutCount.onchange=()=>{settings.cutCount=Number(cutCount.value);$('cutCountSetting').value=cutCount.value;updateStandaloneAvailability();saveLocal()};
