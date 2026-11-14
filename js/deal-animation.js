@@ -4,7 +4,7 @@
    and a final rotation matching the actual destination card. */
 (function(root){
  'use strict';
- const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',spinSlow:'SLOW SPIN — 緩やかな回転',petalSoft:'PETAL — 緩やかな螺旋',serpent:'SERPENT — 蛇行'});
+ const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petalSoft:'PETAL — 緩やかな螺旋',serpent:'SERPENT — 蛇行',serpentFast:'SERPENT ×2 — 倍速'});
  function normalize(mode){return mode==='petal'||mode==='petalVortex'?'petalSoft':Object.hasOwn(MODES,mode)?mode:'standard'}
  function create(mode,{dx,dy,arrivalAngle=0,wind=0,bounds=null}={}){
   mode=normalize(mode);
@@ -12,23 +12,6 @@
   const t=(px,py)=>'translate(calc(-50% + '+px+'px),calc(-50% + '+py+'px))';
   const transform=(px,py,angle,scale=1)=>t(px,py)+' rotate('+angle+'deg) scale('+scale+')';
   const finish={transform:transform(0,0,a),filter:'brightness(1)'};
-  if(mode==='spinSlow'){
-   // A quick throw to the halfway point, followed by one continuous
-   // aerial rotation and a slight pull-in at the very end.
-   const releaseTime=.20; // 152ms of the 760ms flight
-   const releaseDistance=.50; // halfway to the destination
-   const aerialTurns=1;
-   return {
-    duration:760,easing:'linear',
-    frames:[
-     {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)',easing:'linear'},
-     {offset:releaseTime,
-      transform:transform(x*(1-releaseDistance),y*(1-releaseDistance),0,1),
-      filter:'brightness(1.04)',easing:'cubic-bezier(.25,.25,.78,.55)'},
-     {offset:1,transform:transform(0,0,360*aerialTurns+a),filter:'brightness(1)'}
-    ]
-   };
-  }
   if(mode==='spin')return {
    duration:680,easing:'cubic-bezier(.18,.64,.2,1)',
    frames:[
@@ -38,7 +21,7 @@
     {offset:1,...finish,transform:transform(0,0,720+a)}
    ]
   };
-  if(mode==='serpent'){
+  if(mode==='serpent'||mode==='serpentFast'){
    // A single unbroken path: the card advances along the stock-to-target
    // axis, displaced sideways by a damped sine wave (the snake's body).
    // The card itself does not spin; only destination orientation is blended.
@@ -81,7 +64,7 @@
    }));
    frames[0]={offset:0,transform:transform(x,y,0,1),filter:'brightness(1)'};
    frames[frames.length-1]={offset:1,...finish};
-   return {duration:7800,easing:'linear',frames};
+   return {duration:mode==='serpentFast'?3900:7800,easing:'linear',frames};
   }
   if(mode==='petal'||mode==='petalSoft'||mode==='petalVortex'){
    // Spiral centred on the destination. s=0 is the stock; s=1 is the
