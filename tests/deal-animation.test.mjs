@@ -28,30 +28,31 @@ test('SPIN performs two turns and finishes at an arbitrary target angle',()=>{
  }
 });
 
-test('SERPENT ×2 shares the exact trajectory with SERPENT in half the time',()=>{
+test('renamed modes preserve their existing animation paths and durations',()=>{
+ assert.deepEqual(Object.keys(animation.MODES),['standard','spin','serpentQuick','serpent','petalSoft']);
+ assert.equal(animation.MODES.petalSoft,'SPIRAL — 緩やかな螺旋');
+ assert.equal(animation.MODES.serpent,'PETAL — 蛇行');
+ assert.equal(animation.MODES.serpentQuick,'SERPENT — 通常ディール速度');
+ assert.equal(animation.normalize('serpentFast'),'serpent');
  assert.equal(animation.normalize('spinSlow'),'standard');
  for(const angle of [-135,0,65,170]){
   for(const wind of [-.8,.8]){
    const options={dx:285,dy:-120,arrivalAngle:angle,wind,bounds:{minX:-300,maxX:320,minY:-240,maxY:270}};
-   const original=animation.create('serpent',options);
-   const faster=animation.create('serpentFast',options);
-   const quick=animation.create('serpentQuick',options);
-   assert.equal(original.duration,3900);
-   assert.equal(faster.duration,1950);
-   assert.equal(quick.duration,320);
-   assert.equal(quick.easing,original.easing);
-   assert.equal(faster.easing,original.easing);
-   assert.equal(JSON.stringify(faster.frames),JSON.stringify(original.frames));
-   assert.equal(JSON.stringify(quick.frames),JSON.stringify(original.frames));
-   assert.equal(faster.frames.length,161);
-   assert.equal(quick.frames.length,161);
-   assert.ok(faster.frames.at(-1).transform.includes('rotate('+angle+'deg)'));
-   assert.ok(quick.frames.at(-1).transform.includes('rotate('+angle+'deg)'));
+   const petal=animation.create('serpent',options);
+   const serpent=animation.create('serpentQuick',options);
+   const spiral=animation.create('petalSoft',options);
+   assert.equal(spiral.duration,4300);
+   assert.equal(petal.duration,3900);
+   assert.equal(serpent.duration,320);
+   assert.equal(serpent.easing,petal.easing);
+   assert.equal(JSON.stringify(serpent.frames),JSON.stringify(petal.frames));
+   assert.equal(serpent.frames.length,161);
+   assert.ok(serpent.frames.at(-1).transform.includes('rotate('+angle+'deg)'));
   }
  }
 });
 
-test('PETAL I remains the chosen slow spiral and legacy variants resolve to it',()=>{
+test('SPIRAL retains the original slow spiral and legacy variants resolve to it',()=>{
  assert.equal(animation.normalize('petal'),'petalSoft');
  assert.equal(animation.normalize('petalVortex'),'petalSoft');
  const a=animation.create('petalSoft',{dx:360,dy:180,arrivalAngle:-35,wind:.7});
@@ -64,10 +65,10 @@ test('PETAL I remains the chosen slow spiral and legacy variants resolve to it',
  assert.equal(a.frames.at(-1).transform,b.frames.at(-1).transform);
 });
 
-test('SERPENT is slower than PETAL, snakes across its path, and never spins',()=>{
+test('PETAL snakes across its path and never spins',()=>{
  const petal=animation.create('petalSoft',{dx:360,dy:180});
  const flight=animation.create('serpent',{dx:360,dy:180,arrivalAngle:40,wind:.8});
- assert.ok(flight.duration>petal.duration);
+ assert.ok(flight.duration<petal.duration);
  assert.equal(flight.duration,3900);
  assert.equal(flight.frames.length,161);
  assert.equal(flight.easing,'linear');
@@ -95,7 +96,7 @@ test('SERPENT is slower than PETAL, snakes across its path, and never spins',()=
  }
 });
 
-test('SERPENT and PETAL respect viewport bounds where a path can fit',()=>{
+test('SPIRAL and PETAL respect viewport bounds where a path can fit',()=>{
  const bounds={minX:-200,maxX:145,minY:-260,maxY:170};
  for(const mode of ['petalSoft','serpent']){
   const f=animation.create(mode,{dx:120,dy:-160,wind:.4,arrivalAngle:70,bounds});
@@ -110,7 +111,7 @@ test('SERPENT and PETAL respect viewport bounds where a path can fit',()=>{
 });
 
 test('all flight modes end at exactly the same center and destination rotation',()=>{
- const finalTransforms=['standard','spin','petalSoft','serpent','serpentFast'].map(mode=>
+ const finalTransforms=['standard','spin','serpentQuick','serpent','petalSoft'].map(mode=>
   animation.create(mode,{dx:-295,dy:410,arrivalAngle:72,wind:.3}).frames.at(-1).transform);
  const suffix='translate(calc(-50% + 0px),calc(-50% + 0px))';
  finalTransforms.forEach(transform=>assert.ok(transform.startsWith(suffix)));
