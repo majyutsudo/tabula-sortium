@@ -689,3 +689,45 @@ test('free spread encyclopedia tile uses a bounded graphic without overlapping p
  await expect(page.locator('.spread-guide h2')).toHaveText('フリースプレッド');
  await expect(page.locator('#spreadGuideDiagram .spread-diagram-unassigned')).toHaveCount(1);
 });
+
+test('pile-only reading saves and restores its physical cards after reload',async({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.evaluate(key=>{
+  const w=JSON.parse(localStorage.getItem(key));
+  const first=w.state.deck.shift(),second=w.state.deck.shift();
+  w.state.placed=[];
+  w.state.tablePiles=[{id:'pile-1',x:50,y:45,role:'tableau',
+   fan:{dx:0,dy:0},cards:[first,second]}];
+  localStorage.setItem(key,JSON.stringify(w));
+ },WORKSPACE);
+ await page.reload();
+ await expect(page.locator('#zone .table-pile')).toHaveCount(1);
+ await page.locator('#snapshotSave').evaluate(button=>button.click());
+ await expect(page.locator('#snapConfirm')).toBeVisible();
+ await page.locator('#snapshotName').fill('束だけの占例');
+ await page.locator('#snapConfirm').click();
+ const history=await saved(page,'tabula_sortium_history_v034');
+ expect(history[0].tablePiles[0].cards).toHaveLength(2);
+ const identities=history[0].tablePiles[0].cards.map(c=>c.instanceId);
+ await page.reload();
+ await page.locator('#snapshotList').evaluate(button=>button.click());
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#restoreA').click();
+ const restored=(await saved(page,WORKSPACE)).state;
+ expect(restored.tablePiles[0].cards.map(c=>c.instanceId)).toEqual(identities);
+ expect(restored.placed).toHaveLength(0);
+ expect(restored.deck).toHaveLength(76);
+});
+test('desktop status moves below controls only when toolbar width is constrained',async({page})=>{
+ await page.setViewportSize({width:1920,height:900});
+ await expect(page.locator('.toolbar')).not.toHaveClass(/status-on-second-row/);
+ await page.setViewportSize({width:1100,height:850});
+ await expect(page.locator('.toolbar')).toHaveClass(/status-on-second-row/);
+ const status=await page.locator('#status').boundingBox();
+ const controls=await page.locator('#newSessionStandalone').boundingBox();
+ expect(status).toBeTruthy();
+ expect(controls).toBeTruthy();
+ expect(status.y).toBeGreaterThan(controls.y);
+ await page.setViewportSize({width:1920,height:900});
+ await expect(page.locator('.toolbar')).not.toHaveClass(/status-on-second-row/);
+});
