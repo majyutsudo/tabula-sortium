@@ -1901,7 +1901,7 @@ function backupMultiWorkspace(){
   workspace=dualClone(dualSession);
   workspace.piles[workspace.activePile]=dualClone(state.deck);
   const t=workspace.tables[workspace.activeTable];
-  t.placed=dualClone(state.placed);t.removed=dualClone(state.removed||[]);
+  t.placed=dualClone(state.placed);t.removed=dualClone(state.removed||[]);t.tablePiles=dualClone(state.tablePiles||[]);
   t.spread=settings.spread;t.cardSize=zoom;
   if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;}
   t.color=settings.color;t.altar=!!settings.altar;
@@ -2086,7 +2086,7 @@ function snapshotPanel(v){
 function snapshotStockForTable(v,source){
  const convert=list=>(list||[]).map(({instanceId,sourceDeck,...card})=>source
   ?{...dualClone(card),instanceId:source+':'+card.id,sourceDeck:source}:dualClone({...card,...(instanceId?{instanceId}:{})}));
- return {deck:convert(v.deck),placed:convert(v.placed),removed:convert(v.removed),
+ return {deck:convert(v.deck),placed:convert(v.placed),removed:convert(v.removed),tablePiles:(v.tablePiles||[]).map(p=>({...dualClone(p),cards:convert(p.cards)})),
   dealCheckpoint:Array.isArray(v.dealCheckpoint)?convert(v.dealCheckpoint):null};
 }
 function snapshotTableSettings(v){
@@ -2104,7 +2104,7 @@ function restoreIndependentTableSnapshot(v){
  const target=candidate.tables[tableId];
  const cardSize=validCardSize(v.settings?.cardSize)?v.settings.cardSize:spreadCardSize(layout.spread);
  Object.assign(target,layout,{placed:stock.placed,removed:stock.removed,dealCheckpoint:stock.dealCheckpoint,
-  selected:null,completionShown:false,cutStage:null,cardSize,savedSettings:{...settings}});
+  tablePiles:stock.tablePiles,selected:null,completionShown:false,cutStage:null,cardSize,savedSettings:{...settings}});
  candidate.piles[source]=stock.deck;
  try{TabulaMultiWorkspace.validate(candidate)}
  catch(e){alert('復元前の確認に失敗しました。卓は変更していません：'+e.message);return}
@@ -4157,12 +4157,12 @@ function independentTableWorkspace(){
  const allowed=new Set(registered?registered.included:cards.map(c=>c.id));
  const idsB=blueprint?TabulaDeckBlueprint.generate(blueprint).map(c=>c.id)
   :TabulaCardRules.selectCards(cards,pool==='included'?'all':pool,cards.map(c=>c.id)).filter(c=>allowed.has(c.id)).map(c=>c.id);
- const physical=[...state.deck,...state.placed,...(state.removed||[])],idsA=physical.map(c=>c.id);
+ const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)],idsA=physical.map(c=>c.id);
  if(!idsB.length||!idsA.length||new Set(idsA).size!==idsA.length)throw Error('山札のカード構成を確認してください。');
  const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(idsA,idsB,{spread:settings.spread}),'table2','追加卓Ⅰ');
  const own=c=>({...c,instanceId:'A:'+c.id,sourceDeck:'A'});
  w.workspaceKind='independent';w.piles.A=state.deck.map(own);
- Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),spread:settings.spread,cardSize:zoom,deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles())});
+ Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),tablePiles:(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)})),spread:settings.spread,cardSize:zoom,deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles())});
  Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),deckId,pool:pool==='included'?'all':pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles())});
  w.piles.B=randomize(w.piles.B.map(c=>({...c,reversed:settings.reversals?Math.random()<.5:false})));
  w.appearances={A:validAppearance(settings.deckAppearance),B:'standard'};
@@ -4180,7 +4180,6 @@ function beginIndependentTable(){
 }
 function isSharedTables(){return !!dualSession&&dualSession.workspaceKind==='single-shared'}
 function sharedTableWorkspace(){
- if((state.tablePiles||[]).length)throw Error('卓上の束を回収してから追加卓を作成してください。');
  const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
  const ids=physical.map(c=>c.id);
  if(!ids.length||ids.length!==new Set(ids).size)throw Error('共有できるカード構成ではありません。');
@@ -4191,6 +4190,7 @@ function sharedTableWorkspace(){
  w.piles.A=state.deck.map(own);
  w.tables.table1.name='メイン卓';w.tables.table1.placed=state.placed.map(own);
  w.tables.table1.removed=(state.removed||[]).map(own);
+ w.tables.table1.tablePiles=(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)}));
  w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
  w.tables.table1.color=settings.color;w.tables.table1.altar=!!settings.altar;
  w.tables.table1.candles=dualClone(altarCandles());
@@ -4240,6 +4240,7 @@ function dualCapture(){
  dualSession.piles[dualSession.activePile]=dualClone(state.deck);
  const t=dualSession.tables[dualSession.activeTable];
  t.placed=dualClone(state.placed);
+ t.tablePiles=dualClone(state.tablePiles||[]);
  t.spread=settings.spread;t.cardSize=zoom;
  if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;t.savedSettings=dualClone(settings);}
  t.color=settings.color;t.altar=!!settings.altar;t.candles=dualClone(altarCandles());
@@ -4253,7 +4254,7 @@ function dualRestoreView(){
  const t=dualSession.tables[dualSession.activeTable];
  if(isIndependentTables()&&t.savedSettings)settings={...settings,...dualClone(t.savedSettings)};
  state={deck:dualClone(dualSession.piles[dualSession.activePile]),placed:dualClone(t.placed||[]),cutStage:dualClone(t.cutStage||null),
- selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[])};
+ selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[]),tablePiles:dualClone(t.tablePiles||[])};
  settings.spread=t.spread||'free';
  if(isIndependentTables()){
   settings.deckId=t.deckId||'builtin';settings.pool=t.pool||'all';
@@ -4485,14 +4486,21 @@ function dualMixOrSeparate(separate){
 function dualCollect(){
  if(!dualSession||dualBusy())return false;
  dualSave();
- const t=dualSession.tables[dualSession.activeTable];
+ const candidate=dualClone(dualSession);
+ const t=candidate.tables[candidate.activeTable];
  for(const c of [...t.placed,...(t.removed||[]),...(t.tablePiles||[]).flatMap(p=>p.cards)]){
-  const destination=dualSession.mixed?'mixed':c.sourceDeck;
-  if(!['A','B','mixed'].includes(destination)){setStatus('所属不明のカードがあるため回収できません。');return false}
-  dualSession.piles[destination].unshift({instanceId:c.instanceId,id:c.id,sourceDeck:c.sourceDeck,reversed:!!c.reversed});
+  const destination=candidate.mixed?'mixed':c.sourceDeck;
+  if(!['A','B','mixed'].includes(destination)||!Array.isArray(candidate.piles[destination])){
+   setStatus('所属不明のカードがあるため回収できません。');return false;
+  }
+  candidate.piles[destination].unshift({instanceId:c.instanceId,id:c.id,sourceDeck:c.sourceDeck,reversed:!!c.reversed});
  }
  t.placed=[];t.removed=[];t.tablePiles=[];t.dealCheckpoint=null;t.selected=null;t.completionShown=false;
- dualRestoreView();dualSave();setStatus('現在の卓のカードを所属する山札へ回収しました。');return true;
+ try{TabulaMultiWorkspace.validate(candidate)}
+ catch(e){setStatus('カードの整合性を確認できず、回収を中止しました：'+e.message);return false}
+ dualSession=candidate;
+ dualRestoreView();dualSave();
+ setStatus('現在の卓のカードを所属する山札へ回収しました。');return true;
 }
 function dualToggle(){
  if(dualBusy())return;
