@@ -64,7 +64,7 @@
    }));
    frames[0]={offset:0,transform:transform(x,y,0,1),filter:'brightness(1)'};
    frames[frames.length-1]={offset:1,...finish};
-   return {duration:mode==='serpentFast'?3900:7800,easing:'linear',frames};
+   return {duration:mode==='serpentFast'?1950:3900,easing:'linear',frames};
   }
   if(mode==='petal'||mode==='petalSoft'||mode==='petalVortex'){
    // Spiral centred on the destination. s=0 is the stock; s=1 is the
