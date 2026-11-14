@@ -69,3 +69,17 @@ test('storage errors propagate to existing UI error handling',()=>{
   const failure={setItem(){throw new Error('quota exceeded')}};
   assert.throws(()=>history.write(failure,'records',[]),/quota exceeded/);
 });
+
+test('reading snapshot preserves physical table piles and card identities',()=>{
+ const state={deck:[{id:'c'}],placed:[],removed:[],dealCheckpoint:null,
+  tablePiles:[{id:'pile-1',role:'foundation',x:48,y:25,slot:0,
+   cards:[{id:'a',instanceId:'A:a'},{id:'b',instanceId:'A:b'}]}]};
+ const snapshot=history.createSnapshot({id:'p',name:'pile',time:'2026-11-14',
+  settings:{spread:'fourSeasons'},state,slots:[],customIds:['a','b','c'],
+  recipeId:'single',cardNames:[]});
+ assert.equal(snapshot.tablePiles.length,1);
+ assert.equal(snapshot.tablePiles[0].role,'foundation');
+ assert.deepEqual(snapshot.tablePiles[0].cards.map(c=>c.instanceId),['A:a','A:b']);
+ state.tablePiles[0].cards.length=0;
+ assert.equal(snapshot.tablePiles[0].cards.length,2);
+});
