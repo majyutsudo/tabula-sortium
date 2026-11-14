@@ -4,7 +4,7 @@
    and a final rotation matching the actual destination card. */
 (function(root){
  'use strict';
- const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petalSoft:'SPIRAL — 緩やかな螺旋',serpent:'PETAL — 蛇行',serpentQuick:'SERPENT — 通常ディール速度'});
+ const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',serpentQuick:'SERPENT — 通常ディール速度',serpent:'PETAL — 蛇行',petalSoft:'SPIRAL — 緩やかな螺旋'});
  function normalize(mode){return mode==='petal'||mode==='petalVortex'?'petalSoft':mode==='serpentFast'?'serpent':Object.hasOwn(MODES,mode)?mode:'standard'}
  function create(mode,{dx,dy,arrivalAngle=0,wind=0,bounds=null}={}){
   mode=normalize(mode);
