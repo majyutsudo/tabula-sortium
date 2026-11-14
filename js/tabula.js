@@ -3602,8 +3602,73 @@ labelSelect.addEventListener('change',()=>{setTableLabelMode(labelSelect.value)}
 const galleryBody=document.createElement('div');galleryBody.className='detail-body';const galleryImage=$('cardGalleryLarge');galleryImage.before(galleryBody);galleryBody.append(galleryImage);const galleryCopy=document.createElement('aside');galleryCopy.id='galleryCardText';galleryCopy.className='detail-copy';galleryCopy.hidden=true;galleryBody.append(galleryCopy);
 const textToggle=document.createElement('button');textToggle.type='button';textToggle.textContent='文章：表示';textToggle.onclick=()=>{detailTextVisible=!detailTextVisible;textToggle.textContent=detailTextVisible?'文章：表示':'文章：非表示';galleryShowLarge(GALLERY.index)};
 const textEdit=document.createElement('button');textEdit.type='button';textEdit.textContent='文章を編集';textEdit.onclick=()=>editCardText(GALLERY.listed[GALLERY.index]);document.querySelector('.gallery-lightbox-bar').append(textToggle,textEdit);
-const textExport=document.createElement('button');textExport.type='button';textExport.textContent='カード文章を書き出す';document.querySelector('.face-preferences').append(textExport);textExport.onclick=()=>downloadJSON({format:'tabula-card-texts',version:1,texts:{...DEFAULT_CARD_TEXTS,...cardTexts}},'TABULA_card_texts.json');
-const textImport=document.createElement('button');textImport.type='button';textImport.textContent='カード文章を読み込む';textExport.after(textImport);const textFile=document.createElement('input');textFile.type='file';textFile.accept='.json,application/json';textFile.hidden=true;textImport.after(textFile);textImport.onclick=()=>textFile.click();textFile.onchange=async()=>{try{const f=textFile.files[0];if(!f)return;const data=JSON.parse(await f.text());if(data.format!=='tabula-card-texts'||!data.texts||Array.isArray(data.texts))throw Error('カード文章のJSONを選択してください。');for(const c of cards){const r=data.texts[c.id];if(typeof r==='string')cardTexts[c.id]={body:r,source:''};else if(r&&typeof r.body==='string')cardTexts[c.id]={body:r.body,source:typeof r.source==='string'?r.source:''};}localStorage.setItem('tabula_card_texts_v1',JSON.stringify(cardTexts));setStatus('カード文章を読み込みました。');if(!$('cardGalleryLightbox').hidden)galleryShowLarge(GALLERY.index);}catch(e){alert(e.message)}finally{textFile.value=''}};
+/* All deck families use one card-ID keyed text store. Keep legacy v1 files
+   readable, but export a complete v2 snapshot including the native Lenormand,
+   playing cards, and every currently saved custom deck. */
+function allCardTextIds(){
+ const ids=new Set(cards.map(c=>c.id));
+ for(const id of Object.keys(TabulaLenormand.defaultTexts))ids.add(id);
+ for(const id of Object.keys(TabulaDeckBlueprint.playingDefaultTexts))ids.add(id);
+ for(const blueprint of [BUILTIN_PLAYING,BUILTIN_LENORMAND,...TabulaDeckBlueprint.load()]){
+  for(const card of TabulaDeckBlueprint.generate(blueprint))ids.add(card.id);
+ }
+ for(const deck of deckLibrary)for(const id of deck.included)ids.add(id);
+ for(const id of Object.keys(cardTexts))ids.add(id);
+ return ids;
+}
+function cardTextExportData(){
+ const defaults={...DEFAULT_CARD_TEXTS,...TabulaDeckBlueprint.playingDefaultTexts,...TabulaLenormand.defaultTexts};
+ const texts={};
+ for(const id of allCardTextIds()){
+  const value=Object.hasOwn(cardTexts,id)?cardTexts[id]:defaults[id];
+  const record=typeof value==='string'?{body:value,source:''}:value;
+  texts[id]={body:typeof record?.body==='string'?record.body:'',source:typeof record?.source==='string'?record.source:''};
+ }
+ return {format:'tabula-card-texts',version:2,exportedAt:new Date().toISOString(),texts};
+}
+function parseImportedCardTexts(data){
+ if(!data||data.format!=='tabula-card-texts'||![1,2].includes(data.version??1)
+  ||!data.texts||typeof data.texts!=='object'||Array.isArray(data.texts))
+  throw Error('TABULAのカード文章JSON（v1／v2）を選択してください。');
+ const entries=Object.entries(data.texts);
+ if(entries.length>10000)throw Error('カード文章の件数が多すぎます。');
+ const imported={};
+ for(const [id,record] of entries){
+  if(!id||id==='__proto__'||id==='constructor'||id==='prototype'||id.length>180)throw Error('カードIDが不正です。');
+  if(typeof record==='string')imported[id]={body:record,source:''};
+  else if(record&&typeof record==='object'&&!Array.isArray(record)&&typeof record.body==='string')
+   imported[id]={body:record.body,source:typeof record.source==='string'?record.source:''};
+  else throw Error('カード「'+id+'」の文章データが不正です。');
+ }
+ if(!entries.length)throw Error('読み込む文章がありません。');
+ return imported;
+}
+const textExport=document.createElement('button');textExport.type='button';textExport.textContent='カード文章を書き出す';
+document.querySelector('.face-preferences').append(textExport);
+textExport.onclick=()=>{
+ try{
+  const payload=cardTextExportData();
+  downloadJSON(payload,'TABULA_card_texts.json');
+  setStatus(Object.keys(payload.texts).length+'枚分のカード文章を書き出しました。');
+ }catch(err){alert('書き出しに失敗しました：'+err.message)}
+};
+const textImport=document.createElement('button');textImport.type='button';textImport.textContent='カード文章を読み込む';
+textExport.after(textImport);
+const textFile=document.createElement('input');textFile.type='file';textFile.accept='.json,application/json';textFile.hidden=true;
+textImport.after(textFile);textImport.onclick=()=>textFile.click();
+textFile.onchange=async()=>{
+ try{
+  const file=textFile.files[0];if(!file)return;
+  const data=JSON.parse(await file.text());
+  const imported=parseImportedCardTexts(data);
+  const next={...cardTexts,...imported};
+  localStorage.setItem('tabula_card_texts_v1',JSON.stringify(next));
+  cardTexts=next;
+  setStatus(Object.keys(imported).length+'枚分のカード文章を読み込みました。ほかのカード文章は保持されています。');
+  if(GALLERY.visible&&!$('cardGalleryLightbox').hidden)galleryShowLarge(GALLERY.index);
+ }catch(err){alert('読み込みに失敗しました：'+err.message)}
+ finally{textFile.value=''}
+};
 
 const enlarge=document.createElement('button');enlarge.id='enlargeSelected';enlarge.type='button';enlarge.textContent='拡大';$('cardControls').append(enlarge);
 function openTableCard(index){
