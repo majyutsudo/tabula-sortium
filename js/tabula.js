@@ -4324,7 +4324,16 @@ function installTableActionSettings(){
  if(shuffleChoice)$('tableShuffleChoiceSlot').append(shuffleChoice);
  if(dealChoice)$('tableDealChoiceSlot').append(dealChoice);
  const dealToggle=$('tableDealOptionsButton'),dealPanel=$('tableDealOptions'),animationChoice=$('dealAnimation');
+ const shortenDealLabels=()=>{
+  if(!dealChoice)return;
+  for(const option of dealChoice.options){
+   option.textContent=option.textContent
+    .replace(/番号順（裏配り）/g,'番号順（裏）')
+    .replace(/番号順（表配り）/g,'番号順（表）');
+  }
+ };
  const syncDealSummary=()=>{
+  shortenDealLabels();
   const dealText=dealChoice?.selectedOptions?.[0]?.textContent?.trim()||'配り方';
   const animationText=animationChoice.selectedOptions?.[0]?.textContent?.split(/[—-]/)[0]?.trim()||'STANDARD';
   dealToggle.textContent=dealText+' · '+animationText;
