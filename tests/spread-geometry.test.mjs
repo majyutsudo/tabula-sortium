@@ -65,3 +65,20 @@ test('irregular custom layouts remain unchanged',()=>{
  const irregular=[{x:10,y:20},{x:25,y:22},{x:45,y:90},{x:70,y:40}];
  assert.equal(JSON.stringify(g.fitGridColumns(irregular,720,100)),JSON.stringify(irregular));
 });
+
+test('whole spread translation preserves relative distances, angles and card identities',()=>{
+ const cards=[
+  {id:'a',x:20,y:30,angle:15,slot:0},
+  {id:'b',x:50,y:60,angle:90,slot:1},
+  {id:'c',x:80,y:70,angle:270,slot:2}
+ ];
+ const delta=g.translatePositions(cards,8,-5);
+ assert.equal(delta.x,8);assert.equal(delta.y,-5);
+ assert.deepEqual(cards.map(c=>[c.x,c.y,c.angle,c.slot,c.id]),[
+  [28,25,15,0,'a'],[58,55,90,1,'b'],[88,65,270,2,'c']
+ ]);
+ assert.equal(cards[1].x-cards[0].x,30);
+ const bounded=g.translatePositions(cards,20,0);
+ assert.equal(bounded.x,12);
+ assert.equal(cards[2].x,100);
+});
