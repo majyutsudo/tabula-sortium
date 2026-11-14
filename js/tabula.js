@@ -2281,11 +2281,36 @@ function restoreSnapshot(v){
  window.scrollTo({top:0,behavior:'instant'});
 }
 
+function registerSpreadFromReading(v){
+ if(!v)return;
+ if(spreadLibrary.length>=100){alert('スプレッド手帖には100件まで登録できます。');return}
+ const suggested=String(v.name||'読み込んだ占例').slice(0,80)+' のスプレッド';
+ const entered=prompt('この占例の配置をスプレッド手帖に登録します。登録名を入力してください。',suggested);
+ if(entered===null)return;
+ const base=entered.trim().slice(0,100);
+ if(!base){alert('スプレッド名を入力してください。');return}
+ let name=base,number=2;
+ while(spreadLibrary.some(p=>p.name===name)){
+  const suffix='（'+number+++'）';
+  name=base.slice(0,100-suffix.length)+suffix;
+ }
+ let item;
+ try{
+  item=TabulaSpreadStore.fromReading(v,'custom_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name);
+ }catch(e){alert('スプレッドを登録できません：'+e.message);return}
+ spreadLibrary.push(item);
+ try{storeSpreadLibrary()}catch(e){
+  spreadLibrary.pop();refreshCustomPresets();
+  alert('スプレッドを保存できませんでした。保存容量を確認してください。');return;
+ }
+ closeModal();openSpreadArchive();
+ setStatus('占例「'+v.name+'」からスプレッド「'+name+'」を登録しました。元の占例と卓は変更していません。');
+}
 function compareModal(){
  if(!snapshots.length){modal('<h2>記録一覧</h2><p>保存した占い結果はまだありません。</p>');return}
- let rows=snapshots.map(v=>`<div class="history-row"><div><b>${escapeHTML(v.name)}</b><div class="mini">${escapeHTML(snapshotSummary(v))} · ${new Date(v.time).toLocaleString('ja-JP')}</div></div><button type="button" data-export="${v.id}">書き出す</button><button type="button" data-rename="${v.id}">名称変更</button><button type="button" data-delete="${v.id}">削除</button></div>`).join('');
+ let rows=snapshots.map(v=>`<div class="history-row"><div><b>${escapeHTML(v.name)}</b><div class="mini">${escapeHTML(snapshotSummary(v))} · ${new Date(v.time).toLocaleString('ja-JP')}</div></div><button type="button" data-export="${v.id}">書き出す</button><button type="button" data-register-spread="${v.id}">スプレッド登録</button><button type="button" data-rename="${v.id}">名称変更</button><button type="button" data-delete="${v.id}">削除</button></div>`).join('');
  let options=snapshots.map(v=>`<option value="${v.id}">${escapeHTML(v.name)}</option>`).join('');
- modal(`<h2>占例の記録一覧</h2><p class="note">まず1件を大きく表示します。比較を有効にすると2件を横に並べます。</p><div class="records-toolbar"><label class="choice"><input type="checkbox" id="compareEnabled"> 2件を比較する</label><span class="mini" id="compareHint">保存した記録を単独表示中</span></div><div class="record-viewport"><div class="snapshot-compare" id="snapshotCompare"><div class="record-a"><label class="field">表示する記録<select id="compareA">${options}</select></label><div id="snapViewA"></div><div class="record-restore"><button type="button" class="primary" id="restoreA">左の占例を卓に復元</button><button type="button" id="exportA">この結果を書き出す</button></div></div><div class="record-b"><label class="field">比較する記録<select id="compareB">${options}</select></label><div id="snapViewB"></div><div class="record-restore"><button type="button" class="primary" id="restoreB">右の占例を卓に復元</button></div></div></div></div><h3>保存済みの占例（${snapshots.length}件）</h3><div>${rows}</div>`);
+ modal(`<h2>占例の記録一覧</h2><p class="note">まず1件を大きく表示します。比較を有効にすると2件を横に並べます。</p><div class="records-toolbar"><label class="choice"><input type="checkbox" id="compareEnabled"> 2件を比較する</label><span class="mini" id="compareHint">保存した記録を単独表示中</span></div><div class="record-viewport"><div class="snapshot-compare" id="snapshotCompare"><div class="record-a"><label class="field">表示する記録<select id="compareA">${options}</select></label><div id="snapViewA"></div><div class="record-restore"><button type="button" class="primary" id="restoreA">左の占例を卓に復元</button><button type="button" id="exportA">この占例を書き出す</button><button type="button" id="registerSpreadA">この占例からスプレッドを登録</button></div></div><div class="record-b"><label class="field">比較する記録<select id="compareB">${options}</select></label><div id="snapViewB"></div><div class="record-restore"><button type="button" class="primary" id="restoreB">右の占例を卓に復元</button></div></div></div></div><h3>保存済みの占例（${snapshots.length}件）</h3><div>${rows}</div>`);
  $('modalBg').classList.add('records-active');
  $('compareB').selectedIndex=Math.min(1,snapshots.length-1);
  const repaint=()=>{
@@ -2296,8 +2321,9 @@ function compareModal(){
   $('snapViewA').innerHTML=snapshotPanel(a);
   $('snapViewB').innerHTML=comparing?snapshotPanel(b):'';
  };
- $('exportA').onclick=()=>exportOne(snapshots.find(v=>v.id===$('compareA').value));$('restoreA').onclick=()=>restoreSnapshot(snapshots.find(v=>v.id===$('compareA').value));$('restoreB').onclick=()=>restoreSnapshot(snapshots.find(v=>v.id===$('compareB').value));$('compareA').onchange=repaint;$('compareB').onchange=repaint;$('compareEnabled').onchange=repaint;repaint();
+ $('registerSpreadA').onclick=()=>registerSpreadFromReading(snapshots.find(v=>v.id===$('compareA').value));$('exportA').onclick=()=>exportOne(snapshots.find(v=>v.id===$('compareA').value));$('restoreA').onclick=()=>restoreSnapshot(snapshots.find(v=>v.id===$('compareA').value));$('restoreB').onclick=()=>restoreSnapshot(snapshots.find(v=>v.id===$('compareB').value));$('compareA').onchange=repaint;$('compareB').onchange=repaint;$('compareEnabled').onchange=repaint;repaint();
  document.querySelectorAll('[data-export]').forEach(b=>b.onclick=()=>exportOne(snapshots.find(x=>x.id===b.dataset.export)));document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{if(!confirm('この結果を削除しますか？'))return;snapshots=snapshots.filter(x=>x.id!==b.dataset.delete);storeSnapshots();compareModal()});
+ document.querySelectorAll('[data-register-spread]').forEach(b=>b.onclick=()=>registerSpreadFromReading(snapshots.find(x=>x.id===b.dataset.registerSpread)));
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
 function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings={cutCount:3,shuffleMethod:'overhand',deckId:settings.deckId,pool:settings.pool,reversalsByDeck:{},cardDesign:settings.cardDesign,spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',initialOrder:'random',quickWashDirection:'random',quickWashRounds:1};recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
