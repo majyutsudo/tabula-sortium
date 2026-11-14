@@ -917,3 +917,45 @@ test('rotated card flight preserves physical aspect ratio and animates its angle
   expect(flight.frames.at(-1)).toContain('rotate(');
  }
 });
+
+
+test('selectable deal animation uses spin and petal trajectories without spread mapping',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('one');
+ for(const [mode,duration] of [['spin',680],['petal',3400]]){
+  await page.locator('#dealAnimation').selectOption(mode);
+  await expect.poll(async()=> (await saved(page,WORKSPACE)).settings.dealAnimation).toBe(mode);
+  await page.reload();
+  await expect(page.locator('#dealAnimation')).toHaveValue(mode);
+  await page.evaluate(()=>{
+   window.__testFlight=null;
+   const animate=Element.prototype.animate;
+   Element.prototype.animate=function(frames,options){
+    if(this.matches('body > .card'))window.__testFlight={
+     duration:options.duration,
+     dimensions:[Number.parseFloat(this.style.width),Number.parseFloat(this.style.height)],
+     end:frames.at(-1).transform,
+     count:frames.length
+    };
+    return animate.call(this,frames,options);
+   };
+  });
+  await page.locator('#quickDeal').click();
+  await expect.poll(()=>page.evaluate(()=>window.__testFlight?.duration),{timeout:8000}).toBe(duration);
+  const flight=await page.evaluate(()=>window.__testFlight);
+  expect(flight.dimensions.every(Number.isFinite)).toBe(true);
+  expect(flight.dimensions[0]).toBeGreaterThan(0);
+  expect(flight.dimensions[1]).toBeGreaterThan(0);
+  expect(flight.end).toContain('calc(-50% + 0px)');
+  expect(flight.count).toBe(mode==='spin'?4:6);
+  await page.waitForTimeout(duration+100);
+  await expect(page.locator('#zone > .card')).toHaveCount(1);
+  // Clearing the table, not switching spreads, prepares a fresh animation.
+  await page.evaluate(key=>{
+   const data=JSON.parse(localStorage.getItem(key));
+   data.state.deck.unshift(...data.state.placed);
+   data.state.placed=[];
+   localStorage.setItem(key,JSON.stringify(data));
+  },WORKSPACE);
+  await page.reload();
+ }
+});
