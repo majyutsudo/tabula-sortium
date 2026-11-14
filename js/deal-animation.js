@@ -13,12 +13,11 @@
   const transform=(px,py,angle,scale=1)=>t(px,py)+' rotate('+angle+'deg) scale('+scale+')';
   const finish={transform:transform(0,0,a),filter:'brightness(1)'};
   if(mode==='spinSlow'){
-   // A short physical throw precedes the levitating spin. The release
-   // travels briskly without rotating; the remainder completes two turns
-   // on one continuous, gently accelerating interpolation.
-   // Per-keyframe easing keeps the release linear (no intermediate stop).
+   // Throw the card halfway to its destination over the first half-second,
+   // then make one continuous turn during the remaining levitating flight.
+   // The final acceleration is unchanged; the launch remains linear.
    const releaseTime=.065; // roughly half a second of the 7.8s flight
-   const releaseDistance=.20; // first fifth of the source-to-target vector
+   const releaseDistance=.50; // halfway to the destination
    return {
     duration:7800,easing:'linear',
     frames:[
@@ -26,7 +25,7 @@
      {offset:releaseTime,
       transform:transform(x*(1-releaseDistance),y*(1-releaseDistance),0,1),
       filter:'brightness(1.04)',easing:'cubic-bezier(.25,.25,.78,.55)'},
-     {offset:1,transform:transform(0,0,720+a),filter:'brightness(1)'}
+     {offset:1,transform:transform(0,0,360+a),filter:'brightness(1)'}
     ]
    };
   }
