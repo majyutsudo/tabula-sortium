@@ -1764,12 +1764,22 @@ function applyDealRemoval(){
 }
 function animateCardFromDeck(index,sourceRect){
  const zone=$('zone');
- // Locate the actual placed card by its data position rather than relying on slot counts.
+ // Use the placed card itself: the destination frame may be rotated, but
+ // its post-transform bounding box must NEVER become the flying card's size.
  const cardsOnTable=Array.from(zone.children).filter(el=>el.classList.contains('card'));
  const card=cardsOnTable[index];if(!card||!sourceRect||!card.animate)return Promise.resolve();
  const end=card.getBoundingClientRect();if(!end.width||!end.height)return Promise.resolve();
  if(card.classList.contains('faceup'))card.classList.add('instant-faceup');
- const ghost=card.cloneNode(true);ghost.style.cssText='position:fixed;pointer-events:none;margin:0;z-index:100000;left:'+end.left+'px;top:'+end.top+'px;width:'+end.width+'px;height:'+end.height+'px;transform:none;';
+ const visualScale=tableCamera.scale||1;
+ const physicalWidth=card.offsetWidth*visualScale;
+ const physicalHeight=card.offsetHeight*visualScale;
+ const angle=Number.parseFloat(getComputedStyle(card).getPropertyValue('--rotation'))||0;
+ // Equivalent angle within [-180,180): a 315-degree destination should
+ // rotate through -45 degrees rather than making almost a full revolution.
+ const arrivalAngle=((angle+180)%360+360)%360-180;
+ const endX=end.left+end.width/2,endY=end.top+end.height/2;
+ const ghost=card.cloneNode(true);
+ ghost.style.cssText='position:fixed;pointer-events:none;margin:0;z-index:100000;left:'+endX+'px;top:'+endY+'px;width:'+physicalWidth+'px;height:'+physicalHeight+'px;transform:translate(-50%,-50%) rotate('+arrivalAngle+'deg);';
  // A cloned card leaves #zone, losing zone-scoped Worn rules. Copy the
  // rendered back directly to the flying face instead of adding new CSS.
  if(card.dataset.appearance==='worn'){
@@ -1784,8 +1794,15 @@ function animateCardFromDeck(index,sourceRect){
  }
  document.body.append(ghost);
  card.style.visibility='hidden';
- const dx=sourceRect.left+sourceRect.width/2-(end.left+end.width/2),dy=sourceRect.top+sourceRect.height/2-(end.top+end.height/2);
- const animation=ghost.animate([{transform:'translate('+dx+'px,'+dy+'px) scale(.96)',filter:'brightness(1.08)'},{offset:.16,transform:'translate('+(dx*.85)+'px,'+(dy*.85-7)+'px) rotate(-3deg) scale(1.025)'},{transform:'translate(0px,0px) rotate(0deg) scale(1)',filter:'brightness(1)'}],{duration:320,easing:'cubic-bezier(.22,.72,.25,1)'});
+ const dx=sourceRect.left+sourceRect.width/2-endX,dy=sourceRect.top+sourceRect.height/2-endY;
+ // The translate is in viewport coordinates; only the card itself rotates.
+ // Keep the card's own aspect ratio unchanged throughout the entire flight.
+ const translate=(x,y)=>'translate(calc(-50% + '+x+'px),calc(-50% + '+y+'px))';
+ const animation=ghost.animate([
+  {transform:translate(dx,dy)+' rotate(0deg) scale(.96)',filter:'brightness(1.08)'},
+  {offset:.16,transform:translate(dx*.85,dy*.85-7)+' rotate('+(-3+arrivalAngle*.16)+'deg) scale(1.025)'},
+  {transform:translate(0,0)+' rotate('+arrivalAngle+'deg) scale(1)',filter:'brightness(1)'}
+ ],{duration:320,easing:'cubic-bezier(.22,.72,.25,1)'});
  return animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility='';card.classList.remove('instant-faceup')});
 }
 // Select a physical card from the current deck and place it at an exact table point.
