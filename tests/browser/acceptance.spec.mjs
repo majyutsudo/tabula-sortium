@@ -1001,8 +1001,10 @@ test('a new reading restores hidden frame outlines',async ({page})=>{
 test('table deal mode and open mode controls persist without changing animation choices',async ({page})=>{
  const deal=page.locator('.table-action-settings #dealAnimation');
  const open=page.locator('.table-action-settings #tableOpenMode');
- await expect(deal).toBeVisible();
+ await expect(page.locator('#tableDealOptionsButton')).toBeVisible();
+ await expect(deal).toBeHidden();
  await expect(open).toBeVisible();
+ await page.locator('#tableDealOptionsButton').click();
  await expect(page.locator('#tableDealChoiceSlot #quickDealChoice')).toBeVisible();
  await deal.selectOption('serpent');
  await open.selectOption('quick');
@@ -1010,6 +1012,8 @@ test('table deal mode and open mode controls persist without changing animation 
  expect(workspace.settings.dealAnimation).toBe('serpent');
  expect(workspace.settings.openMode).toBe('quick');
  await page.reload();
+ await expect(page.locator('#tableDealOptionsButton')).toContainText('PETAL');
+ await page.locator('#tableDealOptionsButton').click();
  await expect(deal).toHaveValue('serpent');
  await expect(open).toHaveValue('quick');
  await expect(page.locator('#quickRevealAll')).toBeVisible();
@@ -1027,16 +1031,18 @@ test('quick opens sequentially, and simultaneous open lifts and flips all cards 
  await page.locator('#quickFaceDown').click();
  await mode.selectOption('all');
  await page.evaluate(()=>{
-  window.__floatingBegins=0;
-  const animate=Element.prototype.animate;
-  Element.prototype.animate=function(frames,options){
-   if(this.classList.contains('card-inner')&&frames.some(f=>String(f.transform).includes('rotateY(105deg)')))
-    window.__floatingBegins++;
-   return animate.call(this,frames,options);
-  };
+  window.__floatingBegins=new Set();
+  const observer=new MutationObserver(records=>{
+   for(const record of records){
+    const node=record.target;
+    if(node.classList?.contains('simultaneous-opening')&&node.classList?.contains('card'))
+     window.__floatingBegins.add(node.dataset.index);
+   }
+  });
+  observer.observe(document.querySelector('#zone'),{subtree:true,attributes:true,attributeFilter:['class']});
  });
  await page.locator('#quickOpen').click();
- await expect.poll(()=>page.evaluate(()=>window.__floatingBegins)).toBe(3);
+ await expect.poll(()=>page.evaluate(()=>window.__floatingBegins.size)).toBe(3);
  await expect.poll(async()=> (await saved(page,WORKSPACE)).state.placed.filter(c=>c.faceUp).length,{timeout:3000}).toBe(3);
  await expect(page.locator('#zone > .card.faceup')).toHaveCount(3);
  await page.reload();
