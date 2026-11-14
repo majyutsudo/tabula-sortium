@@ -28,7 +28,7 @@
    const distance=Math.hypot(x,y);
    const nx=distance>1e-6?-y/distance:0;
    const ny=distance>1e-6?x/distance:1;
-   const cycles=2.15;
+   const cycles=1;
    const baseAmplitude=Math.min(104,distance*.23);
    const direction=(Number(wind)||0)<0?-1:1;
    const count=160;
