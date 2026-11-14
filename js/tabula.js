@@ -1799,7 +1799,13 @@ function animateCardFromDeck(index,sourceRect){
  // Keep the card's own aspect ratio unchanged throughout the entire flight.
  const flight=TabulaDealAnimation.create(
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'standard':settings.dealAnimation,
-  {dx,dy,arrivalAngle,wind:Math.random()*2-1}
+  {dx,dy,arrivalAngle,wind:Math.random()*2-1,
+   bounds:{
+    minX:Math.min(dx,physicalWidth*.68+8-endX),
+    maxX:Math.max(dx,window.innerWidth-physicalWidth*.68-8-endX),
+    minY:Math.min(dy,physicalHeight*.68+8-endY),
+    maxY:Math.max(dy,window.innerHeight-physicalHeight*.68-8-endY)
+   }}
  );
  const animation=ghost.animate(flight.frames,{duration:flight.duration,easing:flight.easing});
  return animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility='';card.classList.remove('instant-faceup')});
