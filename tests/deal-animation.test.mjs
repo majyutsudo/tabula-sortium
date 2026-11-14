@@ -37,7 +37,7 @@ test('SLOW SPIN preserves SPIN path and full turns over SERPENT length',()=>{
   assert.equal(slow.easing,fast.easing);
   assert.equal(slow.frames.length,fast.frames.length);
   assert.equal(JSON.stringify(slow.frames),JSON.stringify(fast.frames));
-  assert.match(slow.frames.at(-1).transform,new RegExp('rotate\\\\('+(720+angle)+'deg\\\\)'));
+  assert.ok(slow.frames.at(-1).transform.includes('rotate('+(720+angle)+'deg)'));
  }
 });
 
