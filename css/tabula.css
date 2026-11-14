@@ -1765,3 +1765,16 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
  .main>.toolbar .toolbar-trailing{display:contents;}
  .shell>.main>.toolbar .toolbar-leading>.status{display:none!important;}
 }
+
+/* v0.544 — Reflow the status message below the controls when the actual
+   available desktop width cannot fit a readable message and all controls. */
+@media(min-width:781px){
+ .main>.toolbar.status-on-second-row .toolbar-leading>.status{
+  order:99;
+  flex:0 0 100%;
+  width:100%;
+  min-width:0;
+  text-align:left;
+  padding-top:2px;
+ }
+}
