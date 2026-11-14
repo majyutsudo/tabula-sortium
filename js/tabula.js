@@ -227,7 +227,7 @@ function applyTableCamera(){
  clampTableCamera();if(!enabled&&desktopTableEnabled()){desktopTablePan={x:tableCamera.x,y:tableCamera.y};}
  $('surface').style.transform=`translate(${tableCamera.x}px,${tableCamera.y}px) scale(${tableCamera.scale})`;
  const label=$('tableZoomLabel');if(label)label.textContent=Math.round(tableCamera.scale*100)+'%';
- $('zoomOut').disabled=zoom<=.8;$('zoomIn').disabled=zoom>=2.3;
+ syncCardSizeButtonState();
 }
 function zoomTableAt(scale,clientX,clientY){
  if(!mobileCameraEnabled())return;
@@ -2853,7 +2853,13 @@ $('quickRevealAll').onclick=revealAllAtOnce;
 $('quickOpen').onclick=openSequentially;$('shuffle').onclick=()=>runRecipe(false);$('manualShuffle').onclick=()=>runRecipe(true);$('shuffleRecipe').onchange=e=>{recipeId=e.target.value;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};$('editRecipe').onclick=recipeEditor;$('deleteRecipe').onclick=()=>{if(recipeId==='single'){setStatus('標準手順は削除できません。');return}recipes=recipes.filter(r=>r.id!==recipeId);recipeId='single';syncRecipes();saveLocal();setStatus('登録した手順を削除しました。')};$('cut').onclick=()=>cutModal(false);$('deal').onclick=dealAuto;$('draw').onclick=()=>drawAt();$('revealAll').onclick=revealAllAtOnce;$('faceDown').onclick=()=>{state.placed.forEach(p=>p.faceUp=false);state.completionShown=false;render();saveLocal()};$('resetLayout').onclick=()=>{if(!state.placed.length){setStatus('戻すカードがありません。');return}modal('<h2>配札を戻す</h2><p class="note">卓上のカードを山札へ戻しますか？</p><div class="row"><button type="button" id="returnCancel">キャンセル</button><button type="button" class="primary" id="returnConfirm">山札に戻す</button></div>');$('returnCancel').onclick=closeModal;$('returnConfirm').onclick=()=>{state.deck=[...state.placed.map(TabulaPhysicalIdentity.preserveCard),...TabulaTablePiles.collect(state).map(TabulaPhysicalIdentity.preserveCard),...state.deck];state.placed=[];state.selected=null;state.dealCheckpoint=null;closeModal();render();saveLocal();setStatus('配札を山札に戻しました。')}};$('exportCurrent').onclick=exportCurrentReading;$('exportAll').onclick=exportAllData;$('importExternal').onclick=()=>{$('externalFile').click()};$('externalFile').onchange=e=>{const f=e.target.files?.[0];e.target.value='';readExternalFile(f)};$('snapshotSave').onclick=saveSnapshotModal;$('quickSnapshotSave').onclick=saveSnapshotModal;$('quickSnapshotList').onclick=compareModal;$('snapshotAgain').onclick=saveAndAgain;$('snapshotList').onclick=compareModal;$('resetSettings').onclick=resetSettingsAction;$('resetEverything').onclick=resetEverythingAction;$('save').onclick=()=>{saveLocal();setStatus('現在の卓をブラウザー内に保存しました。')};$('restore').onclick=restoreLocal;$('modalClose').onclick=closeModal;$('modalBg').onclick=e=>{ /* 背景クリックでは閉じない。入力欄のテキスト選択・ドラッグ時の誤終了を防ぐ。 */ };function defaultCardSize(){return window.innerWidth<=780?1.75:1.3}
 const validCardSize=TabulaStorage.validCardSize;
 const {builtinSpreadCardSizes}=TabulaCatalog;function spreadCardSize(id){const stored=spreadLibrary.find(v=>v.id===id);if(validCardSize(stored?.cardSize))return stored.cardSize;const built=builtinSpreadCardSizes[id];if(built)return window.innerWidth<=780?built.mobile:built.desktop;return defaultCardSize()}
-function updateCardSizeQuickValue(){const label=$('cardSizeQuickValue');if(label)label.textContent=Math.round(zoom*100)+'%';}function setCardSize(value,persist=true){zoom=validCardSize(value)?value:defaultCardSize();updateCardSizeQuickValue();for(const id of ['cardSizeScale','spreadCardSize']){const input=$(id);if(input)input.value=zoom;}if(persist){settings.cardSize=zoom;try{localStorage.setItem('tabula_card_size_v2',String(zoom))}catch(e){}}}
+function syncCardSizeButtonState(){
+ const minus=$('zoomOut'),plus=$('zoomIn'),reset=$('zoomReset');
+ if(minus)minus.disabled=zoom<=.800001;
+ if(plus)plus.disabled=zoom>=2.299999;
+ if(reset)reset.disabled=false;
+}
+function updateCardSizeQuickValue(){const label=$('cardSizeQuickValue');if(label)label.textContent=Math.round(zoom*100)+'%';}function setCardSize(value,persist=true){zoom=validCardSize(value)?value:defaultCardSize();updateCardSizeQuickValue();syncCardSizeButtonState();for(const id of ['cardSizeScale','spreadCardSize']){const input=$(id);if(input)input.value=zoom;}if(persist){settings.cardSize=zoom;try{localStorage.setItem('tabula_card_size_v2',String(zoom))}catch(e){}}}
 function applySpreadCardSize(id,persist=true){setCardSize(spreadCardSize(id),persist)}
 
 /* Card magnification is distinct from the table-camera zoom. One shared entry
@@ -2876,9 +2882,9 @@ function bindCardSizeControls(){
   const button=$(id);
   if(!button)throw Error('カードサイズ操作ボタンが見つかりません：'+id);
   button.type='button';
-  button.disabled=false;
   button.onclick=event=>{event.preventDefault();action()};
  }
+ syncCardSizeButtonState();
 }
 bindCardSizeControls();const deck=$('deck');
 const deckB=document.createElement('div');deckB.id='deckB';deckB.className='deck dual-second-deck';deckB.title='デッキB：クリックで配札、ドラッグで配札';deckB.hidden=true;
