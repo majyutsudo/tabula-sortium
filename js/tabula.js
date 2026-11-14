@@ -188,7 +188,11 @@ function getWorkbenchCircleBounds(count){const rect=$('zone').getBoundingClientR
 const describeCircleFacing=TabulaSpreadGeometry.describeCircleFacing;
 const circleFacingAngle=TabulaSpreadGeometry.circleFacingAngle;
 function updateSpreadCircleUi(){const w=spreadWorkbench,status=$('spreadCircleStatus'),sel=$('spreadCircleFacing');if(!status||!sel)return;if(!w){status.textContent='円形整列：未実行';return}const facing=(w.circle&&w.circle.facing)||sel.value||'radial';sel.value=facing;if(!w.circle||!w.circle.active){status.textContent='円形整列：未実行';return}const radius=Math.round(Number(w.circle.radiusPx)||0);const rotation=Math.round(normalizeAngle(w.circle.rotation||0));status.textContent=`円形整列：半径 ${radius}px ／ 回転 ${rotation}° ／ ${describeCircleFacing(facing)}`;}
-function applyWorkbenchCircle(opts={}){const w=spreadWorkbench;if(!w)return;const arr=state.placed,chosen=workbenchTargets();if(!chosen.length)return;const rect=$('zone').getBoundingClientRect();if(!w.circle)w.circle={active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')};const bounds=getWorkbenchCircleBounds(chosen.length);if(opts.facing)w.circle.facing=opts.facing;if(!w.circle.active||opts.auto||!Number.isFinite(Number(w.circle.radiusPx))){w.circle.radiusPx=bounds.initial;if(!Number.isFinite(Number(w.circle.rotation)))w.circle.rotation=0;}if(typeof opts.radiusDelta==='number')w.circle.radiusPx=Number(w.circle.radiusPx||bounds.initial)+opts.radiusDelta;if(typeof opts.rotationDelta==='number')w.circle.rotation=normalizeAngle((Number(w.circle.rotation)||0)+opts.rotationDelta);w.circle.radiusPx=Math.max(bounds.min,Math.min(bounds.max,Number(w.circle.radiusPx)||bounds.initial));w.circle.active=true;TabulaSpreadGeometry.placeOnCircle(arr,chosen,w.circle.radiusPx,w.circle.rotation,w.circle.facing,rect.width,rect.height);updateSpreadCircleUi();render()}
+function applyWorkbenchCircle(opts={}){const w=spreadWorkbench;if(!w)return;const arr=state.placed,chosen=workbenchTargets();if(!chosen.length)return;const rect=$('zone').getBoundingClientRect();if(!w.circle)w.circle={active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')};const bounds=getWorkbenchCircleBounds(chosen.length);if(opts.facing)w.circle.facing=opts.facing;if(!w.circle.active||opts.auto||!Number.isFinite(Number(w.circle.radiusPx))){w.circle.radiusPx=bounds.initial;if(!Number.isFinite(Number(w.circle.rotation)))w.circle.rotation=0;}if(typeof opts.radiusDelta==='number')w.circle.radiusPx=Number(w.circle.radiusPx||bounds.initial)+opts.radiusDelta;if(typeof opts.rotationDelta==='number')w.circle.rotation=normalizeAngle((Number(w.circle.rotation)||0)+opts.rotationDelta);w.circle.radiusPx=Math.max(bounds.min,Math.min(bounds.max,Number(w.circle.radiusPx)||bounds.initial));w.circle.active=true;
+ TabulaSpreadGeometry.placeOnCircle(arr,chosen,w.circle.radiusPx,w.circle.rotation,w.circle.facing,rect.width,rect.height);
+ const offsetX=Number(w.circle.offsetX)||0,offsetY=Number(w.circle.offsetY)||0;
+ if(offsetX||offsetY)TabulaSpreadGeometry.translatePositions(chosen.map(i=>arr[i]),offsetX,offsetY);
+ updateSpreadCircleUi();render()}
 function refreshWorkbench(){const w=spreadWorkbench;if(!w)return;$('spreadWorkbenchHint').textContent=w.chosen.length===state.placed.length?'番号付け完了。名前や配置を調整して登録できます。':`${w.chosen.length+1}番にするカードをタップ（${w.chosen.length}/${state.placed.length}）`;updateSpreadCircleUi();const fields=$('spreadWorkbenchFields');fields.replaceChildren();const title=document.createElement('label');title.textContent='名前';const ti=document.createElement('input');ti.value=w.title;ti.placeholder='スプレッド名';ti.oninput=()=>w.title=ti.value;title.append(ti);fields.append(title);const sizeLabel=document.createElement('label');sizeLabel.textContent='カードサイズ';const sizeInput=document.createElement('input');sizeInput.type='range';sizeInput.id='spreadCardSize';sizeInput.min='.8';sizeInput.max='2.3';sizeInput.step='.05';sizeInput.value=zoom;sizeInput.setAttribute('aria-label','スプレッドに保存するカードサイズ');sizeInput.oninput=()=>{setCardSize(Number(sizeInput.value));render();applyTableCamera()};sizeLabel.append(sizeInput);fields.append(sizeLabel);const appendPosition=(index,number)=>{
  const row=document.createElement('div');row.className='spread-workbench-position-row';
  const label=document.createElement('label');label.textContent=number===null?'未採番':(number+1)+'番';
@@ -214,6 +218,23 @@ function refreshWorkbench(){const w=spreadWorkbench;if(!w)return;$('spreadWorkbe
 };
 w.chosen.forEach((index,i)=>appendPosition(index,i));
 state.placed.forEach((_,index)=>{if(!w.chosen.includes(index))appendPosition(index,null)});}
+function translateWorkbench(direction){
+ const w=spreadWorkbench,positions=state.placed;
+ if(!w||!positions.length)return;
+ const zone=$('zone').getBoundingClientRect(),step=Number($('spreadTranslateStep').value)||12;
+ if(!(zone.width>0&&zone.height>0))return;
+ const dx=direction==='left'?-step/zone.width*100:direction==='right'?step/zone.width*100:0;
+ const dy=direction==='up'?-step/zone.height*100:direction==='down'?step/zone.height*100:0;
+ const moved=TabulaSpreadGeometry.translatePositions(positions,dx,dy);
+ if(w.circle?.active){
+  w.circle.offsetX=(Number(w.circle.offsetX)||0)+moved.x;
+  w.circle.offsetY=(Number(w.circle.offsetY)||0)+moved.y;
+ }
+ render();
+}
+for(const direction of ['Left','Up','Down','Right']){
+ $('spreadTranslate'+direction).addEventListener('click',()=>translateWorkbench(direction.toLowerCase()));
+}
 function workbenchAlign(kind){const w=spreadWorkbench;if(!w)return;const arr=state.placed,chosen=workbenchTargets();if(!chosen.length)return;if(kind==='circle'){applyWorkbenchCircle({auto:true});return}TabulaSpreadGeometry.alignPositions(chosen.map(i=>arr[i]),kind);if(w.circle)w.circle.active=false;updateSpreadCircleUi();render()}
 function spreadEnd(restore=true){if(!spreadWorkbench)return;const previousCardSize=spreadWorkbench.previousCardSize;if(spreadWorkbench.savedSession)state=spreadWorkbench.savedSession;else if(restore)state.placed=spreadWorkbench.original;spreadWorkbench=null;setCardSize(previousCardSize);document.body.classList.remove('spread-workbench-active');$('spreadWorkbench').hidden=true;$('zone').classList.remove('spread-grid');updateSpreadCircleUi();render();saveLocal()}
 $('spreadUndoNumber').onclick=()=>{if(spreadWorkbench){spreadWorkbench.chosen.pop();refreshWorkbench();render()}};
