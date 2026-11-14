@@ -51,3 +51,15 @@ test('restore requires the same full inventory with no duplicate cards',()=>{
   assert.equal(storage.matchesDeck({...reading,dealCheckpoint:[{id:'joker'}]},substitute),false);
   assert.equal(storage.matchesDeck({...reading,dealCheckpoint:[{id:'c_hearts_r1'},{id:'c_hearts_r1'}]},substitute),false);
 });
+
+test('pile-only readings count all cards when checking deck compatibility',()=>{
+ const cards=['a','b','c'].map(id=>({id}));
+ const reading={deck:[{id:'c'}],placed:[],removed:[],
+  tablePiles:[{id:'pile-1',x:48,y:35,role:'foundation',slot:0,cards:[{id:'a'},{id:'b'}]}]};
+ assert.equal(storage.validateReading(reading,cards),true);
+ assert.equal(storage.matchesDeck(reading,cards),true);
+ assert.equal(storage.matchesDeck({...reading,tablePiles:[{...reading.tablePiles[0],cards:[{id:'a'}]}]},cards),false);
+ assert.equal(storage.matchesDeck({...reading,tablePiles:[{...reading.tablePiles[0],cards:[{id:'a'},{id:'a'}]}]},cards),false);
+ assert.equal(storage.validateReading({...reading,tablePiles:[{...reading.tablePiles[0],cards:[{id:'unknown'}]}]},cards),false);
+ assert.equal(storage.validateReading({...reading,tablePiles:[reading.tablePiles[0],reading.tablePiles[0]]},cards),false);
+});
