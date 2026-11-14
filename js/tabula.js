@@ -536,6 +536,7 @@ function sortPhysicalCards(items,mode,deckId=settings.deckId){
   setStatus('現在の卓で新しい占いを始めました。山札 '+state.deck.length+'枚。他の卓の配札は維持されています。');
   return;
  }
+ setFrameVisibility(true,false);
  state={deck:(settings.initialOrder==='random'
   ?randomize(TabulaPhysicalIdentity.nextReading(state,selectedCards(),{reversals:settings.reversals}))
   :sortPhysicalCards(TabulaPhysicalIdentity.nextReading(state,selectedCards()),settings.initialOrder)),
