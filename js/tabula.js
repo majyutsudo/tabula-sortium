@@ -1559,10 +1559,10 @@ function renderTablePiles(zone,m){
 
   }else{
    const empty=document.createElement('span');empty.className='table-pile-empty';
-   empty.textContent=anchoredSlot?(settings.spread==='fourSeasons'&&pile.slot>=6?'空き位置 · 札を重ねる':'空き位置 · クリックで補充'):'ここへ札を重ねる';
+   empty.textContent=''; // A bare frame is sufficient; keep interaction guidance in tooltips and the future help sheet.
    if(anchoredSlot&&!(settings.spread==='fourSeasons'&&pile.slot>=6)){
     empty.classList.add('refill-ready');
-    empty.title='山札からこの位置に1枚補充';
+    empty.title='山札からこの位置に1枚補充';empty.setAttribute('aria-label','山札からこの位置に1枚補充');empty.setAttribute('role','button');empty.tabIndex=0;empty.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();empty.click()}});
     empty.addEventListener('click',event=>{
      event.preventDefault();event.stopPropagation();
      if(!state.deck.length){setStatus('山札にカードがありません。');return}
