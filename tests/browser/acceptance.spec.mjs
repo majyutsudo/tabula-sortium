@@ -1073,3 +1073,43 @@ test('non-Tarot inspection and enlargement show the same explanatory text as the
   await page.locator('#modalBg #modalClose').click();
  }
 });
+
+test('deal action editor omits direct execute button',async ({page})=>{
+ await page.getByRole('button',{name:'手順を編集'}).click();
+ await expect(page.getByRole('heading',{name:'ディール・アクション'})).toBeVisible();
+ await expect(page.getByRole('button',{name:/卓上に実行/})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'閉じる'}).last()).toBeVisible();
+});
+
+test('independent refill and compact shortcuts persist per spread and do not overlap',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('three');
+ await expect(page.locator('#quickRefillAction')).toBeHidden();
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
+ const compact=page.locator('#compactShortcutVisibility');
+ const refill=page.locator('#refillShortcutVisibility');
+ await expect(compact).toBeVisible();
+ await expect(refill).toBeVisible();
+ await refill.check();
+ await expect(page.locator('#quickRefillAction')).toBeHidden();
+ await page.locator('#placementTools > button[aria-label="配置設定を閉じる"]').click();
+ await expect(page.locator('#quickRefillAction')).toBeVisible();
+ await expect(page.locator('#quickCompactAction')).toBeHidden();
+ let workspace=await saved(page,WORKSPACE);
+ expect(workspace.settings.refillShortcutVisibility.three).toBe(true);
+ await page.reload();
+ await expect(page.locator('#quickRefillAction')).toBeVisible();
+ await page.locator('#placementTools > button[aria-label="配置設定を開く"]').click();
+ await compact.check();
+ await page.locator('#placementTools > button[aria-label="配置設定を閉じる"]').click();
+ await expect(page.locator('#quickCompactAction')).toBeVisible();
+ await expect(page.locator('#quickRefillAction')).toBeVisible();
+ const rects=await page.evaluate(()=>['quickCompactAction','quickRefillAction'].map(id=>{
+  const r=document.getElementById(id).getBoundingClientRect();
+  return {top:r.top,bottom:r.bottom};
+ }));
+ expect(rects[1].bottom).toBeLessThan(rects[0].top);
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await expect(page.locator('#quickRefillAction')).toBeHidden();
+ await page.locator('#spreadQuickSelect').selectOption('three');
+ await expect(page.locator('#quickRefillAction')).toBeVisible();
+});
