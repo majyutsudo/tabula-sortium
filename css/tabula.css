@@ -1714,3 +1714,23 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .front .lenormand-face-svg,.gallery-blueprint-inner .lenormand-face-svg,.blueprint-card-view .lenormand-face-svg{display:block;width:100%;height:100%;pointer-events:none;user-select:none;flex:none}
 .gallery-blueprint-inner:has(> .lenormand-face-svg){padding:0!important;gap:0!important;border:0!important;background:#f7e8c5!important}
 .gallery-blueprint-inner:has(> .lenormand-face-svg):before{display:none!important}
+
+/* v0.529 — restrained, collapsible deck introduction in the gallery. */
+#galleryDeckIntro[hidden],#galleryDeckIntroEditor[hidden]{display:none!important}
+.gallery-deck-intro,.gallery-deck-intro-actions,.gallery-deck-intro-editor{max-width:1200px;margin-left:auto;margin-right:auto;box-sizing:border-box}
+.gallery-deck-intro{border-block:1px solid #655b43;margin-bottom:3px;padding:3px 0}
+.gallery-deck-intro-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px;border:0;background:transparent;box-shadow:none;color:#d4bd8e;text-align:left;font:600 15px/1.45 'Yu Mincho','Hiragino Mincho ProN',serif;cursor:pointer}
+.gallery-deck-intro-toggle:hover{background:#ffffff08}
+.gallery-deck-intro-toggle>span:last-child{font:20px/1 sans-serif;color:#a48d61}
+.gallery-deck-intro-body{padding:3px 5px 13px}
+.gallery-deck-intro-body p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#e4d9c5;font:14px/1.95 'Yu Mincho','Hiragino Mincho ProN',serif}
+.gallery-deck-intro-actions{display:flex;justify-content:flex-end;margin-bottom:17px}
+.gallery-deck-intro-actions button{background:transparent;border:0;box-shadow:none;color:#b6a47d;padding:5px 4px;font:12px/1.4 sans-serif;text-decoration:underline;cursor:pointer}
+.gallery-deck-intro-editor{padding:14px;margin-top:-9px;margin-bottom:21px;border:1px solid #695c42;border-radius:6px;background:#222821}
+.gallery-deck-intro-editor>label{display:block;margin-bottom:8px;color:#e4cfaa;font:13px sans-serif}
+.gallery-deck-intro-editor textarea{display:block;width:100%;box-sizing:border-box;min-height:110px;resize:vertical;padding:10px;background:#151d18;border:1px solid #776746;border-radius:4px;color:#eee2cb;font:14px/1.7 'Yu Mincho',serif}
+.gallery-deck-intro-editor-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:12px}
+.gallery-deck-intro-editor-actions button{font:12px sans-serif}
+.gallery-deck-intro-editor-actions #galleryDeckIntroSave{background:#5c5239;color:#fff0d2;border-color:#b79b63}
+.gallery-deck-intro-editor-status{margin:8px 0 0;color:#dfc89e;font:12px sans-serif}
+@media(max-width:500px){.gallery-deck-intro-toggle{font-size:14px}.gallery-deck-intro-body p{font-size:13px}.gallery-deck-intro-editor{padding:10px}}
