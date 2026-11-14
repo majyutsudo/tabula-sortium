@@ -634,7 +634,8 @@ function initializePresetFrames(target,spreadId){
  });
 }
 function getSlots(){
- const slots=presets[settings.spread]||[];
+ // Responsive projections must never mutate shared preset definitions.
+ const slots=(presets[settings.spread]||[]).map(slot=>({...slot}));
  // Mobile Grand Tableau: make horizontal and vertical edge gaps equal in pixels.
  // Use actual rendered card dimensions rather than percentage-point guesses.
  if(window.innerWidth<=780&&(settings.spread==='grandTableau8'||settings.spread==='grandTableau9')){
