@@ -3879,6 +3879,26 @@ function installTableToolLayout(){
  leading.append(sizeControls);
  trailing.append(mobileActions);
  toolbar.append(leading,trailing);
+ // Observe actual control widths, not a fixed viewport breakpoint: when the
+ // controls need the available row, move the status to a left-aligned final row.
+ const status=$('status');
+ const controls=[...leading.children,...mobileActions.children].filter(node=>node!==status);
+ const syncStatusWrap=()=>{
+  if(window.innerWidth<=780){toolbar.classList.remove('status-on-second-row');return}
+  const style=getComputedStyle(toolbar);
+  const gap=parseFloat(style.columnGap)||7;
+  const available=toolbar.clientWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0);
+  const widths=controls.filter(node=>getComputedStyle(node).display!=='none'&&!node.hidden)
+   .map(node=>node.getBoundingClientRect().width);
+  // Reserve a readable message area. The buttons continue to wrap freely.
+  const required=widths.reduce((sum,width)=>sum+width,0)+gap*widths.length+180;
+  toolbar.classList.toggle('status-on-second-row',required>available);
+ };
+ const toolbarObserver=new ResizeObserver(syncStatusWrap);
+ toolbarObserver.observe(toolbar);
+ for(const node of controls)toolbarObserver.observe(node);
+ window.addEventListener('resize',syncStatusWrap);
+ syncStatusWrap();
  updateCardSizeQuickValue();
  const onResize=()=>{fit.hidden=!mobileCameraEnabled();};window.addEventListener('resize',onResize);onResize();
  applyTableCamera();
