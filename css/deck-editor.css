@@ -90,3 +90,7 @@
 .lenormand-direct-editor-active .lenormand-editor-number{font:14px Georgia,serif;color:#dfc79f;text-align:center;font-variant-numeric:tabular-nums}
 .lenormand-direct-editor-active #lenormandEditorDelete[hidden]{display:none}
 @media(max-width:600px){.lenormand-direct-editor-active .lenormand-editor-row{grid-template-columns:23px 34px minmax(0,1fr)}}
+
+/* Descriptions share the same visual rhythm in TAROT, PLAYING and LENORMAND editors. */
+.tarot-deck-editor-active :is(#deckEditorDescription,#playingEditorDescription,#lenormandEditorDescription){box-sizing:border-box;width:100%;min-height:78px;resize:vertical;padding:9px 10px;background:#17211c;color:#eee3cd;border:1px solid #897753;border-radius:4px;font:14px/1.65 'Yu Mincho',serif}
+@media(max-width:600px){.tarot-deck-editor-active :is(#deckEditorDescription,#playingEditorDescription,#lenormandEditorDescription){font-size:16px}}
