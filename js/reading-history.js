@@ -15,6 +15,7 @@ function createSnapshot(input){
   return {
     id,name,time,settings:{...settings},
     placed:JSON.parse(JSON.stringify(state.placed)),
+    tablePiles:JSON.parse(JSON.stringify(state.tablePiles||[])),
     ...(cardNames ? {cardNames:[...cardNames]} : {}),
     slots:JSON.parse(JSON.stringify(slots)),
     deckRemaining:state.deck.length,
