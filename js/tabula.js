@@ -2997,6 +2997,77 @@ function setCardArtwork(target,source){
 }
 
 const GALLERY={visible:false,listed:[],focus:null,index:0,deckId:'builtin'};
+
+/* Deck introductions are independent of card-level explanations.
+   Built-ins retain their fixed defaults; text overrides and fold state are
+   separate browser preferences. Custom decks store description with the deck. */
+const BUILTIN_DECK_INTROS=Object.freeze({
+ simple:'78枚のタロットを、簡潔な図像で表したデッキ。大アルカナ22枚と小アルカナ56枚を収録し、カードの配置と象徴を読みやすくしたものです。',
+ builtin:'ウェイト＝スミス版の図像体系を踏まえた78枚のタロット。大アルカナ22枚と小アルカナ56枚からなり、物語性のある風景と象徴を描いています。',
+ [BUILTIN_PLAYING.id]:'フランス式の4スートからなる52枚のプレイングカードに、ジョーカー2枚を加えたデッキ。通常のトランプとしても、伝統的なカード占いにも使用できます。',
+ [BUILTIN_LENORMAND.id]:'人物、動物、植物、建物や道具を描いた36枚のプチ・ルノルマン。複数の札の組み合わせや位置関係から、人物・出来事・状況を読み解きます。'
+});
+const DECK_INTRO_OVERRIDES_KEY='tabula_deck_intro_overrides_v1';
+const DECK_INTRO_FOLDS_KEY='tabula_deck_intro_folds_v1';
+function readDeckIntroMap(key){
+ try{const v=JSON.parse(localStorage.getItem(key)||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch{return {}}
+}
+let deckIntroOverrides=readDeckIntroMap(DECK_INTRO_OVERRIDES_KEY);
+let deckIntroFolds=readDeckIntroMap(DECK_INTRO_FOLDS_KEY);
+function deckIntroText(id=GALLERY.deckId){
+ if(Object.hasOwn(BUILTIN_DECK_INTROS,id))
+  return Object.hasOwn(deckIntroOverrides,id)?String(deckIntroOverrides[id]??''):BUILTIN_DECK_INTROS[id];
+ const blueprint=blueprintFor(id);
+ if(blueprint)return typeof blueprint.description==='string'?blueprint.description:'';
+ const deck=deckLibrary.find(d=>d.id===id);
+ return typeof deck?.description==='string'?deck.description:'';
+}
+function saveDeckIntroText(id,value){
+ if(Object.hasOwn(BUILTIN_DECK_INTROS,id)){
+  const next={...deckIntroOverrides,[id]:value};
+  localStorage.setItem(DECK_INTRO_OVERRIDES_KEY,JSON.stringify(next));
+  deckIntroOverrides=next;
+  return;
+ }
+ const blueprint=blueprintFor(id);
+ if(blueprint){
+  TabulaDeckBlueprint.save({...blueprint,description:value});
+  return;
+ }
+ const deck=deckLibrary.find(d=>d.id===id);
+ if(!deck)throw Error('保存先のデッキが見つかりません。');
+ const previous=deck.description;
+ deck.description=value;
+ if(!storeDeckLibrary()){
+  if(previous===undefined)delete deck.description;else deck.description=previous;
+  throw Error('デッキの保存に失敗しました。');
+ }
+}
+function galleryDeckIntroRender(){
+ const id=GALLERY.deckId,text=deckIntroText(id).trim();
+ const intro=$('galleryDeckIntro'),body=$('galleryDeckIntroBody'),toggle=$('galleryDeckIntroToggle');
+ intro.hidden=!text;
+ $('galleryDeckIntroText').textContent=text;
+ const expanded=deckIntroFolds[id]!==true;
+ body.hidden=!expanded;
+ toggle.setAttribute('aria-expanded',String(expanded));
+ $('galleryDeckIntroChevron').textContent=expanded?'⌃':'⌄';
+ $('galleryDeckIntroEdit').textContent=text?'解説を編集':'解説を追加';
+ $('galleryDeckIntroDefault').hidden=!Object.hasOwn(BUILTIN_DECK_INTROS,id);
+}
+function galleryDeckIntroEditorClose(){
+ $('galleryDeckIntroEditor').hidden=true;
+ $('galleryDeckIntroEdit').setAttribute('aria-expanded','false');
+ $('galleryDeckIntroStatus').textContent='';
+}
+function galleryDeckIntroEditorOpen(){
+ $('galleryDeckIntroInput').value=deckIntroText();
+ $('galleryDeckIntroEditor').hidden=false;
+ $('galleryDeckIntroEdit').setAttribute('aria-expanded','true');
+ $('galleryDeckIntroStatus').textContent='';
+ $('galleryDeckIntroInput').focus();
+}
+
 const tarotGalleryFilters=Array.from($('cardGalleryFilter').options,o=>[o.value,o.text]);
 const playingGalleryFilters=[['all','全54枚'],['pip','数札40枚'],['court','人物札12枚'],
  ['joker','ジョーカー2枚'],...BUILTIN_PLAYING.suits.map(s=>[s.id,s.name+'13枚'])];
@@ -3133,7 +3204,7 @@ function galleryShowLarge(index,origin){
  $('cardGalleryLightbox').hidden=false;
 }
 function galleryRender(){
- galleryFilters();GALLERY.listed=gallerySelection();
+ galleryFilters();galleryDeckIntroRender();GALLERY.listed=gallerySelection();
  const total=galleryBlueprint()?TabulaDeckBlueprint.generate(galleryBlueprint()).length:galleryDeck()?.included.length||78;
  $('cardGalleryCount').textContent=GALLERY.listed.length+' / '+total+'枚';
  const root=$('cardGalleryGrid');root.replaceChildren();
@@ -3160,14 +3231,39 @@ function galleryOpen(){
 function galleryClose(){
  if(!GALLERY.visible)return;
  if(!$('cardGalleryLightbox').hidden)galleryCloseLarge();
+ galleryDeckIntroEditorClose();
  GALLERY.visible=false;$('cardGallery').hidden=true;document.body.classList.remove('gallery-open');$('cardGalleryOpen').focus();
 }
 $('cardGalleryOpen').addEventListener('click',galleryOpen);
 $('cardGalleryClose').addEventListener('click',galleryClose);
 $('cardGalleryDeck').addEventListener('change',()=>{
- GALLERY.deckId=$('cardGalleryDeck').value;galleryCloseLarge();galleryRender();
+ GALLERY.deckId=$('cardGalleryDeck').value;galleryCloseLarge();galleryDeckIntroEditorClose();galleryRender();
 });
 $('cardGalleryFilter').addEventListener('change',()=>{galleryCloseLarge();galleryRender()});
+
+$('galleryDeckIntroToggle').addEventListener('click',()=>{
+ const id=GALLERY.deckId,folded=$('galleryDeckIntroToggle').getAttribute('aria-expanded')==='true';
+ const next={...deckIntroFolds,[id]:folded};
+ try{localStorage.setItem(DECK_INTRO_FOLDS_KEY,JSON.stringify(next));deckIntroFolds=next}
+ catch{deckIntroFolds=next}
+ galleryDeckIntroRender();
+});
+$('galleryDeckIntroEdit').addEventListener('click',()=>{
+ if($('galleryDeckIntroEditor').hidden)galleryDeckIntroEditorOpen();
+ else galleryDeckIntroEditorClose();
+});
+$('galleryDeckIntroCancel').addEventListener('click',galleryDeckIntroEditorClose);
+$('galleryDeckIntroDefault').addEventListener('click',()=>{
+ $('galleryDeckIntroInput').value=BUILTIN_DECK_INTROS[GALLERY.deckId]||'';
+});
+$('galleryDeckIntroSave').addEventListener('click',()=>{
+ const value=$('galleryDeckIntroInput').value.trim();
+ try{
+  saveDeckIntroText(GALLERY.deckId,value);
+  galleryDeckIntroEditorClose();galleryDeckIntroRender();
+ }catch(err){$('galleryDeckIntroStatus').textContent='保存できませんでした：'+(err?.message||err)}
+});
+
 $('cardGalleryBack').addEventListener('click',galleryCloseLarge);
 $('cardGalleryPrev').addEventListener('click',()=>galleryShowLarge(GALLERY.index-1));
 $('cardGalleryNext').addEventListener('click',()=>galleryShowLarge(GALLERY.index+1));
