@@ -1042,3 +1042,33 @@ test('quick opens sequentially, and simultaneous open lifts and flips all cards 
  await page.reload();
  await expect(mode).toHaveValue('all');
 });
+
+test('non-Tarot inspection and enlargement show the same explanatory text as the atlas',async ({page})=>{
+ for(const deckName of ['TABULA LENORMAND','PLAYING']){
+  const options=await page.locator('#deckLibrarySelect option').evaluateAll(nodes=>
+   nodes.map(n=>({value:n.value,text:n.textContent})));
+  const chosen=options.find(o=>deckName==='PLAYING'
+   ? /PLAYING|TRUMP|トランプ/i.test(o.text)&&!o.text.includes('LENORMAND')
+   : /LENORMAND/i.test(o.text));
+  expect(chosen,deckName+' deck should exist').toBeTruthy();
+  await page.locator('#deckLibrarySelect').selectOption(chosen.value);
+  await page.locator('#spreadQuickSelect').selectOption('three');
+  await page.locator('#quickDeal').click();
+  await expect.poll(async()=> (await saved(page,WORKSPACE)).state.placed.length).toBe(3);
+  await page.locator('#quickRevealAll').click();
+  await expect.poll(async()=> (await saved(page,WORKSPACE)).state.placed.filter(c=>c.faceUp).length).toBe(3);
+  await page.locator('#inspectCards').click();
+  await page.locator('#zone .card').first().click();
+  await expect(page.locator('#modalBg')).toHaveClass(/card-viewer-active/);
+  await expect(page.locator('#tableCardArtFrame .blueprint-card-view')).toBeVisible();
+  await expect(page.locator('#tableCardText .card-prose')).toBeVisible();
+  const explanation=await page.locator('#tableCardText .card-prose').innerText();
+  expect(explanation.trim().length).toBeGreaterThan(10);
+  await page.locator('#modalBg #modalClose').click();
+  await page.locator('#inspectCards').click();
+  await page.locator('#zone .card').first().click();
+  await page.locator('#enlargeSelected').click();
+  await expect(page.locator('#tableCardText .card-prose')).toContainText(explanation.trim().slice(0,18));
+  await page.locator('#modalBg #modalClose').click();
+ }
+});
