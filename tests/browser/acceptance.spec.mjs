@@ -880,5 +880,5 @@ test('imported reading can register its own spread with slot names, order and de
  const after=await saved(page,WORKSPACE);
  expect(after.state).toEqual(before.state);
  await page.reload();
- await expect(page.locator('#spreadQuickSelect option')).toContainText(['祭壇の再登録']);
+ await expect(page.locator('#spreadQuickSelect option').filter({hasText:'祭壇の再登録'})).toHaveCount(1);
 });
