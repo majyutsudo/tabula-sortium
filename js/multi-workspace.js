@@ -22,7 +22,7 @@ function validate(w){
  if(!PILES.includes(w.activePile))fail('invalid active pile');
  const expected=new Set(w.instances.map(c=>c.instanceId));
  if(expected.size!==w.instances.length)fail('duplicate instance definition');
- const all=[...PILES.flatMap(p=>w.piles[p]),...Object.values(w.tables).flatMap(t=>[...(t.placed||[]),...(t.removed||[])])];
+ const all=[...PILES.flatMap(p=>w.piles[p]),...Object.values(w.tables).flatMap(t=>[...(t.placed||[]),...(t.removed||[]),...(t.tablePiles||[]).flatMap(p=>p.cards)])];
  const seen=new Set();
  for(const c of all){
   if(!c||typeof c.instanceId!=='string'||seen.has(c.instanceId)||!expected.has(c.instanceId))fail('missing or duplicate physical card');
@@ -32,8 +32,13 @@ function validate(w){
  }
  if(seen.size!==expected.size)fail('card conservation failed');
  for(const [id,t] of Object.entries(w.tables)){
-  if(!Array.isArray(t.placed))fail('invalid table '+id);
-  const slots=t.placed.filter(c=>Number.isInteger(c.slot)).map(c=>c.slot);
+  if(!Array.isArray(t.placed)||!Array.isArray(t.tablePiles||[]))fail('invalid table '+id);
+  const pileIds=new Set();
+  for(const p of t.tablePiles||[]){
+   if(!p||typeof p.id!=='string'||!p.id||pileIds.has(p.id)||!Array.isArray(p.cards)||!Number.isFinite(p.x)||!Number.isFinite(p.y))fail('invalid table pile in '+id);
+   pileIds.add(p.id);
+  }
+  const slots=[...t.placed,...(t.tablePiles||[]).filter(p=>p.cards.length)].filter(c=>Number.isInteger(c.slot)).map(c=>c.slot);
   if(new Set(slots).size!==slots.length)fail('duplicate table slot in '+id);
  }
  return true;
@@ -41,7 +46,7 @@ function validate(w){
 function create(idsA,idsB,options={}){
  const a=cardsFor('A',idsA),b=cardsFor('B',idsB);
  const w={schemaVersion:1,instances:[...a,...b],piles:{A:a,B:b,mixed:[]},
-  tables:{table1:{id:'table1',name:'卓Ⅰ',spread:options.spread||'celtic',placed:[]}},
+  tables:{table1:{id:'table1',name:'卓Ⅰ',spread:options.spread||'celtic',placed:[],tablePiles:[]}},
   activeTable:'table1',activePile:'A',mixed:false};
  validate(w);return w;
 }
@@ -49,7 +54,7 @@ function change(w,fn){validate(w);const next=copy(w);const out=fn(next);validate
 function table(w,id,name){
  return change(w,n=>{
   if(!id||own(n.tables,id))fail('table already exists');
-  n.tables[id]={id,name:name||id,spread:'free',placed:[]};
+  n.tables[id]={id,name:name||id,spread:'free',placed:[],tablePiles:[]};
  });
 }
 function selectTable(w,id){return change(w,n=>{if(!own(n.tables,id))fail('unknown table');n.activeTable=id})}
