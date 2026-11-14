@@ -959,3 +959,41 @@ test('selectable deal animation uses spin and petal trajectories without spread 
   await page.reload();
  }
 });
+
+test('deal hides spread frame visuals while preserving slot geometry and supports restoring them',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('three');
+ const slotsBefore=await page.locator('#zone > .slot').evaluateAll(nodes=>nodes.map(node=>({
+  left:node.style.left,top:node.style.top,angle:node.style.getPropertyValue('--angle')
+ })));
+ expect(slotsBefore.length).toBeGreaterThan(0);
+ await expect(page.locator('#quickFrames')).toHaveAttribute('aria-pressed','true');
+ await page.locator('#dealAnimation').selectOption('serpent');
+ // A long flight must begin with frames hidden, not only after arrival.
+ await page.locator('#quickDeal').click();
+ await expect(page.locator('#zone')).toHaveClass(/frames-hidden/);
+ await expect(page.locator('#quickFrames')).toHaveAttribute('aria-pressed','false');
+ await expect.poll(async()=> (await saved(page,WORKSPACE)).settings.framesVisible).toBe(false);
+ const slotsAfter=await page.locator('#zone > .slot').evaluateAll(nodes=>nodes.map(node=>({
+  left:node.style.left,top:node.style.top,angle:node.style.getPropertyValue('--angle')
+ })));
+ expect(slotsAfter.length).toBeLessThan(slotsBefore.length);
+ for(const item of slotsAfter)expect(slotsBefore).toContainEqual(item);
+ await expect(page.locator('#zone > .slot').first()).toHaveCSS('opacity','0');
+ // The user can reveal remaining frames without disturbing their destinations.
+ await page.locator('#quickFrames').click();
+ await expect(page.locator('#zone')).not.toHaveClass(/frames-hidden/);
+ await expect(page.locator('#quickFrames')).toHaveAttribute('aria-pressed','true');
+ await page.reload();
+ await expect(page.locator('#quickFrames')).toHaveAttribute('aria-pressed','true');
+});
+test('a new reading restores hidden frame outlines',async ({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('three');
+ await page.locator('#quickDeal').click();
+ await expect(page.locator('#zone')).toHaveClass(/frames-hidden/);
+ // End the current animation before starting a new reading.
+ await page.waitForTimeout(500);
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#newSessionStandalone').click();
+ await expect(page.locator('#zone')).not.toHaveClass(/frames-hidden/);
+ await expect(page.locator('#quickFrames')).toHaveAttribute('aria-pressed','true');
+});
