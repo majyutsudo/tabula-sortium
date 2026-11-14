@@ -361,6 +361,13 @@ function installTableCamera(){
  stage.addEventListener('pointerdown',e=>{
   if(!mobileCameraEnabled()||pilePlacementArmed)return;
   if(e.pointerType==='touch'){
+   // A new primary contact always starts a fresh gesture. On mobile Safari,
+   // a cancelled/captured pointer can otherwise leave an orphaned ID in the
+   // gesture map and incorrectly suppress every later card tap and drag.
+   if(e.isPrimary){
+    touches.clear();blocked=false;gesture=null;oneFingerPan=null;
+    stage.classList.remove('camera-moving');
+   }
    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
    if(touches.size===1){blocked=false;const card=e.target.closest('.card');const index=card?Number(card.dataset.index):-1;const p=state.placed[index];firstCard=p?{index,x:p.x,y:p.y,manualMoved:p.manualMoved}:null;}
    if(touches.size===1&&tableCamera.scale>1&&!e.target.closest('.card,.table-pile,#deck,.slot,.altar-object,button,input,select,textarea,a')){oneFingerPan={id:e.pointerId,x:e.clientX,y:e.clientY,viewX:tableCamera.x,viewY:tableCamera.y,moved:false};stage.setPointerCapture(e.pointerId);stopEvent(e);}
@@ -382,6 +389,19 @@ function installTableCamera(){
   if(mousePan&&mousePan.id===e.pointerId){mousePan=null;suppressClickUntil=Date.now()+450;stage.classList.remove('camera-moving');saveTableCamera();stopEvent(e)}
  }
  stage.addEventListener('pointerup',end,true);stage.addEventListener('pointercancel',end,true);
+ // Pointer capture may end outside the stage (or after a card is re-rendered).
+ // Forget only tracked stage touches; unrelated UI pointers are untouched.
+ function releaseOrphanedTouch(e){
+  if(!touches.has(e.pointerId))return;
+  touches.delete(e.pointerId);
+  if(!touches.size){
+   blocked=false;gesture=null;oneFingerPan=null;firstCard=null;
+   stage.classList.remove('camera-moving');
+   saveTableCamera();
+  }
+ }
+ window.addEventListener('pointerup',releaseOrphanedTouch);
+ window.addEventListener('pointercancel',releaseOrphanedTouch);
  stage.addEventListener('click',e=>{if(mobileCameraEnabled()&&!pilePlacementArmed&&(blocked||Date.now()<suppressClickUntil))stopEvent(e)},true);
  stage.addEventListener('wheel',e=>{
   if(!mobileCameraEnabled())return;
