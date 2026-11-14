@@ -455,10 +455,11 @@ function sortPhysicalCards(items,mode,deckId=settings.deckId){
   if(dualBusy())return;
   // A new reading operates only on the selected table. Another table may
   // retain cards from this same shared physical deck.
-  if(state.placed.length||(state.removed||[]).length){
-   if(!confirm('現在の卓の配札を回収し、この卓で新しい占いを始めますか？ 他の卓の配札は維持されます。'))return;
-   dualCollect();
+  if(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length)){
+   if(!confirm('現在の卓の配札と束を回収し、この卓で新しい占いを始めますか？ 他の卓の配札は維持されます。'))return;
+   if(!dualCollect())return;
   }
+  initializePresetFrames(state,settings.spread);
   state.deck=settings.initialOrder==='random'
    ?randomize(state.deck.map(c=>({...c,reversed:settings.reversals?Math.random()<.5:!!c.reversed})))
    :sortPhysicalCards(state.deck,settings.initialOrder);
@@ -505,6 +506,18 @@ function arrangementOrder(){
 
 // Monte Carlo uses the same fixed-slot arrangement engine as the manual
 // controls, but presents each physical move instead of teleporting the grid.
+/* Validate a proposed table arrangement in the physical workspace before
+   altering the active view. This also protects the other table's inventory. */
+function assertArrangementSafe(nextState){
+ if(!dualSession)return;
+ const proposed=dualClone(dualSession);
+ proposed.piles[proposed.activePile]=dualClone(nextState.deck);
+ const table=proposed.tables[proposed.activeTable];
+ table.placed=dualClone(nextState.placed);
+ table.removed=dualClone(nextState.removed||[]);
+ table.tablePiles=dualClone(nextState.tablePiles||[]);
+ TabulaMultiWorkspace.validate(proposed);
+}
 async function animateMonteArrangement(action,order){
  if(autoDealBusy||openingBusy)return;
  const slots=getSlots();
@@ -516,6 +529,7 @@ async function animateMonteArrangement(action,order){
   ?TabulaTableArrangement.compact(state,slots,order)
   :TabulaTableArrangement.refill(state,slots,order,{faceUp:settings.dealFaceUp===true});
  const count=action==='compact'?result.moves:result.dealt;
+ assertArrangementSafe(result.state);
  if(!count){setStatus(action==='compact'?'詰め直す空き位置がありません。':'補充する空き位置がないか、山札がありません。');return}
  const oldPositions=new Map();
  if(action==='compact'){
@@ -574,16 +588,17 @@ async function animateMonteArrangement(action,order){
  }finally{autoDealBusy=false}
 }
 function executeArrangement(action){
- if(dualSession||spreadWorkbench){setStatus('この卓のカード配置を編集中は整理できません。');return}
- if(autoDealBusy||openingBusy){setStatus('配札またはオープンが終わってから操作してください。');return}
+ if(spreadWorkbench){setStatus('スプレッド編集中は整理できません。');return}
+ if(autoDealBusy||openingBusy||shuffleBusy||dualDealBusy||state.cutStage){setStatus('配札またはオープンが終わってから操作してください。');return}
  const order=arrangementOrder();
  if(!order.length){setStatus('整理する配置枠がありません。右下から「＋束を置く」で枠を作れます。');return}
- if(settings.spread==='monteCarlo'&&action==='compact'&&!dualSession){animateMonteArrangement(action,order).catch(e=>setStatus(e.message));return}
+ if(settings.spread==='monteCarlo'&&action==='compact'){animateMonteArrangement(action,order).catch(e=>setStatus(e.message));return}
  try{
   const result=action==='compact'
    ?TabulaTableArrangement.compact(state,getSlots(),order)
    :TabulaTableArrangement.refill(state,getSlots(),order,{faceUp:settings.dealFaceUp===true});
   const count=action==='compact'?result.moves:result.dealt;
+  assertArrangementSafe(result.state);
   if(!count){setStatus(action==='compact'?'詰め直す空き位置がありません。':'補充する空き位置がないか、山札がありません。');return}
   state.placed=result.state.placed;
   state.tablePiles=result.state.tablePiles;
@@ -595,6 +610,18 @@ function executeArrangement(action){
  }catch(e){setStatus(e.message)}
 }
 
+function alignRegisteredSpreadPositions(){
+ const slots=getSlots();
+ for(const card of state.placed){
+  if(card.manualMoved||!Number.isInteger(card.slot)||!slots[card.slot])continue;
+  const slot=slots[card.slot];card.x=slot.x;card.y=slot.y;
+  if(card.origin){card.origin.x=slot.x;card.origin.y=slot.y;}
+ }
+ for(const pile of state.tablePiles||[]){
+  if(pile.manualMoved||!Number.isInteger(pile.slot)||!slots[pile.slot])continue;
+  pile.x=slots[pile.slot].x;pile.y=slots[pile.slot].y;
+ }
+}
 function initializePresetFrames(target,spreadId){
  const slots=presets[spreadId]||[];
  if(!Array.isArray(target.tablePiles))target.tablePiles=[];
@@ -625,6 +652,10 @@ function getSlots(){
     if(card.manualMoved||!Number.isInteger(card.slot)||!slots[card.slot])continue;
     card.x=slots[card.slot].x;
     if(card.origin)card.origin.x=card.x;
+   }
+   for(const pile of state.tablePiles||[]){
+    if(pile.manualMoved||!Number.isInteger(pile.slot)||!slots[pile.slot])continue;
+    pile.x=slots[pile.slot].x;
    }
   }
  }
@@ -917,7 +948,7 @@ function syncCompactShortcut(){
   shortcut.onclick=()=>executeArrangement('compact');
   surface.append(shortcut);
  }
- shortcut.hidden=!compactShortcutShown()||!!spreadWorkbench||!!dualSession;
+ shortcut.hidden=!compactShortcutShown()||!!spreadWorkbench;
  const checkbox=$('compactShortcutVisibility');
  if(checkbox)checkbox.checked=compactShortcutShown();
 }
@@ -1293,7 +1324,7 @@ function pileDropPosition(clientX,clientY){
  return point;
 }
 function renderTablePiles(zone,m){
- if(dualSession||spreadWorkbench)return;
+ if(spreadWorkbench)return;
  for(const pile of TabulaTablePiles.piles(state)){
   const el=document.createElement('div');el.className='table-pile';el.dataset.pileId=pile.id;el.classList.toggle('pile-has-multiple',pile.cards.length>1);
   el.style.setProperty('--pile-tool-size',Math.max(16,Math.min(30,Math.round(m.w*0.18)))+'px');
@@ -1582,6 +1613,7 @@ function renderTablePiles(zone,m){
      setStatus('束ごと'+count+'枚を別の束の上に重ねました。');
     }else{
      TabulaTablePiles.relocate(state,pile.id,pt.x,pt.y);
+     if(Number.isInteger(pile.slot))pile.manualMoved=true;
      if(settings.spread==='monteCarlo'&&Number.isInteger(pile.slot)&&
         (pile.x<12||pile.x>88||pile.y<3||pile.y>97)){
       pile.slot=null;
@@ -4238,6 +4270,7 @@ function dualFresh(){
  if(usesPlayingBack())w.backColors.A=playingBackPreference();
  w.appearances={A:'standard',B:'standard'};
  w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
+ initializePresetFrames(w.tables.table1,settings.spread);
  w.tables.table2.spread='free';w.tables.table2.cardSize=spreadCardSize('free');
  // Give each physical table its own persistent visual identity.
  w.tables.table1.name='卓Ⅰ';w.tables.table1.color=settings.color;
@@ -4279,6 +4312,8 @@ function dualRestoreView(){
  selectedCandle=null;
  settings.dealSkipFirst=0;settings.dealSkipSchedule='';
  setCardSize(validCardSize(t.cardSize)?t.cardSize:spreadCardSize(settings.spread),false);
+ initializePresetFrames(state,settings.spread);
+ alignRegisteredSpreadPositions();
  sync();render();dualRefreshControls();
 }
 
