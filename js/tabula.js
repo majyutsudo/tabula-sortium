@@ -267,7 +267,7 @@ function createDefaultSettings(overrides={}){
  return {
   ...DEFAULT_SETTINGS,
   reversalsByDeck:{},spreadDealOrders:{},compactShortcutVisibility:{},
-  refillShortcutVisibility:{},deckBackColors:{builtin:'sepia'},
+  refillShortcutVisibility:{},frameShortcutVisibility:{},deckBackColors:{builtin:'sepia'},
   ...overrides
  };
 }
@@ -1079,6 +1079,28 @@ function updateNaturalTiltButton(){
    arrangement.append(refillVisibility);
    layout.append(arrangement);
   }
+  // All frame controls belong to the tabletop placement menu.
+  // Move the existing switch rather than creating competing state handlers.
+  const frameButton=$('quickFrames');
+  if(frameButton){
+   const oldContainer=frameButton.closest('.table-display-frame-control');
+   frameButton.removeAttribute('hidden');
+   frameButton.classList.add('placement-tools-button');
+   placement.append(frameButton);
+   if(oldContainer)oldContainer.remove();
+  }
+  let frameVisibilityToggle=$('frameShortcutVisibility');
+  if(!frameVisibilityToggle){
+   const row=document.createElement('label');row.className='compact-shortcut-toggle';
+   frameVisibilityToggle=document.createElement('input');frameVisibilityToggle.type='checkbox';frameVisibilityToggle.id='frameShortcutVisibility';
+   frameVisibilityToggle.onchange=()=>{
+    settings.frameShortcutVisibility??={};
+    settings.frameShortcutVisibility[settings.spread]=frameVisibilityToggle.checked;
+    syncCompactShortcut();saveLocal();
+   };
+   row.append(frameVisibilityToggle,document.createTextNode('「配置枠」を卓に表示'));
+   placement.append(row);
+  }
   const hand=document.getElementById('naturalTiltButton');
   if(hand){hand.removeAttribute('style');hand.classList.add('placement-tools-button');behavior.append(hand)}
   layout.append(behavior);
@@ -1118,6 +1140,14 @@ function syncCompactShortcut(){
   tray.append(refill);
  }
  refill.hidden=!refillShortcutShown()||!!spreadWorkbench;
+ let frames=$('quickFrameAction');
+ if(!frames){
+  frames=document.createElement('button');frames.id='quickFrameAction';frames.type='button';
+  frames.onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を表示しました。':'配置枠を非表示にしました。')};
+  tray.append(frames);
+ }
+ frames.hidden=!frameShortcutShown()||!!spreadWorkbench;
+ syncFrameVisibility();
  const checkbox=$('compactShortcutVisibility');
  if(checkbox)checkbox.checked=compactShortcutShown();
  const refillCheckbox=$('refillShortcutVisibility');
@@ -1806,6 +1836,21 @@ function renderTablePiles(zone,m){
  }
 }
 // Frame visibility is separate from the stored spread geometry.
+// Spread display policy: built-in overrides and optional user-defined spread fields.
+const BUILTIN_FRAME_POLICIES=Object.freeze({fourSeasons:{initialVisible:true,hideOnDeal:false}});
+function spreadFramePolicy(id=settings.spread){
+ const custom=spreadLibrary.find(item=>item.id===id);
+ const policy=BUILTIN_FRAME_POLICIES[id]||custom?.framePolicy||{};
+ return {initialVisible:policy.initialVisible===true,hideOnDeal:policy.hideOnDeal!==false};
+}
+function resetFramesForSpread(id=settings.spread){
+ settings.framesVisible=spreadFramePolicy(id).initialVisible;
+}
+function frameShortcutShown(){
+ const overrides=settings.frameShortcutVisibility;
+ if(overrides&&typeof overrides==='object'&&Object.hasOwn(overrides,settings.spread))return overrides[settings.spread]===true;
+ return settings.spread==='fourSeasons';
+}
 function syncFrameVisibility(){
  const visible=settings.framesVisible!==false;
  $('zone').classList.toggle('frames-hidden',!visible&&!spreadWorkbench);
@@ -1815,6 +1860,14 @@ function syncFrameVisibility(){
   button.setAttribute('aria-pressed',String(visible));
   button.title=visible?'配置枠を隠す':'配置枠を再表示する';
  }
+ const quick=$('quickFrameAction');
+ if(quick){
+  quick.textContent='▣ 配置枠 '+(visible?'ON':'OFF');
+  quick.setAttribute('aria-pressed',String(visible));
+  quick.title=visible?'配置枠を隠す':'配置枠を表示する';
+ }
+ const checkbox=$('frameShortcutVisibility');
+ if(checkbox)checkbox.checked=frameShortcutShown();
 }
 function setFrameVisibility(visible,persist=true){
  settings.framesVisible=!!visible;
@@ -1822,7 +1875,7 @@ function setFrameVisibility(visible,persist=true){
  if(persist)saveLocal();
 }
 function hideFramesForDeal(){
- if(settings.framesVisible!==false&&!spreadWorkbench)setFrameVisibility(false,false);
+ if(spreadFramePolicy().hideOnDeal&&settings.framesVisible!==false&&!spreadWorkbench)setFrameVisibility(false,false);
 }
 function render(){
  stopFreeSlide();
@@ -2448,8 +2501,8 @@ function compareModal(){
  document.querySelectorAll('[data-register-spread]').forEach(b=>b.onclick=()=>registerSpreadFromReading(snapshots.find(x=>x.id===b.dataset.registerSpread)));
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
-function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
-function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
+function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
+function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false){
  if(Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
  if(state.deck.length<2){setStatus('カットには2枚以上必要です。');return}
@@ -3046,6 +3099,7 @@ function changeActiveSpread(nextSpread){
  // Do not discard cards if a future pile type cannot be recovered.
  if((state.tablePiles||[]).some(p=>p.cards.length)){setStatus('束にカードが残っています。展開法を変更できません。');return false}
  settings.spread=nextSpread;
+ resetFramesForSpread(nextSpread);
  state.tablePiles=[];
  initializePresetFrames(state,nextSpread);
  $('spread').value=nextSpread;
@@ -5064,7 +5118,7 @@ window.addEventListener('resize',positionDualDock);
 installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
 const initial=localStorage.getItem(KEY);
-if(initial){restoreLocal()}else{setCardSize(spreadCardSize(settings.spread));sync();initialize()}
+if(initial){restoreLocal()}else{resetFramesForSpread();setCardSize(spreadCardSize(settings.spread));sync();initialize()}
 try{
  const raw=localStorage.getItem(DUAL_SESSION_KEY);
  if(raw){
