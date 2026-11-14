@@ -2856,10 +2856,31 @@ const {builtinSpreadCardSizes}=TabulaCatalog;function spreadCardSize(id){const s
 function updateCardSizeQuickValue(){const label=$('cardSizeQuickValue');if(label)label.textContent=Math.round(zoom*100)+'%';}function setCardSize(value,persist=true){zoom=validCardSize(value)?value:defaultCardSize();updateCardSizeQuickValue();for(const id of ['cardSizeScale','spreadCardSize']){const input=$(id);if(input)input.value=zoom;}if(persist){settings.cardSize=zoom;try{localStorage.setItem('tabula_card_size_v2',String(zoom))}catch(e){}}}
 function applySpreadCardSize(id,persist=true){setCardSize(spreadCardSize(id),persist)}
 
-function changeDesktopCardSize(delta,reset=false){setCardSize(reset?spreadCardSize(settings.spread):Math.max(.8,Math.min(2.3,Math.round((zoom+delta)*100)/100)));render();applyTableCamera();if(!spreadWorkbench)saveLocal()}
-$('zoomIn').onclick=()=>changeDesktopCardSize(.1);
-$('zoomOut').onclick=()=>changeDesktopCardSize(-.1);
-$('zoomReset').onclick=()=>changeDesktopCardSize(0,true);const deck=$('deck');
+/* Card magnification is distinct from the table-camera zoom. One shared entry
+   handles desktop controls and applies the same value with or without tables. */
+function changeDesktopCardSize(delta,reset=false){
+ const before=zoom;
+ const next=reset?spreadCardSize(settings.spread):
+  Math.max(.8,Math.min(2.3,Math.round((zoom+delta)*100)/100));
+ setCardSize(next);
+ if(zoom===before&&!reset){setStatus('カードサイズは'+(delta>0?'最大':'最小')+'倍率です（'+Math.round(zoom*100)+'%）。');return}
+ render();
+ applyTableCamera();
+ if(!spreadWorkbench)saveLocal();
+ setStatus('カードサイズを'+Math.round(zoom*100)+'%に変更しました。');
+}
+function bindCardSizeControls(){
+ const actions={zoomIn:()=>changeDesktopCardSize(.1),zoomOut:()=>changeDesktopCardSize(-.1),
+  zoomReset:()=>changeDesktopCardSize(0,true)};
+ for(const [id,action] of Object.entries(actions)){
+  const button=$(id);
+  if(!button)throw Error('カードサイズ操作ボタンが見つかりません：'+id);
+  button.type='button';
+  button.disabled=false;
+  button.onclick=event=>{event.preventDefault();action()};
+ }
+}
+bindCardSizeControls();const deck=$('deck');
 const deckB=document.createElement('div');deckB.id='deckB';deckB.className='deck dual-second-deck';deckB.title='デッキB：クリックで配札、ドラッグで配札';deckB.hidden=true;
 const labelA=document.createElement('span');labelA.className='dual-deck-identity';labelA.textContent='A';deck.append(labelA);
 const labelB=document.createElement('span');labelB.className='dual-deck-identity';labelB.textContent='B';deckB.append(labelB);deck.after(deckB);
@@ -3840,7 +3861,7 @@ function installTableToolLayout(){
  const gallery=$('cardGalleryOpen');gallery.innerHTML='<svg viewBox="0 0 24 24" width="19" height="21" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="13" height="18" rx="2" transform="rotate(-9 10 12)"/><rect x="7" y="2" width="13" height="18" rx="2"/><path d="m13.5 6 3 4-3 4-3-4z"/></svg><span>カード図鑑</span>';gallery.setAttribute('aria-label','カード図鑑を開く');document.querySelector('.deck-edit-actions').before(gallery);
  const slider=$('cardSizeScale');const field=slider.closest('label');field.hidden=true;field.style.display='none';const sizeControls=document.createElement('div');sizeControls.className='toolbar-card-size';sizeControls.title='カードそのものの大きさを調整';const buttons={};for(const [id,label,title] of [['zoomOut','−','カードサイズを小さくする'],['zoomReset','標準','この展開法の標準サイズに戻す'],['zoomIn','＋','カードサイズを大きくする']]){const b=$(id);b.textContent=label;b.title=title;b.setAttribute('aria-label',title);buttons[id]=b;}const sizeValue=document.createElement('output');sizeValue.id='cardSizeQuickValue';sizeValue.title='カードサイズ倍率';sizeValue.setAttribute('aria-label','カードサイズ倍率');const sizeLabel=document.createElement('span');sizeLabel.className='toolbar-size-label';sizeLabel.textContent='札';const labelToggle=document.createElement('button');labelToggle.type='button';labelToggle.id='toolbarLabelToggle';
  labelToggle.onclick=()=>{const index=labelCycleModes.indexOf(labelMode);setTableLabelMode(labelCycleModes[(index+1)%labelCycleModes.length]);};
- sizeControls.append(sizeLabel,labelToggle,buttons.zoomOut,sizeValue,buttons.zoomIn,buttons.zoomReset);quickSpread.before(sizeControls);syncToolbarLabelCycle();const mobileActions=document.createElement('div');mobileActions.className='mobile-cockpit-actions';mobileActions.append(quickSpread,soundButton,inspect,notebook,$('newSessionStandalone'));toolbar.append(mobileActions);updateCardSizeQuickValue();
+ sizeControls.append(sizeLabel,labelToggle,buttons.zoomOut,sizeValue,buttons.zoomIn,buttons.zoomReset);quickSpread.before(sizeControls);bindCardSizeControls();syncToolbarLabelCycle();const mobileActions=document.createElement('div');mobileActions.className='mobile-cockpit-actions';mobileActions.append(quickSpread,soundButton,inspect,notebook,$('newSessionStandalone'));toolbar.append(mobileActions);updateCardSizeQuickValue();
  const onResize=()=>{fit.hidden=!mobileCameraEnabled();};window.addEventListener('resize',onResize);onResize();
  applyTableCamera();
 }
