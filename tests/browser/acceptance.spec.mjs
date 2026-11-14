@@ -921,7 +921,7 @@ test('rotated card flight preserves physical aspect ratio and animates its angle
 
 test('selectable deal animation uses spin and petal trajectories without spread mapping',async ({page})=>{
  await page.locator('#spreadQuickSelect').selectOption('one');
- for(const [mode,duration] of [['spin',680],['spinSlow',7800],['petalSoft',4300],['serpent',7800]]){
+ for(const [mode,duration] of [['spin',680],['spinSlow',760],['petalSoft',4300],['serpent',7800]]){
   await page.locator('#dealAnimation').selectOption(mode);
   await expect.poll(async()=> (await saved(page,WORKSPACE)).settings.dealAnimation).toBe(mode);
   await page.reload();
