@@ -1864,10 +1864,16 @@ aside .section :is(button,select,input,textarea),
 #zone.frames-hidden .table-pile-empty{border-color:transparent;background:transparent}
 #zone.frames-hidden .table-pile-depth-sheet{border-color:transparent}
 
-/* v0.574: Two related deal choices share the deal column; open has its own mode. */
-.table-action-settings>label{height:auto;min-height:30px;align-items:flex-start}
-.table-action-settings .table-deal-controls{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0;width:100%}
+/* v0.575: Deal options open in a floating menu. The toolbar remains one row. */
+.table-action-settings{position:relative;z-index:15;overflow:visible}
+.table-action-settings>label{height:30px;min-height:30px;align-items:center}
+.table-action-settings .table-deal-control{position:relative;min-width:0;width:100%;height:30px}
+.table-action-settings #tableDealOptionsButton{box-sizing:border-box;display:block;width:100%;height:30px;min-height:30px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;padding:4px 23px 4px 7px;position:relative;border:1px solid #485849;border-radius:4px;background:#202a25;color:#bfc7b8;font:11px Georgia,'Yu Mincho',serif;cursor:pointer}
+.table-action-settings #tableDealOptionsButton[aria-expanded="true"]{border-color:#baa071;color:#f5e8c8}
+.table-action-settings #tableDealOptionsButton::after{content:'▾';position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:12px}
+.table-action-settings .table-deal-options{box-sizing:border-box;position:absolute;top:calc(100% + 5px);right:0;z-index:1700;width:clamp(220px,25vw,310px);max-width:calc(100vw - 22px);padding:12px;border:1px solid #8f7850;border-radius:6px;background:#202b25;box-shadow:0 9px 26px #000b;display:flex;flex-direction:column;gap:10px}
+.table-action-settings .table-deal-options[hidden]{display:none!important}
+.table-action-settings .table-deal-options>label{display:flex;flex-direction:column;align-items:stretch;gap:5px;font:11px Georgia,'Yu Mincho',serif;color:#e3cfa9}
 .table-action-settings #tableDealChoiceSlot{display:block;width:100%;min-width:0}
-.table-action-settings #quickDealChoice{width:100%;max-width:100%}
-.table-action-settings #dealAnimation,.table-action-settings #tableOpenMode{width:100%;min-width:0}
-.table-action-settings #tableOpenMode{display:block}
+.table-action-settings .table-deal-options select{width:100%;max-width:100%;height:32px;min-height:32px;font-size:12px;color:#f0dfbf;background:#2f3a32;border-color:#857352}
+.table-action-settings #tableOpenMode{display:block;width:100%;min-width:0}
