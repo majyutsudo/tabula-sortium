@@ -88,7 +88,7 @@ function deal(w,{pile=w.activePile,tableId=w.activeTable,slot=null,x=null,y=null
   if(!PILES.includes(pile)||(n.mixed&&pile!=='mixed')||(!n.mixed&&pile==='mixed'))fail('pile unavailable');
   const t=n.tables[tableId];
   if(!t||!n.piles[pile].length)fail('table or pile unavailable');
-  if(slot!==null&&t.placed.some(c=>c.slot===slot))fail('slot already occupied');
+  if(slot!==null&&(t.placed.some(c=>c.slot===slot)||(t.tablePiles||[]).some(p=>p.slot===slot&&p.cards.length)))fail('slot already occupied');
   const card=n.piles[pile].shift();chosen={...card,slot,x,y,faceUp:false};
   t.placed.push(chosen);
  });
