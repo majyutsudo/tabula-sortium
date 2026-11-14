@@ -28,24 +28,20 @@ test('SPIN performs two turns and finishes at an arbitrary target angle',()=>{
  }
 });
 
-test('SLOW SPIN quickly throws halfway and completes one aerial rotation',()=>{
- for(const angle of [-155,0,45,90,170]){
-  const fast=animation.create('spin',{dx:285,dy:-120,arrivalAngle:angle});
-  const slow=animation.create('spinSlow',{dx:285,dy:-120,arrivalAngle:angle});
-  assert.equal(fast.duration,680);
-  assert.equal(fast.frames.length,4);
-  assert.equal(slow.duration,760);
-  assert.equal(slow.easing,'linear');
-  assert.equal(slow.frames.length,3,'one throw transition, one continuous spin segment');
-  assert.deepEqual(Array.from(slow.frames.map(frame=>frame.offset)),[0,.20,1]);
-  assert.equal(slow.frames[0].easing,'linear');
-  assert.equal(slow.frames[1].easing,'cubic-bezier(.25,.25,.78,.55)');
-  assert.ok(slow.frames[1].transform.includes('rotate(0deg)'));
-  assert.ok(slow.frames[1].transform.includes('calc(-50% + 142.5px)'));
-  assert.ok(slow.frames[1].transform.includes('calc(-50% + -60px)'));
-  assert.equal(slow.frames[0].transform,fast.frames[0].transform);
-  assert.ok(slow.frames[2].transform.includes('calc(-50% + 0px)'));
-  assert.ok(slow.frames[2].transform.includes('rotate('+(360+angle)+'deg)'));
+test('SERPENT ×2 shares the exact trajectory with SERPENT in half the time',()=>{
+ assert.equal(animation.normalize('spinSlow'),'standard');
+ for(const angle of [-135,0,65,170]){
+  for(const wind of [-.8,.8]){
+   const options={dx:285,dy:-120,arrivalAngle:angle,wind,bounds:{minX:-300,maxX:320,minY:-240,maxY:270}};
+   const original=animation.create('serpent',options);
+   const faster=animation.create('serpentFast',options);
+   assert.equal(original.duration,7800);
+   assert.equal(faster.duration,3900);
+   assert.equal(faster.easing,original.easing);
+   assert.equal(JSON.stringify(faster.frames),JSON.stringify(original.frames));
+   assert.equal(faster.frames.length,161);
+   assert.ok(faster.frames.at(-1).transform.includes('rotate('+angle+'deg)'));
+  }
  }
 });
 
@@ -108,7 +104,7 @@ test('SERPENT and PETAL respect viewport bounds where a path can fit',()=>{
 });
 
 test('all flight modes end at exactly the same center and destination rotation',()=>{
- const finalTransforms=['standard','spin','petalSoft','serpent'].map(mode=>
+ const finalTransforms=['standard','spin','petalSoft','serpent','serpentFast'].map(mode=>
   animation.create(mode,{dx:-295,dy:410,arrivalAngle:72,wind:.3}).frames.at(-1).transform);
  const suffix='translate(calc(-50% + 0px),calc(-50% + 0px))';
  finalTransforms.forEach(transform=>assert.ok(transform.startsWith(suffix)));
