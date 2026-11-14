@@ -12,15 +12,21 @@
   const t=(px,py)=>'translate(calc(-50% + '+px+'px),calc(-50% + '+py+'px))';
   const transform=(px,py,angle,scale=1)=>t(px,py)+' rotate('+angle+'deg) scale('+scale+')';
   const finish={transform:transform(0,0,a),filter:'brightness(1)'};
-  if(mode==='spin'||mode==='spinSlow')return {
-   duration:mode==='spinSlow'?7800:680,easing:'cubic-bezier(.18,.64,.2,1)',
-   frames:[
-    {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)'},
-    {offset:.43,transform:transform(x*.58,y*.58,360+a*.26,1.025),filter:'brightness(1.10)'},
-    {offset:.78,transform:transform(x*.15,y*.15,650+a*.8,1.01),filter:'brightness(1.05)'},
-    {offset:1,...finish,transform:transform(0,0,720+a)}
-   ]
-  };
+  if(mode==='spin'||mode==='spinSlow'){
+   const slow=mode==='spinSlow';
+   // Slow Spin keeps its initial easing but its final .78-to-1 segment
+   // is linear, so rotation and translation do not ease out on arrival.
+   const initialEasing='cubic-bezier(.18,.64,.2,1)';
+   return {
+    duration:slow?7800:680,easing:slow?'linear':initialEasing,
+    frames:[
+     {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)',...(slow?{easing:initialEasing}:{})},
+     {offset:.43,transform:transform(x*.58,y*.58,360+a*.26,1.025),filter:'brightness(1.10)',...(slow?{easing:initialEasing}:{})},
+     {offset:.78,transform:transform(x*.15,y*.15,650+a*.8,1.01),filter:'brightness(1.05)',...(slow?{easing:'linear'}:{})},
+     {offset:1,...finish,transform:transform(0,0,720+a)}
+    ]
+   };
+  }
   if(mode==='serpent'){
    // A single unbroken path: the card advances along the stock-to-target
    // axis, displaced sideways by a damped sine wave (the snake's body).
