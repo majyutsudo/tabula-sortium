@@ -1942,8 +1942,7 @@ aside .section :is(button,select,input,textarea),
  font-weight:normal;
  box-sizing:border-box;
  min-height:35px;
- display:flex;
- align-items:center;
+ display:list-item;
  padding:7px 10px;
  border:1px solid #655e4a;
  border-radius:5px;
