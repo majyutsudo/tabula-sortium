@@ -1796,3 +1796,19 @@ aside .section :is(button,select,input,textarea),
 #modalBg :is(button,select,input,textarea){
  font-family:var(--tabula-ui-font);
 }
+
+/* v0.551 — rotate the card or pile itself; no external grip.
+   Direct manipulation should not animate away from the pointer. */
+#zone.rotation-mode-active .card,
+#zone.rotation-mode-active .table-pile :is(.table-pile-top,.table-pile-empty){
+ cursor:grab;
+ touch-action:none;
+}
+#zone .card.body-rotating,
+#zone .table-pile.body-rotating{
+ transition:none!important;
+ animation:none!important;
+ cursor:grabbing!important;
+}
+#zone .card.body-rotating *,
+#zone .table-pile.body-rotating *{cursor:grabbing!important;}
