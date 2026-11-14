@@ -758,3 +758,53 @@ test('rotation mode drags the physical card without relocating or flipping it',a
  await page.reload();
  expect((await saved(page,WORKSPACE)).state.placed[0].angle).toBeCloseTo(result.angle,1);
 });
+
+test('editing a registered spread removes chosen positions without moving others',async({page})=>{
+ const fixture={
+  id:'custom_remove_positions',name:'削除検証',cardSize:1.35,
+  slots:[
+   {x:22,y:32,angle:0,name:'入口',detail:'始まり'},
+   {x:51,y:42,angle:23,name:'中央',detail:'転機'},
+   {x:78,y:64,angle:45,name:'出口',detail:'結末'},
+   {x:15,y:76,angle:270,name:'補助',detail:'補足'}
+  ]
+ };
+ await page.evaluate(({key,item})=>localStorage.setItem(key,JSON.stringify([item])),{key:SPREADS,item:fixture});
+ await page.reload();
+ const before=await saved(page,WORKSPACE);
+ await page.locator('#spreadNotebook').click();
+ await page.locator('#archiveItems').getByRole('button',{name:'編集'}).click();
+ await expect(page.locator('#spreadWorkbenchFields .spread-position-remove')).toHaveCount(4);
+ await page.locator('#spreadWorkbenchFields .spread-position-remove').nth(1).click();
+ await expect(page.locator('#spreadWorkbenchFields .spread-position-remove')).toHaveCount(3);
+ // Restoring positions must not reintroduce the deleted card.
+ await page.locator('#spreadRestoreLayout').click();
+ await expect(page.locator('#zone .card')).toHaveCount(3);
+ await page.locator('#spreadWorkbenchFields .spread-position-remove').nth(2).click();
+ await expect(page.locator('#zone .card')).toHaveCount(2);
+ await page.locator('#spreadSave').click();
+ const savedSpread=(await saved(page,SPREADS)).find(p=>p.id===fixture.id);
+ expect(savedSpread.slots).toEqual([fixture.slots[0],fixture.slots[2]]);
+ expect(savedSpread.cardSize).toBeCloseTo(fixture.cardSize,2);
+ const after=await saved(page,WORKSPACE);
+ expect(after.state.deck).toEqual(before.state.deck);
+ expect(after.state.placed).toEqual(before.state.placed);
+ await page.reload();
+ expect((await saved(page,SPREADS)).find(p=>p.id===fixture.id).slots).toHaveLength(2);
+});
+test('a newly captured spread allows removing unnumbered cards and cancel restores original session',async({page})=>{
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ for(let i=0;i<3;i++)await page.locator('#quickDeal').click();
+ await expect.poll(async()=>(await saved(page,WORKSPACE)).state.placed.length).toBe(3);
+ const before=await saved(page,WORKSPACE);
+ await page.locator('#spreadNotebook').click();
+ await page.locator('#archiveCapture').click();
+ await expect(page.locator('#spreadWorkbenchFields .spread-position-remove')).toHaveCount(3);
+ await expect(page.locator('#spreadWorkbenchFields')).toContainText('未採番');
+ await page.locator('#spreadWorkbenchFields .spread-position-remove').first().click();
+ await expect(page.locator('#zone .card')).toHaveCount(2);
+ await page.locator('#spreadCancel').click();
+ const after=await saved(page,WORKSPACE);
+ expect(after.state.placed).toEqual(before.state.placed);
+ expect(after.state.deck).toEqual(before.state.deck);
+});
