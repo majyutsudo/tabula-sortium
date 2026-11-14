@@ -633,9 +633,17 @@ function initializePresetFrames(target,spreadId){
   target.tablePiles.push({id:'pile-'+n,slot:i,x:slot.x,y:slot.y,role,fan:{dx:0,dy:0},cards:[]});
  });
 }
+function activeGridCardWidth(m){
+ const sources=dualSession?.mixed?['A','B']:[dualSession?.activePile||null];
+ return Math.max(...sources.map(source=>m.w*(appearanceForPile(source)==='pocket'?.82:1)));
+}
 function getSlots(){
  // Responsive projections must never mutate shared preset definitions.
- const slots=(presets[settings.spread]||[]).map(slot=>({...slot}));
+ let slots=(presets[settings.spread]||[]).map(slot=>({...slot}));
+ if(window.innerWidth>780){
+  const m=metrics();
+  slots=TabulaSpreadGeometry.fitGridColumns(slots,m.z.width,activeGridCardWidth(m));
+ }
  // Mobile Grand Tableau: make horizontal and vertical edge gaps equal in pixels.
  // Use actual rendered card dimensions rather than percentage-point guesses.
  if(window.innerWidth<=780&&(settings.spread==='grandTableau8'||settings.spread==='grandTableau9')){
@@ -1637,6 +1645,7 @@ function renderTablePiles(zone,m){
 }
 function render(){
  stopFreeSlide();
+ alignRegisteredSpreadPositions();
  updateAppearanceControls();
  refreshClothIndicators();
  if(lastRenderedSpread!==null&&lastRenderedSpread!==settings.spread){
