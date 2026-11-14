@@ -70,3 +70,26 @@ test('temporarily removed cards remain accounted for in their table',()=>{
  w.tables.table1.removed=[];
  assert.throws(()=>M.validate(w));
 });
+
+test('physical cards within table piles survive switching and never duplicate',()=>{
+ let w=M.table(M.create(a,b),'table2','卓Ⅱ');
+ const first=w.piles.A.shift();
+ w.tables.table1.tablePiles=[{id:'pile-1',x:30,y:40,slot:1,role:'tableau',cards:[first]}];
+ assert.equal(M.validate(w),true);
+ w=M.selectTable(w,'table2');
+ assert.equal(M.validate(w),true);
+ const second=w.piles.B.shift();
+ w.tables.table2.tablePiles=[{id:'pile-1',x:50,y:50,slot:1,role:'foundation',cards:[second]}];
+ assert.equal(M.validate(w),true);
+ const restored=JSON.parse(JSON.stringify(w));
+ assert.equal(M.validate(restored),true);
+ assert.equal(restored.tables.table1.tablePiles[0].cards[0].instanceId,first.instanceId);
+ restored.tables.table1.placed.push({...first});
+ assert.throws(()=>M.validate(restored));
+});
+test('table piles and individual cards cannot occupy the same spread slot',()=>{
+ const w=M.create(a,b);
+ const c=w.piles.A.shift();
+ w.tables.table1.tablePiles=[{id:'pile-1',x:30,y:40,slot:0,cards:[c]}];
+ assert.throws(()=>M.deal(w,{pile:'A',slot:0}));
+});
