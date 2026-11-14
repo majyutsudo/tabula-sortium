@@ -261,7 +261,7 @@ const DEFAULT_SETTINGS=Object.freeze({
  initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,
  dealSkipFirst:0,dealSkipSchedule:'',dealFaceUp:false,
  cardLanguage:'original',tableCardLanguage:'linked',pipBackground:'landscape',
- deckAppearance:'standard',cardBackColor:'sepia',playingOrientationMarks:false
+ deckAppearance:'standard',cardBackColor:'sepia',playingBackColor:'burgundy',playingOrientationMarks:false
 });
 function createDefaultSettings(overrides={}){
  return {
