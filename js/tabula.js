@@ -634,9 +634,12 @@ function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint()
  if(settings.cardDesign==='standard' && TABULA_TAROT_IMAGES[c.id])return cardArtworkMarkup(finishedCardSource(c,true,appearance)).replace('class="card-art"','class="card-art tarot-face-art"');
  return simpleCardMarkup(c);
 }
-function blueprintCardMarkup(c){
- if(c.id.startsWith('lenormand-'))return TabulaLenormand.faceMarkup(c);
- const artwork=TabulaDeckBlueprint.playingFaceMarkup(c,c.symbol,c.cardColor,c.rankLabel,settings.playingOrientationMarks===true);
+function blueprintCardMarkup(c,blueprint=activeBlueprint()){
+ if(c.id.startsWith('lenormand-'))return TabulaLenormand.faceMarkup(c,facePrefs.lenormand);
+ const originalRank=String(c.rankLabel??'');
+ const playingRank=isPlayingBlueprint(blueprint)&&/^([2-9]|10)$/.test(originalRank)&&facePrefs.playing==='roman'
+  ?romanValue(Number(originalRank)):originalRank;
+ const artwork=TabulaDeckBlueprint.playingFaceMarkup(c,c.symbol,c.cardColor,playingRank,settings.playingOrientationMarks===true);
  if(artwork)return artwork;
  const line=(!c.suitId&&!c.rankId&&typeof c.oracleLine==='string')?c.oracleLine.trim():'';
  const ink=TabulaDeckBlueprint.inkColor(c.cardColor);
@@ -3082,6 +3085,17 @@ const playingGalleryFilters=[['all','全54枚'],['pip','数札40枚'],['court','
  ['joker','ジョーカー2枚'],...BUILTIN_PLAYING.suits.map(s=>[s.id,s.name+'13枚'])];
 function galleryBlueprint(){return blueprintFor(GALLERY.deckId)}
 function galleryPlaying(){return isPlayingBlueprint(galleryBlueprint())}
+function updateGalleryNumberControls(){
+ const panel=document.querySelector('.face-preferences');
+ if(!panel)return;
+ const blueprint=galleryBlueprint();
+ const category=isPlayingBlueprint(blueprint)?'playing':isLenormandBlueprint(blueprint)?'lenormand':'tarot';
+ for(const select of panel.querySelectorAll('select[data-face]')){
+  const type=select.dataset.face;
+  select.closest('label').hidden=category==='tarot'?(type!=='major'&&type!=='pip'):type!==category;
+ }
+ panel.hidden=false;
+}
 function galleryFilters(){
  const blueprint=galleryBlueprint(),all=blueprint?TabulaDeckBlueprint.generate(blueprint):null;
  const picker=$('cardGalleryFilter');
@@ -3100,7 +3114,7 @@ function galleryFilters(){
  const gallery=$('cardGallery');
  gallery.querySelector('.gallery-brand').textContent=blueprint?.name||'TABULA TAROT';
  gallery.querySelector('.gallery-head small').textContent='THE CARDS · '+(all?.length??galleryDeck()?.included.length??78)+'枚の図鑑';
- gallery.querySelector('.face-preferences').style.display=blueprint?'none':'';
+ updateGalleryNumberControls();
 }
 function galleryDeck(){return deckLibrary.find(d=>d.id===GALLERY.deckId)||null}
 function gallerySimple(){return GALLERY.deckId==='simple'||!!galleryDeck()&&galleryDeck().faceStyle==='simple'}
@@ -3149,7 +3163,7 @@ function galleryBlueprintArtwork(c){
  frame.className='card-art gallery-blueprint-face';
  const face=document.createElement('div');
  face.className='face front gallery-blueprint-inner';
- face.innerHTML=blueprintCardMarkup(c);
+ face.innerHTML=blueprintCardMarkup(c,galleryBlueprint());
  face.style.transform='scale(1)';
  frame.append(face);
  frame.setAttribute('role','img');
@@ -3320,17 +3334,21 @@ function identifierPaths(label,cx,cy,height,maxWidth,fill,stroke){
 }
 
 const FACE_PREF_KEY='tabula_face_preferences_v1';
-let facePrefs={major:'roman',pip:'arabic'};
+let facePrefs={major:'roman',pip:'arabic',playing:'arabic',lenormand:'arabic'};
 try{Object.assign(facePrefs,JSON.parse(localStorage.getItem(FACE_PREF_KEY)||'{}'))}catch(e){}
+for(const key of ['major','pip','playing','lenormand']){
+ if(!['roman','arabic'].includes(facePrefs[key]))facePrefs[key]=key==='major'?'roman':'arabic';
+}
 
 function romanValue(n){if(!n)return '0';let out='';for(const [v,t] of [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']])while(n>=v){out+=t;n-=v}return out}
 function faceNumber(n,type){return n===null?'':facePrefs[type]==='roman'?romanValue(n):String(n)}
 function installFaceControls(){
  const host=document.querySelector('.gallery-controls');
  const panel=document.createElement('div');panel.className='face-preferences';
- panel.innerHTML='<label>大アルカナの数字 <select data-face="major"><option value="roman">ローマ数字</option><option value="arabic">算用数字</option></select></label><label>数札の数字 <select data-face="pip"><option value="arabic">算用数字</option><option value="roman">ローマ数字</option></select></label>';
+ panel.innerHTML='<label>大アルカナの数字 <select data-face="major"><option value="roman">ローマ数字</option><option value="arabic">算用数字</option></select></label><label>数札の数字 <select data-face="pip"><option value="arabic">算用数字</option><option value="roman">ローマ数字</option></select></label><label>プレイングカードの数字 <select data-face="playing"><option value="arabic">算用数字</option><option value="roman">ローマ数字</option></select></label><label>ルノルマンの数字 <select data-face="lenormand"><option value="arabic">算用数字</option><option value="roman">ローマ数字</option></select></label>';
  host.after(panel);
- panel.querySelectorAll('select').forEach(el=>{el.value=facePrefs[el.dataset.face];el.addEventListener('change',()=>{facePrefs[el.dataset.face]=el.value;localStorage.setItem(FACE_PREF_KEY,JSON.stringify(facePrefs));render();galleryRender();if(!$('cardGalleryLightbox').hidden)galleryShowLarge(GALLERY.index)})});
+ panel.querySelectorAll('select').forEach(el=>{el.value=facePrefs[el.dataset.face];el.addEventListener('change',()=>{facePrefs[el.dataset.face]=el.value;localStorage.setItem(FACE_PREF_KEY,JSON.stringify(facePrefs));render();if(GALLERY.visible){galleryRender();if(!$('cardGalleryLightbox').hidden)galleryShowLarge(GALLERY.index)}})});
+ updateGalleryNumberControls();
 }
 installFaceControls();
 
