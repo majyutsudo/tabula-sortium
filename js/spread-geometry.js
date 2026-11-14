@@ -39,7 +39,7 @@ function fitGridColumns(slots,zoneWidth,cardWidth,marginPx=6){
  if(full.some(row=>[...row].sort((a,b)=>a-b).some((x,i)=>Math.abs(x-pattern[i])>.1)))return output;
  const minStep=Math.min(...pattern.slice(1).map((x,i)=>x-pattern[i]));
  if(minStep<=0)return output;
- const requested=(cardWidth+4)/zoneWidth*100/minStep;
+ const requested=(cardWidth+2)/zoneWidth*100/minStep;
  if(requested<=1)return output;
  const extent=Math.max(...output.map(p=>Math.abs(p.x-50)));
  if(!extent)return output;
