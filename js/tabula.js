@@ -1927,10 +1927,11 @@ function exportAllData(){
     :{schemaVersion:STORAGE_SCHEMA_VERSION,settings,state,customIds,recipes,recipeId};
   const base=ordinary||{schemaVersion:STORAGE_SCHEMA_VERSION,settings,state,customIds,recipes,recipeId};
   downloadJSON({
-   format:EXPORT_FORMAT,version:2,kind:'backup',exportedAt:new Date().toISOString(),
+   format:EXPORT_FORMAT,version:3,kind:'backup',exportedAt:new Date().toISOString(),
    workspace:base,multiWorkspace,
    activeMultiWorkspace:!!dualSession,
-   snapshots,spreadLibrary,deckLibrary,blueprintLibrary:TabulaDeckBlueprint.load()
+   snapshots,spreadLibrary,deckLibrary,blueprintLibrary:TabulaDeckBlueprint.load(),
+   cardTextOverrides:cardTexts,deckIntroOverrides
   },'TABULA_BACKUP_'+new Date().toISOString().slice(0,10)+'.json');
   setStatus('通常の卓・追加卓・デッキ・記録を含むバックアップを書き出しました。');
  }catch(e){setStatus('バックアップを作成できませんでした：'+e.message)}
@@ -1986,7 +1987,7 @@ function readExternalFile(file){
   let data;
   try{data=JSON.parse(String(reader.result))}
   catch(e){alert('JSONファイルとして読み込めませんでした。');return}
-  if(data?.format!==EXPORT_FORMAT||!((data.kind==='reading'&&data.version===1)||(data.kind==='backup'&&[1,2].includes(data.version)))){
+  if(data?.format!==EXPORT_FORMAT||!((data.kind==='reading'&&data.version===1)||(data.kind==='backup'&&[1,2,3].includes(data.version)))){
    alert('TABULA SORTIUMの対応するJSONファイルではありません。');return;
   }
   if(data.kind==='reading'){
@@ -2000,9 +2001,16 @@ function readExternalFile(file){
    if(!storeSnapshots()){snapshots.shift();return}
    setStatus('占例を記録一覧に追加しました。卓上の「記録一覧・比較」から確認・復元できます。');return;
   }
-  const w=data.workspace,extra=data.version===2?data.multiWorkspace:null;
+  const w=data.workspace,extra=data.version>=2?data.multiWorkspace:null;
   const blueprints=data.blueprintLibrary===undefined?[]:data.blueprintLibrary;
-  const valid=validBlueprintLibrary(blueprints)&&validBackupWorkspace(w,blueprints)
+  const validTextMap=map=>map&&typeof map==='object'&&!Array.isArray(map)&&Object.keys(map).length<=10000
+   &&Object.entries(map).every(([id,v])=>id&&id!=='__proto__'&&id!=='constructor'&&id!=='prototype'&&id.length<=180
+    &&(typeof v==='string'||v&&typeof v==='object'&&!Array.isArray(v)&&typeof v.body==='string'&&(!Object.hasOwn(v,'source')||typeof v.source==='string')));
+  const intros=data.deckIntroOverrides??{};
+  const validIntros=intros&&typeof intros==='object'&&!Array.isArray(intros)&&Object.keys(intros).length<=100
+   &&Object.entries(intros).every(([id,value])=>Object.hasOwn(BUILTIN_DECK_INTROS,id)&&typeof value==='string'&&value.length<=20000);
+  const valid=validIntros&&(data.cardTextOverrides===undefined||validTextMap(data.cardTextOverrides))
+   &&validBlueprintLibrary(blueprints)&&validBackupWorkspace(w,blueprints)
    &&Array.isArray(data.snapshots)&&data.snapshots.length<=1000&&data.snapshots.every(validateReading)
    &&Array.isArray(data.spreadLibrary)&&data.spreadLibrary.length<=100
    &&data.spreadLibrary.every(x=>TabulaSpreadStore.validSpread(x))
@@ -2013,14 +2021,17 @@ function readExternalFile(file){
   if(!confirm('全データを復元すると、通常の卓・追加卓・デッキ・保存記録・設定を置き換えます。よろしいですか？'))return;
   // Stage all serialized values before touching storage. If any write fails,
   // roll back every affected key rather than keeping half an import.
-  const keys=[KEY,HISTORY_KEY,SPREAD_LIBRARY_KEY,TabulaDeckStore.KEY,TabulaDeckBlueprint.KEY,DUAL_SESSION_KEY,DUAL_RESTORE_ONCE_KEY];
+  const keys=[KEY,HISTORY_KEY,SPREAD_LIBRARY_KEY,TabulaDeckStore.KEY,TabulaDeckBlueprint.KEY,DUAL_SESSION_KEY,DUAL_RESTORE_ONCE_KEY,
+   'tabula_card_texts_v1',DECK_INTRO_OVERRIDES_KEY];
   const previous=new Map();
   try{
    const values=[
     JSON.stringify(w),JSON.stringify(data.snapshots),
     JSON.stringify(data.spreadLibrary),JSON.stringify(data.deckLibrary),JSON.stringify(blueprints),
     extra?JSON.stringify(extra):null,
-    extra&&data.activeMultiWorkspace&&extra.workspaceKind===undefined?'1':null
+    extra&&data.activeMultiWorkspace&&extra.workspaceKind===undefined?'1':null,
+    data.cardTextOverrides===undefined?localStorage.getItem('tabula_card_texts_v1'):JSON.stringify(data.cardTextOverrides),
+    data.deckIntroOverrides===undefined?localStorage.getItem(DECK_INTRO_OVERRIDES_KEY):JSON.stringify(data.deckIntroOverrides)
    ];
    for(const key of keys)previous.set(key,localStorage.getItem(key));
    keys.forEach((key,i)=>values[i]===null?localStorage.removeItem(key):localStorage.setItem(key,values[i]));
