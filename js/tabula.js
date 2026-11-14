@@ -1834,7 +1834,7 @@ function syncFrameVisibility(){
  $('zone').classList.toggle('frames-hidden',!visible&&!spreadWorkbench);
  const button=$('quickFrames');
  if(button){
-  button.textContent='配置枠';
+  button.textContent='配置枠：'+(visible?'ON':'OFF');
   button.setAttribute('aria-pressed',String(visible));
   button.title=visible?'配置枠を隠す':'配置枠を表示する';
  }
