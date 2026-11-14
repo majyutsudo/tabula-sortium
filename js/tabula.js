@@ -2435,6 +2435,7 @@ function openPlayingDeckEditor(source=BUILTIN_PLAYING,createCopy=false){
  }
  function render(){
   $('playingEditorName').value=draft.name;
+  $('playingEditorDescription').value=draft.description||'';
   $('playingEditorLanguage').replaceChildren(...languages.map(v=>new Option(v.label,v.id)));
   $('playingEditorLanguage').value=language;
   $('playingEditorDelete').hidden=!saved;
@@ -2444,6 +2445,7 @@ function openPlayingDeckEditor(source=BUILTIN_PLAYING,createCopy=false){
  markup+='<nav class="editor-nav tarot-editor-nav" aria-label="編集画面の移動"><button type="button" id="playingEditorBack">← TABULAへ戻る</button><a href="deck-designer.html" id="playingEditorDesigner">デッキ設計室</a></nav>';
  markup+='<div class="tarot-edit-manage"><div class="tarot-edit-actions"><button type="button" id="playingEditorStandard">標準から新規作成</button><button type="button" id="playingEditorCopy">現在の内容を複製</button></div><p class="note">新規作成は標準54枚から、複製は現在の編集内容を引き継ぎます。</p></div>';
  markup+='<label class="field">デッキ名<input id="playingEditorName" maxlength="80"></label>';
+ markup+='<label class="field">デッキの説明（任意）<textarea id="playingEditorDescription" rows="3" placeholder="カード図鑑に表示する紹介文。空欄の場合は表示しません。"></textarea></label>';
  markup+='<label class="field">カード名の言語<select id="playingEditorLanguage"></select></label>';
  markup+='<h3 class="playing-editor-heading">カードの名称と表示 <span id="playingEditorCount"></span></h3><div class="playing-editor-tabs" id="playingEditorTabs"></div>';
  markup+='<div class="playing-editor-rows" id="playingEditorCards"></div>';
@@ -2453,6 +2455,7 @@ function openPlayingDeckEditor(source=BUILTIN_PLAYING,createCopy=false){
  $('playingEditorBack').onclick=closeModal;$('playingEditorCancel').onclick=closeModal;
  $('playingEditorDesigner').onclick=e=>{if(dirty&&!confirm('未保存の変更を破棄してデッキ設計室へ移動しますか？'))e.preventDefault()};
  $('playingEditorName').oninput=e=>{draft.name=e.target.value;dirtyMark()};
+ $('playingEditorDescription').oninput=e=>{draft.description=e.target.value;dirtyMark()};
  $('playingEditorLanguage').onchange=e=>{language=e.target.value;renderCards()};
  $('playingEditorStandard').onclick=()=>{if(dirty&&!confirm('未保存の変更を破棄して標準54枚から始めますか？'))return;draft=makeDraft();saved=false;dirty=false;group='all';render();status('標準54枚から新しいデッキを作成します。')};
  $('playingEditorCopy').onclick=()=>{draft=makeDraft(draft);saved=false;dirty=true;render();status('現在の内容を複製しました。')};
@@ -2518,6 +2521,7 @@ function openLenormandDeckEditor(source=BUILTIN_LENORMAND,createCopy=false){
  }
  function render(){
   $('lenormandEditorName').value=draft.name;
+  $('lenormandEditorDescription').value=draft.description||'';
   $('lenormandEditorLanguage').value=language;
   $('lenormandEditorDelete').hidden=!saved;
   renderCards();
@@ -2526,6 +2530,7 @@ function openLenormandDeckEditor(source=BUILTIN_LENORMAND,createCopy=false){
  markup+='<nav class="editor-nav tarot-editor-nav" aria-label="編集画面の移動"><button type="button" id="lenormandEditorBack">← TABULAへ戻る</button><a href="deck-designer.html" id="lenormandEditorDesigner">デッキ設計室</a></nav>';
  markup+='<div class="tarot-edit-manage"><div class="tarot-edit-actions"><button type="button" id="lenormandEditorStandard">標準から新規作成</button><button type="button" id="lenormandEditorCopy">現在の内容を複製</button></div><p class="note">編集内容はブラウザーに保存され、標準の36枚には影響しません。</p></div>';
  markup+='<label class="field">デッキ名<input id="lenormandEditorName" maxlength="80"></label>';
+ markup+='<label class="field">デッキの説明（任意）<textarea id="lenormandEditorDescription" rows="3" placeholder="カード図鑑に表示する紹介文。空欄の場合は表示しません。"></textarea></label>';
  markup+='<label class="field">カード名の言語<select id="lenormandEditorLanguage"><option value="primary">日本語</option><option value="en">English</option></select></label>';
  markup+='<h3 class="playing-editor-heading">収録カードと名称 <span id="lenormandEditorCount"></span></h3>';
  markup+='<div class="playing-editor-rows" id="lenormandEditorCards"></div>';
@@ -2536,6 +2541,7 @@ function openLenormandDeckEditor(source=BUILTIN_LENORMAND,createCopy=false){
  $('lenormandEditorCancel').onclick=closeModal;
  $('lenormandEditorDesigner').onclick=e=>{if(dirty&&!confirm('未保存の変更を破棄してデッキ設計室へ移動しますか？'))e.preventDefault()};
  $('lenormandEditorName').oninput=e=>{draft.name=e.target.value;dirtyMark()};
+ $('lenormandEditorDescription').oninput=e=>{draft.description=e.target.value;dirtyMark()};
  $('lenormandEditorLanguage').onchange=e=>{language=e.target.value;renderCards()};
  $('lenormandEditorStandard').onclick=()=>{
   if(dirty&&!confirm('未保存の変更を破棄して標準36枚から始めますか？'))return;
@@ -2581,6 +2587,7 @@ function openDeckEditor(createCopy=false,fromStandard=false){
  let html='<h2>TABULA TAROT — デッキ編集</h2><p class="note">標準78枚体系を元に名称・番号・図像設定・収録カードを編集できます。標準デッキは変更しません。</p><nav class="editor-nav tarot-editor-nav" aria-label="編集画面の移動"><button type="button" id="deckEditorReturn">← TABULAへ戻る</button><a href="deck-designer.html" id="deckEditorDesigner">デッキ設計室</a></nav>';
  html+='<div class="tarot-edit-manage"><div class="tarot-edit-actions"><button type="button" id="deckEditorStandard">標準から新規作成</button><button type="button" id="deckEditorCopy">現在の内容を複製</button></div><p class="note">'+(existing?'保存済みデッキを編集中。':source?'選択中のデッキを元に複製を作成中。':'標準78枚から新しいデッキを作成中。')+' 新規作成は標準78枚から、複製は現在の設定を引き継ぎます。</p></div>';
  html+='<label class="field">デッキ名<input id="deckEditorName" maxlength="80" value="'+escapeHTML(draft.name)+'"></label>';
+ html+='<label class="field">デッキの説明（任意）<textarea id="deckEditorDescription" rows="3" placeholder="カード図鑑に表示する紹介文。空欄の場合は表示しません。"></textarea></label>';
  html+='<label class="field">表面デザイン<select id="deckEditorFaceStyle"><option value="standard">TABULA TAROT</option><option value="simple">SIMPLE TAROT</option></select></label>';
  html+='<label class="field">カード名の言語<select id="deckEditorLanguage">'+TabulaDeckStore.LANGUAGES.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('')+'</select></label>';
  html+='<div class="row deck-editor-shortcuts"><button type="button" id="deckEditorSwap">力 VIII ↔ 正義 XI</button><button type="button" id="deckEditorUnnumbered">愚者を番号なしに</button></div>';
@@ -2604,6 +2611,7 @@ function openDeckEditor(createCopy=false,fromStandard=false){
  $('deckEditorCopy').onclick=()=>{if(confirm('現在選択されているデッキを複製しますか？ 編集中の未保存の変更は破棄されます。'))openDeckEditor(true,false)};
  $('deckEditorReturn').onclick=closeModal;
  $('deckEditorDesigner').onclick=e=>{if(!confirm('デッキ設計室へ移動しますか？ 編集中の未保存の変更は破棄されます。'))e.preventDefault()};
+ $('deckEditorDescription').value=draft.description||'';
  $('deckEditorFaceStyle').value=draft.faceStyle||'standard';
  $('deckEditorLanguage').value=draft.language||'original';
  $('deckEditorPip').value=draft.pipBackground;
@@ -2631,6 +2639,7 @@ function openDeckEditor(createCopy=false,fromStandard=false){
  };
  $('deckEditorSave').onclick=()=>{
   draft.name=$('deckEditorName').value.trim();
+  draft.description=$('deckEditorDescription').value.trim();
   draft.faceStyle=$('deckEditorFaceStyle').value;
   draft.language=$('deckEditorLanguage').value;
   draft.pipBackground=$('deckEditorPip').value;
