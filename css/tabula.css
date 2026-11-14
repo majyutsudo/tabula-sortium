@@ -1737,3 +1737,32 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 
 /* Hide numeral selectors not relevant to the chosen gallery deck. */
 .face-preferences label[hidden],.face-preferences[hidden]{display:none!important}
+
+/* v0.541 — Desktop toolbar wraps as complete functional groups.
+   The second line always begins with 展開法; no orphaned icons or buttons. */
+@media(min-width:781px){
+ .main>.toolbar .toolbar-leading,
+ .main>.toolbar .toolbar-trailing{
+  display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:nowrap;
+ }
+ .main>.toolbar .toolbar-leading{
+  flex:1 1 550px;
+  min-width:min(100%,550px);
+ }
+ .main>.toolbar .toolbar-leading>.status{
+  flex:1 1 180px;min-width:105px;margin:0;
+ }
+ .main>.toolbar .toolbar-leading>.workspace-switcher,
+ .main>.toolbar .toolbar-leading>.toolbar-card-size,
+ .main>.toolbar .toolbar-leading>#desktopTableViews{
+  flex-shrink:0;
+ }
+ .main>.toolbar .toolbar-trailing{flex:0 0 auto;}
+ .main>.toolbar .toolbar-trailing>.mobile-cockpit-actions{display:contents;}
+ .main>.toolbar .toolbar-trailing .toolbar-spread-shortcut{flex:0 0 auto;}
+}
+@media(max-width:780px){
+ .main>.toolbar .toolbar-leading,
+ .main>.toolbar .toolbar-trailing{display:contents;}
+ .shell>.main>.toolbar .toolbar-leading>.status{display:none!important;}
+}
