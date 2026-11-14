@@ -808,3 +808,43 @@ test('a newly captured spread allows removing unnumbered cards and cancel restor
  expect(after.state.placed).toEqual(before.state.placed);
  expect(after.state.deck).toEqual(before.state.deck);
 });
+
+test('whole-spread arrows translate every saved slot together and keep circular offset after rotation',async({page})=>{
+ const fixture={
+  id:'custom_move_all',name:'全体移動検証',cardSize:1.25,
+  slots:[
+   {x:30,y:35,angle:10,name:'左'},
+   {x:50,y:60,angle:80,name:'中央'},
+   {x:70,y:35,angle:170,name:'右'}
+  ]
+ };
+ await page.evaluate(({key,item})=>localStorage.setItem(key,JSON.stringify([item])),{key:SPREADS,item:fixture});
+ await page.reload();
+ const before=await saved(page,WORKSPACE);
+ await page.locator('#spreadNotebook').click();
+ await page.locator('#archiveItems').getByRole('button',{name:'編集'}).click();
+ const snapshot=()=>page.locator('#zone .card').evaluateAll(nodes=>nodes.map(n=>({
+  x:parseFloat(n.style.left),y:parseFloat(n.style.top),angle:parseFloat(n.style.getPropertyValue('--rotation'))
+ })));
+ const original=await snapshot();
+ await page.locator('#spreadTranslateStep').selectOption('2');
+ await page.locator('#spreadTranslateRight').click();
+ await page.locator('#spreadTranslateDown').click();
+ const moved=await snapshot();
+ for(let i=0;i<moved.length;i++){
+  expect(moved[i].x).toBeGreaterThan(original[i].x);
+  expect(moved[i].y).toBeGreaterThan(original[i].y);
+  expect(moved[i].angle).toBeCloseTo(original[i].angle);
+  expect(moved[i].x-moved[0].x).toBeCloseTo(original[i].x-original[0].x);
+  expect(moved[i].y-moved[0].y).toBeCloseTo(original[i].y-original[0].y);
+ }
+ await page.locator('#spreadSave').click();
+ const savedSpread=(await saved(page,SPREADS)).find(x=>x.id===fixture.id);
+ for(let i=0;i<savedSpread.slots.length;i++){
+  expect(savedSpread.slots[i].x).toBeGreaterThan(fixture.slots[i].x);
+  expect(savedSpread.slots[i].y).toBeGreaterThan(fixture.slots[i].y);
+ }
+ const after=await saved(page,WORKSPACE);
+ expect(after.state.deck).toEqual(before.state.deck);
+ expect(after.state.placed).toEqual(before.state.placed);
+});
