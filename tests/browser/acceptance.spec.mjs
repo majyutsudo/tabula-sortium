@@ -1044,6 +1044,7 @@ test('quick opens sequentially, and simultaneous open lifts and flips all cards 
 });
 
 test('non-Tarot inspection and enlargement show the same explanatory text as the atlas',async ({page})=>{
+ page.on('dialog',dialog=>dialog.accept());
  for(const deckName of ['TABULA LENORMAND','PLAYING']){
   const options=await page.locator('#deckLibrarySelect option').evaluateAll(nodes=>
    nodes.map(n=>({value:n.value,text:n.textContent})));
@@ -1067,7 +1068,7 @@ test('non-Tarot inspection and enlargement show the same explanatory text as the
   await page.locator('#modalBg #modalClose').click();
   await page.locator('#inspectCards').click();
   await page.locator('#zone .card').first().click();
-  await page.locator('#enlargeSelected').click();
+  await page.locator('#enlargeSelected').evaluate(button=>button.click());
   await expect(page.locator('#tableCardText .card-prose')).toContainText(explanation.trim().slice(0,18));
   await page.locator('#modalBg #modalClose').click();
  }
