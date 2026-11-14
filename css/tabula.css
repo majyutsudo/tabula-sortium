@@ -1734,3 +1734,6 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .gallery-deck-intro-editor-actions #galleryDeckIntroSave{background:#5c5239;color:#fff0d2;border-color:#b79b63}
 .gallery-deck-intro-editor-status{margin:8px 0 0;color:#dfc89e;font:12px sans-serif}
 @media(max-width:500px){.gallery-deck-intro-toggle{font-size:14px}.gallery-deck-intro-body p{font-size:13px}.gallery-deck-intro-editor{padding:10px}}
+
+/* Hide numeral selectors not relevant to the chosen gallery deck. */
+.face-preferences label[hidden],.face-preferences[hidden]{display:none!important}
