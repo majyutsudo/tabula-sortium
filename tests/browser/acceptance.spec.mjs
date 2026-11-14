@@ -1006,6 +1006,15 @@ test('table deal mode and open mode controls persist without changing animation 
  await expect(open).toBeVisible();
  await page.locator('#tableDealOptionsButton').click();
  await expect(page.locator('#tableDealChoiceSlot #quickDealChoice')).toBeVisible();
+ const dealFace=page.locator('#quickDealChoice');
+ expect((await dealFace.locator('option').allTextContents()).join(' ')).not.toContain('裏配り');
+ expect((await dealFace.locator('option').allTextContents()).join(' ')).not.toContain('表配り');
+ const colors=await page.evaluate(()=>{
+  const numbered=getComputedStyle(document.querySelector('#quickDealChoice'));
+  const animation=getComputedStyle(document.querySelector('#dealAnimation'));
+  return {numbered:[numbered.backgroundColor,numbered.color,numbered.borderTopColor],animation:[animation.backgroundColor,animation.color,animation.borderTopColor]};
+ });
+ expect(colors.animation).toEqual(colors.numbered);
  await deal.selectOption('serpent');
  await open.selectOption('quick');
  let workspace=await saved(page,WORKSPACE);
