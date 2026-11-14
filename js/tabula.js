@@ -2125,15 +2125,25 @@ const snapshotFace=(v,p)=>v.cardNames?.[p.originalIndex]??TabulaUiFormat.snapsho
 function snapshotPanel(v){
  if(!v)return '<p class="note">記録を選択してください。</p>';
  const ordered=v.placed.map((p,i)=>({...p,originalIndex:i}));
+ const piles=(Array.isArray(v.tablePiles)?v.tablePiles:[]).filter(p=>p&&Array.isArray(p.cards)&&p.cards.length);
  const cloth=colors[Number.isInteger(v.settings?.color)?v.settings.color:0]?.[1]||'#171719';
  const altar=v.settings?.altar?'<div class="record-altar">'+(v.settings.candles||[{x:8,y:25,color:'#d8b977',lit:true},{x:92,y:25,color:'#d8b977',lit:true}]).map((c,i)=>'<div style="position:absolute;left:'+Number(c.x)+'%;top:'+Number(c.y)+'%;width:12%;aspect-ratio:120/210;transform:translate(-50%,-94%)">'+candleArtwork(c,i)+'</div>').join('')+'</div>':'';
  const pieces=ordered.map((p,i)=>{
   const face=p.faceUp?snapshotFace(v,p):'裏向き',cross=v.spread==='celtic'&&p.slot===1&&p.faceUp;
   const angle=(cross?80:Number(p.angle||0))+(p.reversed&&p.faceUp?180:0);
   const y=Number(p.y||0)+(cross?38/70*9:0);
-  return `<div class="snapshot-card" title="${escapeHTML(face)}" style="left:${Number(p.x)}%;top:${y}%;transform:translate(-50%,-50%) rotate(${angle}deg);z-index:${i+5}"><span style="transform:rotate(${p.reversed&&p.faceUp?180:0}deg)">${p.faceUp?escapeHTML(face):'✦'}</span></div>`
+  return `<div class="snapshot-card" title="${escapeHTML(face)}" style="left:${Number(p.x)}%;top:${y}%;transform:translate(-50%,-50%) rotate(${angle}deg);z-index:${i+5}"><span style="transform:rotate(${p.reversed&&p.faceUp?180:0}deg)">${p.faceUp?escapeHTML(face):'✦'}</span></div>`;
+ }).join('')+piles.map((pile,i)=>{
+  const top=pile.cards[0],face=top.faceUp?snapshotFace(v,top):'裏向き';
+  return `<div class="snapshot-card" title="${escapeHTML('束 '+pile.cards.length+'枚 · '+face)}" style="left:${Number(pile.x)}%;top:${Number(pile.y)}%;transform:translate(-50%,-50%) rotate(${Number(pile.angle)||0}deg);z-index:${ordered.length+i+5}"><span style="transform:rotate(${top.reversed&&top.faceUp?180:0}deg)">${top.faceUp?escapeHTML(face):'✦'}</span></div>`;
  }).join('');
- const rows=ordered.map((p,i)=>{let pos=p.slot!=null?v.slots?.[p.slot]:null;return `<div class="snapshot-row"><b>${pos?`${p.slot+1}. ${escapeHTML(pos.name)}`:`補助 ${i+1}`}</b><span>${p.faceUp?escapeHTML(snapshotFace(v,p)):'裏向き'}${p.reversed?'（逆）':''}</span></div>`}).join('');
+ const rows=ordered.map((p,i)=>{let pos=p.slot!=null?v.slots?.[p.slot]:null;return `<div class="snapshot-row"><b>${pos?`${p.slot+1}. ${escapeHTML(pos.name)}`:`補助 ${i+1}`}</b><span>${p.faceUp?escapeHTML(snapshotFace(v,p)):'裏向き'}${p.reversed?'（逆）':''}</span></div>`}).join('')
+  +piles.flatMap(pile=>pile.cards.map((card,index)=>{
+   const label=Number.isInteger(pile.slot)&&v.slots?.[pile.slot]
+    ?(pile.slot+1)+'. '+v.slots[pile.slot].name:'束 '+pile.id;
+   const face=card.faceUp?snapshotFace(v,card):'裏向き';
+   return `<div class="snapshot-row"><b>${escapeHTML(label)} · ${index+1}/${pile.cards.length}</b><span>${escapeHTML(face)}${card.reversed?'（逆）':''}</span></div>`;
+  })).join('');
  return `<div class="snapshot-board" style="--record-cloth:${cloth}">${altar}${pieces}</div><div class="snapshot-details">${rows}</div>`;
 }
 function snapshotStockForTable(v,source){
