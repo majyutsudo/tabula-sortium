@@ -1912,3 +1912,6 @@ aside .section :is(button,select,input,textarea),
 #tableDisplaySettings .table-display-frame-control>span{font-size:12px;flex:1;min-width:0}
 #tableDisplaySettings #quickFrames{width:auto;min-width:113px;padding:7px 10px;font-size:12px;white-space:nowrap}
 #tableDisplaySettings>.mini{margin:6px 0 0}
+
+/* v0.578: The primary deck selector matches the full-width deck actions. */
+#deckLibrarySelect{display:block;width:100%;min-height:44px;height:44px;border-radius:6px;padding:9px 34px 9px 12px;font-size:13px;line-height:1.4;box-sizing:border-box}
