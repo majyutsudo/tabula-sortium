@@ -2111,14 +2111,14 @@ function currentReadingSnapshot(id,name){
  return obj;
 }
 function captureSnapshot(name){
- if(!state.placed.length){setStatus('結果がありません。まずカードを配ってください。');return false}
+ if(!state.placed.length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('結果がありません。まずカードを配ってください。');return false}
  if(dualBusy())return false;
  const id='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
  snapshots.unshift(currentReadingSnapshot(id,name||freshName()));
  if(!storeSnapshots()){snapshots.shift();return false}
  setStatus('占い結果を記録しました。記録一覧から比較できます。');return true;
 }
-function saveSnapshotModal(){if(!state.placed.length){setStatus('保存する結果がありません。');return}modal('<h2>占い結果を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">結果を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
+function saveSnapshotModal(){if(!state.placed.length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('保存する結果がありません。');return}modal('<h2>占い結果を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">結果を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
 function saveAndAgain(){if(captureSnapshot('')){initialize();setStatus('結果を保存し、同じ設定で新しい占いを開始しました。')}}
 const snapshotSummary=TabulaUiFormat.snapshotSummary;
 const snapshotFace=(v,p)=>v.cardNames?.[p.originalIndex]??TabulaUiFormat.snapshotFace(p,cards);
