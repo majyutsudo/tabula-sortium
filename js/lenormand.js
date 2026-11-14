@@ -17,9 +17,18 @@ const blueprint=Object.freeze({
  version:1
 });
 function escapeXml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));}
-function faceMarkup(card){
+function romanNumeral(number){
+ let value=number,out='';
+ for(const [digit,glyph] of [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']]){
+  while(value>=digit){out+=glyph;value-=digit}
+ }
+ return out;
+}
+function faceMarkup(card,numberStyle='arabic'){
  const number=Number(card.lenormandNumber||String(card.id||'').split('-').pop());
  if(!Number.isInteger(number)||number<1||number>36)return '';
+ const shownNumber=numberStyle==='roman'?romanNumeral(number):String(number);
+ const numberFontSize=shownNumber.length>=7?12:shownNumber.length>=5?14:shownNumber.length>=4?16:19;
  const art='images/decks/tabula-lenormand/artwork/L'+String(number).padStart(2,'0')+'.png';
  const name=escapeXml(card.name||''),english=escapeXml(card.names?.en||'');
  const rank=escapeXml(card.playingRank||''),suit=escapeXml(card.playingSuit||'');
@@ -32,7 +41,7 @@ function faceMarkup(card){
  +'<svg x="19" y="19" width="262" height="412" viewBox="0 0 262 412" overflow="hidden"><image href="'+art+'" width="262" height="412" preserveAspectRatio="xMidYMid slice"/></svg>'
  +'<rect x="19" y="19" width="262" height="412" fill="none" stroke="#b1833b" stroke-width="2"/>'
  +ornaments
- +'<g transform="translate(150 34)"><ellipse rx="22" ry="18" fill="#f6e2b4" stroke="#966a30" stroke-width="2"/><ellipse rx="19" ry="15" fill="none" stroke="#d6af64"/><text text-anchor="middle" y="6" font-family="Georgia,serif" font-size="19" fill="#513922">'+number+'</text></g>'
+ +'<g transform="translate(150 34)"><ellipse rx="22" ry="18" fill="#f6e2b4" stroke="#966a30" stroke-width="2"/><ellipse rx="19" ry="15" fill="none" stroke="#d6af64"/><text text-anchor="middle" y="6" font-family="Georgia,serif" font-size="'+numberFontSize+'" fill="#513922">'+shownNumber+'</text></g>'
  +'<g transform="translate(253 346)"><path d="M0 -24L23 0L0 24L-23 0Z" fill="#fbecd0" stroke="#956b32" stroke-width="2"/><path d="M0 -19L18 0L0 19L-18 0Z" fill="none" stroke="#d8af69"/><text text-anchor="middle" y="-2" fill="'+ink+'" font-family="Georgia,serif" font-size="'+(rank.length>1?'12':'16')+'" font-weight="bold">'+rank+'</text><text text-anchor="middle" y="13" font-size="15" fill="'+ink+'">'+suit+'</text></g>'
  +'<path d="M52 401Q65 392 79 396H221Q236 392 248 401L242 425Q230 433 219 433H81Q69 433 58 425Z" fill="#f9eac6" stroke="#92682e" stroke-width="2"/>'
  +'<path d="M65 404H235M70 428H230" stroke="#cda767" stroke-width="1"/>'
