@@ -4,8 +4,8 @@
    and a final rotation matching the actual destination card. */
 (function(root){
  'use strict';
- const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petalSoft:'PETAL I — 緩やかな螺旋',petal:'PETAL II — 螺旋収束',petalVortex:'PETAL III — 強い吸引'});
- function normalize(mode){return Object.hasOwn(MODES,mode)?mode:'standard'}
+ const MODES=Object.freeze({standard:'STANDARD — 通常',spin:'SPIN — 回転',petalSoft:'PETAL — 緩やかな螺旋',serpent:'SERPENT — 蛇行'});
+ function normalize(mode){return mode==='petal'||mode==='petalVortex'?'petalSoft':Object.hasOwn(MODES,mode)?mode:'standard'}
  function create(mode,{dx,dy,arrivalAngle=0,wind=0,bounds=null}={}){
   mode=normalize(mode);
   const x=Number(dx)||0,y=Number(dy)||0,a=Number(arrivalAngle)||0;
@@ -21,6 +21,51 @@
     {offset:1,...finish,transform:transform(0,0,720+a)}
    ]
   };
+  if(mode==='serpent'){
+   // A single unbroken path: the card advances along the stock-to-target
+   // axis, displaced sideways by a damped sine wave (the snake's body).
+   // The card itself does not spin; only destination orientation is blended.
+   const distance=Math.hypot(x,y);
+   const nx=distance>1e-6?-y/distance:0;
+   const ny=distance>1e-6?x/distance:1;
+   const cycles=2.15;
+   const baseAmplitude=Math.min(104,distance*.23);
+   const direction=(Number(wind)||0)<0?-1:1;
+   const count=160;
+   const smooth=n=>Math.round(n*10000)/10000;
+   const samples=Array.from({length:count+1},(_,i)=>{
+    const t=i/count;
+    // Nearly even progress makes the procession considerably slower
+    // than PETAL without the visual sensation of a late acceleration.
+    const q=t*t*(3-2*t);
+    const envelope=Math.pow(Math.sin(Math.PI*q),.82);
+    const wave=Math.sin(2*Math.PI*cycles*q);
+    const displacement=direction*baseAmplitude*envelope*wave;
+    return {t,q,bx:x*(1-q),by:y*(1-q),vx:nx*displacement,vy:ny*displacement};
+   });
+   // Keep the entire bent line in the available viewport without moving
+   // either endpoint. Bounds may be relaxed for very close deck positions.
+   let amplitude=1;
+   if(bounds&&[bounds.minX,bounds.maxX,bounds.minY,bounds.maxY].every(Number.isFinite)){
+    const cap=(base,v,min,max)=>{
+     if(Math.abs(v)<1e-8)return 1;
+     return Math.max(0,Math.min(1,(v>0?max-base:min-base)/v));
+    };
+    for(const p of samples){
+     amplitude=Math.min(amplitude,
+      cap(p.bx,p.vx,bounds.minX,bounds.maxX),
+      cap(p.by,p.vy,bounds.minY,bounds.maxY));
+    }
+   }
+   const frames=samples.map(p=>({
+    offset:smooth(p.t),
+    transform:transform(smooth(p.bx+amplitude*p.vx),smooth(p.by+amplitude*p.vy),smooth(a*p.q),1),
+    filter:'brightness(1)'
+   }));
+   frames[0]={offset:0,transform:transform(x,y,0,1),filter:'brightness(1)'};
+   frames[frames.length-1]={offset:1,...finish};
+   return {duration:7800,easing:'linear',frames};
+  }
   if(mode==='petal'||mode==='petalSoft'||mode==='petalVortex'){
    // Spiral centred on the destination. s=0 is the stock; s=1 is the
    // destination, so every preset finishes exactly at the real card's centre.
