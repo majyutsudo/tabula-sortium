@@ -13,15 +13,19 @@
   const transform=(px,py,angle,scale=1)=>t(px,py)+' rotate('+angle+'deg) scale('+scale+')';
   const finish={transform:transform(0,0,a),filter:'brightness(1)'};
   if(mode==='spinSlow'){
-   // One uninterrupted interpolation, with a modest acceleration as
-   // the card approaches the destination. Matching the initial tangent
-   // to linear avoids a perceptible starting jolt; a steeper final
-   // tangent provides the brief pull-in without any intermediate pause.
-   // Both translation and rotation share this timing curve.
+   // A short physical throw precedes the levitating spin. The release
+   // travels briskly without rotating; the remainder completes two turns
+   // on one continuous, gently accelerating interpolation.
+   // Per-keyframe easing keeps the release linear (no intermediate stop).
+   const releaseTime=.065; // roughly half a second of the 7.8s flight
+   const releaseDistance=.20; // first fifth of the source-to-target vector
    return {
-    duration:7800,easing:'cubic-bezier(.25,.25,.78,.55)',
+    duration:7800,easing:'linear',
     frames:[
-     {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)'},
+     {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)',easing:'linear'},
+     {offset:releaseTime,
+      transform:transform(x*(1-releaseDistance),y*(1-releaseDistance),0,1),
+      filter:'brightness(1.04)',easing:'cubic-bezier(.25,.25,.78,.55)'},
      {offset:1,transform:transform(0,0,720+a),filter:'brightness(1)'}
     ]
    };
