@@ -28,7 +28,7 @@ test('SPIN performs two turns and finishes at an arbitrary target angle',()=>{
  }
 });
 
-test('SLOW SPIN throws halfway then makes one turn during the remaining flight',()=>{
+test('SLOW SPIN throws halfway then spins near normal speed during the remaining flight',()=>{
  for(const angle of [-155,0,45,90,170]){
   const fast=animation.create('spin',{dx:285,dy:-120,arrivalAngle:angle});
   const slow=animation.create('spinSlow',{dx:285,dy:-120,arrivalAngle:angle});
@@ -45,7 +45,7 @@ test('SLOW SPIN throws halfway then makes one turn during the remaining flight',
   assert.ok(slow.frames[1].transform.includes('calc(-50% + -60px)'));
   assert.equal(slow.frames[0].transform,fast.frames[0].transform);
   assert.ok(slow.frames[2].transform.includes('calc(-50% + 0px)'));
-  assert.ok(slow.frames[2].transform.includes('rotate('+(360+angle)+'deg)'));
+  assert.ok(slow.frames[2].transform.includes('rotate('+(360*16+angle)+'deg)'));
  }
 });
 
