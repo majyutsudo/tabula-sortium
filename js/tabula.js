@@ -3049,8 +3049,22 @@ async function revealAllFloating(){
   ],{duration,easing:'ease-in-out',fill:'forwards'});
   flights.push(flip.finished.catch(()=>{}));
  }
- // Physical pile tops have their own rendering system; keep their
- // reveal synchronized with the other cards without changing pile roles.
+ // Physical pile tops have their own rendering system. Lift and turn
+ // their visible top card at the same time, then reveal the actual face
+ // in the shared final render (the pile data/roles are never rebuilt).
+ for(const card of piles){
+  const node=[...$('zone').querySelectorAll('.table-pile-top')].find(el=>
+   el.dataset.instanceId===(card.instanceId||'')&&el.classList.contains('is-face-down'));
+  if(!node?.animate)continue;
+  const flip=node.animate([
+   {offset:0,transform:'translateY(0px) rotateY(0deg)'},
+   {offset:.28,transform:'translateY(-22px) rotateY(38deg)'},
+   {offset:.54,transform:'translateY(-28px) rotateY(105deg)'},
+   {offset:.8,transform:'translateY(-16px) rotateY(170deg)'},
+   {offset:1,transform:'translateY(0px) rotateY(180deg)'}
+  ],{duration,easing:'ease-in-out',fill:'forwards'});
+  flights.push(flip.finished.catch(()=>{}));
+ }
  try{
   if(flights.length)await Promise.all(flights);
   targets.forEach(({card})=>{card.faceUp=true});
