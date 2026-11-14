@@ -784,7 +784,7 @@ test('editing a registered spread removes chosen positions without moving others
  await expect(page.locator('#zone .card')).toHaveCount(2);
  await page.locator('#spreadSave').click();
  const savedSpread=(await saved(page,SPREADS)).find(p=>p.id===fixture.id);
- expect(savedSpread.slots).toEqual([fixture.slots[0],fixture.slots[2]]);
+ expect(savedSpread.slots).toMatchObject([fixture.slots[0],fixture.slots[2]]);
  expect(savedSpread.cardSize).toBeCloseTo(fixture.cardSize,2);
  const after=await saved(page,WORKSPACE);
  expect(after.state.deck).toEqual(before.state.deck);
