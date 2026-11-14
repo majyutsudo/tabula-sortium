@@ -13,11 +13,13 @@
   const transform=(px,py,angle,scale=1)=>t(px,py)+' rotate('+angle+'deg) scale('+scale+')';
   const finish={transform:transform(0,0,a),filter:'brightness(1)'};
   if(mode==='spinSlow'){
-   // One continuous interpolation: no intermediate easing boundaries.
-   // Rotation makes exactly two full turns while the card travels to
-   // its target at constant speed, then aligns with the destination.
+   // One uninterrupted interpolation, with a modest acceleration as
+   // the card approaches the destination. Matching the initial tangent
+   // to linear avoids a perceptible starting jolt; a steeper final
+   // tangent provides the brief pull-in without any intermediate pause.
+   // Both translation and rotation share this timing curve.
    return {
-    duration:7800,easing:'linear',
+    duration:7800,easing:'cubic-bezier(.25,.25,.78,.55)',
     frames:[
      {offset:0,transform:transform(x,y,0,.96),filter:'brightness(1.08)'},
      {offset:1,transform:transform(0,0,720+a),filter:'brightness(1)'}
