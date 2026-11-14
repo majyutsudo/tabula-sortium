@@ -1107,7 +1107,12 @@ test('independent refill and compact shortcuts persist per spread and do not ove
   const r=document.getElementById(id).getBoundingClientRect();
   return {top:r.top,bottom:r.bottom};
  }));
- expect(rects[1].bottom).toBeLessThan(rects[0].top);
+ expect(rects[0].bottom).toBeGreaterThan(rects[1].top);
+ expect(rects[0].top).toBeLessThan(rects[1].bottom);
+ const xPositions=await page.evaluate(()=>['quickCompactAction','quickRefillAction'].map(id=>{
+  const r=document.getElementById(id).getBoundingClientRect();return {left:r.left,right:r.right};
+ }));
+ expect(xPositions[0].right).toBeLessThan(xPositions[1].left);
  await page.locator('#spreadQuickSelect').selectOption('free');
  await expect(page.locator('#quickRefillAction')).toBeHidden();
  await page.locator('#spreadQuickSelect').selectOption('three');
