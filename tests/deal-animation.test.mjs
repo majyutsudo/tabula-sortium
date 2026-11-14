@@ -28,7 +28,7 @@ test('SPIN performs two turns and finishes at an arbitrary target angle',()=>{
  }
 });
 
-test('SLOW SPIN launches with a short unrotated throw and then spins continuously',()=>{
+test('SLOW SPIN throws halfway then makes one turn during the remaining flight',()=>{
  for(const angle of [-155,0,45,90,170]){
   const fast=animation.create('spin',{dx:285,dy:-120,arrivalAngle:angle});
   const slow=animation.create('spinSlow',{dx:285,dy:-120,arrivalAngle:angle});
@@ -36,16 +36,16 @@ test('SLOW SPIN launches with a short unrotated throw and then spins continuousl
   assert.equal(fast.frames.length,4);
   assert.equal(slow.duration,7800);
   assert.equal(slow.easing,'linear');
-  assert.equal(slow.frames.length,3,'one throw transition, one spin segment');
+  assert.equal(slow.frames.length,3,'one throw transition, one continuous spin segment');
   assert.deepEqual(Array.from(slow.frames.map(frame=>frame.offset)),[0,.065,1]);
   assert.equal(slow.frames[0].easing,'linear');
   assert.equal(slow.frames[1].easing,'cubic-bezier(.25,.25,.78,.55)');
-  assert.match(slow.frames[1].transform,/rotate\\(0deg\\)/);
-  assert.match(slow.frames[1].transform,/calc\\(-50% \\+ 228px\\)/);
-  assert.match(slow.frames[1].transform,/calc\\(-50% \\+ -96px\\)/);
+  assert.ok(slow.frames[1].transform.includes('rotate(0deg)'));
+  assert.ok(slow.frames[1].transform.includes('calc(-50% + 142.5px)'));
+  assert.ok(slow.frames[1].transform.includes('calc(-50% + -60px)'));
   assert.equal(slow.frames[0].transform,fast.frames[0].transform);
-  assert.equal(slow.frames[2].transform,fast.frames.at(-1).transform);
-  assert.ok(slow.frames[2].transform.includes('rotate('+(720+angle)+'deg)'));
+  assert.ok(slow.frames[2].transform.includes('calc(-50% + 0px)'));
+  assert.ok(slow.frames[2].transform.includes('rotate('+(360+angle)+'deg)'));
  }
 });
 
