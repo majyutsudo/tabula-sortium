@@ -848,3 +848,37 @@ test('whole-spread arrows translate every saved slot together and keep circular 
  expect(after.state.deck).toEqual(before.state.deck);
  expect(after.state.placed).toEqual(before.state.placed);
 });
+
+test('imported reading can register its own spread with slot names, order and details',async({page})=>{
+ const fixture={
+  id:'custom_export_source',name:'元の祭壇',cardSize:1.45,
+  slots:[{x:31,y:22,angle:15,name:'第一・三角',detail:'入口'},
+   {x:52,y:49,angle:90,name:'第二・十字',detail:'中心'},
+   {x:68,y:75,angle:270,name:'第三・円環',detail:'終幕'}]
+ };
+ await page.evaluate(({key,record})=>{
+  const previous=JSON.parse(localStorage.getItem('tabula_sortium_v01'));
+  localStorage.setItem('tabula_sortium_history_v034',JSON.stringify([{
+   id:'reading_imported',name:'共有された占例',time:new Date().toISOString(),
+   placed:[{...previous.state.deck[0],x:31,y:22,angle:15,slot:0}],
+   deck:previous.state.deck.slice(1),removed:[],tablePiles:[],slots:record.slots,
+   settings:{...previous.settings,spread:record.id,cardSize:record.cardSize},
+   spread:record.id,cardNames:['愚者']
+  }]));
+ },{key:WORKSPACE,record:fixture});
+ await page.reload();
+ const before=await saved(page,WORKSPACE);
+ await page.locator('#quickSnapshotList').click();
+ await expect(page.locator('#registerSpreadA')).toBeVisible();
+ page.once('dialog',dialog=>dialog.accept('祭壇の再登録'));
+ await page.locator('#registerSpreadA').click();
+ const items=await saved(page,SPREADS);
+ expect(items).toHaveLength(1);
+ expect(items[0].name).toBe('祭壇の再登録');
+ expect(items[0].cardSize).toBeCloseTo(fixture.cardSize);
+ expect(items[0].slots).toEqual(fixture.slots);
+ const after=await saved(page,WORKSPACE);
+ expect(after.state).toEqual(before.state);
+ await page.reload();
+ await expect(page.locator('#spreadQuickSelect option')).toContainText(['祭壇の再登録']);
+});
