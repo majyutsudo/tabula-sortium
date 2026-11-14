@@ -1915,3 +1915,66 @@ aside .section :is(button,select,input,textarea),
 
 /* v0.578: The primary deck selector matches the full-width deck actions. */
 #deckLibrarySelect{display:block;width:100%;min-height:44px;height:44px;border-radius:6px;padding:9px 34px 9px 12px;font-size:13px;line-height:1.4;box-sizing:border-box}
+
+/* v0.579: Align Table Management with the denser card-settings rhythm.
+   Only recently added controls are normalized; other sections are untouched. */
+#tableManagement .table-workspace-start{
+ gap:7px;
+ padding:3px 0 5px;
+}
+#tableManagement .table-current-chip{
+ padding:7px 10px;
+}
+#tableManagement #tableDisplaySettings{
+ margin-top:7px;
+ padding-top:8px;
+}
+#tableManagement #tableDisplaySettings .label-cycle-settings{
+ margin:5px 0 6px;
+ padding:0;
+ border:0;
+ width:100%;
+}
+#tableManagement #tableDisplaySettings .label-cycle-settings>summary{
+ font-family:var(--tabula-ui-font);
+ font-size:12px;
+ line-height:1.4;
+ font-weight:normal;
+ box-sizing:border-box;
+ min-height:35px;
+ display:flex;
+ align-items:center;
+ padding:7px 10px;
+ border:1px solid #655e4a;
+ border-radius:5px;
+ background:rgba(22,31,27,.36);
+}
+#tableManagement #tableDisplaySettings .label-cycle-settings .mini{
+ margin:6px 0 5px;
+}
+#tableManagement #tableDisplaySettings .label-cycle-options{
+ gap:6px 10px;
+ padding:4px 0 5px;
+}
+#tableManagement #tableDisplaySettings .label-cycle-options label,
+#tableManagement #tableDisplaySettings .label-cycle-placement{
+ font-family:var(--tabula-ui-font);
+ font-size:12px;
+}
+#tableManagement #tableDisplaySettings .field{
+ margin:5px 0 6px;
+ font-size:12px;
+}
+#tableManagement #tableDisplaySettings .field select{
+ min-height:35px;
+ font-size:12px;
+}
+#tableManagement #tableDisplaySettings .table-display-frame-control{
+ margin-top:6px;
+ gap:8px;
+}
+#tableManagement #tableDisplaySettings #quickFrames{
+ min-height:35px;
+ font-family:var(--tabula-ui-font);
+ font-size:12px;
+}
