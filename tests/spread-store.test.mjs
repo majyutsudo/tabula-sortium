@@ -39,3 +39,24 @@ test('custom library limit is retained',()=>{
   storage.setItem('spread_key',JSON.stringify(rows));
   assert.equal(store.read(storage,'spread_key').length,100);
 });
+
+test('reading slots become a reusable spread with original order, names and details',()=>{
+ const input={settings:{cardSize:1.45},placed:[{id:'major_00',x:90,y:90}],
+  slots:[{x:30,y:20,angle:15,name:'第一・火',detail:'原因'},
+   {x:70,y:40,angle:270,name:'第二・水',detail:'結末',frameRole:'tableau'}]};
+ const spread=store.fromReading(input,'custom_shared','儀式のスプレッド');
+ assert.equal(spread.id,'custom_shared');
+ assert.equal(spread.name,'儀式のスプレッド');
+ assert.equal(spread.cardSize,1.45);
+ assert.deepEqual(JSON.parse(JSON.stringify(spread.slots)),input.slots);
+ assert.equal(store.validSpread(spread),true);
+ assert.equal(input.slots[0].name,'第一・火');
+});
+test('legacy free reading without slots can still register physical positions',()=>{
+ const reading={placed:[{id:'major_01',x:21,y:34,angle:90,slot:1},
+  {id:'major_00',x:72,y:54,angle:0,slot:0}],tablePiles:[],settings:{}};
+ const spread=store.fromReading(reading,'custom_legacy','旧占例');
+ assert.deepEqual(Array.from(spread.slots,p=>[p.x,p.y,p.name]),[[72,54,'位置1'],[21,34,'位置2']]);
+ assert.equal('cardSize' in spread,false);
+ assert.throws(()=>store.fromReading({placed:[],slots:[]},'custom_x','bad'));
+});
