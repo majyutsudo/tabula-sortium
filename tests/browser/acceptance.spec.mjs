@@ -733,3 +733,28 @@ test('desktop status moves below controls only when toolbar width is constrained
  await page.setViewportSize({width:1920,height:900});
  await expect(page.locator('.toolbar')).not.toHaveClass(/status-on-second-row/);
 });
+
+test('rotation mode drags the physical card without relocating or flipping it',async({page})=>{
+ await page.setViewportSize({width:1440,height:900});
+ await page.locator('#spreadQuickSelect').selectOption('free');
+ await page.locator('#quickDeal').click();
+ await expect(page.locator('#zone .card')).toHaveCount(1);
+ const node=page.locator('#zone .card').first();
+ const box=await node.boundingBox();
+ await page.mouse.click(box.x+box.width/2,box.y+box.height/2);
+ await expect(page.locator('#rotateDragMode')).toBeVisible();
+ await page.locator('#rotateDragMode').click();
+ const start=(await saved(page,WORKSPACE)).state.placed[0];
+ const rect=await node.boundingBox();
+ await page.mouse.move(rect.x+rect.width*.85,rect.y+rect.height*.35);
+ await page.mouse.down();
+ await page.mouse.move(rect.x+rect.width*.65,rect.y+rect.height*.85,{steps:12});
+ await page.mouse.up();
+ const result=(await saved(page,WORKSPACE)).state.placed[0];
+ expect(result.x).toBeCloseTo(start.x,4);
+ expect(result.y).toBeCloseTo(start.y,4);
+ expect(result.angle).not.toBe(start.angle);
+ expect(result.faceUp).toBe(start.faceUp);
+ await page.reload();
+ expect((await saved(page,WORKSPACE)).state.placed[0].angle).toBeCloseTo(result.angle,1);
+});
