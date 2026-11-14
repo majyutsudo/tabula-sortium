@@ -267,7 +267,7 @@ function createDefaultSettings(overrides={}){
  return {
   ...DEFAULT_SETTINGS,
   reversalsByDeck:{},spreadDealOrders:{},compactShortcutVisibility:{},
-  refillShortcutVisibility:{},frameShortcutVisibility:{},deckBackColors:{builtin:'sepia'},
+  refillShortcutVisibility:{},deckBackColors:{builtin:'sepia'},
   ...overrides
  };
 }
@@ -1089,18 +1089,6 @@ function updateNaturalTiltButton(){
    placement.append(frameButton);
    if(oldContainer)oldContainer.remove();
   }
-  let frameVisibilityToggle=$('frameShortcutVisibility');
-  if(!frameVisibilityToggle){
-   const row=document.createElement('label');row.className='compact-shortcut-toggle';
-   frameVisibilityToggle=document.createElement('input');frameVisibilityToggle.type='checkbox';frameVisibilityToggle.id='frameShortcutVisibility';
-   frameVisibilityToggle.onchange=()=>{
-    settings.frameShortcutVisibility??={};
-    settings.frameShortcutVisibility[settings.spread]=frameVisibilityToggle.checked;
-    syncCompactShortcut();saveLocal();
-   };
-   row.append(frameVisibilityToggle,document.createTextNode('「配置枠」を卓に表示'));
-   placement.append(row);
-  }
   const hand=document.getElementById('naturalTiltButton');
   if(hand){hand.removeAttribute('style');hand.classList.add('placement-tools-button');behavior.append(hand)}
   layout.append(behavior);
@@ -1140,14 +1128,6 @@ function syncCompactShortcut(){
   tray.append(refill);
  }
  refill.hidden=!refillShortcutShown()||!!spreadWorkbench;
- let frames=$('quickFrameAction');
- if(!frames){
-  frames=document.createElement('button');frames.id='quickFrameAction';frames.type='button';
-  frames.onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を表示しました。':'配置枠を非表示にしました。')};
-  tray.append(frames);
- }
- frames.hidden=!frameShortcutShown()||!!spreadWorkbench;
- syncFrameVisibility();
  const checkbox=$('compactShortcutVisibility');
  if(checkbox)checkbox.checked=compactShortcutShown();
  const refillCheckbox=$('refillShortcutVisibility');
@@ -1846,28 +1826,15 @@ function spreadFramePolicy(id=settings.spread){
 function resetFramesForSpread(id=settings.spread){
  settings.framesVisible=spreadFramePolicy(id).initialVisible;
 }
-function frameShortcutShown(){
- const overrides=settings.frameShortcutVisibility;
- if(overrides&&typeof overrides==='object'&&Object.hasOwn(overrides,settings.spread))return overrides[settings.spread]===true;
- return settings.spread==='fourSeasons';
-}
 function syncFrameVisibility(){
  const visible=settings.framesVisible!==false;
  $('zone').classList.toggle('frames-hidden',!visible&&!spreadWorkbench);
  const button=$('quickFrames');
  if(button){
-  button.textContent='配置枠：'+(visible?'ON':'OFF');
+  button.textContent='配置枠';
   button.setAttribute('aria-pressed',String(visible));
-  button.title=visible?'配置枠を隠す':'配置枠を再表示する';
+  button.title=visible?'配置枠を隠す':'配置枠を表示する';
  }
- const quick=$('quickFrameAction');
- if(quick){
-  quick.textContent='▣ 配置枠 '+(visible?'ON':'OFF');
-  quick.setAttribute('aria-pressed',String(visible));
-  quick.title=visible?'配置枠を隠す':'配置枠を表示する';
- }
- const checkbox=$('frameShortcutVisibility');
- if(checkbox)checkbox.checked=frameShortcutShown();
 }
 function setFrameVisibility(visible,persist=true){
  settings.framesVisible=!!visible;
