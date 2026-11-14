@@ -35,7 +35,7 @@ test('SLOW SPIN uses uninterrupted linear travel and rotation',()=>{
   assert.equal(fast.duration,680);
   assert.equal(fast.frames.length,4);
   assert.equal(slow.duration,7800);
-  assert.equal(slow.easing,'linear');
+  assert.equal(slow.easing,'cubic-bezier(.25,.25,.78,.55)');
   assert.equal(slow.frames.length,2,'no intermediate pause-inducing keyframes');
   assert.equal(slow.frames[0].offset,0);
   assert.equal(slow.frames[1].offset,1);
