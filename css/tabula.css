@@ -2307,19 +2307,23 @@ aside .section :is(button,select,input,textarea),
 /* v0.603 — BLOOM becomes a wind-borne simultaneous turn, not a procession.
    Keep the 3-D faces intact: no filter or opacity on the rotating parent. */
 @keyframes tabula-bloom-gust{
- 0%{transform:translate3d(0,0,0) rotateZ(0deg) rotateY(0deg)}
- 16%{transform:translate3d(var(--bloom-wind-half,8px),-7px,0) rotateZ(var(--bloom-tilt,0deg)) rotateY(20deg)}
- 50%{transform:translate3d(var(--bloom-wind,16px),-25px,0) rotateZ(var(--bloom-tilt,0deg)) rotateY(91deg)}
- 78%{transform:translate3d(var(--bloom-wind-half,8px),-10px,0) rotateZ(0deg) rotateY(156deg)}
- 100%{transform:translate3d(0,0,0) rotateZ(0deg) rotateY(180deg)}
+ 0%{transform:translate3d(0,0,0) rotateZ(0deg) rotateX(0deg) rotateY(0deg)}
+ 12%{transform:translate3d(-7px,-3px,0) rotateZ(-5deg) rotateX(-12deg) rotateY(4deg)}
+ 29%{transform:translate3d(var(--bloom-wind-half,16px),-15px,0) rotateZ(var(--bloom-tilt,0deg)) rotateX(-17deg) rotateY(32deg)}
+ 54%{transform:translate3d(var(--bloom-wind,30px),-36px,0) rotateZ(8deg) rotateX(-13deg) rotateY(101deg)}
+ 78%{transform:translate3d(var(--bloom-wind-half,16px),-18px,0) rotateZ(-4deg) rotateX(5deg) rotateY(163deg)}
+ 91%{transform:translate3d(-3px,3px,0) rotateZ(2deg) rotateX(2deg) rotateY(183deg)}
+ 100%{transform:translate3d(0,0,0) rotateZ(0deg) rotateX(0deg) rotateY(180deg)}
 }
 #zone .card.faceup.ceremonial-opening.bloom-opening .card-inner{
- animation:tabula-bloom-gust 1200ms cubic-bezier(.36,0,.56,1) var(--ceremonial-delay,0ms) both!important;
+ animation:tabula-bloom-gust 1350ms cubic-bezier(.34,.05,.46,1) var(--ceremonial-delay,0ms) both!important;
 }
 @keyframes tabula-bloom-pile-gust{
  0%,100%{transform:translate3d(0,0,0)}
- 50%{transform:translate3d(var(--bloom-wind,16px),-22px,0)}
+ 18%{transform:translate3d(-6px,-3px,0)}
+ 54%{transform:translate3d(var(--bloom-wind,30px),-29px,0)}
+ 85%{transform:translate3d(0,2px,0)}
 }
 #zone .table-pile-top.ceremonial-opening.bloom-opening{
- animation:tabula-bloom-pile-gust 1200ms cubic-bezier(.36,0,.56,1) var(--ceremonial-delay,0ms) both!important;
+ animation:tabula-bloom-pile-gust 1350ms cubic-bezier(.34,.05,.46,1) var(--ceremonial-delay,0ms) both!important;
 }
