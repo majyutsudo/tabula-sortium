@@ -2248,3 +2248,34 @@ aside .section :is(button,select,input,textarea),
   white-space:nowrap;
  }
 }
+
+/* v0.599 — slow, restrained 3-D reveal for FLOAT and staggered BLOOM.
+   Transform only the inner face; outer card angle and position stay intact. */
+@keyframes tabula-ceremonial-turn{
+ 0%{transform:translateY(0) rotateY(0deg);filter:brightness(1)}
+ 18%{transform:translateY(-12px) rotateY(5deg);filter:brightness(1.04)}
+ 42%{transform:translateY(-23px) rotateY(57deg);filter:brightness(1.11)}
+ 66%{transform:translateY(-24px) rotateY(123deg);filter:brightness(1.12)}
+ 84%{transform:translateY(-12px) rotateY(168deg);filter:brightness(1.04)}
+ 100%{transform:translateY(0) rotateY(180deg);filter:brightness(1)}
+}
+#zone .card.faceup.ceremonial-opening .card-inner{
+ animation:tabula-ceremonial-turn 2400ms cubic-bezier(.42,0,.25,1) var(--ceremonial-delay,0ms) both!important;
+ transition:none!important;
+ transform-style:preserve-3d;
+}
+@keyframes tabula-ceremonial-pile{
+ 0%{transform:translateY(0) scaleX(1);filter:brightness(1)}
+ 26%{transform:translateY(-14px) scaleX(.7);filter:brightness(1.08)}
+ 50%{transform:translateY(-22px) scaleX(.03);filter:brightness(1.12)}
+ 74%{transform:translateY(-14px) scaleX(.7);filter:brightness(1.07)}
+ 100%{transform:translateY(0) scaleX(1);filter:brightness(1)}
+}
+#zone .table-pile-top.ceremonial-opening{
+ animation:tabula-ceremonial-pile 2400ms cubic-bezier(.42,0,.25,1) var(--ceremonial-delay,0ms) both!important;
+}
+#zone.ceremonial-opening-active{pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+ #zone .card.faceup.ceremonial-opening .card-inner,
+ #zone .table-pile-top.ceremonial-opening{animation:none!important}
+}
