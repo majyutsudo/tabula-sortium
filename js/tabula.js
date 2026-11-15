@@ -682,6 +682,8 @@ function soundAtAnimationEnd(node,animationName,volume=1){
   if(event.target===node&&event.animationName===animationName)play('flip',volume);
  },{once:false});
 }function initialize(){
+ // A new reading uses the selected spread's saved/default card size.
+ applySpreadCardSize(settings.spread);
  if(dualSession){
   if(dualBusy())return;
   // A new reading operates only on the selected table. Another table may
@@ -2208,12 +2210,19 @@ async function dealAuto(){
  }
  if(!dualSession&&state.deck.length&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))){hideFramesForDeal();saveLocal()}
  if(!dualSession&&dealWorkbenchController?.executeSelected())return;
- if(!state.deck.length)return;
+ if(!state.deck.length){
+  // A truly empty, undealt workspace may be initialized by the deal action.
+  // Never reset an existing completed or partially dealt reading.
+  const emptyTable=!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length);
+  if(!dualSession&&emptyTable){initialize();}
+  if(!state.deck.length){setStatus('山札にカードがありません。新しい占いを始めてください。');return;}
+ }
  if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}
  const unfilled=getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i));
  if(!unfilled.length){setStatus('基本の配札が完了しました。山札から補助カードを追加できます。');return}
  hideFramesForDeal();saveLocal();
  const startingSpread=settings.spread,startingSession=dualSession;
+ const alreadyDealt=state.placed.length;
  autoDealBusy=true;dealCancelRequested=false;syncDealButton();
  if(dualSession)dualDealBusy=true;
  try{
@@ -2221,7 +2230,9 @@ async function dealAuto(){
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   for(const slot of unfilled){
    if(dealCancelRequested||settings.spread!==startingSpread||dualSession!==startingSession||!state.deck.length)break;
+   const before=state.deck.length;
    await drawAt(slot);
+   if(state.deck.length===before)break; // Respect a rejected draw instead of silently continuing.
    // Maintain approximately the old deliberate 340-ms rhythm, while
    // preventing work on a blocked main thread from bunching card arrivals.
    await new Promise(resolve=>setTimeout(resolve,20));
@@ -2231,6 +2242,8 @@ async function dealAuto(){
   if(startingSession)dualDealBusy=false;
   if(dealCancelRequested)setStatus('配札を中断しました。');
  }
+ if(!dealCancelRequested&&settings.spread===startingSpread&&state.placed.length>alreadyDealt&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))&&!state.deck.length)
+  setStatus('山札がなくなりました。残りの位置には配札できません。');
  // The final arrival animation is complete; check face-up spreads once.
  if(!startingSession&&settings.spread===startingSpread&&settings.dealFaceUp===true){maybeTriggerCompletionEffect();saveLocal();}
 }
@@ -2689,7 +2702,7 @@ function closeModal(){$('modalBg').classList.remove('open','records-active','car
   settings.deckBackColors={builtin:settings.deckId==='builtin'&&settings.cardBackColor!=='green'&&Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'sepia',[BUILTIN_LENORMAND.id]:'green'};
   if(settings.deckId==='builtin')settings.cardBackColor=settings.deckBackColors.builtin;
  }
- if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
+ if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(settings.spread==='grandStar'?spreadCardSize('grandStar'):(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread)));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
 function updateStandaloneAvailability(){const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash;w.title=noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}if(c){c.disabled=noCut;c.title=noCut?'カットは「なし」に設定されています':'山札をカット'}}function sync(){syncDeckReversals();if(activeBlueprint())settings.cardDesign='simple';else if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';updateAppearanceControls();refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';const poolInput=$('pool');
  const blueprint=activeBlueprint();
  const poolOptions=blueprint
@@ -3177,7 +3190,7 @@ function openSequentially(){if(openingBusy)return;const closed=[...state.placed.
 /* All spread selectors must use the same collect-or-cancel transaction.
    Never discard pile frames containing physical cards. */
 function changeActiveSpread(nextSpread){
- if(nextSpread===settings.spread){syncSpreadShortcut();return true}
+ if(nextSpread===settings.spread){if(nextSpread==='grandStar'){applySpreadCardSize(nextSpread);render();saveLocal()}syncSpreadShortcut();return true}
  if(dualBusy())return false;
  const occupied=state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length);
  if(occupied&&!confirm(dualSession
