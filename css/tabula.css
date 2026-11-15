@@ -2291,3 +2291,15 @@ aside .section :is(button,select,input,textarea),
  #zone .card.faceup.ceremonial-opening .card-inner,
  #zone .table-pile-top.ceremonial-opening{animation:none!important}
 }
+
+/* v0.602 — keep the native spread selector accessible next to the deck menu. */
+.main>.toolbar .toolbar-spread-shortcut{
+ position:relative;
+ z-index:7001;
+ min-width:0;
+}
+.main>.toolbar .toolbar-spread-shortcut select{
+ position:relative;
+ z-index:1;
+ pointer-events:auto;
+}
