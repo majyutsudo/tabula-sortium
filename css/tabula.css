@@ -2185,12 +2185,12 @@ aside .section :is(button,select,input,textarea),
 }
 
 /* v0.595 — quick deck access beside the spread; status lives below the table. */
-.main>.table-status{
- display:block;box-sizing:border-box;flex:none;min-height:28px;
- padding:6px 13px;margin:0;background:#1b2421;
- border-top:1px solid #414638;border-bottom:1px solid #4c4e40;
+.main>.stage-shell>.table-status{
+ position:absolute;z-index:550;left:0;right:0;bottom:2px;
+ display:block;box-sizing:border-box;height:23px;min-height:0;
+ padding:3px 13px;margin:0;background:transparent;border:0;
  color:#c8bfa8;font:11px/1.45 var(--tabula-ui-font,Arial,sans-serif);
- white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;
 }
 .toolbar-deck-picker{position:relative;flex:0 1 150px;min-width:105px;max-width:170px;z-index:7000;font-family:var(--tabula-ui-font,Arial,sans-serif)}
 #toolbarDeckButton{display:flex;align-items:center;gap:6px;width:100%;height:38px;min-width:0;padding:5px 8px!important;
@@ -2219,7 +2219,7 @@ aside .section :is(button,select,input,textarea),
  .main>.toolbar .toolbar-card-size button{padding-left:5px!important;padding-right:5px!important}
 }
 @media(max-width:780px){
- .main>.table-status{font-size:10px;min-height:25px;padding:5px 10px}
+ .main>.stage-shell>.table-status{font-size:10px;height:22px;padding:3px 10px}
  .toolbar .mobile-cockpit-actions{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:44px 42px;gap:6px}
  .toolbar .mobile-cockpit-actions>.toolbar-deck-picker{grid-column:1 / 5;grid-row:1;min-width:0;max-width:none;width:100%}
  .toolbar .mobile-cockpit-actions>.toolbar-spread-shortcut{grid-column:5 / -1;grid-row:1;min-width:0;width:100%;max-width:none}
