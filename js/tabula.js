@@ -3209,9 +3209,65 @@ async function revealAllFloating(){
   openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;
  }
 }
+
+// Gentle opening presets designed to accompany PETAL and SPIRAL dealing.
+// Keep card coordinates, rotations and reversed flags untouched. In BLOOM,
+// schedule every flip on the same rendered DOM so adjacent reveals overlap.
+async function openCeremonially(mode){
+ if(openingBusy)return;
+ const targets=state.placed.map((card,index)=>({card,index}))
+  .filter(({card})=>!card.faceUp&&!card.auxiliaryPile)
+  .sort((a,b)=>(a.card.slot??999)-(b.card.slot??999)||a.index-b.index);
+ const piles=!dualSession?TabulaTablePiles.closedTopCards(state):[];
+ const total=targets.length+piles.length;
+ if(!total){setStatus('開ける伏せ札がありません。');return}
+ const reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+ const duration=2400,interval=500;
+ const entries=[...targets.map(({card,index})=>({card,index})),...piles.map(card=>({card,pile:true}))];
+ const animateEntry=(entry,delay=0)=>{
+  const node=entry.pile
+   ?[...$('zone').querySelectorAll('.table-pile-top')].find(el=>el.dataset.instanceId===(entry.card.instanceId||'')&&el.classList.contains('is-face-up'))
+   :$('zone').querySelector('.card[data-index="'+entry.index+'"]');
+  if(!node)return;
+  node.style.setProperty('--ceremonial-delay',delay+'ms');
+  node.classList.add('ceremonial-opening');
+ };
+ openingBusy=true;
+ $('quickOpen').disabled=true;$('quickRevealAll').disabled=true;
+ $('zone').classList.add('ceremonial-opening-active');
+ try{
+  if(mode==='bloom'){
+   entries.forEach(({card})=>{card.faceUp=true});
+   render();saveLocal();
+   if(!reduced){
+    entries.forEach((entry,i)=>animateEntry(entry,i*interval));
+    setStatus('BLOOM — 開花：'+total+'枚をゆっくり開いています。');
+    await new Promise(resolve=>setTimeout(resolve,duration+(entries.length-1)*interval+70));
+   }
+  }else{
+   for(let i=0;i<entries.length;i++){
+    const entry=entries[i];
+    entry.card.faceUp=true;
+    render();saveLocal();
+    if(!reduced){
+     animateEntry(entry);
+     setStatus('FLOAT — 浮遊反転：'+(i+1)+' / '+total+'枚');
+     await new Promise(resolve=>setTimeout(resolve,duration+30));
+    }
+   }
+  }
+  setStatus(total+'枚を'+(mode==='bloom'?'BLOOM（開花）':'FLOAT（浮遊反転）')+'で開きました。');
+  render();saveLocal();maybeTriggerCompletionEffect();
+ }finally{
+  $('zone').classList.remove('ceremonial-opening-active');
+  openingBusy=false;
+  $('quickOpen').disabled=false;$('quickRevealAll').disabled=false;
+ }
+}
 function openWithSelectedMode(){
  if(openingBusy)return;
  if(settings.openMode==='all')return revealAllFloating();
+ if(settings.openMode==='float'||settings.openMode==='bloom')return openCeremonially(settings.openMode);
  return openSequentially();
 }
 $('quickRevealAll').onclick=revealAllAtOnce;
@@ -4495,9 +4551,9 @@ function installTableActionSettings(){
  dealChoice?.addEventListener('change',syncDealSummary);
  animationChoice.addEventListener('change',syncDealSummary);
  const openMode=$('tableOpenMode');
- openMode.onchange=()=>{settings.openMode=['normal','quick','all'].includes(openMode.value)?openMode.value:'normal';saveLocal();setStatus('オープン方式を変更しました。')};
+ openMode.onchange=()=>{settings.openMode=['normal','quick','all','float','bloom'].includes(openMode.value)?openMode.value:'normal';saveLocal();setStatus('オープン方式を変更しました。')};
  const washDirection=$('tableWashDirection'),washRounds=$('tableWashRounds'),cutCount=$('tableCutCount');
- const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3);openMode.value=['normal','quick','all'].includes(settings.openMode)?settings.openMode:'normal';syncDealSummary()};
+ const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3);openMode.value=['normal','quick','all','float','bloom'].includes(settings.openMode)?settings.openMode:'normal';syncDealSummary()};
  washDirection.onchange=()=>{settings.quickWashDirection=washDirection.value;$('quickWashDirection').value=washDirection.value;updateStandaloneAvailability();saveLocal()};
  washRounds.onchange=()=>{settings.quickWashRounds=Number(washRounds.value);$('quickWashRounds').value=washRounds.value;updateStandaloneAvailability();saveLocal()};
  cutCount.onchange=()=>{settings.cutCount=Number(cutCount.value);$('cutCountSetting').value=cutCount.value;updateStandaloneAvailability();saveLocal()};
