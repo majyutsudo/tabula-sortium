@@ -2108,17 +2108,30 @@ function installPhysicalCardPicker(){
   // A selected card placed on a registered frame owns that slot, so a later
   // automatic deal skips it. Grand Star always reserves slot 1 for its
   // significator; the exact preset coordinates take precedence over a click.
+  const slots=getSlots();
   const selectedFrame=e.target.closest('.slot');
   const registeredIndex=selectedFrame&&selectedFrame.parentElement===$('zone')
    ?Number(selectedFrame.dataset.slotIndex):null;
-  const isRegistered=Number.isInteger(registeredIndex)&&registeredIndex>=0&&registeredIndex<getSlots().length;
+  // A hidden frame has pointer-events:none, so its DOM element cannot be the
+  // click target. Resolve the closest preset position geometrically as well.
+  const m=metrics(),hitW=Math.max(1,m.w),hitH=Math.max(1,m.h);
+  let nearest=null,nearestDistance=Infinity;
+  if(settings.spread!=='free'){
+   for(let i=0;i<slots.length;i++){
+    const center=slots[i],dx=(x-center.x)*rect.width/100,dy=(y-center.y)*rect.height/100;
+    const distance=(dx/hitW)**2+(dy/hitH)**2;
+    if(distance<nearestDistance){nearest=i;nearestDistance=distance;}
+   }
+  }
+  const isRegistered=Number.isInteger(registeredIndex)&&registeredIndex>=0&&registeredIndex<slots.length;
+  const nearbySlot=nearestDistance<=0.65?nearest:null;
   const targetSlot=settings.spread==='grandStar'&&chosenPhysicalRole==='significator'
-   ?0:(settings.spread!=='free'&&isRegistered?registeredIndex:null);
+   ?0:(settings.spread!=='free'?(isRegistered?registeredIndex:nearbySlot):null);
   if(targetSlot!==null&&(hasOccupiedSpreadSlot(targetSlot)
      ||(state.tablePiles||[]).some(p=>p.slot===targetSlot))){
    setStatus('その配置枠にはすでにカードがあります。');return;
   }
-  const slot=targetSlot!==null?getSlots()[targetSlot]:null;
+  const slot=targetSlot!==null?slots[targetSlot]:null;
   const placement=slot?{x:slot.x,y:slot.y,angle:slot.angle}:{x,y,angle:0};
   const [entry]=state.deck.splice(idx,1);
   state.placed.push({...entry,slot:targetSlot,...placement,origin:{...placement},
