@@ -3233,7 +3233,7 @@ async function openCeremonially(mode){
  const total=targets.length+piles.length;
  if(!total){setStatus('開ける伏せ札がありません。');return}
  const reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
- const duration=mode==='bloom'?1350:1200,interval=125;
+ const duration=mode==='bloom'?1350:1050,interval=125;
  const entries=[...targets.map(({card,index})=>({card,index})),...piles.map(card=>({card,pile:true}))];
  const animateEntry=(entry,delay=0)=>{
   const node=entry.pile
