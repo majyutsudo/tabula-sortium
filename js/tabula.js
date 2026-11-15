@@ -19,9 +19,43 @@ let spreadWorkbench=null;let spreadSnap=true;
 function closeSpreadArchive(){$('spreadArchive').hidden=true;document.body.classList.remove('spread-archive-open');setNotebookButtonState(false);applyDesktopTableView();applyTableCamera();render()}
 function openSpreadArchive(){renderSpreadArchive();$('archiveCapture').hidden=settings.spread!=='free';$('spreadArchive').hidden=false;document.body.classList.add('spread-archive-open');setNotebookButtonState(true);$('spreadArchive').scrollIntoView({block:'nearest',behavior:'smooth'})}
 const spreadThumb=TabulaUiFormat.spreadThumb;
-function renderSpreadArchive(){const root=$('archiveItems');root.replaceChildren();$('archiveCount').textContent=spreadLibrary.length+'篇';if(!spreadLibrary.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}spreadLibrary.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚';info.append(name,count);const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('複製',()=>{const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id='custom_'+Date.now()+'_'+Math.floor(Math.random()*10000);copy.name=name;spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});row.append(thumb,info,actions);root.append(row)})}
+function renderSpreadArchive(){const root=$('archiveItems');root.replaceChildren();$('archiveCount').textContent=spreadLibrary.length+'篇';if(!spreadLibrary.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}spreadLibrary.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚';info.append(name,count);const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('書き出し',()=>exportSingleSpread(v));action('複製',()=>{const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id='custom_'+Date.now()+'_'+Math.floor(Math.random()*10000);copy.name=name;spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});row.append(thumb,info,actions);root.append(row)})}
+function exportSingleSpread(spread){
+ try{
+  const data=TabulaSpreadStore.exportPortable(spread);
+  downloadJSON(data,'TABULA_SPREAD_'+fileNamePart(spread.name)+'.json');
+  setStatus('スプレッドを書き出しました。');
+ }catch(e){alert('書き出せませんでした：'+e.message)}
+}
+function importSingleSpread(data){
+ let value;
+ try{value=TabulaSpreadStore.importPortable(data)}
+ catch(e){alert(e.message);return false}
+ if(spreadLibrary.length>=100){alert('登録上限（100件）に達しています。');return false}
+ let name=value.name,n=2;
+ while(spreadLibrary.some(p=>p.name===name))name=value.name+' ('+n+++')';
+ if(!confirm('スプレッド「'+name+'」を登録しますか？ 現在の卓は変更されません。'))return false;
+ const imported={...value,name,id:'custom_'+Date.now()+'_'+Math.floor(Math.random()*1000000)};
+ if(!TabulaSpreadStore.validSpread(imported)){alert('スプレッドの内容が不正です。');return false}
+ spreadLibrary.push(imported);
+ try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('スプレッドを保存できませんでした。');return false}
+ setStatus('スプレッド「'+name+'」を登録しました。');
+ return true;
+}
+function readSingleSpreadFile(file){
+ if(!file)return;
+ if(file.size>1024*1024){alert('スプレッドファイルが大きすぎます（上限1MB）。');return}
+ const reader=new FileReader();
+ reader.onerror=()=>alert('ファイルを読み込めませんでした。');
+ reader.onload=()=>{
+  let data;
+  try{data=JSON.parse(String(reader.result))}catch(e){alert('JSONファイルが不正です。');return}
+  importSingleSpread(data);
+ };
+ reader.readAsText(file);
+}
 function setNotebookButtonState(open){const b=$('spreadNotebook');b.setAttribute('aria-pressed',String(open));b.setAttribute('aria-expanded',String(open));b.setAttribute('aria-label',open?'手帖を閉じる':'手帖を開く');b.title=open?'手帖を閉じる':'手帖を開く';b.dataset.toolLabel=open?'手帖を閉じる':'手帖';}
-$('spreadNotebook').setAttribute('aria-controls','spreadArchive');setNotebookButtonState(false);$('spreadNotebook').onclick=()=>{$('spreadArchive').hidden?openSpreadArchive():closeSpreadArchive()};$('archiveClose').onclick=closeSpreadArchive;$('archiveCapture').onclick=()=>{spreadCapture()};
+$('spreadNotebook').setAttribute('aria-controls','spreadArchive');setNotebookButtonState(false);$('spreadNotebook').onclick=()=>{$('spreadArchive').hidden?openSpreadArchive():closeSpreadArchive()};$('archiveClose').onclick=closeSpreadArchive;$('archiveCapture').onclick=()=>{spreadCapture()};$('archiveImport').onclick=()=>$('archiveImportFile').click();$('archiveImportFile').onchange=e=>{const file=e.target.files?.[0];e.target.value='';readSingleSpreadFile(file)};
 
 
 /* One encyclopedia entry per spread definition: no duplicate diagrams or libraries. */
@@ -2342,6 +2376,10 @@ function readExternalFile(file){
   let data;
   try{data=JSON.parse(String(reader.result))}
   catch(e){alert('JSONファイルとして読み込めませんでした。');return}
+  // Accept portable spreads through the existing general JSON import as well.
+  if(data?.kind==='spread'||(data&&!data.format&&!data.kind&&Array.isArray(data.slots))){
+   importSingleSpread(data);return;
+  }
   if(data?.format!==EXPORT_FORMAT||!((data.kind==='reading'&&data.version===1)||(data.kind==='backup'&&[1,2,3].includes(data.version)))){
    alert('TABULA SORTIUMの対応するJSONファイルではありません。');return;
   }
