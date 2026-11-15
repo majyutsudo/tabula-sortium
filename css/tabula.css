@@ -1886,17 +1886,33 @@ aside .section :is(button,select,input,textarea),
 .table-action-settings #tableOpenMode{display:block;width:100%;min-width:0}
 
 /* v0.575: animate actual front/back card faces in one synchronized pass. */
+/* v0.609 — keep the actual front and back visible through a genuine
+   3-D flip. Filters on the rotating parent flatten its 3-D descendants. */
 @keyframes tabula-simultaneous-turn{
- 0%{transform:translateY(0) rotateY(0deg);filter:brightness(1)}
- 22%{transform:translateY(-27px) rotateY(0deg);filter:brightness(1.12)}
- 55%{transform:translateY(-34px) rotateY(96deg);filter:brightness(1.2)}
- 82%{transform:translateY(-20px) rotateY(170deg);filter:brightness(1.08)}
- 100%{transform:translateY(0) rotateY(180deg);filter:brightness(1)}
+ 0%{transform:translate3d(0,0,0) rotateY(0deg)}
+ 22%{transform:translate3d(0,-27px,0) rotateY(0deg)}
+ 55%{transform:translate3d(0,-34px,0) rotateY(96deg)}
+ 82%{transform:translate3d(0,-20px,0) rotateY(170deg)}
+ 100%{transform:translate3d(0,0,0) rotateY(180deg)}
+}
+#zone .card.simultaneous-opening{
+ perspective:900px;
+ -webkit-perspective:900px;
 }
 #zone .card.faceup.simultaneous-opening .card-inner{
  animation:tabula-simultaneous-turn 820ms cubic-bezier(.26,.5,.34,1) both!important;
  transition:none!important;
- transform-style:preserve-3d;
+ transform-style:preserve-3d!important;
+ -webkit-transform-style:preserve-3d!important;
+ will-change:transform;
+}
+#zone .card.simultaneous-opening .card-inner>.face{
+ backface-visibility:hidden!important;
+ -webkit-backface-visibility:hidden!important;
+}
+#zone .card.simultaneous-opening .card-inner>.face.front{
+ transform:rotateY(180deg);
+ -webkit-transform:rotateY(180deg);
 }
 @keyframes tabula-simultaneous-pile-lift{
  0%,100%{transform:translateY(0);filter:brightness(1)}
