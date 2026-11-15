@@ -1,7 +1,18 @@
 
 (()=>{'use strict';let inspectMode=false,tableDetailFocus=null;const $=id=>document.getElementById(id);const {majors,suitDefs,ranks,cards}=TabulaCatalog;const SPREAD_LIBRARY_KEY='tabula_sortium_spread_library_v1';let spreadLibrary=[];
 function loadSpreadLibrary(){spreadLibrary=TabulaSpreadStore.read(localStorage,SPREAD_LIBRARY_KEY);refreshCustomPresets()}
-function syncSpreadShortcut(){const shortcut=$('spreadQuickSelect'),source=$('spread');if(!shortcut||!source)return;shortcut.replaceChildren(...Array.from(source.options,option=>option.cloneNode(true)));shortcut.value=settings.spread;}
+function syncSpreadShortcut(){
+ const shortcut=$('spreadQuickSelect'),source=$('spread');if(!shortcut||!source)return;
+ // Do not rebuild a native select while its popup is being used. Changing
+ // its option nodes during a selection can discard the user's choice.
+ const options=[...source.options];
+ const stale=shortcut.options.length!==options.length||options.some((option,i)=>{
+  const current=shortcut.options[i];
+  return current.value!==option.value||current.text!==option.text||current.disabled!==option.disabled;
+ });
+ if(stale)shortcut.replaceChildren(...options.map(option=>option.cloneNode(true)));
+ if(shortcut.value!==settings.spread)shortcut.value=settings.spread;
+}
 function refreshCustomPresets(){Object.keys(presets).filter(k=>k.startsWith('custom_')).forEach(k=>delete presets[k]);spreadLibrary.forEach(v=>presets[v.id]=v.slots.map(p=>({...p})));const select=document.getElementById('spread');if(!select)return;select.querySelectorAll('option[data-custom="1"]').forEach(el=>el.remove());spreadLibrary.forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.name;o.dataset.custom='1';select.append(o)});syncSpreadShortcut()}
 function storeSpreadLibrary(){TabulaSpreadStore.write(localStorage,SPREAD_LIBRARY_KEY,spreadLibrary);refreshCustomPresets();if($('spreadArchive')&&!$('spreadArchive').hidden)renderSpreadArchive()}
 let spreadWorkbench=null;let spreadSnap=true;
