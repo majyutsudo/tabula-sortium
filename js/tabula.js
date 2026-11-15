@@ -1775,7 +1775,7 @@ function renderTablePiles(zone,m){
       if(stackReady&&!dualSession&&!spreadWorkbench){
        TabulaTablePiles.stackFromPile(state,pile.id,stackIndex,count);
        pileTakeCounts.delete(pile.id);
-       setStatus(''+count+'枚を重ねて束を作りました。');
+       setStatus(count+'枚を重ねて束を作りました。');
       }else if(destination){
        TabulaTablePiles.transfer(state,pile.id,destination,count);
        pileTakeCounts.delete(pile.id);
@@ -2041,7 +2041,7 @@ function installPhysicalCardPicker(){
    const name=displayCard(card).name;
    if(q&&!name.toLocaleLowerCase().includes(q)&&!entry.id.toLocaleLowerCase().includes(q))continue;
    const b=document.createElement('button');b.type='button';b.textContent=name;b.style.cssText=buttonStyle;
-   b.onclick=()=>{chosenPhysicalCardId=entry.id;chosenPhysicalRole=signifyCheck.checked?'significator':'ordinary';panel.style.display='none';setStatus('「'+name+'」を'+(chosenPhysicalRole==='significator'?'シグニフィケイターとして':'')+'を選択中。卓上をクリックして配置（Escで解除）。');};
+   b.onclick=()=>{chosenPhysicalCardId=entry.id;chosenPhysicalRole=signifyCheck.checked?'significator':'ordinary';panel.style.display='none';setStatus('「'+name+'」を'+(chosenPhysicalRole==='significator'?'シグニフィケイターとして':'')+'選択中。卓上をクリックして配置（Escで解除）。');};
    list.append(b)
   }
   if(!list.childElementCount){const empty=document.createElement('span');empty.textContent='該当するカードは山札にありません。';list.append(empty)}
