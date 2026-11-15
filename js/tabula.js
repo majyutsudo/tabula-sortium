@@ -4225,7 +4225,7 @@ function refreshTableLabels(){
   const t=document.createElement('span');t.className='zone-label unified-label';
   // Free-spread cards have no numbered slots, so display the card name alone.
   // Outside free spread, a + still identifies an auxiliary (unslotted) card.
-  const num=item?.slot==null&&item?(settings.spread==='free'?'':'＋'):String(i+1);
+  const num=labelMode==='card'?'':item?.slot==null&&item?(settings.spread==='free'?'':'＋'):String(i+1);
   let text=num;
   if(labelMode==='position'&&slot)text+=' · '+slot.name;
   if(labelMode==='card'&&item?.faceUp){
@@ -4246,7 +4246,7 @@ function refreshTableLabels(){
   if(zw&&lw){const center=Math.max(lw/2+3,Math.min(zw-lw/2-3,zw*x/100));t.style.left=center+'px';}
 
  }
- slots.forEach((slot,i)=>{if((state.tablePiles||[]).some(p=>p.slot===i))return;add(state.placed.find(p=>p.slot===i),slot,i)});
+ slots.forEach((slot,i)=>{if((state.tablePiles||[]).some(p=>p.slot===i))return;const item=state.placed.find(p=>p.slot===i);if(labelMode==='card'&&!item?.faceUp)return;add(item,slot,i)});
  state.placed.filter(p=>p.slot==null).forEach(p=>add(p,null,-1));
  // Physical piles participate in the SAME display modes as placed cards.
  // Labels are independent of movement handles and are never hit targets.
@@ -4259,7 +4259,7 @@ function refreshTableLabels(){
   let label='';
   if(labelMode==='number')label=number;
   else if(labelMode==='position')label=slot?number+' · '+slot.name:role+' '+number;
-  else if(labelMode==='card'&&first?.faceUp)label=(slot?number+' · ':'')+(definition?tableCardName(definition):'カード')+(first.reversed?'〈逆〉':'');
+  else if(labelMode==='card'&&first?.faceUp)label=(definition?tableCardName(definition):'カード')+(first.reversed?'〈逆〉':'');
   if(!label)continue;
   const t=document.createElement('span');t.className='zone-label unified-label pile-label';
   t.textContent=label;t.title=label;
