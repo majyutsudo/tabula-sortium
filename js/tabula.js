@@ -4250,7 +4250,7 @@ function installTableToolLayout(){
  toolbar.append(leading,trailing);
  // Move status feedback out of the header, directly between the table and the action row.
  const message=$('status');message.classList.add('table-status');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
- document.querySelector('.stage-shell').after(message);
+ document.querySelector('.stage-shell').append(message);
  updateCardSizeQuickValue();
  const onResize=()=>{fit.hidden=!mobileCameraEnabled();};window.addEventListener('resize',onResize);onResize();
  applyTableCamera();
