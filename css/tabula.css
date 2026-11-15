@@ -1440,7 +1440,7 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 .table-pile-take-toggle,.table-pile-take-count{z-index:460}
 
 /* v0.420: a lifted sequence must appear above destination piles during drag. */
-.table-pile.pile-drag-active{z-index:2100}
+#zone > .table-pile.pile-drag-active{z-index:2100}
 
 /* v0.423: role selection is disclosed by the existing pile handle.
    It remains absent from the tabletop until the handle is clicked. */
