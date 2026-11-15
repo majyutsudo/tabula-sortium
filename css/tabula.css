@@ -2232,3 +2232,19 @@ aside .section :is(button,select,input,textarea),
  #toolbarDeckButton svg{width:16px;height:16px}
  .toolbar-deck-menu{min-width:min(260px,calc(100vw - 20px));max-width:calc(100vw - 20px)}
 }
+
+/* v0.597 — PC toolbar starts at the left edge; the New Reading action alone
+   absorbs unused horizontal space. Keep the existing mobile grid unchanged. */
+@media(min-width:781px){
+ .main>.toolbar{
+  justify-content:flex-start;
+ }
+ .main>.toolbar .toolbar-trailing .mobile-cockpit-actions>#newSessionStandalone{
+  flex:1 1 148px;
+  width:auto;
+  min-width:120px;
+  max-width:none;
+  margin-left:0;
+  white-space:nowrap;
+ }
+}
