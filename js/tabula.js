@@ -518,7 +518,65 @@ function effectivePipBackground(){return activeDeck()?.pipBackground||settings.p
 function displayCard(c){if(activeBlueprint())return workingCard(c.id)||c;const original=cards.find(v=>v.id===c.id)||c,d=activeDeck();return {...original,name:d?.names?.[original.id]||TabulaDeckStore.translatedName(original,effectiveCardLanguage()),number:original.group==='major'&&d&&Object.hasOwn(d.majorNumbers,original.id)?d.majorNumbers[original.id]:original.number}}
 function tableCardName(c){const lang=settings.tableCardLanguage||'linked';if(activeBlueprint()){if(activeBlueprint().id===BUILTIN_PLAYING.id&&lang!=='linked')return TabulaDeckBlueprint.playingName(c,lang);return displayCard(c).name;}return lang==='linked'?displayCard(c).name:TabulaDeckStore.translatedName(c,lang)}
 function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,cards);return true}catch(e){setStatus('デッキの保存に失敗しました。');return false}}
-function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('SIMPLE TAROT（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));for(const d of deckLibrary)picker.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+'（'+TabulaDeckBlueprint.generate(d).length+'枚）',d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin')}
+
+// The quick menu mirrors the original selector; the existing deck transition
+// remains the only place that changes cards and asks for confirmation.
+function refreshToolbarDeckPicker(){
+ const root=$('toolbarDeckPicker'),menu=$('toolbarDeckMenu'),button=$('toolbarDeckButton'),name=$('toolbarDeckName'),source=$('deckLibrarySelect');
+ if(!root||!menu||!button||!name||!source)return;
+ const selected=source.value;
+ const entries=[...source.options];
+ const chosen=entries.find(o=>o.value===selected);
+ name.textContent=chosen?chosen.text.replace(/（.*?枚）/g,'').trim():'デッキを選択';
+ button.title='使用デッキ：'+(chosen?.text||'')+'（クリックして変更）';
+ button.disabled=!!dualSession;
+ menu.replaceChildren();
+ const groups=[
+  ['TABULA DECKS',entries.filter(o=>['builtin',BUILTIN_PLAYING.id,BUILTIN_LENORMAND.id].includes(o.value))],
+  ['その他のデッキ',entries.filter(o=>o.value==='simple')],
+  ['ユーザー作成デッキ',entries.filter(o=>!['simple','builtin',BUILTIN_PLAYING.id,BUILTIN_LENORMAND.id].includes(o.value))]
+ ];
+ for(const [heading,options] of groups){
+  if(!options.length)continue;
+  const title=document.createElement('div');title.className='toolbar-deck-group';title.textContent=heading;menu.append(title);
+  for(const option of options){
+   const choice=document.createElement('button');choice.type='button';choice.className='toolbar-deck-option';
+   choice.setAttribute('role','menuitemradio');choice.setAttribute('aria-checked',String(option.value===selected));
+   choice.dataset.deckId=option.value;choice.textContent=option.text;choice.tabIndex=-1;
+   if(option.value===selected)choice.classList.add('selected');
+   if(option.value==='simple')choice.classList.add('secondary');
+   choice.addEventListener('click',()=>{
+    closeToolbarDeckMenu();
+    if(option.value===source.value)return;
+    source.value=option.value;
+    source.dispatchEvent(new Event('change',{bubbles:true}));
+    refreshToolbarDeckPicker();
+   });
+   menu.append(choice);
+  }
+ }
+}
+function closeToolbarDeckMenu(restoreFocus=false){
+ const root=$('toolbarDeckPicker'),menu=$('toolbarDeckMenu'),button=$('toolbarDeckButton');
+ if(!root||!menu||!button)return;
+ menu.hidden=true;button.setAttribute('aria-expanded','false');if(restoreFocus)button.focus();
+}
+function installToolbarDeckPicker(){
+ const root=document.createElement('div');root.id='toolbarDeckPicker';root.className='toolbar-deck-picker';
+ root.innerHTML='<button type="button" id="toolbarDeckButton" aria-haspopup="menu" aria-expanded="false" aria-controls="toolbarDeckMenu" aria-label="使用デッキを選択"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="12" height="16" rx="2"/><rect x="7" y="2" width="12" height="16" rx="2"/></svg><span id="toolbarDeckName"></span><span class="toolbar-deck-chevron" aria-hidden="true">▾</span></button><div id="toolbarDeckMenu" class="toolbar-deck-menu" role="menu" aria-label="使用デッキ" hidden></div>';
+ const button=root.querySelector('button'),menu=root.querySelector('[role="menu"]');
+ button.addEventListener('click',()=>{if(button.disabled)return;const opening=menu.hidden;closeToolbarDeckMenu();if(opening){refreshToolbarDeckPicker();menu.hidden=false;button.setAttribute('aria-expanded','true');menu.querySelector('.selected')?.focus()||menu.querySelector('button')?.focus();}});
+ root.addEventListener('keydown',e=>{if(menu.hidden)return;const options=[...menu.querySelectorAll('button')];const index=options.indexOf(document.activeElement);
+  if(e.key==='Escape'){e.preventDefault();closeToolbarDeckMenu(true);}
+  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();options[(index+(e.key==='ArrowDown'?1:-1)+options.length)%options.length]?.focus();}
+  else if(e.key==='Home'||e.key==='End'){e.preventDefault();options[e.key==='Home'?0:options.length-1]?.focus();}
+  else if(e.key==='Tab')closeToolbarDeckMenu();
+ });
+ document.addEventListener('pointerdown',e=>{if(!root.contains(e.target))closeToolbarDeckMenu();});
+ refreshToolbarDeckPicker();
+ return root;
+}
+function refreshDeckPicker(){independentDeckChoices();const picker=$('deckLibrarySelect');if(!picker)return;picker.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));for(const d of deckLibrary)picker.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));if(globalThis.TabulaDeckBlueprint)for(const d of TabulaDeckBlueprint.load())picker.add(new Option(d.name+'（'+TabulaDeckBlueprint.generate(d).length+'枚）',d.id));picker.value=activeBlueprint()?.id||activeDeck()?.id||(settings.deckId==='simple'||settings.cardDesign==='simple'?'simple':'builtin');refreshToolbarDeckPicker();}
 let audioCtx=null,zoom=defaultCardSize(),drag=null,dragMoved=false;const rnd=TabulaShuffle.rnd;
 const randomize=TabulaShuffle.randomize;
 // French-suited historic packs. Each list identifies actual ranks, never an
@@ -2471,8 +2529,8 @@ function compareModal(){
  document.querySelectorAll('[data-register-spread]').forEach(b=>b.onclick=()=>registerSpreadFromReading(snapshots.find(x=>x.id===b.dataset.registerSpread)));
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
-function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
-function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='card';localStorage.setItem('tabula_label_mode','card');$('tableLabelMode').value='card';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
+function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
+function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false){
  if(Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
  if(state.deck.length<2){setStatus('カットには2枚以上必要です。');return}
@@ -2711,7 +2769,7 @@ function activateDeck(id,ask=true){
  }else if(blueprint)settings.cardBackColor=initialDeckSettings(settings.deckId).cardBackColor;
  finishedCache.clear();
  sync();initialize();
- setStatus((blueprint?.name||deck?.name||(id==='simple'?'SIMPLE TAROT':'TABULA TAROT（標準）'))+' を読み込みました。');
+ setStatus((blueprint?.name||deck?.name||(id==='simple'?'シンプル・タロット':'TABULA TAROT（標準）'))+' を読み込みました。');
  return true;
 }
 function openPlayingDeckEditor(source=BUILTIN_PLAYING,createCopy=false){
@@ -2911,7 +2969,7 @@ function openDeckEditor(createCopy=false,fromStandard=false){
  html+='<div class="tarot-edit-manage"><div class="tarot-edit-actions"><button type="button" id="deckEditorStandard">標準から新規作成</button><button type="button" id="deckEditorCopy">現在の内容を複製</button></div><p class="note">'+(existing?'保存済みデッキを編集中。':source?'選択中のデッキを元に複製を作成中。':'標準78枚から新しいデッキを作成中。')+' 新規作成は標準78枚から、複製は現在の設定を引き継ぎます。</p></div>';
  html+='<label class="field">デッキ名<input id="deckEditorName" maxlength="80" value="'+escapeHTML(draft.name)+'"></label>';
  html+='<label class="field">デッキの説明（任意）<textarea id="deckEditorDescription" rows="3" placeholder="カード図鑑に表示する紹介文。空欄の場合は表示しません。"></textarea></label>';
- html+='<label class="field">表面デザイン<select id="deckEditorFaceStyle"><option value="standard">TABULA TAROT</option><option value="simple">SIMPLE TAROT</option></select></label>';
+ html+='<label class="field">表面デザイン<select id="deckEditorFaceStyle"><option value="standard">TABULA TAROT</option><option value="simple">シンプル・タロット</option></select></label>';
  html+='<label class="field">カード名の言語<select id="deckEditorLanguage">'+TabulaDeckStore.LANGUAGES.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('')+'</select></label>';
  html+='<div class="row deck-editor-shortcuts"><button type="button" id="deckEditorSwap">力 VIII ↔ 正義 XI</button><button type="button" id="deckEditorUnnumbered">愚者を番号なしに</button></div>';
  html+='<label class="field">小アルカナ数札の図像<select id="deckEditorPip"><option value="landscape">背景あり（風景とスート）</option><option value="none">背景なし（スートを全面に大きく配置）</option></select></label>';
@@ -3533,7 +3591,7 @@ function galleryCard(c){
 }
 function galleryDeckOptions(){
  const picker=$('cardGalleryDeck'),previous=GALLERY.deckId;
- picker.replaceChildren(new Option('SIMPLE TAROT（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
+ picker.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
  for(const deck of deckLibrary)picker.add(new Option(deck.name+'（'+deck.included.length+'枚）',deck.id));
  for(const deck of TabulaDeckBlueprint.load())picker.add(new Option(deck.name+'（'+TabulaDeckBlueprint.generate(deck).length+'枚）',deck.id));
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
@@ -3891,15 +3949,15 @@ function editCardText(c){
  $('cardTextCancel').onclick=closeModal;$('cardTextSave').onclick=()=>{const body=$('cardTextBody').value,source=$('cardTextSource').value;cardTexts[c.id]={body,source};localStorage.setItem('tabula_card_texts_v1',JSON.stringify(cardTexts));closeModal();if(GALLERY.visible&&!$('cardGalleryLightbox').hidden)galleryShowLarge(GALLERY.index);};
 }
 // One shared label per position; preferences are independent of the reading.
-let labelMode='card',galleryHideIdentifiers=true,labelPlacement='below';
+let labelMode='off',galleryHideIdentifiers=true,labelPlacement='below';
 try{labelPlacement=localStorage.getItem('tabula_label_placement')||'below'}catch(e){}
 try{galleryHideIdentifiers=localStorage.getItem('tabula_detail_symbols')!=='show'}catch(e){}
-try{labelMode=localStorage.getItem('tabula_label_mode')||'card'}catch(e){}
+try{labelMode=localStorage.getItem('tabula_label_mode')||'off'}catch(e){}
 const labelChoices=[['card','カード名'],['position','ポジション名'],['number','番号のみ'],['off','非表示']];
 const labelCycleKey='tabula_label_cycle_v1';
 let labelCycleModes=['card','position','off'];
 try{const saved=JSON.parse(localStorage.getItem(labelCycleKey)||'null');if(Array.isArray(saved)){const valid=labelChoices.map(x=>x[0]).filter(id=>saved.includes(id));if(valid.length)labelCycleModes=valid;}}catch(e){}
-if(!labelChoices.some(c=>c[0]===labelMode))labelMode='card';
+if(!labelChoices.some(c=>c[0]===labelMode))labelMode='off';
 if(!labelCycleModes.includes(labelMode))labelCycleModes=labelChoices.map(x=>x[0]).filter(id=>labelCycleModes.includes(id)||id===labelMode);
 const labelSelect=document.createElement('select');labelSelect.id='tableLabelMode';labelSelect.setAttribute('aria-label','現在の卓上ラベル');labelSelect.hidden=true;
 for(const [value,name] of labelChoices){const o=document.createElement('option');o.value=value;o.textContent=name;labelSelect.append(o)}
@@ -4165,6 +4223,7 @@ function installTableToolLayout(){
  notebook.classList.add('toolbar-icon');notebook.querySelector('span:last-child').classList.add('tool-sr-only');notebook.dataset.toolLabel='手帖';notebook.title='手帖を開く';
  const fit=document.createElement('button');fit.type='button';fit.id='mobileTableFit';fit.textContent='全景';fit.title='卓全体を表示';fit.setAttribute('aria-label','卓全体を表示');fit.onclick=resetTableCamera;
  $('newSessionStandalone').textContent='新しい占い';
+ const quickDeck=installToolbarDeckPicker();
  const quickSpread=document.createElement('div');quickSpread.className='toolbar-spread-shortcut';quickSpread.title='展開法を選択';quickSpread.innerHTML='<span>展開法</span><select id="spreadQuickSelect" aria-label="展開法を選択"></select>';toolbar.append($('desktopTableViews'),fit,$('tableZoomLabel'),quickSpread,inspect,notebook,$('newSessionStandalone'));syncSpreadShortcut();$('spreadQuickSelect').addEventListener('change',e=>{const source=$('spread');source.value=e.target.value;source.dispatchEvent(new Event('change',{bubbles:true}));syncSpreadShortcut();});
  // A compact information control beside the active spread; the atlas is its second entrance.
  const spreadInfo=document.createElement('button');spreadInfo.id='spreadInfoButton';spreadInfo.type='button';
@@ -4177,7 +4236,7 @@ function installTableToolLayout(){
  const gallery=$('cardGalleryOpen');gallery.innerHTML='<svg viewBox="0 0 24 24" width="19" height="21" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="13" height="18" rx="2" transform="rotate(-9 10 12)"/><rect x="7" y="2" width="13" height="18" rx="2"/><path d="m13.5 6 3 4-3 4-3-4z"/></svg><span>カード図鑑</span>';gallery.setAttribute('aria-label','カード図鑑を開く');document.querySelector('.deck-edit-actions').before(gallery);
  const slider=$('cardSizeScale');const field=slider.closest('label');field.hidden=true;field.style.display='none';const sizeControls=document.createElement('div');sizeControls.className='toolbar-card-size';sizeControls.title='カードそのものの大きさを調整';const buttons={};for(const [id,label,title] of [['zoomOut','−','カードサイズを小さくする'],['zoomReset','標準','この展開法の標準サイズに戻す'],['zoomIn','＋','カードサイズを大きくする']]){const b=$(id);b.textContent=label;b.title=title;b.setAttribute('aria-label',title);buttons[id]=b;}const sizeValue=document.createElement('output');sizeValue.id='cardSizeQuickValue';sizeValue.title='カードサイズ倍率';sizeValue.setAttribute('aria-label','カードサイズ倍率');const sizeLabel=document.createElement('span');sizeLabel.className='toolbar-size-label';sizeLabel.textContent='札';const labelToggle=document.createElement('button');labelToggle.type='button';labelToggle.id='toolbarLabelToggle';
  labelToggle.onclick=()=>{const index=labelCycleModes.indexOf(labelMode);setTableLabelMode(labelCycleModes[(index+1)%labelCycleModes.length]);};
- sizeControls.append(sizeLabel,labelToggle,buttons.zoomOut,sizeValue,buttons.zoomIn,buttons.zoomReset);quickSpread.before(sizeControls);bindCardSizeControls();syncToolbarLabelCycle();const mobileActions=document.createElement('div');mobileActions.className='mobile-cockpit-actions';mobileActions.append(quickSpread,soundButton,inspect,notebook,$('newSessionStandalone'));toolbar.append(mobileActions);
+ sizeControls.append(sizeLabel,labelToggle,buttons.zoomOut,sizeValue,buttons.zoomIn,buttons.zoomReset);quickSpread.before(sizeControls);bindCardSizeControls();syncToolbarLabelCycle();const mobileActions=document.createElement('div');mobileActions.className='mobile-cockpit-actions';mobileActions.append(quickDeck,quickSpread,soundButton,inspect,notebook,$('newSessionStandalone'));toolbar.append(mobileActions);
  // Keep the desktop toolbar in two indivisible groups. When a second line is
  // required, it always begins at the spread selector, not at an arbitrary icon.
  // On mobile these wrappers become display:contents, preserving its grid.
@@ -4189,26 +4248,9 @@ function installTableToolLayout(){
  leading.append(sizeControls);
  trailing.append(mobileActions);
  toolbar.append(leading,trailing);
- // Observe actual control widths, not a fixed viewport breakpoint: when the
- // controls need the available row, move the status to a left-aligned final row.
- const status=$('status');
- const controls=[...leading.children,...mobileActions.children].filter(node=>node!==status);
- const syncStatusWrap=()=>{
-  if(window.innerWidth<=780){toolbar.classList.remove('status-on-second-row');return}
-  const style=getComputedStyle(toolbar);
-  const gap=parseFloat(style.columnGap)||7;
-  const available=toolbar.clientWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0);
-  const widths=controls.filter(node=>getComputedStyle(node).display!=='none'&&!node.hidden)
-   .map(node=>node.getBoundingClientRect().width);
-  // Reserve a readable message area. The buttons continue to wrap freely.
-  const required=widths.reduce((sum,width)=>sum+width,0)+gap*widths.length+180;
-  toolbar.classList.toggle('status-on-second-row',required>available);
- };
- const toolbarObserver=new ResizeObserver(syncStatusWrap);
- toolbarObserver.observe(toolbar);
- for(const node of controls)toolbarObserver.observe(node);
- window.addEventListener('resize',syncStatusWrap);
- syncStatusWrap();
+ // Move status feedback out of the header, directly between the table and the action row.
+ const message=$('status');message.classList.add('table-status');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
+ document.querySelector('.stage-shell').after(message);
  updateCardSizeQuickValue();
  const onResize=()=>{fit.hidden=!mobileCameraEnabled();};window.addEventListener('resize',onResize);onResize();
  applyTableCamera();
@@ -4592,7 +4634,7 @@ function dualBackTone(deck){const tone=dualSession?.backColors?.[deck]||DUAL_BAC
 function isIndependentTables(){return !!dualSession&&dualSession.workspaceKind==='independent'}
 function independentDeckChoices(){
  const p=$('independentDeckSelect');if(!p)return;const old=p.value;
- p.replaceChildren(new Option('SIMPLE TAROT（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
+ p.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
  for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
  for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+'（'+TabulaDeckBlueprint.generate(d).length+'枚）',d.id));
  p.value=Array.from(p.options).some(o=>o.value===old)?old:'builtin';
