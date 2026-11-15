@@ -66,7 +66,7 @@ function openSpreadGuide(id){
  $('spreadGuideAtlas').onclick=()=>openSpreadAtlas();
  if(!spread.builtin)$('spreadGuideEdit').onclick=()=>openSpreadGuideEditor(spread.id);
  $('spreadGuideUse').onclick=()=>{
-  if(spread.id===settings.spread){closeModal();setStatus('この展開法を使用中です。');return}
+  if(spread.id===settings.spread){closeModal();setStatus('この展開法を使用しています。');return}
   if((state.placed.length||(state.removed||[]).length)&&!confirm('現在の配札を片付けて展開法を切り替えますか？'))return;
   closeModal();
   $('spread').value=spread.id;
@@ -131,7 +131,7 @@ function openSpreadGuideEditor(id){
 }
 
 function spreadCapture(){
- if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。一組モードで登録してください。');return}
+ if(dualSession){setStatus('スプレッド編集は一組モードで行ってください。');return}
  closeSpreadArchive();
  const piles=state.tablePiles||[],count=state.placed.length+piles.length;
  if(!count){alert('フリースプレッドでカードまたは空の束を配置してから実行してください。');return}
@@ -158,7 +158,7 @@ function spreadCapture(){
  refreshWorkbench();render();$('spreadWorkbench').scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 function openStoredSpreadWorkbench(source){
- if(dualSession){setStatus('二組モードではスプレッド編集を一時的に利用できません。');return}
+ if(dualSession){setStatus('スプレッド編集は一組モードで行ってください。');return}
  if(spreadWorkbench)return;
  if(!source||!Array.isArray(source.slots)||!source.slots.length){alert('このスプレッドには編集できる配置がありません。');return}
  // Editing uses working copies of the registered positions, not the real deck or its cards.
@@ -180,7 +180,7 @@ function openStoredSpreadWorkbench(source){
 function spreadRemovePosition(index){
  const w=spreadWorkbench;
  if(!w||!Number.isInteger(index)||index<0||index>=state.placed.length)return;
- if(state.placed.length<=1){setStatus('スプレッドには少なくとも1つの位置が必要です。');return}
+ if(state.placed.length<=1){setStatus('位置を0にはできません。');return}
  state.placed.splice(index,1);
  w.chosen=w.chosen.filter(i=>i!==index).map(i=>i>index?i-1:i);
  const shift=entries=>Object.fromEntries(Object.entries(entries||{}).filter(([key])=>Number(key)!==index).map(([key,value])=>[Number(key)>index?Number(key)-1:Number(key),value]));
@@ -190,7 +190,7 @@ function spreadRemovePosition(index){
  state.selected=null;
  if(w.circle)w.circle.active=false;
  refreshWorkbench();render();
- setStatus('位置を1つ削除しました。残りのカードの位置・角度・サイズは維持されます。');
+ setStatus('位置を1つ削除しました。');
 }
 function spreadChoose(index){if(!spreadWorkbench)return;const w=spreadWorkbench;if(!w.chosen.includes(index))w.chosen.push(index);refreshWorkbench();render()}
 const normalizeAngle=TabulaSpreadGeometry.normalizeAngle;
@@ -260,7 +260,7 @@ $('spreadRestoreLayout').onclick=()=>{if(spreadWorkbench){
  if(w.circle)w.circle.active=false;updateSpreadCircleUi();render();
 }};
 $('spreadCancel').onclick=()=>spreadEnd(true);
-$('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(spreadLibrary.some(v=>v.name===name&&v.id!==w.editingId)){alert('同名のスプレッドがあります。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした。');return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}const id='custom_'+Date.now();spreadLibrary.push({id,name,slots,cardSize:zoom});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした。');return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。展開法から選択できます。')};
+$('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(spreadLibrary.some(v=>v.name===name&&v.id!==w.editingId)){alert('同名のスプレッドがあります。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした。');return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}const id='custom_'+Date.now();spreadLibrary.push({id,name,slots,cardSize:zoom});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした。');return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。')};
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
 const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';/* One authoritative starting configuration for a new workspace and both reset paths.
    Mutable preference maps are recreated for every use, never shared by reference. */
@@ -663,14 +663,14 @@ function soundAtAnimationEnd(node,animationName,volume=1){
    :sortPhysicalCards(state.deck,settings.initialOrder);
   state.dealCheckpoint=null;state.cutStage=null;state.selected=null;state.completionShown=false;
   render();dualSave();
-  setStatus('現在の卓で新しい占いを始めました。山札 '+state.deck.length+'枚。他の卓の配札は維持されています。');
+  setStatus('新しい占いを始めました。山札 '+state.deck.length+'枚。');
   return;
  }
  // Preserve the selected frame presentation when starting a new reading.
  state={deck:(settings.initialOrder==='random'
   ?randomize(TabulaPhysicalIdentity.nextReading(state,selectedCards(),{reversals:settings.reversals}))
   :sortPhysicalCards(TabulaPhysicalIdentity.nextReading(state,selectedCards()),settings.initialOrder)),
-  placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};initializePresetFrames(state,settings.spread);render();setStatus(`新しい占い：${state.deck.length}枚のカードを用意しました。`);saveLocal()}function defaultDealOrder(spread){return TabulaCardRules.defaultDealOrder(presets,spread)}
+  placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};initializePresetFrames(state,settings.spread);render();setStatus(`新しい占いを始めました（山札${state.deck.length}枚）。`);saveLocal()}function defaultDealOrder(spread){return TabulaCardRules.defaultDealOrder(presets,spread)}
 function getDealOrder(spread=settings.spread){
  const order=TabulaCardRules.getDealOrder(presets,spread,settings.spreadDealOrders);
  // Four Seasons has ten physical frames but exactly six automatic deal targets.
@@ -788,9 +788,9 @@ async function animateMonteArrangement(action,order){
 }
 function executeArrangement(action){
  if(spreadWorkbench){setStatus('スプレッド編集中は整理できません。');return}
- if(autoDealBusy||openingBusy||shuffleBusy||dualDealBusy||state.cutStage){setStatus('配札またはオープンが終わってから操作してください。');return}
+ if(autoDealBusy||openingBusy||shuffleBusy||dualDealBusy||state.cutStage){setStatus('配札やカードの開封が終わってから操作してください。');return}
  const order=arrangementOrder();
- if(!order.length){setStatus('整理する配置枠がありません。右下から「＋ 束を置く」で枠を作れます。');return}
+ if(!order.length){setStatus('配置枠がありません。「＋ 束を置く」から作成できます。');return}
  if(settings.spread==='monteCarlo'&&action==='compact'){animateMonteArrangement(action,order).catch(e=>setStatus(e.message));return}
  try{
   const result=action==='compact'
@@ -990,7 +990,7 @@ function rotateSelected(delta,reset=false){const item=selectedRotationTarget();i
 $('rotateDragMode').addEventListener('click',()=>{
  rotationDragMode=!rotationDragMode;
  updateCardSelection();
- if(rotationDragMode)setStatus('回転モード：カード本体または束の札をドラッグして回転します。もう一度押すと通常の移動に戻ります。');
+ if(rotationDragMode)setStatus('回転モード：カードや束をドラッグ。再度押すと終了します。');
  else setStatus('回転モードを終了しました。');
 });
 // Rotation mode takes priority over ordinary card/pile dragging. Capture the
@@ -1093,7 +1093,7 @@ function updateNaturalTiltButton(){
  if(!button){
   button=document.createElement('button');button.id='naturalTiltButton';button.type='button';
   button.style.cssText='padding:5px 8px;border:1px solid #9d8862;border-radius:5px;background:#182621;color:#d6c6a5;font-size:11px;cursor:pointer;';
-  button.onclick=()=>{naturalTilt=!naturalTilt;updateNaturalTiltButton();setStatus('手置き（小さな滑り＋接触）：'+(naturalTilt?'ON':'OFF'));};
+  button.onclick=()=>{naturalTilt=!naturalTilt;updateNaturalTiltButton();setStatus('手置き：'+(naturalTilt?'ON':'OFF'));};
   document.getElementById('placementToolsContent').append(button);
  }
  // Keep the five basic shortcuts for ordinary readings. Pile creation is
@@ -1474,7 +1474,7 @@ if(dragMoved&&settings.spread==='monteCarlo'&&!spreadWorkbench&&!dualSession){
    // Do not let a card appear to occupy a different, already filled frame.
    const original=Number.isInteger(item.slot)?slots[item.slot]:null;
    if(original){item.x=original.x;item.y=original.y;node.style.left=item.x+'%';node.style.top=item.y+'%'}
-   setStatus('移動先の枠にはすでにカードがあります。空いている枠へ置いてください。');
+   setStatus('この枠にはカードがあります。空き枠を選んでください。');
   }
  }
 }
@@ -1485,7 +1485,7 @@ if(dragMoved&&settings.spread==='monteCarlo'&&Number.isInteger(item.slot)){
  const outsideGrid=item.x<12||item.x>88||item.y<3||item.y>97;
  if(outsideGrid){
   item.slot=null;item.manualMoved=true;
-  setStatus('盤面の外に出した札を配列から外しました。詰め直しには使われません。');
+  setStatus('枠外のカードを詰め直し対象から外しました。');
  }
 }
 
@@ -1775,11 +1775,11 @@ function renderTablePiles(zone,m){
       if(stackReady&&!dualSession&&!spreadWorkbench){
        TabulaTablePiles.stackFromPile(state,pile.id,stackIndex,count);
        pileTakeCounts.delete(pile.id);
-       setStatus('束の上から'+count+'枚を単体の札に重ね、新しい束を作りました。');
+       setStatus(''+count+'枚を重ねて束を作りました。');
       }else if(destination){
        TabulaTablePiles.transfer(state,pile.id,destination,count);
        pileTakeCounts.delete(pile.id);
-       setStatus('上から'+count+'枚を、別の束の上に重ねました。');
+       setStatus('上から'+count+'枚を別の束に重ねました。');
       }else if(count>1){
        const point=tablePoint(ev.clientX,ev.clientY);
        TabulaTablePiles.split(state,pile.id,count,point.x,point.y);
@@ -1789,7 +1789,7 @@ function renderTablePiles(zone,m){
        const pos=pileDropPosition(ev.clientX,ev.clientY);
        TabulaTablePiles.withdraw(state,pile.id,pos);
        pileTakeCounts.delete(pile.id);
-       setStatus('束から一番上のカードを取り出しました。');
+       setStatus('束の一番上を取り出しました。');
       }
       commitTableChange();
      }catch(err){render();setStatus(err.message)}
@@ -1828,7 +1828,7 @@ function renderTablePiles(zone,m){
    }
    el.append(empty);
    const close=document.createElement('button');close.type='button';close.className='table-pile-remove';close.textContent='×';close.title='空の束を削除';
-   close.onclick=()=>{if(settings.spread==='fourSeasons'&&Number.isInteger(pile.slot)){setStatus('フォー・シーズンズの枠は削除せず、そのまま再利用できます。');return}TabulaTablePiles.removeEmpty(state,pile.id);render();saveLocal()};if(settings.spread==='fourSeasons'&&Number.isInteger(pile.slot))close.hidden=true;el.append(close);
+   close.onclick=()=>{if(settings.spread==='fourSeasons'&&Number.isInteger(pile.slot)){setStatus('フォー・シーズンズの枠は再利用できます。');return}TabulaTablePiles.removeEmpty(state,pile.id);render();saveLocal()};if(settings.spread==='fourSeasons'&&Number.isInteger(pile.slot))close.hidden=true;el.append(close);
   }
   title.addEventListener('pointerdown',e=>{
    if(e.button!==0)return;e.preventDefault();e.stopPropagation();
@@ -1959,7 +1959,7 @@ function applyDealRemoval(){
  const count=(ordinal===1?Math.max(0,Math.trunc(Number(settings.dealSkipFirst)||0)):0)+(plan.get(ordinal)||0);
  if(!Array.isArray(state.removed))state.removed=[];
  if(!state.placed.some(c=>!c.significator)&&!Array.isArray(state.dealCheckpoint))state.dealCheckpoint=state.deck.map(c=>({...c}));
- if(state.deck.length<=count){setStatus(`第${ordinal}枚の配札に必要なカードが足りません。除外${count}枚に対して山札は${state.deck.length}枚です。`);return false}
+ if(state.deck.length<=count){setStatus(`第${ordinal}枚の配札前に山札が不足しています（除外${count}枚、残り${state.deck.length}枚）。`);return false}
  if(count){state.removed.push(...state.deck.splice(0,count));setStatus(`第${ordinal}枚の配札前に${count}枚を取り除きました（累計${state.removed.length}枚）。`)}
  return true;
 }
@@ -2041,7 +2041,7 @@ function installPhysicalCardPicker(){
    const name=displayCard(card).name;
    if(q&&!name.toLocaleLowerCase().includes(q)&&!entry.id.toLocaleLowerCase().includes(q))continue;
    const b=document.createElement('button');b.type='button';b.textContent=name;b.style.cssText=buttonStyle;
-   b.onclick=()=>{chosenPhysicalCardId=entry.id;chosenPhysicalRole=signifyCheck.checked?'significator':'ordinary';panel.style.display='none';setStatus('「'+name+'」を'+(chosenPhysicalRole==='significator'?'シグニフィケイターとして':'')+'選択中。卓上の置きたい位置をクリックしてください。Escで解除できます。');};
+   b.onclick=()=>{chosenPhysicalCardId=entry.id;chosenPhysicalRole=signifyCheck.checked?'significator':'ordinary';panel.style.display='none';setStatus('「'+name+'」を'+(chosenPhysicalRole==='significator'?'シグニフィケイターとして':'')+'を選択中。卓上をクリックして配置（Escで解除）。');};
    list.append(b)
   }
   if(!list.childElementCount){const empty=document.createElement('span');empty.textContent='該当するカードは山札にありません。';list.append(empty)}
@@ -2072,13 +2072,13 @@ function installPhysicalCardPicker(){
   const [entry]=state.deck.splice(idx,1);
   state.placed.push({...entry,slot:null,x,y,angle:0,origin:{x,y,angle:0},faceUp:true,dragOrder:nextPlacedStackOrder(),physicalSelection:true,significator:chosenPhysicalRole==='significator'});
   chosenPhysicalCardId=null;play('deal');render();saveLocal();
-  setStatus(chosenPhysicalRole==='significator'?'シグニフィケイターを配置しました（通常の配札枚数には含みません）。':'指定カードを山札から抜いて配置しました。');
+  setStatus(chosenPhysicalRole==='significator'?'シグニフィケイターを配置しました。':'指定カードを山札から抜いて配置しました。');
  },true);
 }
 function nextPlacedStackOrder(){return Math.max(0,...state.placed.map(c=>Number(c.dragOrder)||0))+1}
-function drawAt(slot=null,x=null,y=null,animateArrival=true){if(settings.spread==='fourSeasons'&&fourSeasonsHandGuard())return;if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread==='fourSeasons'&&slot!==null&&slot>=6){setStatus('フォー・シーズンズの自動配札先は①〜⑥のみです。');return}if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('本来の展開は完了しています。山札を卓の好きな場所へドラッグすると補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
+function drawAt(slot=null,x=null,y=null,animateArrival=true){if(settings.spread==='fourSeasons'&&fourSeasonsHandGuard())return;if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread==='fourSeasons'&&slot!==null&&slot>=6){setStatus('フォー・シーズンズの自動配札先は①〜⑥のみです。');return}if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('基本の配札は完了しました。山札をドラッグして補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
  const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
- if(duplicate){setStatus('同じカードが重複しています（'+duplicate.id+'）。新しい占いを始めるかバックアップを確認してください。');return}
+ if(duplicate){setStatus('カードが重複しています（'+duplicate.id+'）。バックアップを確認してください。');return}
  if(!applyDealRemoval())return;
  hideFramesForDeal();
  if(refillPile){
@@ -2128,7 +2128,7 @@ function fourSeasonsHasUnplacedHand(){
 }
 function fourSeasonsHandGuard(){
  if(settings.spread==='fourSeasons'&&!dualSession&&fourSeasonsHasUnplacedHand()){
-  setStatus('枠外に開いた手札があります。まずファウンデーション・場札・タロンのいずれかへ移してください。');
+  setStatus('枠外の手札をファウンデーション・場札・タロンへ移してください。');
   return true;
  }
  return false;
@@ -2153,7 +2153,7 @@ async function revealFourSeasonsStock(){
 let dealCancelRequested=false;
 function syncDealButton(){const button=$('quickDeal');if(!button)return;const active=autoDealBusy;button.title=active?'進行中のディールを中断（配ったカードは残します）':'スプレッドへディール';const parts=button.querySelectorAll('span');if(parts[0])parts[0].textContent=active?'■':'▧';if(parts[1])parts[1].textContent=active?'中断':'ディール';}
 async function dealAuto(){
- if(autoDealBusy){dealCancelRequested=true;setStatus('ディールを中断します。現在の1枚が配り終わるまでお待ちください。');return;}
+ if(autoDealBusy){dealCancelRequested=true;setStatus('配札を中断しています。');return;}
  // The Four Seasons preset always uses its six registered deal targets,
  // regardless of any user-configured dealing workbench.
  if(settings.spread==='fourSeasons'&&!dualSession){
@@ -2169,7 +2169,7 @@ async function dealAuto(){
     await drawAt(slot);
     await new Promise(resolve=>setTimeout(resolve,25));
    }
-  }finally{autoDealBusy=false;syncDealButton();if(dealCancelRequested)setStatus('ディールを中断しました。配札済みのカードは残っています。')}
+  }finally{autoDealBusy=false;syncDealButton();if(dealCancelRequested)setStatus('配札を中断しました。')}
   return;
  }
  if(!dualSession&&state.deck.length&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))){hideFramesForDeal();saveLocal()}
@@ -2177,7 +2177,7 @@ async function dealAuto(){
  if(!state.deck.length)return;
  if(settings.spread==='free'){drawAt(null,25+rnd(50),20+rnd(55));return}
  const unfilled=getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i));
- if(!unfilled.length){setStatus('基本の配札は完了しました。補助カードは山札をドラッグして自由な位置へ追加できます。');return}
+ if(!unfilled.length){setStatus('基本の配札が完了しました。山札から補助カードを追加できます。');return}
  hideFramesForDeal();saveLocal();
  const startingSpread=settings.spread,startingSession=dualSession;
  autoDealBusy=true;dealCancelRequested=false;syncDealButton();
@@ -2195,7 +2195,7 @@ async function dealAuto(){
  }finally{
   autoDealBusy=false;syncDealButton();
   if(startingSession)dualDealBusy=false;
-  if(dealCancelRequested)setStatus('ディールを中断しました。配札済みのカードは残っています。');
+  if(dealCancelRequested)setStatus('配札を中断しました。');
  }
  // The final arrival animation is complete; check face-up spreads once.
  if(!startingSession&&settings.spread===startingSpread&&settings.dealFaceUp===true){maybeTriggerCompletionEffect();saveLocal();}
@@ -2219,7 +2219,7 @@ function runWashQuick(){
   if(round>=rounds){
    shuffleBusy=false;
    for(const id of ['quickWash','quickShuffle','shuffle','manualShuffle'])if($(id))$(id).disabled=false;updateStandaloneAvailability();
-   play('shuffle');render();saveLocal();setStatus('ウォッシュ '+labels[direction]+' '+rounds+'巡を完了しました。');
+   play('shuffle');render();saveLocal();setStatus('ウォッシュ（'+labels[direction]+'・'+rounds+'巡）完了。');
    return;
   }
   const current=round++;
@@ -2233,15 +2233,15 @@ function runWashQuick(){
  };
  next();
 }
-function shuffleDeck(manual=false){if(shuffleBusy)return;if(!state.deck.length){setStatus('山札は空です。新しい占いを始めてください。');return}const method=settings.shuffleMethod||'hindu';if(state.deck.length<2){setStatus('シャッフルには2枚以上必要です。');return}shuffleBusy=true;$('shuffle').disabled=true;$('manualShuffle').disabled=true;setStatus(`${({wash:'ウォッシュ',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'})[method]}シャッフル中…`);animateShuffle(method,()=>{let a=state.deck.slice();if(method==='wash')randomize(a);else if(method==='overhand'||method==='hindu')a=overhandSequence(a,manual);else if(method==='riffle')a=riffleSequence(a,manual);else a=pileSequence(a,4);state.deck=a;if(settings.reversals&&method==='wash'){state.deck.forEach(c=>{if(Math.random()<.45)c.reversed=Math.random()<.5})}else if(settings.reversals&&manual&&Math.random()<.25){const portion=Math.max(1,Math.floor(state.deck.length/4)),start=rnd(Math.max(1,state.deck.length-portion+1));for(let i=start;i<start+portion;i++)state.deck[i].reversed=!state.deck[i].reversed}shuffleBusy=false;$('shuffle').disabled=false;$('manualShuffle').disabled=false;play('shuffle');render();saveLocal();setStatus(`${({wash:'ウォッシュ',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'})[method]}シャッフルを行いました。${manual?'手動の簡易操作モード。':''}`)},manual)}
+function shuffleDeck(manual=false){if(shuffleBusy)return;if(!state.deck.length){setStatus('山札は空です。新しい占いを始めてください。');return}const method=settings.shuffleMethod||'hindu';if(state.deck.length<2){setStatus('シャッフルには2枚以上必要です。');return}shuffleBusy=true;$('shuffle').disabled=true;$('manualShuffle').disabled=true;setStatus(`${({wash:'ウォッシュ',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'})[method]}シャッフル中…`);animateShuffle(method,()=>{let a=state.deck.slice();if(method==='wash')randomize(a);else if(method==='overhand'||method==='hindu')a=overhandSequence(a,manual);else if(method==='riffle')a=riffleSequence(a,manual);else a=pileSequence(a,4);state.deck=a;if(settings.reversals&&method==='wash'){state.deck.forEach(c=>{if(Math.random()<.45)c.reversed=Math.random()<.5})}else if(settings.reversals&&manual&&Math.random()<.25){const portion=Math.max(1,Math.floor(state.deck.length/4)),start=rnd(Math.max(1,state.deck.length-portion+1));for(let i=start;i<start+portion;i++)state.deck[i].reversed=!state.deck[i].reversed}shuffleBusy=false;$('shuffle').disabled=false;$('manualShuffle').disabled=false;play('shuffle');render();saveLocal();setStatus(`${({wash:'ウォッシュ',overhand:'オーバーハンド',riffle:'リフル',pile:'パイル'})[method]}シャッフル完了。${manual?'（手動）':''}`)},manual)}
 const HISTORY_KEY='tabula_sortium_history_v034';
 let snapshots=[];
 function loadSnapshots(){snapshots=TabulaReadingHistory.read(localStorage,HISTORY_KEY)}
-function storeSnapshots(){try{TabulaReadingHistory.write(localStorage,HISTORY_KEY,snapshots);return true}catch(e){setStatus('占例を保存できません。ブラウザーの保存容量を確認してください。');return false}}
+function storeSnapshots(){try{TabulaReadingHistory.write(localStorage,HISTORY_KEY,snapshots);return true}catch(e){setStatus('保存できません。ブラウザの空き容量を確認してください。');return false}}
 const EXPORT_FORMAT='tabula-sortium';
 const fileNamePart=TabulaStorage.fileNamePart;
 function downloadJSON(payload,name){const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000)}
-function exportOne(v){if(!v)return;downloadJSON({format:EXPORT_FORMAT,version:1,kind:'reading',exportedAt:new Date().toISOString(),reading:v},'TABULA_'+fileNamePart(v.name)+'.json');setStatus('占例をJSONファイルに書き出しました。')}
+function exportOne(v){if(!v)return;downloadJSON({format:EXPORT_FORMAT,version:1,kind:'reading',exportedAt:new Date().toISOString(),reading:v},'TABULA_'+fileNamePart(v.name)+'.json');setStatus('占例をJSONに書き出しました。')}
 function exportCurrentReading(){
  if(!state.placed.length){setStatus('書き出すカードがありません。');return}
  if(dualBusy())return;
@@ -2288,7 +2288,7 @@ function exportAllData(){
    snapshots,spreadLibrary,deckLibrary,blueprintLibrary:TabulaDeckBlueprint.load(),
    cardTextOverrides:cardTexts,deckIntroOverrides
   },'TABULA_BACKUP_'+new Date().toISOString().slice(0,10)+'.json');
-  setStatus('通常の卓・追加卓・デッキ・記録を含むバックアップを書き出しました。');
+  setStatus('全データのバックアップを書き出しました。');
  }catch(e){setStatus('バックアップを作成できませんでした：'+e.message)}
 }
 const validateReading=v=>TabulaStorage.validateReading(v);
@@ -2354,7 +2354,7 @@ function readExternalFile(file){
    if(!confirm('占例「'+imported.name+'」を記録一覧に追加しますか？ 現在の卓は変更されません。'))return;
    snapshots.unshift(imported);
    if(!storeSnapshots()){snapshots.shift();return}
-   setStatus('占例を記録一覧に追加しました。卓上の「記録一覧・比較」から確認・復元できます。');return;
+   setStatus('占例を記録一覧に追加しました。');return;
   }
   const w=data.workspace,extra=data.version>=2?data.multiWorkspace:null;
   const blueprints=data.blueprintLibrary===undefined?[]:data.blueprintLibrary;
@@ -2429,7 +2429,7 @@ function captureSnapshot(name){
  const id='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
  snapshots.unshift(currentReadingSnapshot(id,name||freshName()));
  if(!storeSnapshots()){snapshots.shift();return false}
- setStatus('占例を保存しました。記録一覧から比較できます。');return true;
+ setStatus('占例を保存しました。');return true;
 }
 function saveSnapshotModal(){if(!state.placed.length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('保存する占例がありません。');return}modal('<h2>占例を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">占例を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
 function saveAndAgain(){if(captureSnapshot('')){initialize();setStatus('占例を保存し、同じ設定で新しい占いを開始しました。')}}
@@ -2486,7 +2486,7 @@ function restoreIndependentTableSnapshot(v){
  catch(e){alert('復元前の確認に失敗しました。卓は変更していません：'+e.message);return}
  if(!confirm('記録「'+v.name+'」を、使用中のデッキで「'+target.name+'」へ復元しますか？'))return;
  dualSession=candidate;dualRestoreView();dualSave();closeModal();
- setStatus('「'+v.name+'」を使用中のデッキで「'+target.name+'」に復元しました。');
+ setStatus('「'+v.name+'」を「'+target.name+'」に復元しました。');
  window.scrollTo({top:0,behavior:'instant'});
 }
 function restoreSnapshot(v){
@@ -2504,7 +2504,7 @@ function restoreSnapshot(v){
  state=TabulaPhysicalIdentity.ensureSingle({...snapshotStockForTable(v,null),cutStage:null,selected:null,completionShown:false});
  setCardSize(validCardSize(v.settings?.cardSize)?v.settings.cardSize:spreadCardSize(settings.spread));
  sync();render();saveLocal();closeModal();
- setStatus('「'+v.name+'」を使用中のデッキで復元しました。');
+ setStatus('「'+v.name+'」を復元しました。');
  window.scrollTo({top:0,behavior:'instant'});
 }
 
@@ -2531,7 +2531,7 @@ function registerSpreadFromReading(v){
   alert('スプレッドを保存できませんでした。保存容量を確認してください。');return;
  }
  closeModal();openSpreadArchive();
- setStatus('占例「'+v.name+'」からスプレッド「'+name+'」を登録しました。元の占例と卓は変更していません。');
+ setStatus('占例からスプレッド「'+name+'」を登録しました。');
 }
 function compareModal(){
  if(!snapshots.length){modal('<h2>記録一覧</h2><p>保存した占い結果はまだありません。</p>');return}
@@ -2553,7 +2553,7 @@ function compareModal(){
  document.querySelectorAll('[data-register-spread]').forEach(b=>b.onclick=()=>registerSpreadFromReading(snapshots.find(x=>x.id===b.dataset.registerSpread)));
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
-function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定だけを初期化しました。現在の配札と記録は残っています。')}
+function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定を初期化しました。配札と記録は残ります。')}
 function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false){
  if(Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
@@ -2644,14 +2644,14 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
  }
 }
-function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){if(dualSession){dualSave();return}try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;TabulaPhysicalIdentity.ensureSingle(persistedState);localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}))}catch(e){setStatus('この環境ではブラウザー保存を利用できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};
+function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){if(dualSession){dualSave();return}try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;TabulaPhysicalIdentity.ensureSingle(persistedState);localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}))}catch(e){setStatus('このブラウザでは保存できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};
  if(!settings.deckBackColors||typeof settings.deckBackColors!=='object'){
   // Legacy versions shared the active back tone across decks. Do not let
   // LENORMAND's green contaminate the restored TAROT default.
   settings.deckBackColors={builtin:settings.deckId==='builtin'&&settings.cardBackColor!=='green'&&Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'sepia',[BUILTIN_LENORMAND.id]:'green'};
   if(settings.deckId==='builtin')settings.cardBackColor=settings.deckBackColors.builtin;
  }
- if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('使用中のデッキが削除されていたため、標準デッキを用意しました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
+ if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
 function updateStandaloneAvailability(){const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash;w.title=noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}if(c){c.disabled=noCut;c.title=noCut?'カットは「なし」に設定されています':'山札をカット'}}function sync(){syncDeckReversals();if(activeBlueprint())settings.cardDesign='simple';else if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';updateAppearanceControls();refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';const poolInput=$('pool');
  const blueprint=activeBlueprint();
  const poolOptions=blueprint
@@ -2770,7 +2770,7 @@ function commitTableChange(){
 }
 
 function activateDeck(id,ask=true){
- if(dualSession){setStatus('二組モードのデッキ定義はこの試作では共通です。一組モードで変更してください。');refreshDeckPicker();return false}
+ if(dualSession){setStatus('デッキの定義は一組モードで変更してください。');refreshDeckPicker();return false}
  const deck=deckLibrary.find(d=>d.id===id)||null;
  const blueprint=blueprintFor(id);
  if(ask&&(state.placed.length||(state.removed||[]).length)&&!confirm('デッキを変更すると、現在の配札を片付けて新しい山札を作ります。続けますか？')){refreshDeckPicker();return false}
@@ -3131,11 +3131,11 @@ function customModal(){
   if(!ids.length){alert('カードを1枚以上選択してください。');return}
   customIds=ids;settings.pool='custom';$('pool').value='custom';closeModal();initialize();
  };
-}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewVisualEffect(true)};$('previewEffect').onclick=()=>previewVisualEffect(true);colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('二組モードのカード構成は開始時に確定します。新しく始める場合は一組モードで構成を変更してください。');return}if(e.target.value==='custom'){e.target.value=settings.pool;customModal();return}settings.pool=e.target.value;initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{if(changeActiveSpread(e.target.value))setStatus('展開法を切り替えました。山札の配列は維持しています。');else{e.target.value=settings.spread;syncSpreadShortcut();}};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
+}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewVisualEffect(true)};$('previewEffect').onclick=()=>previewVisualEffect(true);colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('カード構成は一組モードで変更してください。');return}if(e.target.value==='custom'){e.target.value=settings.pool;customModal();return}settings.pool=e.target.value;initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{if(changeActiveSpread(e.target.value))setStatus('展開法を切り替えました。山札の配列は維持しています。');else{e.target.value=settings.spread;syncSpreadShortcut();}};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
 $('resetSpreadDealOrder').onclick=()=>{settings.spreadDealOrders={...(settings.spreadDealOrders||{})};delete settings.spreadDealOrders[settings.spread];syncDealOrderField();saveLocal();setStatus('このスプレッドの配札順を番号順に戻しました。')};
 $('playingOrientationMarks').onchange=e=>{settings.playingOrientationMarks=e.target.checked;render();saveLocal()};
-$('reversals').onchange=e=>{setDeckReversals(e.target.checked);initialize()};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('次に新しい占いを始める際のデッキ初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('ディールアニメーションを「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。スプレッドへの自動割り当てはまだ行いません。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
-function openSequentially(){if(openingBusy)return;const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...(!dualSession?TabulaTablePiles.closedTopCards(state):[])];if(!closed.length){setStatus('開ける伏せ札がありません。カードをタップすると個別に表裏を切り替えられます。');return}openingBusy=true;$('quickOpen').disabled=true;$('quickRevealAll').disabled=true;const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;const pace=settings.openMode==='quick'?Math.max(110,Math.round(basePace/2)):basePace;let index=0;function step(){if(index>=closed.length){openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;render();maybeTriggerCompletionEffect();saveLocal();setStatus(closed.length+'枚を'+(settings.openMode==='quick'?'クイックで':'順番に')+'開きました。');return}closed[index].faceUp=true;index++;play('flip');render();saveLocal();setStatus(`オープン中：${index} / ${closed.length}枚`);setTimeout(step,pace)}step()}
+$('reversals').onchange=e=>{setDeckReversals(e.target.checked);initialize()};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
+function openSequentially(){if(openingBusy)return;const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...(!dualSession?TabulaTablePiles.closedTopCards(state):[])];if(!closed.length){setStatus('開ける伏せ札がありません。');return}openingBusy=true;$('quickOpen').disabled=true;$('quickRevealAll').disabled=true;const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;const pace=settings.openMode==='quick'?Math.max(110,Math.round(basePace/2)):basePace;let index=0;function step(){if(index>=closed.length){openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;render();maybeTriggerCompletionEffect();saveLocal();setStatus(closed.length+'枚を'+(settings.openMode==='quick'?'一度に':'順番に')+'開きました。');return}closed[index].faceUp=true;index++;play('flip');render();saveLocal();setStatus(`カードを開いています：${index}/${closed.length}枚`);setTimeout(step,pace)}step()}
 /* All spread selectors must use the same collect-or-cancel transaction.
    Never discard pile frames containing physical cards. */
 function changeActiveSpread(nextSpread){
@@ -3161,8 +3161,8 @@ function changeActiveSpread(nextSpread){
  render();saveLocal();
  return true;
 }
-function restoreDealWithoutPrompt(){if(dualSession){setStatus('現在の卓のカードは「カードを回収」から回収してください。');return false}if(!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length))return false;const pileCards=(state.tablePiles||[]).flatMap(p=>p.cards).map(TabulaPhysicalIdentity.preserveCard);if(Array.isArray(state.dealCheckpoint)){const listed=new Set(state.dealCheckpoint.map(c=>c.instanceId||c.id));state.deck=[...state.dealCheckpoint.map(c=>({...c})),...pileCards.filter(c=>!listed.has(c.instanceId||c.id))];}else{state.deck=[...pileCards,...(state.removed||[]),...state.placed.map(TabulaPhysicalIdentity.preserveCard),...state.deck];}state.tablePiles=[];state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();return true}
-function collectForNextReading(){if(dualSession){dualCollect();return}if(!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('回収するカードがありません。');return}const returned=state.placed.map(TabulaPhysicalIdentity.preserveCard);const stacked=TabulaTablePiles.collect(state).map(TabulaPhysicalIdentity.preserveCard);state.deck=[...returned,...stacked,...(state.removed||[]).map(TabulaPhysicalIdentity.preserveCard),...state.deck.map(TabulaPhysicalIdentity.preserveCard)];state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();setStatus('配札したカードと除外カードを回収しました。同じデッキで次の占いを続けられます。')}
+function restoreDealWithoutPrompt(){if(dualSession){setStatus('先に「カードを回収」を実行してください。');return false}if(!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length))return false;const pileCards=(state.tablePiles||[]).flatMap(p=>p.cards).map(TabulaPhysicalIdentity.preserveCard);if(Array.isArray(state.dealCheckpoint)){const listed=new Set(state.dealCheckpoint.map(c=>c.instanceId||c.id));state.deck=[...state.dealCheckpoint.map(c=>({...c})),...pileCards.filter(c=>!listed.has(c.instanceId||c.id))];}else{state.deck=[...pileCards,...(state.removed||[]),...state.placed.map(TabulaPhysicalIdentity.preserveCard),...state.deck];}state.tablePiles=[];state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();return true}
+function collectForNextReading(){if(dualSession){dualCollect();return}if(!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('回収するカードがありません。');return}const returned=state.placed.map(TabulaPhysicalIdentity.preserveCard);const stacked=TabulaTablePiles.collect(state).map(TabulaPhysicalIdentity.preserveCard);state.deck=[...returned,...stacked,...(state.removed||[]).map(TabulaPhysicalIdentity.preserveCard),...state.deck.map(TabulaPhysicalIdentity.preserveCard)];state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();setStatus('配札と除外カードを回収しました。')}
 function returnPositions(){if(!state.placed.length){setStatus('戻すカードがありません。');return}for(const p of state.placed){if(p.slot!=null&&getSlots()[p.slot]){const slot=getSlots()[p.slot];p.x=slot.x;p.y=slot.y;p.angle=slot.angle;p.manualMoved=false;p.dragOrder=0;}else if(p.origin){p.x=p.origin.x;p.y=p.origin.y;p.angle=p.origin.angle;p.manualMoved=false;p.dragOrder=0;}}render();saveLocal();setStatus('卓のカード位置を元に戻しました。')}
 $('quickPositions').onclick=returnPositions;
 $('addTablePile').onclick=()=>{
@@ -3187,7 +3187,7 @@ $('surface').addEventListener('click',e=>{
  render();saveLocal();setStatus('空の束を作成しました。札をドラッグして重ねられます。');
 },true);
 
-$('quickReturn').onclick=()=>{if(!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('戻す配札がありません。');return}if(confirm('配札前の山札の順番と正逆位置を復元しますか？')){restoreDealWithoutPrompt();setStatus('配札前の山札を完全復元しました。')}};
+$('quickReturn').onclick=()=>{if(!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('戻す配札がありません。');return}if(confirm('配札前の山札の順番と正逆位置を復元しますか？')){restoreDealWithoutPrompt();setStatus('配札前の山札に戻しました。')}};
 $('quickCollect').onclick=()=>{if(confirm('卓上のカードを配札順に回収して、同じデッキで次の占いを続けますか？'))collectForNextReading()};
 $('quickFaceDown').onclick=()=>{state.placed.forEach(p=>p.faceUp=false);state.completionShown=false;render();saveLocal()};
 function revealAllAtOnce(){
@@ -4289,7 +4289,7 @@ inspectionButton.title='閲覧モードを切り替えます。表向きのカ�
 document.querySelector('.table-utility-actions').prepend(inspectionButton);
 function inspectionEnabled(){return inspectMode&&!spreadWorkbench;}
 function setInspectionMode(enabled){
- if(enabled&&spreadWorkbench){setStatus('スプレッドの編集を終えてからカードを見られます。');return;}
+ if(enabled&&spreadWorkbench){setStatus('スプレッド編集を終了してください。');return;}
  cancelCardLongPress();
  if(enabled){cameraPanMode=false;$('stage').classList.remove('camera-pan-mode','camera-moving');const pan=$('tablePanToggle');if(pan)pan.setAttribute('aria-pressed','false');drag=null;clearDeckPreview();}
  inspectMode=!!enabled;
@@ -4297,13 +4297,13 @@ function setInspectionMode(enabled){
  inspectionButton.querySelector('span').textContent=inspectMode?'カードを見る：ON':'カードを見る';
  $('surface').classList.toggle('card-inspection-mode',inspectMode);
  render();
- setStatus(inspectMode?'閲覧モード：表向きのカードをクリックすると、完成形と説明が開きます。Escまたは「カードを見る」で通常操作へ戻ります。':'通常操作に戻りました。');
+ setStatus(inspectMode?'閲覧モード：表向きのカードをクリック（Escで終了）。':'通常操作に戻りました。');
 }
 inspectionButton.onclick=()=>setInspectionMode(!inspectMode);
 function inspectTableCard(index,origin){
  if(!inspectionEnabled())return;
  const item=state.placed[index];if(!item)return;
- if(!item.faceUp){setStatus('この札はまだ伏せられています。閲覧モードを解除して開いてください。');return;}
+ if(!item.faceUp){setStatus('伏せ札です。閲覧モードを終了して開いてください。');return;}
  tableDetailFocus=origin||inspectionButton;
  // Every new inspection starts with the finished card and its available text.
  // Navigation within that reading keeps any subsequent display choices.
@@ -4524,7 +4524,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
       await displayPileFrame(frame,prior);
       if(frame.dealt.length>previousPlaced)animateCardFromDeck(state.placed.length-1,sourceRect);
       else if(frame.removed.length>previousRemoved)animateCardFromDeck(frame.removed.length-1,sourceRect);
-      setStatus('独自ディール '+cursor+' / '+timeline.length+'：'+frame.label+'（配札 '+frame.dealt.length+'枚・除外 '+frame.removed.length+'枚）');
+      setStatus('配札 '+cursor+' / '+timeline.length+'：'+frame.label+'（配札 '+frame.dealt.length+'枚・除外 '+frame.removed.length+'枚）');
       if(frame.type==='dealt'||frame.type==='removed'||frame.type==='take')play('deal');
       cursor++;
       if(cursor<sequence.length){
@@ -4536,7 +4536,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
             if(round>=rounds.length){play('shuffle');setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(nextStage)),300);return}
             const {step,i}=rounds[round++];
             const direction=step.washDirection==='alternate'?(i%2===0?'cw':'ccw'):step.washDirection;
-            setStatus('独自ディール・シャッフル：'+methods[step.method]+' '+round+'/'+rounds.length);
+            setStatus('配札手順・シャッフル：'+methods[step.method]+' '+round+'/'+rounds.length);
             animateShuffle(step.method,animateRound,false,{direction,piles:step.groups});
           }
           if(rounds.length)animateRound();else setTimeout(nextStage,300);
@@ -4550,7 +4550,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
         render();
         if(settings.spread!=='fourSeasons'&&settings.spread!=='monteCarlo')maybeTriggerCompletionEffect();
         saveLocal();
-        setStatus('独自ディールを完了しました。'+dealt.length+'枚を配札、'+removed.length+'枚を除外しました。');
+        setStatus('指定の配札を完了しました。'+dealt.length+'枚を配札、'+removed.length+'枚を除外しました。');
       }
     }
     // Give the browser a paint before beginning a potentially long animated procedure.
@@ -4561,7 +4561,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
   state.removed=removed.filter(c=>!tableIds.has(c.id)).map(c=>({...c}));
   render();
   if(settings.spread!=='fourSeasons'&&settings.spread!=='monteCarlo')maybeTriggerCompletionEffect();
-  saveLocal();setStatus('独自ディールを完了しました。');
+  saveLocal();setStatus('指定の配札を完了しました。');
 
  },
  status:setStatus
@@ -4775,7 +4775,7 @@ function beginIndependentTable(){
  try{
   const w=independentTableWorkspace();dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
   dualSession=w;dualRestoreView();dualSave();dualSwitchTable('table2');
-  setStatus('追加卓Ⅰに独立した'+w.piles.B.length+'枚の山札を用意しました。');
+  setStatus('追加卓Ⅰを作成しました（山札'+w.piles.B.length+'枚）。');
  }catch(e){setStatus('追加卓を作れませんでした：'+e.message)}
 }
 function isSharedTables(){return !!dualSession&&dualSession.workspaceKind==='single-shared'}
@@ -4806,13 +4806,13 @@ function sharedTableWorkspace(){
 function beginSharedTable(){
  if(dualBusy())return;
  if(dualSession){if(isSharedTables())dualSwitchTable('table2');else setStatus('二組のデッキを保管してから、共有卓を利用してください。');return}
- if(storedExtraWorkspace()){setStatus('保存中の追加卓があります。再開するか片付けてください。');return}
+ if(storedExtraWorkspace()){setStatus('追加卓を再開するか、片付けてください。');return}
  try{
   const next=sharedTableWorkspace();
   dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
   dualSession=next;
   dualRestoreView();dualSave();dualSwitchTable('table2');
-  setStatus('追加卓Ⅰを用意しました。メイン卓と同じ山札から配札します。');
+  setStatus('共有の追加卓Ⅰを作成しました。');
  }catch(e){setStatus('追加卓を作れませんでした：'+e.message)}
 }
 function dualFresh(){
@@ -5054,15 +5054,15 @@ function dualSave(){
   }
   localStorage.setItem(DUAL_SESSION_KEY,JSON.stringify(dualSession));
   dualRefreshControls();
- }catch(e){setStatus('二組モードの保存に失敗しました：'+e.message)}
+ }catch(e){setStatus('ダブルデッキの保存に失敗しました：'+e.message)}
 }
 function dualBusy(){
- if(shuffleBusy||openingBusy||dualDealBusy||spreadWorkbench||state.cutStage){setStatus('操作が完了してから山札・卓を切り替えてください。');return true}
+ if(shuffleBusy||openingBusy||dualDealBusy||spreadWorkbench||state.cutStage){setStatus('操作完了後に卓・山札を切り替えてください。');return true}
  return false;
 }
 function dualSwitchPile(id){
  if(!dualSession||dualBusy()||id===dualSession.activePile)return;
- if(isIndependentTables()){setStatus('独立デッキは卓を切り替えることで選択します。');dualRefreshControls();return;}
+ if(isIndependentTables()){setStatus('独立デッキは卓の切り替えで選択してください。');dualRefreshControls();return;}
  dualSave();
  try{const next=TabulaMultiWorkspace.selectPile(dualSession,id);dualSession=next;}
  catch(e){setStatus(e.message);dualRefreshControls();return}
@@ -5074,7 +5074,7 @@ function dualSwitchTable(id){
  try{dualSession=TabulaMultiWorkspace.selectTable(dualSession,id);
   if(isIndependentTables())dualSession.activePile=id==='table2'?'B':'A';}
  catch(e){setStatus(e.message);dualRefreshControls();return}
- dualRestoreView();dualSave();setStatus((id==='table1'?'卓Ⅰ':'卓Ⅱ')+'へ切り替えました。もう一方の卓の配札は維持されています。');
+ dualRestoreView();dualSave();setStatus((id==='table1'?'卓Ⅰ':'卓Ⅱ')+'へ切り替えました。');
 }
 function dualMixOrSeparate(separate){
  if(!dualSession||dualBusy())return;
@@ -5103,21 +5103,21 @@ function dualCollect(){
  catch(e){setStatus('カードの整合性を確認できず、回収を中止しました：'+e.message);return false}
  dualSession=candidate;
  dualRestoreView();dualSave();
- setStatus('現在の卓のカードを所属する山札へ回収しました。');return true;
+ setStatus('カードを各山札へ回収しました。');return true;
 }
 function dualToggle(){
  if(dualBusy())return;
  if(dualSession){
   if(isSharedTables()||isIndependentTables()){
    dualSwitchTable('table1');
-   setStatus(isIndependentTables()?'メイン卓を表示しました。独立した追加卓と山札は維持されています。':'メイン卓を表示しました。追加卓と共有山札は維持されています。');
+   setStatus(isIndependentTables()?'メイン卓に戻りました。':'メイン卓に戻りました。');
    return;
   }
   dualSave();dualSession=null;
   const old=dualSingleBackup;dualSingleBackup=null;
   if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
   sync();render();dualRefreshControls();
-  setStatus('一組モードに戻りました。二組の作業状態は別に保存されています。');
+  setStatus('一組モードに戻りました（二組の状態は保存済み）。');
   return;
  }
  dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
@@ -5129,12 +5129,12 @@ function dualToggle(){
   TabulaMultiWorkspace.validate(dualSession);
   dualRestoreView();dualSave();
   setStatus('ダブルデッキモードを開始しました。');
- }catch(e){dualSession=null;dualSingleBackup=null;setStatus('二組モードの開始に失敗しました：'+e.message)}
+ }catch(e){dualSession=null;dualSingleBackup=null;setStatus('ダブルデッキの開始に失敗しました：'+e.message)}
 }
 $('deckAppearance').onchange=e=>{
  if(dualSession)return;
  settings.deckAppearance=allowedAppearance(e.target.value);
- render();saveLocal();setStatus('カード外観を '+APPEARANCE_LABELS[settings.deckAppearance]+' に変更しました。');
+ render();saveLocal();setStatus('カード外観を「'+APPEARANCE_LABELS[settings.deckAppearance]+'」に変更しました。');
 };
 for(const [id,source] of Object.entries({dualAppearanceA:'A',dualAppearanceB:'B'})){
  const select=$(id);select.replaceChildren(...APPEARANCES.map(a=>new Option(APPEARANCE_LABELS[a],a)));
@@ -5142,7 +5142,7 @@ for(const [id,source] of Object.entries({dualAppearanceA:'A',dualAppearanceB:'B'
   if(!dualSession)return;
   dualSession.appearances??={A:'standard',B:'standard'};
   dualSession.appearances[source]=allowedAppearance(e.target.value,source);
-  render();dualSave();setStatus('デッキ'+source+'の外観を '+APPEARANCE_LABELS[dualSession.appearances[source]]+' に変更しました。');
+  render();dualSave();setStatus('デッキ'+source+'の外観を「'+APPEARANCE_LABELS[dualSession.appearances[source]]+'」に変更しました。');
  };
 }
 for(const [id,tone] of Object.entries({dualBackA:'A',dualBackB:'B'})){
@@ -5189,7 +5189,7 @@ $('dualClear').onclick=()=>{
  }
  try{localStorage.removeItem(DUAL_SESSION_KEY)}catch(e){setStatus('追加卓を片付けられませんでした：'+e.message);return}
  sync();render();saveLocal();dualRefreshControls();
- setStatus('追加卓を片付けました。メイン卓と残りのカードは維持されています。');
+ setStatus('追加卓を片付けました。');
 };
 $('workspaceTable').onchange=e=>{
  const target=e.target.value;
