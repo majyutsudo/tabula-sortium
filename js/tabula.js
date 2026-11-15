@@ -638,7 +638,16 @@ function sortPhysicalCards(items,mode,deckId=settings.deckId){
  const indices=new Map(order.map((id,i)=>[id,i]));
  return items.slice().sort((a,b)=>(indices.get(a.id)??Number.MAX_SAFE_INTEGER)-(indices.get(b.id)??Number.MAX_SAFE_INTEGER))
   .map(c=>({...c,reversed:false}));
-}function setStatus(t){$('status').textContent=t}function play(type){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(type==='flip'?360:160,t);osc.frequency.exponentialRampToValueAtTime(type==='flip'?180:90,t+.06);g.gain.setValueAtTime(.035,t);g.gain.exponentialRampToValueAtTime(.001,t+.075);osc.connect(g);g.connect(audioCtx.destination);osc.start(t);osc.stop(t+.085)}catch(e){}}function initialize(){
+}function setStatus(t){$('status').textContent=t}function play(type,volume=1){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(type==='flip'?360:160,t);osc.frequency.exponentialRampToValueAtTime(type==='flip'?180:90,t+.06);g.gain.setValueAtTime(.035*volume,t);g.gain.exponentialRampToValueAtTime(.001,t+.075);osc.connect(g);g.connect(audioCtx.destination);osc.start(t);osc.stop(t+.085)}catch(e){}}
+// Prepare audio in the direct click gesture; animationend may run after the
+// browser's autoplay permission window. No audible sound is played here.
+function prepareOpeningSound(){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});}catch(e){}}
+function soundAtAnimationEnd(node,animationName,volume=1){
+ if(!node||!settings.sound)return;
+ node.addEventListener('animationend',event=>{
+  if(event.target===node&&event.animationName===animationName)play('flip',volume);
+ },{once:false});
+}function initialize(){
  if(dualSession){
   if(dualBusy())return;
   // A new reading operates only on the selected table. Another table may
@@ -3193,6 +3202,7 @@ async function revealAllFloating(){
  const total=targets.length+piles.length;
  if(!total){setStatus('開ける伏せ札がありません。');return}
  openingBusy=true;
+ prepareOpeningSound();
  $('quickOpen').disabled=true;$('quickRevealAll').disabled=true;
  try{
   // Commit face-up DOM first. Both faces now exist, so CSS can animate a
@@ -3214,6 +3224,7 @@ async function revealAllFloating(){
    if(animated.length)await new Promise(resolve=>setTimeout(resolve,860));
   }
   for(const node of animated)if(node.isConnected)node.classList.remove('simultaneous-opening');
+  play('flip'); // One shared landing sound, regardless of card count.
   setStatus(total+'枚を一斉に開きました。');
   maybeTriggerCompletionEffect();
  }finally{
@@ -3242,6 +3253,10 @@ async function openCeremonially(mode){
   if(!node)return;
   node.style.setProperty('--ceremonial-delay',delay+'ms');
   node.classList.add('ceremonial-opening');
+  // The flipped inner face and the raised pile finish on different nodes.
+  // Listen to the actual landing rather than guessing a timeout.
+  const landingNode=entry.pile?node:node.querySelector('.card-inner');
+  soundAtAnimationEnd(landingNode,entry.pile?(mode==='bloom'?'tabula-bloom-pile-gust':'tabula-ceremonial-pile'):(mode==='bloom'?'tabula-bloom-gust':'tabula-ceremonial-turn'),mode==='bloom'?.55:1);
   if(mode==='bloom'){
    // A nearly simultaneous gust: coherent left-to-right wind, with tiny
    // deterministic differences so the cards do not move mechanically alike.
@@ -3254,6 +3269,7 @@ async function openCeremonially(mode){
   }
  };
  openingBusy=true;
+ prepareOpeningSound();
  $('quickOpen').disabled=true;$('quickRevealAll').disabled=true;
  $('zone').classList.add('ceremonial-opening-active');
  try{
