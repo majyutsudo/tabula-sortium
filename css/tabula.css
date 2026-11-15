@@ -2265,7 +2265,7 @@ aside .section :is(button,select,input,textarea),
  -webkit-perspective:900px;
 }
 #zone .card.faceup.ceremonial-opening .card-inner{
- animation:tabula-ceremonial-turn 2400ms cubic-bezier(.45,0,.55,1) var(--ceremonial-delay,0ms) both!important;
+ animation:tabula-ceremonial-turn 1200ms cubic-bezier(.45,0,.55,1) var(--ceremonial-delay,0ms) both!important;
  transition:none!important;
  transform-style:preserve-3d!important;
  -webkit-transform-style:preserve-3d!important;
@@ -2284,7 +2284,7 @@ aside .section :is(button,select,input,textarea),
  50%{transform:translateY(-18px)}
 }
 #zone .table-pile-top.ceremonial-opening{
- animation:tabula-ceremonial-pile 2400ms ease-in-out var(--ceremonial-delay,0ms) both!important;
+ animation:tabula-ceremonial-pile 1200ms ease-in-out var(--ceremonial-delay,0ms) both!important;
 }
 #zone.ceremonial-opening-active{pointer-events:none}
 @media(prefers-reduced-motion:reduce){
