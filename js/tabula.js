@@ -3222,7 +3222,7 @@ async function openCeremonially(mode){
  const total=targets.length+piles.length;
  if(!total){setStatus('開ける伏せ札がありません。');return}
  const reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
- const duration=2400,interval=500;
+ const duration=1200,interval=380;
  const entries=[...targets.map(({card,index})=>({card,index})),...piles.map(card=>({card,pile:true}))];
  const animateEntry=(entry,delay=0)=>{
   const node=entry.pile
@@ -3241,7 +3241,7 @@ async function openCeremonially(mode){
    render();saveLocal();
    if(!reduced){
     entries.forEach((entry,i)=>animateEntry(entry,i*interval));
-    setStatus('BLOOM — 開花：'+total+'枚をゆっくり開いています。');
+    setStatus('BLOOM — 開花：'+total+'枚を連続して開いています。');
     await new Promise(resolve=>setTimeout(resolve,duration+(entries.length-1)*interval+70));
    }
   }else{
