@@ -3233,7 +3233,7 @@ async function openCeremonially(mode){
  const total=targets.length+piles.length;
  if(!total){setStatus('開ける伏せ札がありません。');return}
  const reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
- const duration=1200,interval=3;
+ const duration=mode==='bloom'?1350:1200,interval=125;
  const entries=[...targets.map(({card,index})=>({card,index})),...piles.map(card=>({card,pile:true}))];
  const animateEntry=(entry,delay=0)=>{
   const node=entry.pile
@@ -3246,10 +3246,10 @@ async function openCeremonially(mode){
    // A nearly simultaneous gust: coherent left-to-right wind, with tiny
    // deterministic differences so the cards do not move mechanically alike.
    const order=entry.index??entries.indexOf(entry);
-   const drift=14+(order%5)*2;
+   const drift=24+(order%5)*4;
    node.style.setProperty('--bloom-wind',drift+'px');
    node.style.setProperty('--bloom-wind-half',Math.round(drift*.5)+'px');
-   node.style.setProperty('--bloom-tilt',(order%3-1)*2+'deg');
+   node.style.setProperty('--bloom-tilt',((order%3)-1)*5+'deg');
    node.classList.add('bloom-opening');
   }
  };
@@ -3261,8 +3261,11 @@ async function openCeremonially(mode){
    entries.forEach(({card})=>{card.faceUp=true});
    render();saveLocal();
    if(!reduced){
-    entries.forEach((entry,i)=>animateEntry(entry,i*interval));
-    setStatus('BLOOM — 突風：'+total+'枚がほぼ一斉にめくれています。');
+    // The gust moves across the tabletop rather than following spread numbers.
+    // A visible but overlapping 125ms offset distinguishes this from all-at-once.
+    const wave=[...entries].sort((a,b)=>(Number(a.card.x)||0)-(Number(b.card.x)||0));
+    wave.forEach((entry,i)=>animateEntry(entry,i*interval));
+    setStatus('BLOOM — 風が卓を横切り、札を順にめくっています。');
     await new Promise(resolve=>setTimeout(resolve,duration+(entries.length-1)*interval+70));
    }
   }else{
