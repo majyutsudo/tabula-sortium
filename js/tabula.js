@@ -3675,9 +3675,10 @@ function galleryCard(c){
 }
 function galleryDeckOptions(){
  const picker=$('cardGalleryDeck'),previous=GALLERY.deckId;
- picker.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
- for(const deck of deckLibrary)picker.add(new Option(deck.name+'（'+deck.included.length+'枚）',deck.id));
- for(const deck of TabulaDeckBlueprint.load())picker.add(new Option(deck.name+'（'+TabulaDeckBlueprint.generate(deck).length+'枚）',deck.id));
+ // Share the left-hand deck picker's order and labels, including custom decks.
+ // Keeping one source prevents drift as new card systems are registered.
+ const source=$('deckLibrarySelect');
+ picker.replaceChildren(...[...source.options].map(option=>new Option(option.text,option.value)));
  if(![...picker.options].some(o=>o.value===previous))GALLERY.deckId='builtin';
  picker.value=GALLERY.deckId;
 }
