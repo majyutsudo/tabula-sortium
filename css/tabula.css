@@ -1404,6 +1404,11 @@ body.dual-enabled .table-surface .deck.dual-second-deck{
 /* v0.411: Explicit, movable physical tabletop piles.
    Overlapping tarot cards remain independent unless manually dropped here. */
 .table-zone.pile-placement-armed{cursor:crosshair}
+/* v0.610 — semantic stacking: an empty pile is a reusable placement frame.
+   Keep empty frames below all cards and occupied piles, independent of render order.
+   Elevated drag/drop layers remain governed by their existing dedicated rules. */
+#zone > .table-pile.pile-is-empty{z-index:1}
+#zone > .table-pile.pile-is-occupied{z-index:1600}
 .table-pile{position:absolute;z-index:1600;transform:translate(-50%,-50%);box-sizing:border-box;border:2px dashed #d6b57c;border-radius:6px;background:#191d1bdd;box-shadow:0 4px 12px #0009;touch-action:none}
 .table-pile::before{content:"";position:absolute;inset:4px;pointer-events:none;border:1px solid #ab8c59;border-radius:4px}
 .table-pile-handle{position:absolute;left:-2px;right:-2px;top:-29px;width:calc(100% + 4px);min-height:25px;border:1px solid #a18b62;border-radius:6px 6px 0 0;background:#29362d;color:#ead9b5;font:11px/1.2 Arial,sans-serif;z-index:3;cursor:grab;touch-action:none;white-space:nowrap;padding:3px 1px}
