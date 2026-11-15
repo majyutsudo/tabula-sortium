@@ -3261,11 +3261,15 @@ async function openCeremonially(mode){
    entries.forEach(({card})=>{card.faceUp=true});
    render();saveLocal();
    if(!reduced){
-    // The gust moves across the tabletop rather than following spread numbers.
-    // A visible but overlapping 125ms offset distinguishes this from all-at-once.
-    const wave=[...entries].sort((a,b)=>(Number(a.card.x)||0)-(Number(b.card.x)||0));
+    // Shuffle the reveal order on each invocation. Keep the existing
+    // overlapping 125ms stagger, flip trajectories, and card state intact.
+    const wave=[...entries];
+    for(let i=wave.length-1;i>0;i--){
+     const j=Math.floor(Math.random()*(i+1));
+     [wave[i],wave[j]]=[wave[j],wave[i]];
+    }
     wave.forEach((entry,i)=>animateEntry(entry,i*interval));
-    setStatus('BLOOM — 風が卓を横切り、札を順にめくっています。');
+    setStatus('BLOOM — 札がランダムな順番で開いています。');
     await new Promise(resolve=>setTimeout(resolve,duration+(entries.length-1)*interval+70));
    }
   }else{
