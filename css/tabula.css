@@ -2251,28 +2251,40 @@ aside .section :is(button,select,input,textarea),
 
 /* v0.599 — slow, restrained 3-D reveal for FLOAT and staggered BLOOM.
    Transform only the inner face; outer card angle and position stay intact. */
+/* Preserve both sides throughout the turn. Animating 'filter' on the
+   3-D parent forced flattening in Chromium/WebKit and exposed the back twice. */
 @keyframes tabula-ceremonial-turn{
- 0%{transform:translateY(0) rotateY(0deg);filter:brightness(1)}
- 18%{transform:translateY(-12px) rotateY(5deg);filter:brightness(1.04)}
- 42%{transform:translateY(-23px) rotateY(57deg);filter:brightness(1.11)}
- 66%{transform:translateY(-24px) rotateY(123deg);filter:brightness(1.12)}
- 84%{transform:translateY(-12px) rotateY(168deg);filter:brightness(1.04)}
- 100%{transform:translateY(0) rotateY(180deg);filter:brightness(1)}
+ 0%{transform:translate3d(0,0,0) rotateY(0deg)}
+ 18%{transform:translate3d(0,-9px,0) rotateY(18deg)}
+ 50%{transform:translate3d(0,-22px,0) rotateY(90deg)}
+ 82%{transform:translate3d(0,-9px,0) rotateY(162deg)}
+ 100%{transform:translate3d(0,0,0) rotateY(180deg)}
+}
+#zone .card.ceremonial-opening{
+ perspective:900px;
+ -webkit-perspective:900px;
 }
 #zone .card.faceup.ceremonial-opening .card-inner{
- animation:tabula-ceremonial-turn 2400ms cubic-bezier(.42,0,.25,1) var(--ceremonial-delay,0ms) both!important;
+ animation:tabula-ceremonial-turn 2400ms cubic-bezier(.45,0,.55,1) var(--ceremonial-delay,0ms) both!important;
  transition:none!important;
- transform-style:preserve-3d;
+ transform-style:preserve-3d!important;
+ -webkit-transform-style:preserve-3d!important;
+ will-change:transform;
+}
+#zone .card.ceremonial-opening .card-inner>.face{
+ backface-visibility:hidden!important;
+ -webkit-backface-visibility:hidden!important;
+}
+#zone .card.ceremonial-opening .card-inner>.face.front{
+ transform:rotateY(180deg);
+ -webkit-transform:rotateY(180deg);
 }
 @keyframes tabula-ceremonial-pile{
- 0%{transform:translateY(0) scaleX(1);filter:brightness(1)}
- 26%{transform:translateY(-14px) scaleX(.7);filter:brightness(1.08)}
- 50%{transform:translateY(-22px) scaleX(.03);filter:brightness(1.12)}
- 74%{transform:translateY(-14px) scaleX(.7);filter:brightness(1.07)}
- 100%{transform:translateY(0) scaleX(1);filter:brightness(1)}
+ 0%,100%{transform:translateY(0)}
+ 50%{transform:translateY(-18px)}
 }
 #zone .table-pile-top.ceremonial-opening{
- animation:tabula-ceremonial-pile 2400ms cubic-bezier(.42,0,.25,1) var(--ceremonial-delay,0ms) both!important;
+ animation:tabula-ceremonial-pile 2400ms ease-in-out var(--ceremonial-delay,0ms) both!important;
 }
 #zone.ceremonial-opening-active{pointer-events:none}
 @media(prefers-reduced-motion:reduce){
