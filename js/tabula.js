@@ -1588,7 +1588,11 @@ function pileDropPosition(clientX,clientY){
 function renderTablePiles(zone,m){
  if(spreadWorkbench)return;
  for(const pile of TabulaTablePiles.piles(state)){
-  const el=document.createElement('div');el.className='table-pile';el.dataset.pileId=pile.id;el.classList.toggle('pile-has-multiple',pile.cards.length>1);
+  const el=document.createElement('div');el.className='table-pile';el.dataset.pileId=pile.id;
+   // Empty physical piles are placement frames, not cards. Their layer never depends on creation order.
+   el.classList.toggle('pile-is-occupied',pile.cards.length>0);
+   el.classList.toggle('pile-is-empty',pile.cards.length===0);
+   el.classList.toggle('pile-has-multiple',pile.cards.length>1);
   el.style.setProperty('--pile-tool-size',Math.max(16,Math.min(30,Math.round(m.w*0.18)))+'px');
   el.style.left=pile.x+'%';el.style.top=pile.y+'%';
   const pileSize=applyPhysicalCardDimensions(el,m,appearanceForCard(pile.cards[0]));el.style.transform='translate(-50%,-50%) rotate('+(Number(pile.angle)||0)+'deg)';
