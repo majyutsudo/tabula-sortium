@@ -2483,6 +2483,13 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-actio
  color:var(--light-setting-text);
  border-color:var(--light-setting-border);
 }
+/* v0.624: Shuffle has a legacy ID-specific dark rule. Match the
+   same light-theme settings tokens as all its neighboring selectors. */
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings #quickShuffleChoice{
+ background:var(--light-setting-face);
+ color:var(--light-setting-text);
+ border-color:var(--light-setting-border);
+}
 @media(hover:hover){
  body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button:not(:disabled):hover{
   background:var(--light-action-hover);
