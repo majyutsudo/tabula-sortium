@@ -4738,7 +4738,7 @@ function installTableActionSettings(){
    // rule works across both desktop and mobile selection menus.
    const divider=document.createElement('option');
    divider.disabled=true;
-   divider.textContent='────────────';
+   divider.textContent='──────';
    divider.dataset.dealProcedureMenu='true';
    animationChoice.append(divider);
    const standard=document.createElement('option');
