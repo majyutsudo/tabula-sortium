@@ -4725,29 +4725,57 @@ function installTableActionSettings(){
  const shuffleChoice=$('quickShuffleChoice'),dealChoice=$('quickDealChoice');
  if(shuffleChoice)$('tableShuffleChoiceSlot').append(shuffleChoice);
  if(dealChoice)$('tableDealChoiceSlot').append(dealChoice);
- const dealToggle=$('tableDealOptionsButton'),dealPanel=$('tableDealOptions'),animationChoice=$('dealAnimation'),dealFace=$('tableDealFace');
- const syncDealSummary=()=>{
-  // The animation selector is a direct native control, like Shuffle.
-  // The compact procedure button only reflects which saved procedure is active.
-  const dealText=dealChoice?.selectedOptions?.[0]?.textContent?.trim()||'番号順';
+ const animationChoice=$('dealAnimation'),dealFace=$('tableDealFace');
+ const procedurePrefix='__deal_procedure__:';
+ const procedureEdit='__deal_edit__';
+ // Match Shuffle's native menu: methods, registered procedures, editor last.
+ // A procedure selection is a command, not an animation preset. Restore the
+ // selected animation immediately so both choices stay independent.
+ const syncDealMenu=()=>{
+  animationChoice.querySelectorAll('[data-deal-procedure-menu]').forEach(el=>el.remove());
+  if(dealChoice){
+   const procedureGroup=document.createElement('optgroup');
+   procedureGroup.label='ディール手順';
+   procedureGroup.dataset.dealProcedureMenu='true';
+   for(const option of dealChoice.options){
+    if(option.value==='__edit__')continue;
+    const entry=document.createElement('option');
+    entry.value=procedurePrefix+option.value;
+    entry.textContent=option.textContent;
+    procedureGroup.append(entry);
+   }
+   animationChoice.append(procedureGroup);
+  }
+  const edit=document.createElement('option');
+  edit.value=procedureEdit;
+  edit.textContent='手順を編集・登録…';
+  edit.dataset.dealProcedureMenu='true';
+  animationChoice.append(edit);
+  animationChoice.value=TabulaDealAnimation.normalize(settings.dealAnimation);
+  const name=dealChoice?.selectedOptions?.[0]?.textContent?.trim()||'番号順';
+  animationChoice.title='ディール演出（配札手順：'+name+'）';
   dealFace.value=settings.dealFaceUp===true?'up':'down';
-  dealToggle.title='配札手順：'+dealText+'（クリックして変更・編集）';
-  dealToggle.setAttribute('aria-label','配札手順：'+dealText);
  };
- const closeDealPanel=()=>{dealPanel.hidden=true;dealToggle.setAttribute('aria-expanded','false')};
- dealToggle.onclick=()=>{
-  const show=dealPanel.hidden;dealPanel.hidden=!show;
-  dealToggle.setAttribute('aria-expanded',String(show));
+ const previousAnimationChange=animationChoice.onchange;
+ animationChoice.onchange=event=>{
+  const choice=animationChoice.value;
+  if(choice===procedureEdit||choice.startsWith(procedurePrefix)){
+   animationChoice.value=TabulaDealAnimation.normalize(settings.dealAnimation);
+   if(dealChoice){
+    dealChoice.value=choice===procedureEdit?'__edit__':choice.slice(procedurePrefix.length);
+    dealChoice.dispatchEvent(new Event('change',{bubbles:true}));
+    if(choice!==procedureEdit){
+     const name=dealChoice.selectedOptions?.[0]?.textContent?.trim()||'番号順';
+     setStatus('ディール手順を「'+name+'」に変更しました。');
+    }
+   }
+   syncDealMenu();
+   return;
+  }
+  previousAnimationChange?.call(animationChoice,event);
  };
- document.addEventListener('pointerdown',event=>{
-  if(!dealPanel.hidden&&!dealToggle.contains(event.target)&&!dealPanel.contains(event.target))closeDealPanel();
- });
- document.addEventListener('keydown',event=>{
-  if(event.key==='Escape'&&!dealPanel.hidden){closeDealPanel();dealToggle.focus()}
- });
- dealChoice?.addEventListener('change',syncDealSummary);
- dealChoice?.addEventListener('tabula:deal-choice-updated',syncDealSummary);
- animationChoice.addEventListener('change',syncDealSummary);
+ dealChoice?.addEventListener('change',syncDealMenu);
+ dealChoice?.addEventListener('tabula:deal-choice-updated',syncDealMenu);
  dealFace.onchange=()=>{
   settings.dealFaceUp=dealFace.value==='up';
   saveLocal();
@@ -4756,7 +4784,7 @@ function installTableActionSettings(){
  const openMode=$('tableOpenMode');
  openMode.onchange=()=>{settings.openMode=['normal','quick','all','float','bloom'].includes(openMode.value)?openMode.value:'normal';saveLocal();setStatus('オープン方式を変更しました。')};
  const washDirection=$('tableWashDirection'),washRounds=$('tableWashRounds'),cutCount=$('tableCutCount');
- const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3);openMode.value=['normal','quick','all','float','bloom'].includes(settings.openMode)?settings.openMode:'normal';syncDealSummary()};
+ const update=()=>{washDirection.value=settings.quickWashDirection||'random';washRounds.value=String(settings.quickWashRounds||1);cutCount.value=String(settings.cutCount??3);openMode.value=['normal','quick','all','float','bloom'].includes(settings.openMode)?settings.openMode:'normal';syncDealMenu()};
  washDirection.onchange=()=>{settings.quickWashDirection=washDirection.value;$('quickWashDirection').value=washDirection.value;updateStandaloneAvailability();saveLocal()};
  washRounds.onchange=()=>{settings.quickWashRounds=Number(washRounds.value);$('quickWashRounds').value=washRounds.value;updateStandaloneAvailability();saveLocal()};
  cutCount.onchange=()=>{settings.cutCount=Number(cutCount.value);$('cutCountSetting').value=cutCount.value;updateStandaloneAvailability();saveLocal()};
