@@ -4630,8 +4630,11 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
       state.removed=[];
       render();saveLocal();
       await displayPileFrame(frame,prior);
-      if(frame.dealt.length>previousPlaced)animateCardFromDeck(state.placed.length-1,sourceRect);
-      else if(frame.removed.length>previousRemoved)animateCardFromDeck(frame.removed.length-1,sourceRect);
+      // Complete each card's flight before advancing the workflow. Without
+      // awaiting this animation, longer PETAL / SPIRAL flights overlap the
+      // next removal or the first ordinary deal, violating step order.
+      if(frame.dealt.length>previousPlaced)await animateCardFromDeck(state.placed.length-1,sourceRect);
+      else if(frame.removed.length>previousRemoved)await animateCardFromDeck(frame.removed.length-1,sourceRect);
       setStatus('配札 '+cursor+' / '+timeline.length+'：'+frame.label+'（配札 '+frame.dealt.length+'枚・除外 '+frame.removed.length+'枚）');
       if(frame.type==='dealt'||frame.type==='removed'||frame.type==='take')play('deal');
       cursor++;
