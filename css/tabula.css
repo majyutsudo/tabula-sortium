@@ -2539,3 +2539,31 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .deck-
   background:var(--ui-aside);
  }
 }
+
+/* v0.626 — light-theme legibility in Table Management and Card Operations.
+   These legacy components used translucent dark panels and pale gold headings;
+   align their surfaces and foregrounds with each light theme instead. */
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .table-current-chip,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside #tableDisplaySettings .label-cycle-settings>summary{
+ background:var(--light-sidebar-link-bg);
+ border-color:var(--light-sidebar-link-border);
+ color:var(--ui-text);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .table-current-chip strong,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside #tableDisplaySettings .label-cycle-settings>summary{
+ color:var(--ui-text);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-header{
+ color:var(--light-sidebar-bronze);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-header .mini{
+ color:var(--ui-text);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-settings{
+ background:var(--light-sidebar-link-bg);
+ border-color:var(--light-sidebar-link-border);
+ color:var(--ui-text);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-settings .field{
+ color:var(--ui-text);
+}
