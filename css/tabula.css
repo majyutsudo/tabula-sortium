@@ -2209,6 +2209,25 @@ aside .section :is(button,select,input,textarea),
  }
 }
 
+/* v0.616: One-step native animation picker; separate procedure menu and face. */
+.table-action-settings .table-deal-controls #dealAnimation{
+ box-sizing:border-box;flex:1 1 auto;width:0;min-width:0;max-width:none;
+ height:30px;min-height:30px;padding:4px 19px 4px 6px;
+ font:12px Georgia,'Yu Mincho',serif;color:#bfc7b8;
+ border:1px solid #485849;border-radius:4px;background:#202a25;
+ appearance:auto;-webkit-appearance:menulist;
+}
+.table-action-settings .table-deal-controls #tableDealOptionsButton{
+ flex:0 0 42px;width:42px;min-width:0;max-width:42px;
+ padding:4px 2px;text-align:center;font:11px Georgia,'Yu Mincho',serif;
+}
+.table-action-settings .table-deal-controls #tableDealOptionsButton::after{display:none}
+@media(max-width:780px){
+ .main>.table-action-settings .table-deal-controls #dealAnimation{height:36px;min-height:36px;font-size:12px}
+ .main>.table-action-settings .table-deal-controls #tableDealOptionsButton{flex-basis:42px;width:42px;max-width:42px}
+}
+/* The procedure popover remains available on phones without adding a second
+   tap to animation selection. */
 /* Registered physical piles also have an optional, non-interactive placement frame. */
 #zone > .slot.registered-pile-frame{
  pointer-events:none;
