@@ -2578,3 +2578,37 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManage
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManagement #tableDisplaySettings .label-cycle-settings>summary:hover{
  background:var(--light-sidebar-link-bg)!important;
 }
+
+/* v0.628 — the deck dropdown keeps its dark surface in both light themes.
+   Explicit menu-scoped colors take priority over the general light-theme
+   button rules, including secondary/custom decks, hover and selected states. */
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu{
+ background:#26352e;
+ border-color:#857459;
+ color:#f4e9d5;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-group{
+ color:#ead0a1;
+ border-top-color:#776953;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option.secondary{
+ background:transparent;
+ color:#f3e7d2;
+ border-color:transparent;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option:hover,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option:focus-visible{
+ background:#435748;
+ color:#fff9eb;
+ outline:1px solid #bea67b;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option.selected{
+ background:#61543c;
+ color:#fff3d7;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option.selected:hover,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option.selected:focus-visible{
+ background:#756344;
+ color:#fff9e9;
+}
