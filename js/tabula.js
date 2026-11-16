@@ -4707,6 +4707,7 @@ function installTableActionSettings(){
   if(event.key==='Escape'&&!dealPanel.hidden){closeDealPanel();dealToggle.focus()}
  });
  dealChoice?.addEventListener('change',syncDealSummary);
+ dealChoice?.addEventListener('tabula:deal-choice-updated',syncDealSummary);
  animationChoice.addEventListener('change',syncDealSummary);
  dealFace.onchange=()=>{
   settings.dealFaceUp=dealFace.value==='up';
