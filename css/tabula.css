@@ -2391,3 +2391,42 @@ aside .section :is(button,select,input,textarea),
  animation:tabula-bloom-pile-gust 1350ms linear var(--ceremonial-delay,0ms) both!important;
 }
 
+
+/* v0.622 — minimal action-bar contrast improvement for the two light themes.
+   Restrict to the five primary controls; retain layout, font sizes and behavior.
+   The band is slightly separated from surrounding tools while each symbol and
+   label gains enough contrast to read without changing the gentle palette. */
+body[data-visual-theme="minimal"]{
+ --light-action-band:#d0c5b7;
+ --light-action-face:#e8e0d5;
+ --light-action-text:#38322c;
+ --light-action-border:#8b7d6c;
+ --light-action-symbol:#776247;
+ --light-action-hover:#eee7dc;
+}
+body[data-visual-theme="lovely"]{
+ --light-action-band:#e7cbdc;
+ --light-action-face:#f6e7f0;
+ --light-action-text:#57364f;
+ --light-action-border:#a67597;
+ --light-action-symbol:#865572;
+ --light-action-hover:#fbedf4;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts{
+ background:var(--light-action-band)!important;
+ border-top-color:var(--light-action-border);
+ border-bottom-color:var(--light-action-border);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button{
+ background:var(--light-action-face);
+ color:var(--light-action-text);
+ border-color:var(--light-action-border);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button .quick-symbol{
+ color:var(--light-action-symbol);
+}
+@media(hover:hover){
+ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button:not(:disabled):hover{
+  background:var(--light-action-hover);
+ }
+}
