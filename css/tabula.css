@@ -291,7 +291,7 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside :is(.f
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .main>.toolbar :is(.status,.field,.choice,.subtle){
  color:var(--ui-text);
 }
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .main>.toolbar button{
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .main>.toolbar button:not(.toolbar-deck-option){
  color:var(--ui-text);background:var(--ui-tool);border-color:var(--ui-accent);
 }
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .main>.toolbar button.primary{
