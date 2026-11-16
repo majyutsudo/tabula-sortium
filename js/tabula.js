@@ -2112,8 +2112,9 @@ function installPhysicalCardPicker(){
  const refreshMode=()=>{
   const editing=pickerMode==='order';
   title.textContent=editing?'山札の順序を編集':'山札からカードを選ぶ';
-  note.hidden=editing;roleRow.hidden=editing;returnTitle.hidden=editing;
-  returns.hidden=editing;orderHint.hidden=!editing;orderCount.hidden=!editing;
+  note.hidden=editing;roleRow.style.display=editing?'none':'flex';
+  returnTitle.hidden=editing;returns.style.display=editing?'none':'flex';
+  orderHint.hidden=!editing;orderCount.hidden=!editing;
   list.style.gridTemplateColumns=editing?'minmax(0,1fr)':'repeat(auto-fill,minmax(125px,1fr))';
   for(const [button,on] of [[placeTab,!editing],[orderTab,editing]]){
    button.setAttribute('aria-pressed',String(on));
