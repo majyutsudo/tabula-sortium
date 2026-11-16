@@ -2072,7 +2072,11 @@ function animateCardFromDeck(index,sourceRect){
    }}
  );
  const animation=ghost.animate(flight.frames,{duration:flight.duration,easing:flight.easing});
- return animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility='';card.classList.remove('instant-faceup')});
+ const finished=animation.finished.catch(()=>{}).then(()=>{ghost.remove();card.style.visibility='';card.classList.remove('instant-faceup')});
+ // Allow custom workflow scheduling to use the actual preset duration,
+ // without changing the Promise-based interface for ordinary dealing.
+ finished.duration=flight.duration;
+ return finished;
 }
 // Select a physical card from the current deck and place it at an exact table point.
 let chosenPhysicalCardId=null;
@@ -4620,6 +4624,21 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
     if(last.dealt.map(c=>c.id).join('|')+';'+last.removed.map(c=>c.id).join('|')!==finalIds)throw Error('ディール工程の最終結果が一致しません');
     const sequence=[{type:'start',label:'開始',stock:[...state.deck],piles:[],selected:[],dealt:[],removed:[]},...timeline];
     let cursor=0;
+    // PETAL allows brief overlap between adjacent cards of the same operation.
+    // Pending flights must finish before switching from removal to ordinary deal.
+    const petalFlightOverlap=.85;
+    const activeFlights=new Map();
+    const zoneCardsForWorkflow=()=>[...$('zone').children].filter(el=>el.classList.contains('card'));
+    const settleFlight=(index,promise)=>{
+      activeFlights.set(index,promise);
+      promise.finally(()=>{
+        if(activeFlights.get(index)!==promise)return;
+        activeFlights.delete(index);
+        // The table may have re-rendered during the final 15% of flight.
+        const current=[...$('zone').children].filter(el=>el.classList.contains('card'))[index];
+        if(current)current.style.visibility='';
+      });
+    };
     async function nextStage(){
       const frame=sequence[cursor],prior=sequence[cursor-1]||null;
       const previousPlaced=state.placed.filter(c=>!c.auxiliaryPile).length,previousRemoved=state.placed.filter(c=>c.auxiliaryPile).length;
@@ -4629,12 +4648,37 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
       state.placed=[...placeRemoved(frame.removed),...placeDealt(frame.dealt)];
       state.removed=[];
       render();saveLocal();
+      // Re-rendering replaces card nodes. Keep older flights concealed until
+      // their corresponding ghost lands, so no card flashes beneath the flight.
+      for(const index of activeFlights.keys()){
+        const current=[...zoneCardsForWorkflow()].find(el=>Number(el.dataset.index)===index);
+        if(current)current.style.visibility='hidden';
+      }
       await displayPileFrame(frame,prior);
-      // Complete each card's flight before advancing the workflow. Without
-      // awaiting this animation, longer PETAL / SPIRAL flights overlap the
-      // next removal or the first ordinary deal, violating step order.
-      if(frame.dealt.length>previousPlaced)await animateCardFromDeck(state.placed.length-1,sourceRect);
-      else if(frame.removed.length>previousRemoved)await animateCardFromDeck(frame.removed.length-1,sourceRect);
+      let startedNextBeforeLanding=false;
+      const flightIndex=frame.dealt.length>previousPlaced?state.placed.length-1
+        :frame.removed.length>previousRemoved?frame.removed.length-1:null;
+      if(flightIndex!==null){
+        const flight=animateCardFromDeck(flightIndex,sourceRect);
+        const next=sequence[cursor+1];
+        const sameOperation=next&&next.type===frame.type
+          &&(frame.type==='removed'||frame.type==='dealt');
+        const overlap=settings.dealAnimation==='serpent'
+          &&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+          &&sameOperation&&Number.isFinite(flight.duration);
+        if(overlap){
+          startedNextBeforeLanding=true;
+          settleFlight(flightIndex,flight);
+          // The next card starts as the previous one nears its destination.
+          await Promise.race([flight,new Promise(resolve=>setTimeout(resolve,Math.round(flight.duration*petalFlightOverlap)))]);
+        }else{
+          // A phase boundary is a barrier: finish every remaining removal
+          // before beginning the first normal deal.
+          await Promise.all([...activeFlights.values(),flight]);
+        }
+      }else if(activeFlights.size){
+        await Promise.all(activeFlights.values());
+      }
       setStatus('配札 '+cursor+' / '+timeline.length+'：'+frame.label+'（配札 '+frame.dealt.length+'枚・除外 '+frame.removed.length+'枚）');
       if(frame.type==='dealt'||frame.type==='removed'||frame.type==='take')play('deal');
       cursor++;
@@ -4651,7 +4695,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
             animateShuffle(step.method,animateRound,false,{direction,piles:step.groups});
           }
           if(rounds.length)animateRound();else setTimeout(nextStage,300);
-        }else setTimeout(()=>requestAnimationFrame(nextStage),frame.type==='split'||frame.type==='collect'?430:380);
+        }else setTimeout(()=>requestAnimationFrame(nextStage),startedNextBeforeLanding?0:frame.type==='split'||frame.type==='collect'?430:380);
       }
       else{
         clearPileOverlay();
