@@ -4678,7 +4678,7 @@ function installTableActionSettings(){
  const shuffleChoice=$('quickShuffleChoice'),dealChoice=$('quickDealChoice');
  if(shuffleChoice)$('tableShuffleChoiceSlot').append(shuffleChoice);
  if(dealChoice)$('tableDealChoiceSlot').append(dealChoice);
- const dealToggle=$('tableDealOptionsButton'),dealPanel=$('tableDealOptions'),animationChoice=$('dealAnimation');
+ const dealToggle=$('tableDealOptionsButton'),dealPanel=$('tableDealOptions'),animationChoice=$('dealAnimation'),dealFace=$('tableDealFace');
  const shortenDealLabels=()=>{
   if(!dealChoice)return;
   for(const option of dealChoice.options){
@@ -4691,6 +4691,7 @@ function installTableActionSettings(){
   shortenDealLabels();
   const dealText=dealChoice?.selectedOptions?.[0]?.textContent?.trim()||'配り方';
   const animationText=animationChoice.selectedOptions?.[0]?.textContent?.split(/[—-]/)[0]?.trim()||'STANDARD';
+  dealFace.value=settings.dealFaceUp===true?'up':'down';
   dealToggle.textContent=dealText+' · '+animationText;
   dealToggle.title='配り方とアニメーション：'+dealText+' / '+animationText;
  };
@@ -4707,6 +4708,11 @@ function installTableActionSettings(){
  });
  dealChoice?.addEventListener('change',syncDealSummary);
  animationChoice.addEventListener('change',syncDealSummary);
+ dealFace.onchange=()=>{
+  settings.dealFaceUp=dealFace.value==='up';
+  saveLocal();
+  setStatus('以降のカードを'+(settings.dealFaceUp?'表':'裏')+'向きで配札します。');
+ };
  const openMode=$('tableOpenMode');
  openMode.onchange=()=>{settings.openMode=['normal','quick','all','float','bloom'].includes(openMode.value)?openMode.value:'normal';saveLocal();setStatus('オープン方式を変更しました。')};
  const washDirection=$('tableWashDirection'),washRounds=$('tableWashRounds'),cutCount=$('tableCutCount');
