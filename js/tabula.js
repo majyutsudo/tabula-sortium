@@ -2095,14 +2095,111 @@ function installPhysicalCardPicker(){
  const roleRow=document.createElement('label');roleRow.style.cssText='display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;cursor:pointer;';
  const signifyCheck=document.createElement('input');signifyCheck.type='checkbox';signifyCheck.style.accentColor='#b99b68';
  roleRow.append(signifyCheck,document.createTextNode('シグニフィケイターとして配置'));
+ // Directly edit the live deck, so normal Deal and existing snapshot saves
+ // require no additional scenario state or separate persistence format.
+ let pickerMode='place';
+ const tabs=document.createElement('div');
+ tabs.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 13px;';
+ const placeTab=document.createElement('button'),orderTab=document.createElement('button');
+ placeTab.type=orderTab.type='button';
+ placeTab.textContent='卓に配置';orderTab.textContent='山札の順序を編集';
+ const orderHint=document.createElement('p');
+ orderHint.style.cssText='font-size:12px;line-height:1.65;margin:0 0 12px;color:#d7c7a7;';
+ orderHint.textContent='上から配る順番です。≡をドラッグして移動できます。スマホでは≡を押したまま移動してください。正逆も個別に指定できます。';
+ const orderCount=document.createElement('span');
+ orderCount.style.cssText='display:block;font-size:11px;margin:0 0 9px;color:#c7b696;';
+ tabs.append(placeTab,orderTab);
+ const refreshMode=()=>{
+  const editing=pickerMode==='order';
+  title.textContent=editing?'山札の順序を編集':'山札からカードを選ぶ';
+  note.hidden=editing;roleRow.hidden=editing;returnTitle.hidden=editing;
+  returns.hidden=editing;orderHint.hidden=!editing;orderCount.hidden=!editing;
+  list.style.gridTemplateColumns=editing?'minmax(0,1fr)':'repeat(auto-fill,minmax(125px,1fr))';
+  for(const [button,on] of [[placeTab,!editing],[orderTab,editing]]){
+   button.setAttribute('aria-pressed',String(on));
+   button.style.cssText='min-width:0;padding:10px 6px;border-radius:5px;border:1px solid '+(on?'#d0b47e':'#75684e')+';background:'+(on?'#5b4b31':'#29392e')+';color:#f4e7cb;font-size:12px;';
+  }
+  populate();
+ };
+ placeTab.onclick=()=>{pickerMode='place';filter.value='';refreshMode()};
+ orderTab.onclick=()=>{pickerMode='order';chosenPhysicalCardId=null;filter.value='';refreshMode()};
  const returnTitle=document.createElement('p');returnTitle.style.cssText='margin:16px 0 8px;font-size:13px';returnTitle.textContent='指定して置いたカードを山札へ戻す';
  const returns=document.createElement('div');returns.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
- dialog.append(head,note,roleRow,filter,list,returnTitle,returns);panel.append(dialog);document.body.append(panel);
+ dialog.append(head,tabs,note,roleRow,orderHint,orderCount,filter,list,returnTitle,returns);panel.append(dialog);document.body.append(panel);
  panel.addEventListener('pointerdown',e=>{if(e.target===panel)panel.style.display='none'});
  const buttonStyle='padding:8px 6px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;cursor:pointer;text-align:left;font-size:12px;';
+ function moveInDeck(sourceId,targetId){
+  if(!sourceId||!targetId||sourceId===targetId)return;
+  const start=state.deck.findIndex(c=>c.instanceId===sourceId||(!c.instanceId&&c.id===sourceId));
+  const end=state.deck.findIndex(c=>c.instanceId===targetId||(!c.instanceId&&c.id===targetId));
+  if(start<0||end<0)return;
+  const [entry]=state.deck.splice(start,1);
+  state.deck.splice(end,0,entry);
+  state.dealCheckpoint=null;
+  saveLocal();render();populate();
+  setStatus('山札の順序を変更しました。次のディールから適用されます。');
+ }
  function populate(){
   list.replaceChildren();returns.replaceChildren();
   const q=filter.value.trim().toLocaleLowerCase();
+  if(pickerMode==='order'){
+   const entries=state.deck.map((entry,index)=>({entry,index})).filter(({entry})=>{
+    const card=workingCard(entry.id),name=card?displayCard(card).name:entry.id;
+    return !q||name.toLocaleLowerCase().includes(q)||entry.id.toLocaleLowerCase().includes(q);
+   });
+   orderCount.textContent='山札 '+state.deck.length+'枚 ／ 表示 '+entries.length+'枚（上が最初に配るカード）';
+   let draggingId=null;
+   const keyOf=e=>e.instanceId||e.id;
+   for(const {entry,index} of entries){
+    const id=keyOf(entry),card=workingCard(entry.id),name=card?displayCard(card).name:entry.id;
+    const row=document.createElement('div');
+    row.dataset.deckCardId=id;
+    row.style.cssText='display:flex;align-items:center;gap:7px;min-width:0;padding:6px;border:1px solid #75684e;border-radius:5px;background:#27392f;color:#e9dec9;font-size:12px;';
+    const indexLabel=document.createElement('span');indexLabel.textContent=String(index+1);
+    indexLabel.style.cssText='width:24px;text-align:right;flex:none;color:#bbaa86;font-variant-numeric:tabular-nums;';
+    const grip=document.createElement('button');grip.type='button';grip.textContent='≡';grip.setAttribute('aria-label',name+'をドラッグして並べ替え');
+    grip.style.cssText='padding:6px 8px;min-width:31px;min-height:34px;cursor:grab;touch-action:none;background:#455446;color:#ead4a5;border:1px solid #8c7b56;border-radius:4px;';
+    const label=document.createElement('span');label.textContent=name;label.style.cssText='flex:1;min-width:0;overflow-wrap:anywhere;';
+    const reverse=document.createElement('label');reverse.style.cssText='display:flex;align-items:center;gap:3px;white-space:nowrap;cursor:pointer;font-size:11px;';
+    const check=document.createElement('input');check.type='checkbox';check.checked=!!entry.reversed;check.setAttribute('aria-label',name+'を逆位置にする');
+    check.onchange=()=>{
+     const current=state.deck.find(c=>keyOf(c)===id);
+     if(!current)return;current.reversed=check.checked;state.dealCheckpoint=null;
+     saveLocal();setStatus(name+'：'+(check.checked?'逆位置':'正位置')+'に指定しました。');
+    };
+    reverse.append(check,document.createTextNode('逆'));
+    const up=document.createElement('button'),down=document.createElement('button');
+    for(const [button,text,delta] of [[up,'↑',-1],[down,'↓',1]]){
+     button.type='button';button.textContent=text;button.title=delta<0?'一つ上へ':'一つ下へ';
+     button.setAttribute('aria-label',name+(delta<0?'を一つ上へ':'を一つ下へ'));
+     button.disabled=index+delta<0||index+delta>=state.deck.length;
+     button.style.cssText='padding:4px 5px;min-width:26px;min-height:32px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;';
+     button.onclick=()=>{
+      const adjacent=state.deck[index+delta];
+      if(adjacent)moveInDeck(id,keyOf(adjacent));
+     };
+    }
+    // Pointer-based reordering works with touch and mouse without requiring
+    // an external drag library. Only the grip captures touch, leaving list
+    // scrolling and checkbox interaction unaffected.
+    grip.addEventListener('pointerdown',event=>{
+     if(event.button!==0||state.deck.length<2)return;
+     draggingId=id;grip.setPointerCapture(event.pointerId);row.style.opacity='.7';
+    });
+    grip.addEventListener('pointerup',event=>{
+     if(!draggingId)return;
+     const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-deck-card-id]');
+     const destination=target?.dataset.deckCardId;
+     row.style.opacity='';draggingId=null;
+     if(destination&&destination!==id)moveInDeck(id,destination);
+    });
+    grip.addEventListener('pointercancel',()=>{draggingId=null;row.style.opacity='';});
+    row.append(indexLabel,grip,label,reverse,up,down);
+    list.append(row);
+   }
+   if(!entries.length){const empty=document.createElement('p');empty.textContent='該当するカードは山札にありません。';list.append(empty)}
+   return;
+  }
   for(const entry of state.deck){
    const card=workingCard(entry.id);if(!card)continue;
    const name=displayCard(card).name;
@@ -2126,7 +2223,7 @@ function installPhysicalCardPicker(){
   returnTitle.style.display=returns.childElementCount?'block':'none';
  }
  filter.addEventListener('input',populate);
- window.openPhysicalCardPicker=()=>{chosenPhysicalCardId=null;filter.value='';populate();panel.style.display='flex';filter.focus()};
+ window.openPhysicalCardPicker=()=>{chosenPhysicalCardId=null;pickerMode='place';filter.value='';refreshMode();panel.style.display='flex';filter.focus()};
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&chosenPhysicalCardId){chosenPhysicalCardId=null;setStatus('指定カードの配置を解除しました。')}});
  $('zone').addEventListener('click',e=>{
   if(!chosenPhysicalCardId||panel.style.display==='flex')return;
