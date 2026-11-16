@@ -1911,18 +1911,9 @@ aside .section :is(button,select,input,textarea),
 .table-action-settings{position:relative;z-index:15;overflow:visible}
 .table-action-settings>label{height:30px;min-height:30px;align-items:center}
 .table-action-settings .table-deal-control{position:relative;min-width:0;width:100%;height:30px}
-.table-action-settings #tableDealOptionsButton{box-sizing:border-box;display:block;width:100%;height:30px;min-height:30px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;padding:4px 23px 4px 7px;position:relative;border:1px solid #485849;border-radius:4px;background:#202a25;color:#bfc7b8;font:11px Georgia,'Yu Mincho',serif;cursor:pointer}
 /* v0.612: Deal controls mirror the Wash direction/rounds proportions. */
 .table-action-settings .table-deal-controls{display:flex;align-items:stretch;gap:5px;width:100%;min-width:0}
-.table-action-settings .table-deal-controls #tableDealOptionsButton{flex:1 1 auto;width:0;min-width:0}
 .table-action-settings .table-deal-controls #tableDealFace{box-sizing:border-box;flex:0 0 60px;width:60px;min-width:0;height:30px;min-height:30px;padding:4px 3px;font-size:12px;text-align:center}
-.table-action-settings #tableDealOptionsButton[aria-expanded="true"]{border-color:#baa071;color:#f5e8c8}
-.table-action-settings #tableDealOptionsButton::after{content:'▾';position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:12px}
-.table-action-settings .table-deal-options{box-sizing:border-box;position:absolute;top:calc(100% + 5px);right:0;z-index:1700;width:clamp(220px,25vw,310px);max-width:calc(100vw - 22px);padding:12px;border:1px solid #8f7850;border-radius:6px;background:#202b25;box-shadow:0 9px 26px #000b;display:flex;flex-direction:column;gap:10px}
-.table-action-settings .table-deal-options[hidden]{display:none!important}
-.table-action-settings .table-deal-options>label{display:flex;flex-direction:column;align-items:stretch;gap:5px;font:11px Georgia,'Yu Mincho',serif;color:#e3cfa9}
-.table-action-settings #tableDealChoiceSlot{display:block;width:100%;min-width:0}
-.table-action-settings .table-deal-options select{width:100%;max-width:100%;height:32px;min-height:32px;font-size:12px;color:#bfc7b8;background:#202a25;border:1px solid #485849;border-radius:4px;appearance:auto;-webkit-appearance:menulist}
 .table-action-settings #tableOpenMode{display:block;width:100%;min-width:0}
 
 /* v0.575: animate actual front/back card faces in one synchronized pass. */
@@ -2184,29 +2175,8 @@ aside .section :is(button,select,input,textarea),
   color:var(--ui-text,#d6c9a6);
   opacity:.85;
  }
- .main>.table-action-settings #tableDealOptionsButton{
-  height:36px;
-  min-height:36px;
-  font-size:12px;
- }
  .main>.table-action-settings .table-deal-controls #tableDealFace{height:36px;min-height:36px}
- .main>.table-action-settings .table-deal-options{
-  position:static;
-  box-sizing:border-box;
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  margin-top:7px;
-  box-shadow:none;
-  padding:9px;
- }
- .main>.table-action-settings .table-deal-control:has(#tableDealOptions:not([hidden])){
-  grid-column:1/-1;
- }
- .main>.table-action-settings .table-deal-options select{
-  min-width:0;
-  max-width:100%;
- }
+
 }
 
 /* v0.616: One-step native animation picker; separate procedure menu and face. */
@@ -2217,17 +2187,7 @@ aside .section :is(button,select,input,textarea),
  border:1px solid #485849;border-radius:4px;background:#202a25;
  appearance:auto;-webkit-appearance:menulist;
 }
-.table-action-settings .table-deal-controls #tableDealOptionsButton{
- flex:0 0 42px;width:42px;min-width:0;max-width:42px;
- padding:4px 2px;text-align:center;font:11px Georgia,'Yu Mincho',serif;
-}
-.table-action-settings .table-deal-controls #tableDealOptionsButton::after{display:none}
-@media(max-width:780px){
- .main>.table-action-settings .table-deal-controls #dealAnimation{height:36px;min-height:36px;font-size:12px}
- .main>.table-action-settings .table-deal-controls #tableDealOptionsButton{flex-basis:42px;width:42px;max-width:42px}
-}
-/* The procedure popover remains available on phones without adding a second
-   tap to animation selection. */
+/* Registered procedure choices appear inside the native animation menu. */
 /* Registered physical piles also have an optional, non-interactive placement frame. */
 #zone > .slot.registered-pile-frame{
  pointer-events:none;
