@@ -2187,6 +2187,14 @@ aside .section :is(button,select,input,textarea),
  border:1px solid #485849;border-radius:4px;background:#202a25;
  appearance:auto;-webkit-appearance:menulist;
 }
+/* v0.619: keep both Deal selectors level with Wash, Shuffle and Cut.
+   This override follows the base 30px rules and uses the mobile 36px height. */
+@media(max-width:780px){
+ .main>.table-action-settings .table-deal-controls #dealAnimation,
+ .main>.table-action-settings .table-deal-controls #tableDealFace{
+  height:36px;min-height:36px;max-height:36px;
+ }
+}
 /* Registered procedure choices appear inside the native animation menu. */
 /* Registered physical piles also have an optional, non-interactive placement frame. */
 #zone > .slot.registered-pile-frame{
