@@ -2430,3 +2430,61 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-short
   background:var(--light-action-hover);
  }
 }
+
+/* v0.623 — restore visual hierarchy in the two light themes.
+   The five primary actions are the focal controls; the settings row uses
+   lower-contrast, theme-matched surfaces instead of dark-green selects.
+   Scoped to Modern Minimal and Lovely Room; all interactions stay intact. */
+body[data-visual-theme="minimal"]{
+ --light-action-band:#cfc2b2;
+ --light-action-face:#77695a;
+ --light-action-text:#fff9ec;
+ --light-action-border:#665849;
+ --light-action-symbol:#f2d8a4;
+ --light-action-hover:#665849;
+ --light-setting-band:#ded7cb;
+ --light-setting-face:#ede7dc;
+ --light-setting-text:#423a33;
+ --light-setting-border:#a69b8c;
+}
+body[data-visual-theme="lovely"]{
+ --light-action-band:#e5c8d9;
+ --light-action-face:#925d80;
+ --light-action-text:#fff7fa;
+ --light-action-border:#815070;
+ --light-action-symbol:#ffdfad;
+ --light-action-hover:#814b6d;
+ --light-setting-band:#f1e0e9;
+ --light-setting-face:#f8edf3;
+ --light-setting-text:#593b51;
+ --light-setting-border:#c5a5b9;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts{
+ border-top:1px solid var(--light-action-border);
+ border-bottom:1px solid var(--light-action-border);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button:not(:disabled){
+ background:var(--light-action-face);
+ color:var(--light-action-text);
+ border-color:var(--light-action-border);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts .quick-symbol{
+ color:var(--light-action-symbol);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings{
+ background:var(--light-setting-band);
+ color:var(--light-setting-text);
+ border-bottom:1px solid var(--light-setting-border);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings select,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings .table-deal-controls #dealAnimation,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings .table-deal-controls #tableDealFace{
+ background:var(--light-setting-face);
+ color:var(--light-setting-text);
+ border-color:var(--light-setting-border);
+}
+@media(hover:hover){
+ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button:not(:disabled):hover{
+  background:var(--light-action-hover);
+ }
+}
