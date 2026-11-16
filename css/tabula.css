@@ -2495,3 +2495,47 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-actio
   background:var(--light-action-hover);
  }
 }
+
+/* v0.625 — readable decorative accents and deck controls in light themes.
+   Preserve brass/rose character with dark bronze ink instead of pale-gold
+   dark-theme foregrounds. The Card Gallery button also receives a light
+   surface because its old dark fill inherited unreadably dark theme text. */
+body[data-visual-theme="minimal"]{
+ --light-sidebar-bronze:#725437;
+ --light-sidebar-rule:#947757;
+ --light-sidebar-link-bg:#e0d5c4;
+ --light-sidebar-link-border:#91775a;
+}
+body[data-visual-theme="lovely"]{
+ --light-sidebar-bronze:#80506b;
+ --light-sidebar-rule:#ab7996;
+ --light-sidebar-link-bg:#f1d9e6;
+ --light-sidebar-link-border:#ac7899;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside header .tabula-brand h1,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside header .tabula-series,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .deck-setting-heading{
+ color:var(--light-sidebar-bronze);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside header .tabula-series::before,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside header .tabula-series::after{
+ background:var(--light-sidebar-rule);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .section #cardGalleryOpen{
+ background:var(--light-sidebar-link-bg);
+ color:var(--ui-text);
+ border-color:var(--light-sidebar-link-border);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .section #cardGalleryOpen :is(svg,svg *){
+ color:currentColor;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .deck-edit-actions a[href$="deck-designer.html"]{
+ color:var(--light-sidebar-bronze)!important;
+ border-color:var(--light-sidebar-link-border)!important;
+ text-decoration:none;
+}
+@media(hover:hover){
+ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .section #cardGalleryOpen:hover{
+  background:var(--ui-aside);
+ }
+}
