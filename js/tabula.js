@@ -4734,23 +4734,25 @@ function installTableActionSettings(){
  const syncDealMenu=()=>{
   animationChoice.querySelectorAll('[data-deal-procedure-menu]').forEach(el=>el.remove());
   if(dealChoice){
+   // Native select has no portable separator element on iOS: a disabled
+   // rule works across both desktop and mobile selection menus.
+   const divider=document.createElement('option');
+   divider.disabled=true;
+   divider.textContent='────────────';
+   divider.dataset.dealProcedureMenu='true';
+   animationChoice.append(divider);
    const standard=document.createElement('option');
    standard.value=procedurePrefix;
    standard.textContent='番号順';
    standard.dataset.dealProcedureMenu='true';
    animationChoice.append(standard);
-   const saved=[...dealChoice.options].filter(option=>option.value&&option.value!=='__edit__');
-   if(saved.length){
-    const procedureGroup=document.createElement('optgroup');
-    procedureGroup.label='登録済みディール手順';
-    procedureGroup.dataset.dealProcedureMenu='true';
-    for(const option of saved){
-     const entry=document.createElement('option');
-     entry.value=procedurePrefix+option.value;
-     entry.textContent=option.textContent;
-     procedureGroup.append(entry);
-    }
-    animationChoice.append(procedureGroup);
+   for(const option of dealChoice.options){
+    if(!option.value||option.value==='__edit__')continue;
+    const entry=document.createElement('option');
+    entry.value=procedurePrefix+option.value;
+    entry.textContent=option.textContent;
+    entry.dataset.dealProcedureMenu='true';
+    animationChoice.append(entry);
    }
   }
   const edit=document.createElement('option');
