@@ -264,9 +264,13 @@ aside{background:var(--ui-aside)!important}
 .stage-shell{background:var(--table-edge)!important}
 .stage{background:radial-gradient(ellipse at center,var(--table-inner),var(--table-edge))!important}
 .back,.deck,.shuffle-card{background:repeating-linear-gradient(45deg,var(--card-back1) 0,var(--card-back1) 4px,var(--card-back2) 4px,var(--card-back2) 8px)!important}
-body[data-visual-theme="minimal"] aside,body[data-visual-theme="lovely"] aside{color:var(--ui-text)}
-body[data-visual-theme="minimal"] aside select,body[data-visual-theme="minimal"] aside input,body[data-visual-theme="minimal"] aside button,body[data-visual-theme="lovely"] aside select,body[data-visual-theme="lovely"] aside input,body[data-visual-theme="lovely"] aside button{background:var(--ui-tool);color:var(--ui-text);border-color:var(--ui-accent)}
-body[data-visual-theme="minimal"] .mini,body[data-visual-theme="lovely"] .mini{color:var(--ui-text)}
+/* Visual themes belong to the permanent tabletop and sidebar only.
+   Opened reference pages, editors, help and dialogs retain their own palette. */
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside{color:var(--ui-text)}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside :is(select,input,textarea,button){
+ background:var(--ui-tool);color:var(--ui-text);border-color:var(--ui-accent);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .mini{color:var(--ui-text)}
 body[data-effect-preset="silent"] .card,body[data-effect-preset="silent"] .card-inner{transition-duration:.20s!important}
 body[data-effect-preset="ritual"] .card-inner{transition-duration:.7s}
 body[data-effect-preset="mystic"] .card.faceup{filter:drop-shadow(0 0 8px #d3c28b77) drop-shadow(2px 5px 3px #000a)}
@@ -277,25 +281,25 @@ body[data-effect-preset="psychic"] .card.faceup{filter:drop-shadow(0 0 12px #ab6
 .zone-label.tower-label{transform:translate(-100%,-50%);text-align:right;max-width:calc(23% - 4px);white-space:normal;font-size:10px;line-height:1.25;z-index:300}
 @media(max-width:780px){.zone-label.tower-label{font-size:8px;padding:2px 3px}}
 body[data-visual-theme="minimal"],body[data-visual-theme="lovely"]{--ui-muted:#5b514c;--ui-border:#a69a8d}
-body[data-visual-theme="minimal"] .toolbar,body[data-visual-theme="lovely"] .toolbar,
-body[data-visual-theme="minimal"] .info,body[data-visual-theme="lovely"] .info,
-body[data-visual-theme="minimal"] .table-shortcuts,body[data-visual-theme="lovely"] .table-shortcuts,
-body[data-visual-theme="minimal"] .table-record-actions,body[data-visual-theme="lovely"] .table-record-actions{color:var(--ui-text);border-color:var(--ui-accent)}
-body[data-visual-theme="minimal"] button,body[data-visual-theme="lovely"] button{color:var(--ui-text);background:var(--ui-tool);border-color:var(--ui-accent)}
-body[data-visual-theme="minimal"] button.primary,body[data-visual-theme="lovely"] button.primary{background:var(--ui-accent);color:#fff;border-color:var(--ui-accent)}
-body[data-visual-theme="minimal"] .status,body[data-visual-theme="lovely"] .status,
-body[data-visual-theme="minimal"] .field,body[data-visual-theme="lovely"] .field,
-body[data-visual-theme="minimal"] .choice,body[data-visual-theme="lovely"] .choice,
-body[data-visual-theme="minimal"] .subtle,body[data-visual-theme="lovely"] .subtle,
-body[data-visual-theme="minimal"] .version,body[data-visual-theme="lovely"] .version,
-body[data-visual-theme="minimal"] header small,body[data-visual-theme="lovely"] header small,
-body[data-visual-theme="minimal"] .section-toggle,body[data-visual-theme="lovely"] .section-toggle,
-body[data-visual-theme="minimal"] h2,body[data-visual-theme="lovely"] h2{color:var(--ui-text)!important}
-body[data-visual-theme="minimal"] .modal,body[data-visual-theme="lovely"] .modal{background:var(--ui-aside);color:var(--ui-text)}
-body[data-visual-theme="minimal"] .modal input,body[data-visual-theme="lovely"] .modal input,
-body[data-visual-theme="minimal"] .modal select,body[data-visual-theme="lovely"] .modal select{background:var(--ui-tool);color:var(--ui-text)}
-body[data-visual-theme="minimal"] .note,body[data-visual-theme="lovely"] .note{color:var(--ui-text)}
-body[data-visual-theme="minimal"] .table-shortcuts button,body[data-visual-theme="lovely"] .table-shortcuts button{background:var(--ui-aside);color:var(--ui-text)}
+/* Permanent controls can be themed; opened windows cannot. */
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) :is(.toolbar,.info,.table-shortcuts,.table-record-actions){
+ color:var(--ui-text);border-color:var(--ui-accent);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside :is(.field,.choice,.subtle,.version,header small,.section-toggle,h2){
+ color:var(--ui-text)!important;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .main>.toolbar :is(.status,.field,.choice,.subtle){
+ color:var(--ui-text);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .main>.toolbar button{
+ color:var(--ui-text);background:var(--ui-tool);border-color:var(--ui-accent);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .main>.toolbar button.primary{
+ color:#fff;background:var(--ui-accent);border-color:var(--ui-accent);
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button{
+ color:var(--ui-text);background:var(--ui-aside);
+}
 .effect-demo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .effect-demo-row button{white-space:nowrap;flex:none}
 .effect-demo-row .mini{flex:1;min-width:130px}
@@ -2392,49 +2396,10 @@ aside .section :is(button,select,input,textarea),
 }
 
 
-/* v0.622 — minimal action-bar contrast improvement for the two light themes.
-   Restrict to the five primary controls; retain layout, font sizes and behavior.
-   The band is slightly separated from surrounding tools while each symbol and
-   label gains enough contrast to read without changing the gentle palette. */
-body[data-visual-theme="minimal"]{
- --light-action-band:#d0c5b7;
- --light-action-face:#e8e0d5;
- --light-action-text:#38322c;
- --light-action-border:#8b7d6c;
- --light-action-symbol:#776247;
- --light-action-hover:#eee7dc;
-}
-body[data-visual-theme="lovely"]{
- --light-action-band:#e7cbdc;
- --light-action-face:#f6e7f0;
- --light-action-text:#57364f;
- --light-action-border:#a67597;
- --light-action-symbol:#865572;
- --light-action-hover:#fbedf4;
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts{
- background:var(--light-action-band)!important;
- border-top-color:var(--light-action-border);
- border-bottom-color:var(--light-action-border);
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button{
- background:var(--light-action-face);
- color:var(--light-action-text);
- border-color:var(--light-action-border);
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button .quick-symbol{
- color:var(--light-action-symbol);
-}
-@media(hover:hover){
- body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button:not(:disabled):hover{
-  background:var(--light-action-hover);
- }
-}
 
-/* v0.623 — restore visual hierarchy in the two light themes.
-   The five primary actions are the focal controls; the settings row uses
-   lower-contrast, theme-matched surfaces instead of dark-green selects.
-   Scoped to Modern Minimal and Lovely Room; all interactions stay intact. */
+/* v0.629 — Scope visual themes to persistent controls.
+   The entire v0.622–0.628 light-theme patch stack is consolidated here.
+   Opened windows intentionally use the original shared dark reference style. */
 body[data-visual-theme="minimal"]{
  --light-action-band:#cfc2b2;
  --light-action-face:#77695a;
@@ -2446,6 +2411,10 @@ body[data-visual-theme="minimal"]{
  --light-setting-face:#ede7dc;
  --light-setting-text:#423a33;
  --light-setting-border:#a69b8c;
+ --light-sidebar-bronze:#725437;
+ --light-sidebar-rule:#947757;
+ --light-sidebar-link-bg:#e0d5c4;
+ --light-sidebar-link-border:#91775a;
 }
 body[data-visual-theme="lovely"]{
  --light-action-band:#e5c8d9;
@@ -2458,8 +2427,13 @@ body[data-visual-theme="lovely"]{
  --light-setting-face:#f8edf3;
  --light-setting-text:#593b51;
  --light-setting-border:#c5a5b9;
+ --light-sidebar-bronze:#80506b;
+ --light-sidebar-rule:#ab7996;
+ --light-sidebar-link-bg:#f1d9e6;
+ --light-sidebar-link-border:#ac7899;
 }
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts{
+ background:var(--light-action-band)!important;
  border-top:1px solid var(--light-action-border);
  border-bottom:1px solid var(--light-action-border);
 }
@@ -2476,55 +2450,27 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-actio
  color:var(--light-setting-text);
  border-bottom:1px solid var(--light-setting-border);
 }
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings select,
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings .table-deal-controls #dealAnimation,
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings .table-deal-controls #tableDealFace{
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings :is(select,#quickShuffleChoice,#dealAnimation,#tableDealFace){
  background:var(--light-setting-face);
  color:var(--light-setting-text);
  border-color:var(--light-setting-border);
-}
-/* v0.624: Shuffle has a legacy ID-specific dark rule. Match the
-   same light-theme settings tokens as all its neighboring selectors. */
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-action-settings #quickShuffleChoice{
- background:var(--light-setting-face);
- color:var(--light-setting-text);
- border-color:var(--light-setting-border);
-}
-@media(hover:hover){
- body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button:not(:disabled):hover{
-  background:var(--light-action-hover);
- }
-}
-
-/* v0.625 — readable decorative accents and deck controls in light themes.
-   Preserve brass/rose character with dark bronze ink instead of pale-gold
-   dark-theme foregrounds. The Card Gallery button also receives a light
-   surface because its old dark fill inherited unreadably dark theme text. */
-body[data-visual-theme="minimal"]{
- --light-sidebar-bronze:#725437;
- --light-sidebar-rule:#947757;
- --light-sidebar-link-bg:#e0d5c4;
- --light-sidebar-link-border:#91775a;
-}
-body[data-visual-theme="lovely"]{
- --light-sidebar-bronze:#80506b;
- --light-sidebar-rule:#ab7996;
- --light-sidebar-link-bg:#f1d9e6;
- --light-sidebar-link-border:#ac7899;
 }
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside header .tabula-brand h1,
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside header .tabula-series,
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .deck-setting-heading{
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .deck-setting-heading,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-header{
  color:var(--light-sidebar-bronze);
 }
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside header .tabula-series::before,
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside header .tabula-series::after{
  background:var(--light-sidebar-rule);
 }
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .section #cardGalleryOpen{
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .section #cardGalleryOpen,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .table-current-chip,
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-settings{
  background:var(--light-sidebar-link-bg);
- color:var(--ui-text);
  border-color:var(--light-sidebar-link-border);
+ color:var(--ui-text);
 }
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .section #cardGalleryOpen :is(svg,svg *){
  color:currentColor;
@@ -2532,83 +2478,35 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .secti
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .deck-edit-actions a[href$="deck-designer.html"]{
  color:var(--light-sidebar-bronze)!important;
  border-color:var(--light-sidebar-link-border)!important;
- text-decoration:none;
 }
-@media(hover:hover){
- body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .section #cardGalleryOpen:hover{
-  background:var(--ui-aside);
- }
-}
-
-/* v0.626 — light-theme legibility in Table Management and Card Operations.
-   These legacy components used translucent dark panels and pale gold headings;
-   align their surfaces and foregrounds with each light theme instead. */
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .table-current-chip,
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside #tableDisplaySettings .label-cycle-settings>summary{
- background:var(--light-sidebar-link-bg);
- border-color:var(--light-sidebar-link-border);
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside :is(.wash-header .mini,.wash-settings .field,.table-current-chip strong){
  color:var(--ui-text);
 }
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .table-current-chip strong,
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside #tableDisplaySettings .label-cycle-settings>summary{
- color:var(--ui-text);
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-header{
- color:var(--light-sidebar-bronze);
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-header .mini{
- color:var(--ui-text);
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-settings{
- background:var(--light-sidebar-link-bg);
- border-color:var(--light-sidebar-link-border);
- color:var(--ui-text);
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-settings .field{
- color:var(--ui-text);
-}
-
-/* v0.627 — Table Management's "Label display" disclosure must look like
-   its neighboring light-theme controls, not a dark gray legacy button. */
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManagement #tableDisplaySettings .label-cycle-settings>summary{
  background:var(--ui-tool)!important;
  color:var(--ui-text)!important;
  border-color:var(--ui-accent)!important;
 }
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManagement #tableDisplaySettings .label-cycle-settings>summary:hover{
- background:var(--light-sidebar-link-bg)!important;
+@media(hover:hover){
+ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .table-shortcuts button:not(:disabled):hover{
+  background:var(--light-action-hover);
+ }
+ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManagement #tableDisplaySettings .label-cycle-settings>summary:hover,
+ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .section #cardGalleryOpen:hover{
+  background:var(--light-sidebar-link-bg)!important;
+ }
 }
 
-/* v0.628 — the deck dropdown keeps its dark surface in both light themes.
-   Explicit menu-scoped colors take priority over the general light-theme
-   button rules, including secondary/custom decks, hover and selected states. */
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu{
- background:#26352e;
- border-color:#857459;
- color:#f4e9d5;
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-group{
- color:#ead0a1;
- border-top-color:#776953;
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option,
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option.secondary{
- background:transparent;
- color:#f3e7d2;
- border-color:transparent;
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option:hover,
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option:focus-visible{
- background:#435748;
- color:#fff9eb;
- outline:1px solid #bea67b;
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option.selected{
- background:#61543c;
- color:#fff3d7;
-}
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option.selected:hover,
-body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) .toolbar-deck-menu .toolbar-deck-option.selected:focus-visible{
- background:#756344;
- color:#fff9e9;
+/* Reference windows are visually independent of the active tabletop theme.
+   CSS variables are reset at each window boundary to protect shared headings
+   and controls which intentionally use theme tokens inside their own content. */
+:is(.modal-bg,#cardGallery,#spreadArchive){
+ --ui-bg:#151b18;
+ --ui-aside:#202821;
+ --ui-tool:#20271e;
+ --ui-text:#eee0c8;
+ --ui-accent:#bda477;
+ --ui-muted:#a9a28e;
+ --ui-border:#655c49;
+ color:#e9dec7;
 }
