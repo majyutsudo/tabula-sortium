@@ -4734,17 +4734,24 @@ function installTableActionSettings(){
  const syncDealMenu=()=>{
   animationChoice.querySelectorAll('[data-deal-procedure-menu]').forEach(el=>el.remove());
   if(dealChoice){
-   const procedureGroup=document.createElement('optgroup');
-   procedureGroup.label='ディール手順';
-   procedureGroup.dataset.dealProcedureMenu='true';
-   for(const option of dealChoice.options){
-    if(option.value==='__edit__')continue;
-    const entry=document.createElement('option');
-    entry.value=procedurePrefix+option.value;
-    entry.textContent=option.textContent;
-    procedureGroup.append(entry);
+   const standard=document.createElement('option');
+   standard.value=procedurePrefix;
+   standard.textContent='番号順';
+   standard.dataset.dealProcedureMenu='true';
+   animationChoice.append(standard);
+   const saved=[...dealChoice.options].filter(option=>option.value&&option.value!=='__edit__');
+   if(saved.length){
+    const procedureGroup=document.createElement('optgroup');
+    procedureGroup.label='登録済みディール手順';
+    procedureGroup.dataset.dealProcedureMenu='true';
+    for(const option of saved){
+     const entry=document.createElement('option');
+     entry.value=procedurePrefix+option.value;
+     entry.textContent=option.textContent;
+     procedureGroup.append(entry);
+    }
+    animationChoice.append(procedureGroup);
    }
-   animationChoice.append(procedureGroup);
   }
   const edit=document.createElement('option');
   edit.value=procedureEdit;
