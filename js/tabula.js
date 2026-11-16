@@ -4726,21 +4726,13 @@ function installTableActionSettings(){
  if(shuffleChoice)$('tableShuffleChoiceSlot').append(shuffleChoice);
  if(dealChoice)$('tableDealChoiceSlot').append(dealChoice);
  const dealToggle=$('tableDealOptionsButton'),dealPanel=$('tableDealOptions'),animationChoice=$('dealAnimation'),dealFace=$('tableDealFace');
- const shortenDealLabels=()=>{
-  if(!dealChoice)return;
-  for(const option of dealChoice.options){
-   option.textContent=option.textContent
-    .replace(/番号順（裏配り）/g,'番号順（裏）')
-    .replace(/番号順（表配り）/g,'番号順（表）');
-  }
- };
  const syncDealSummary=()=>{
-  shortenDealLabels();
-  const dealText=dealChoice?.selectedOptions?.[0]?.textContent?.trim()||'配り方';
-  const animationText=animationChoice.selectedOptions?.[0]?.textContent?.split(/[—-]/)[0]?.trim()||'STANDARD';
+  // The animation selector is a direct native control, like Shuffle.
+  // The compact procedure button only reflects which saved procedure is active.
+  const dealText=dealChoice?.selectedOptions?.[0]?.textContent?.trim()||'番号順';
   dealFace.value=settings.dealFaceUp===true?'up':'down';
-  dealToggle.textContent=dealText+' · '+animationText;
-  dealToggle.title='配り方とアニメーション：'+dealText+' / '+animationText;
+  dealToggle.title='配札手順：'+dealText+'（クリックして変更・編集）';
+  dealToggle.setAttribute('aria-label','配札手順：'+dealText);
  };
  const closeDealPanel=()=>{dealPanel.hidden=true;dealToggle.setAttribute('aria-expanded','false')};
  dealToggle.onclick=()=>{
