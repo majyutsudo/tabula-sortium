@@ -2567,3 +2567,14 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-
 body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .wash-settings .field{
  color:var(--ui-text);
 }
+
+/* v0.627 — Table Management's "Label display" disclosure must look like
+   its neighboring light-theme controls, not a dark gray legacy button. */
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManagement #tableDisplaySettings .label-cycle-settings>summary{
+ background:var(--ui-tool)!important;
+ color:var(--ui-text)!important;
+ border-color:var(--ui-accent)!important;
+}
+body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManagement #tableDisplaySettings .label-cycle-settings>summary:hover{
+ background:var(--light-sidebar-link-bg)!important;
+}
