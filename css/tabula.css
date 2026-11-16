@@ -2510,3 +2510,82 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManage
  --ui-border:#655c49;
  color:#e9dec7;
 }
+
+/* v0.631 — mobile theme boundaries.
+   On narrow screens, aside uses display:contents; its section backgrounds
+   no longer receive the aside background. Theme those persistent sections
+   explicitly, but leave opened dialogs and reference windows unthemed. */
+@media(max-width:780px){
+ body :is(.shell>aside>header,.shell>aside>.section,.shell>aside>.aside-help-area){
+  background:var(--ui-aside);
+  color:var(--ui-text);
+  border-color:var(--ui-border,#655c49);
+ }
+ body .shell>aside>.aside-help-area :is(button,.aside-help-button){
+  color:var(--ui-text);
+  border-color:var(--ui-accent);
+  background:var(--ui-tool);
+ }
+ body .shell>aside>.section :is(.section-title,.section-hint){
+  color:var(--ui-text);
+ }
+ body .shell>aside>.section :is(.field,.mini){
+  color:var(--ui-text);
+ }
+ body .shell>.main>.table-utility-actions button,
+ body .shell>.main>.table-record-actions button{
+  background:var(--ui-tool);
+  color:var(--ui-text);
+  border-color:var(--ui-accent);
+ }
+}
+/* Preserve the reference palette on all viewports, independent of whichever
+   theme is selected for the table. These selectors target only controls
+   inside opened reference views; the normal tabletop buttons are untouched. */
+#cardGallery :is(.gallery-head,.gallery-controls,.face-preferences){
+ color:#e9dec7;
+}
+#cardGallery :is(#cardGalleryClose,#galleryDeckIntroDefault,#galleryDeckIntroCancel,
+  #cardGalleryBack,#cardGalleryPrev,#cardGalleryNext){
+ background:#373a32;
+ color:#f3e5cb;
+ border-color:#827357;
+}
+#cardGallery :is(#cardGalleryDeck,#cardGalleryFilter,#galleryDeckIntroInput){
+ background:#302f29;
+ color:#f3e8d3;
+ border-color:#71644c;
+}
+#cardGallery .gallery-deck-intro-toggle{
+ background:transparent;
+ color:#d4bd8e;
+ border-color:transparent;
+}
+#cardGallery .gallery-deck-intro-actions #galleryDeckIntroEdit{
+ background:transparent;
+ color:#b6a47d;
+ border-color:transparent;
+}
+#cardGallery #galleryDeckIntroSave{
+ background:#5c5239;
+ color:#fff0d2;
+ border-color:#b79b63;
+}
+#modalBg .modal{
+ color:#e9dec7;
+ background:#292b25;
+}
+#modalBg :is(button,select,input,textarea){
+ color:#f3e5cb;
+ background:#373a32;
+ border-color:#827357;
+}
+#modalBg :is(input,select,textarea){
+ background:#302f29;
+ color:#f3e8d3;
+ border-color:#71644c;
+}
+/* Preserve transparencies in the editorial and navigation controls. */
+#modalBg :is(.about-license,.about-back,.tarot-editor-nav button){
+ background:transparent;
+}
