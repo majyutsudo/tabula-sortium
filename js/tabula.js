@@ -2854,7 +2854,7 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
    node.style.opacity='1';
   });
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  await new Promise(resolve=>setTimeout(resolve,600));
+  await new Promise(resolve=>setTimeout(resolve,200));
   state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
   overlay.remove();surface.classList.remove('cut-in-progress');$('deck').style.visibility=originalDeckVisibility;render();updateStandaloneAvailability();for(const id of ['quickDeal','deal','draw','quickOpen','quickRevealAll','revealAll']){const button=$(id);if(button)button.disabled=false;}updateStandaloneAvailability();saveLocal();play('shuffle');
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
