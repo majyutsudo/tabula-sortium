@@ -4664,6 +4664,8 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
    card.removeAttribute('id');
    card.classList.remove('empty');
    card.classList.add('deal-pile-card');
+   // The stock is hidden while split; cloned piles must remain visible.
+   card.style.visibility='visible';
    card.removeAttribute('title');
    card.dataset.pileIndex=String(index);
    const label=document.createElement('span');label.className='deal-pile-caption';
@@ -4747,7 +4749,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
       render();saveLocal();
       // Piles are the visible stock during a split; the aggregated deck is only a state carrier.
       const stockNode=$('deck');
-      if(stockNode)stockNode.style.visibility=frame.piles.length?'hidden':'';
+      if(stockNode)stockNode.style.visibility=(frame.piles.length||prior?.piles?.length)?'hidden':'';
       // Re-rendering replaces card nodes. Keep older flights concealed until
       // their corresponding ghost lands, so no card flashes beneath the flight.
       for(const index of activeFlights.keys()){
@@ -4755,6 +4757,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
         if(current)current.style.visibility='hidden';
       }
       await displayPileFrame(frame,prior);
+      if(stockNode&&!frame.piles.length)stockNode.style.visibility='';
       // Resolve the physical origin from the card's previous location, not the aggregate deck.
       let sourceNode=$('deck');
       if(prior&&prior.piles?.length&&(frame.dealt.length>prior.dealt.length||frame.removed.length>prior.removed.length)){
