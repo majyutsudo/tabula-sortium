@@ -11,7 +11,7 @@
 .playing-preview button[data-card]:hover{background:#52604c!important}
 .line.rank{grid-template-columns:minmax(52px,1fr) minmax(68px,1fr) minmax(88px,1fr) auto}
 .rank-court-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;border:1px solid #5c584d;border-radius:6px;padding:9px;margin:0 0 11px;background:#292d30}
-.rank-court-settings label{font-size:11px}.rank-court-settings input,.rank-court-settings select{width:100%}
+.rank-court-settings .rank-court-heading{grid-column:1/-1;font-size:11px;color:#d7bd91;font-weight:600;letter-spacing:.04em}.rank-court-settings label{font-size:11px}.rank-court-settings input,.rank-court-settings select{width:100%}
 @media(max-width:800px){.line.rank{grid-template-columns:minmax(40px,1fr) minmax(48px,1fr) minmax(85px,1fr) auto}}
 dialog.card-editor{width:min(440px,calc(100vw - 24px));max-height:90dvh;overflow:auto;color:#f1e3d0;background:#282b2b;border:1px solid #b69b70;border-radius:10px;box-shadow:0 20px 60px #000a;padding:20px}
 dialog.card-editor::backdrop{background:#090e11bd}
@@ -54,7 +54,7 @@ dialog.card-editor::backdrop{background:#090e11bd}
 <div class="panel"><h2>ランク（独立定義）</h2><p class="hint">任意のランクを人物相当札に指定できます。文字紋章はSVGで描画し、札ごとにも変更できます。</p><div id="ranks"></div><button id="addRank">＋ ランク</button></div>
 <div class="panel"><h2>単独カード</h2><p class="hint">スート×ランクに当てはまらないカードも一枚ずつ追加できます。</p><button id="addCard">＋ カードを一枚追加</button></div>
 </section><section><div class="panel"><div class="card-list-title"><h2>カード一覧 <span id="cardCount"></span></h2><span class="hint">カードを押して個別編集</span></div><div id="cards" class="cards"></div></div></section></main>
-<script src="js/deck-blueprint.js?v=0647"></script>
+<script src="js/deck-blueprint.js?v=0648"></script>
 <script>
 (()=>{'use strict';
 const API=TabulaDeckBlueprint,$=id=>document.getElementById(id);
@@ -89,7 +89,6 @@ let def=API.playingCards(),savedId=null,dirty=false,activeSet='primary';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const selectOptions=(items,selected)=>items.map(([value,label])=>'<option value="'+esc(value)+'"'+(selected===value?' selected':'')+'>'+esc(label)+'</option>').join('');
 const EMBLEMS=API.COURT_EMBLEMS,FRAMES=API.COURT_FRAMES;
-const STYLE_OPTIONS=[['text','文字＋SVG紋章']];
 const RANK_KINDS=[['pip','数札・一般札'],['court','人物相当札']];
 const SYMBOL_PRESETS=[
  ['','自由入力'],
@@ -121,7 +120,7 @@ function render(){
      '<label>名称<input data-kind="suits" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>記号<select data-symbol-preset data-i="'+i+'">'+symbolOptions(item.symbol)+'</select><input data-kind="suits" data-i="'+i+'" data-prop="symbol" value="'+esc(item.symbol)+'" aria-label="記号を自由入力"></label><label>色<select data-kind="suits" data-i="'+i+'" data-prop="color">'+API.COLORS.map(([id,label])=>'<option value="'+id+'" '+(item.color===id?'selected':'')+'>'+label+'</option>').join('')+'</select></label>':
      '<label>表示<input data-kind="ranks" data-i="'+i+'" data-prop="label" value="'+esc(item.label)+'"></label><label>名称<input data-kind="ranks" data-i="'+i+'" data-prop="name" value="'+esc(item.name)+'"></label><label>種類<select data-kind="ranks" data-i="'+i+'" data-prop="faceKind">'+selectOptions(RANK_KINDS,item.faceKind==='court'?'court':'pip')+'</select></label>';
    const extra=kind==='ranks'&&item.faceKind==='court'?
-     '<div class="rank-court-settings"><label>人物札の図像<select data-kind="ranks" data-i="'+i+'" data-prop="courtStyle">'+selectOptions(STYLE_OPTIONS,item.courtStyle||'text')+'</select></label><label>中央の称号<input data-kind="ranks" data-i="'+i+'" data-prop="courtTitle" maxlength="48" value="'+esc(item.courtTitle||item.name)+'"></label><label>紋章<select data-kind="ranks" data-i="'+i+'" data-prop="courtEmblem">'+selectOptions(EMBLEMS,item.courtEmblem||'crown')+'</select></label><label>紋章枠<select data-kind="ranks" data-i="'+i+'" data-prop="courtFrame">'+selectOptions(FRAMES,item.courtFrame||'shield')+'</select></label></div>':'';
+     '<div class="rank-court-settings"><div class="rank-court-heading">人物札の図案 · 文字＋SVG紋章</div><label>中央の称号<input data-kind="ranks" data-i="'+i+'" data-prop="courtTitle" maxlength="48" value="'+esc(item.courtTitle||item.name)+'"></label><label>紋章<select data-kind="ranks" data-i="'+i+'" data-prop="courtEmblem">'+selectOptions(EMBLEMS,item.courtEmblem||'crown')+'</select></label><label>紋章枠<select data-kind="ranks" data-i="'+i+'" data-prop="courtFrame">'+selectOptions(FRAMES,item.courtFrame||'shield')+'</select></label></div>':'';
    return '<div class="line '+(kind==='ranks'?'rank':'')+'">'+columns+'<button data-remove="'+kind+'" data-i="'+i+'" title="削除">×</button></div>'+extra;
   }).join('');
  }
@@ -146,7 +145,7 @@ function openCardEditor(card){
  const isSingle=!card.suitId&&!card.rankId;
  const existing=def.cards.find(c=>c.id===card.id)||{};
  const dlg=document.createElement('dialog');dlg.className='card-editor';
- const style='text',emblem=existing.courtEmblem||card.courtEmblem||'crown',frame=existing.courtFrame||card.courtFrame||'shield';
+ const emblem=existing.courtEmblem||card.courtEmblem||'crown',frame=existing.courtFrame||card.courtFrame||'shield';
  dlg.innerHTML='<form method="dialog"><h2>カードを編集</h2>'+
   '<label>カード名称<input name="name" maxlength="120" value="'+esc(API.nameOf(card,activeSet))+'"></label>'+
   '<label>番号・表示文字<input name="number" maxlength="24" value="'+esc(card.number)+'"></label>'+
@@ -154,7 +153,7 @@ function openCardEditor(card){
    '<label>シンボル（自由入力可能）<input name="symbol" maxlength="24" value="'+esc(card.symbol||'✦')+'"></label>'+
    '<label>シンボルの色<select name="cardColor">'+selectOptions(API.COLORS.map(([id,label])=>[id,label]),card.cardColor||'black')+'</select></label>'+
    '<label>短い銘文（任意・60文字まで／Enterで改行）<textarea name="oracleLine" maxlength="60" rows="3" placeholder="例：心を開き、&#10;愛を受け入れよ。">'+esc(card.oracleLine||'')+'</textarea></label>':'')+
-  (isCourt?'<label>人物相当札の図像<select name="courtStyle">'+selectOptions(STYLE_OPTIONS,style)+'</select></label>'+
+  (isCourt?'<p class="card-editor-help">人物札の図案：文字＋SVG紋章</p>'+
    '<label>中央の称号<input name="courtTitle" maxlength="48" placeholder="'+esc(rank?.courtTitle||rank?.name||'')+'" value="'+esc(existing.courtTitle||'')+'"></label>'+
    '<label>SVG紋章<select name="courtEmblem">'+selectOptions([['','ランク設定を使用'],...EMBLEMS],existing.courtEmblem||'')+'</select></label>'+
    '<label>紋章枠<select name="courtFrame">'+selectOptions([['','ランク設定を使用'],...FRAMES],existing.courtFrame||'')+'</select></label>'+
