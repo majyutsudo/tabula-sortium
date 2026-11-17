@@ -25,7 +25,7 @@ function install(api){
   const shade=document.createElement('div');shade.className='deal-editor-shade';
   shade.style.cssText='position:fixed;inset:0;background:#000b;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
   const panel=document.createElement('section');panel.className='deal-editor-panel modal';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','ディール手順の登録');
-  panel.style.cssText='width:min(600px,100%);max-height:85vh;overflow:auto;padding:24px;background:#24312b;color:#f1dfbd;border:1px solid #a88c60;border-radius:8px;box-shadow:0 20px 60px #0009';
+  panel.style.cssText='width:min(600px,100%);max-height:85vh;overflow:auto;padding:24px;color:#f1dfbd;border:1px solid #a88c60;border-radius:8px;box-shadow:0 20px 60px #0009';
   shade.append(panel);document.body.append(shade);dialog=shade;
   const make=(tag,parent,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;parent.append(e);return e};
   const button=(parent,label,fn)=>{const b=make('button',parent,label);b.type='button';b.onclick=fn;return b};
