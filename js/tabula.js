@@ -2271,7 +2271,7 @@ function installPhysicalCardPicker(){
  },true);
 }
 function nextPlacedStackOrder(){return Math.max(0,...state.placed.map(c=>Number(c.dragOrder)||0))+1}
-function drawAt(slot=null,x=null,y=null,animateArrival=true){if(settings.spread==='fourSeasons'&&fourSeasonsHandGuard())return;if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread==='fourSeasons'&&slot!==null&&slot>=6){setStatus('フォー・シーズンズの自動配札先は①〜⑥のみです。');return}if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('基本の配札は完了しました。山札をドラッグして補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
+function drawAt(slot=null,x=null,y=null,animateArrival=true){if(document.getElementById('physicalCutOverlay')){setStatus('カット中は配札できません。');return;}if(settings.spread==='fourSeasons'&&fourSeasonsHandGuard())return;if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread==='fourSeasons'&&slot!==null&&slot>=6){setStatus('フォー・シーズンズの自動配札先は①〜⑥のみです。');return}if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('基本の配札は完了しました。山札をドラッグして補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
  const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
  if(duplicate){setStatus('カードが重複しています（'+duplicate.id+'）。バックアップを確認してください。');return}
  if(!applyDealRemoval())return;
@@ -2329,6 +2329,7 @@ function fourSeasonsHandGuard(){
  return false;
 }
 async function revealFourSeasonsStock(){
+ if(document.getElementById('physicalCutOverlay')){setStatus('カット中はカードを開けません。');return;}
  if(!state.deck.length){setStatus('山札がありません。');return}
  if(fourSeasonsHandGuard())return;
  const zone=$('zone'),stock=$('deck');
@@ -2348,6 +2349,7 @@ async function revealFourSeasonsStock(){
 let dealCancelRequested=false;
 function syncDealButton(){const button=$('quickDeal');if(!button)return;const active=autoDealBusy;button.title=active?'進行中のディールを中断（配ったカードは残します）':'スプレッドへディール';const parts=button.querySelectorAll('span');if(parts[0])parts[0].textContent=active?'■':'▧';if(parts[1])parts[1].textContent=active?'中断':'ディール';}
 async function dealAuto(){
+ if(document.getElementById('physicalCutOverlay')){setStatus('カット中はディールできません。');return;}
  if(autoDealBusy){dealCancelRequested=true;setStatus('配札を中断しています。');return;}
  // The Four Seasons preset always uses its six registered deal targets,
  // regardless of any user-configured dealing workbench.
@@ -2854,7 +2856,7 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   await new Promise(resolve=>setTimeout(resolve,600));
   state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
-  overlay.remove();surface.classList.remove('cut-in-progress');$('deck').style.visibility=originalDeckVisibility;render();updateStandaloneAvailability();saveLocal();play('shuffle');
+  overlay.remove();surface.classList.remove('cut-in-progress');$('deck').style.visibility=originalDeckVisibility;render();updateStandaloneAvailability();for(const id of ['quickDeal','deal','draw','quickOpen','quickRevealAll','revealAll']){const button=$(id);if(button)button.disabled=false;}saveLocal();play('shuffle');
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
  }
 }
@@ -2866,7 +2868,7 @@ function closeModal(){$('modalBg').classList.remove('open','records-active','car
   if(settings.deckId==='builtin')settings.cardBackColor=settings.deckBackColors.builtin;
  }
  if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(settings.spread==='grandStar'?spreadCardSize('grandStar'):(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread)));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
-function updateStandaloneAvailability(){const cutting=!!document.getElementById('physicalCutOverlay');const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash||cutting;w.title=cutting?'カット中はウォッシュできません':noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}for(const id of ['quickShuffle','shuffle','manualShuffle']){const button=$(id);if(button&&cutting)button.disabled=true}if(c){c.disabled=noCut||cutting;c.title=noCut?'カットは「なし」に設定されています':'山札をカット'}}function sync(){syncDeckReversals();if(activeBlueprint())settings.cardDesign='simple';else if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';updateAppearanceControls();refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';const poolInput=$('pool');
+function updateStandaloneAvailability(){const cutting=!!document.getElementById('physicalCutOverlay');const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash||cutting;w.title=cutting?'カット中はウォッシュできません':noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}for(const id of ['quickShuffle','shuffle','manualShuffle']){const button=$(id);if(button&&cutting)button.disabled=true}if(c){c.disabled=noCut||cutting;c.title=cutting?'カット中です':noCut?'カットは「なし」に設定されています':'山札をカット'}for(const id of ['quickDeal','deal','draw','quickOpen','quickRevealAll','revealAll']){const button=$(id);if(button&&cutting)button.disabled=true}}function sync(){syncDeckReversals();if(activeBlueprint())settings.cardDesign='simple';else if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';updateAppearanceControls();refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';const poolInput=$('pool');
  const blueprint=activeBlueprint();
  const poolOptions=blueprint
   ?(isPlayingBlueprint(blueprint)
@@ -3405,6 +3407,7 @@ $('quickReturn').onclick=()=>{if(!state.placed.length&&!(state.removed||[]).leng
 $('quickCollect').onclick=()=>{if(confirm('卓上のカードを配札順に回収して、同じデッキで次の占いを続けますか？'))collectForNextReading()};
 $('quickFaceDown').onclick=()=>{state.placed.forEach(p=>p.faceUp=false);state.completionShown=false;render();saveLocal()};
 function revealAllAtOnce(){
+ if(document.getElementById('physicalCutOverlay')){setStatus('カット中はカードを開けません。');return;}
  if(openingBusy)return;
  const closed=state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile);
  if(!closed.length){setStatus('開ける伏せ札がありません。');return}
@@ -3527,6 +3530,7 @@ async function openCeremonially(mode){
  }
 }
 function openWithSelectedMode(){
+ if(document.getElementById('physicalCutOverlay')){setStatus('カット中はカードを開けません。');return;}
  if(openingBusy)return;
  if(settings.openMode==='all')return revealAllFloating();
  if(settings.openMode==='float'||settings.openMode==='bloom')return openCeremonially(settings.openMode);
