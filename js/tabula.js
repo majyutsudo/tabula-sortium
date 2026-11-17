@@ -2773,7 +2773,7 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
  const lengths=TabulaShuffle.cutLengths(state.deck.length,count),sequence=[];
  const surface=$('surface'),overlay=document.createElement('div');
  overlay.id='physicalCutOverlay';
- overlay.style.cssText='position:absolute;inset:0;z-index:850;pointer-events:none;overflow:hidden;';
+ overlay.style.cssText='position:absolute;inset:0;z-index:5000;pointer-events:none;overflow:hidden;';
  surface.append(overlay);
  surface.classList.add('cut-in-progress');
  const cutStyle=document.createElement('style');
