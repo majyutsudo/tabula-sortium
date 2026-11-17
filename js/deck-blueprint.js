@@ -64,6 +64,11 @@ function playingName(card,language='primary'){
  return name+' di '+suit;
 }
 const builtInPlaying=playingCards('playing-cards','TABULA PLAYING CARDS');
+// Built-in TABULA PLAYING CARDS retain the original illustrated J/Q/K.
+// The independent designer template deliberately uses SVG heraldic courts.
+for(const rank of builtInPlaying.ranks){
+ if(rank.faceKind==='court')rank.courtStyle='portrait';
+}
 builtInPlaying.nameSets=PLAYING_LANGUAGES.map(([id,label])=>({id,label}));
 builtInPlaying.cards.push(
  {id:'playing-joker-1',name:'ジョーカーⅠ',number:'JOKER',rankId:null,suitId:null,kind:'joker'},
