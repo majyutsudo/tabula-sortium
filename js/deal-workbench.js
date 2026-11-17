@@ -46,7 +46,7 @@ function install(api){
   };
   const types=[['take','カードを除外・配札'],['skip-deal','除外を挟んで配札'],['split','山札を分割'],['collect','束を積み直す'],['reverse-pile','束の順序を逆にする'],['shuffle-recipe','登録済みシャッフル']];
   function validate(){try{preview();message='';return true}catch(e){message='工程を実行できません：'+e.message;return false}}
-  function updateStep(i,next){const old=steps[i];steps[i]=next;if(!validate()){steps[i]=old;paint()}else paint()}
+  function updateStep(i,next){steps[i]=next;validate();paint()}
   function paint(){
    panel.replaceChildren();
    const head=make('div',panel);head.style.cssText='display:flex;align-items:start;justify-content:space-between;gap:12px';
@@ -91,7 +91,7 @@ function install(api){
    });
    const actions=make('div',panel);actions.className='row';actions.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin:12px 0';
    button(actions,'工程を追加',()=>{
-    const current=run(steps);let type='take';
+    let current;try{current=run(steps)}catch(e){message='工程の入力を完成させてから追加してください：'+e.message;paint();return}let type='take';
     if(!current.stock.length&&current.piles.length)type='collect';
     else if(!current.stock.length){message='追加できる工程がありません。';paint();return}
     steps.push(defaults[type]());validate();paint();
