@@ -4740,12 +4740,14 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
     async function nextStage(){
       const frame=sequence[cursor],prior=sequence[cursor-1]||null;
       const previousPlaced=state.placed.filter(c=>!c.auxiliaryPile).length,previousRemoved=state.placed.filter(c=>c.auxiliaryPile).length;
-      const sourceRect=$('deck').getBoundingClientRect();
       const stock=[...frame.stock,...frame.piles.flat(),...frame.selected];
       state.deck=stock.map(c=>({...c}));
       state.placed=[...placeRemoved(frame.removed),...placeDealt(frame.dealt)];
       state.removed=[];
       render();saveLocal();
+      // Piles are the visible stock during a split; the aggregated deck is only a state carrier.
+      const stockNode=$('deck');
+      if(stockNode)stockNode.style.visibility=frame.piles.length?'hidden':'';
       // Re-rendering replaces card nodes. Keep older flights concealed until
       // their corresponding ghost lands, so no card flashes beneath the flight.
       for(const index of activeFlights.keys()){
@@ -4753,6 +4755,14 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
         if(current)current.style.visibility='hidden';
       }
       await displayPileFrame(frame,prior);
+      // Resolve the physical origin from the card's previous location, not the aggregate deck.
+      let sourceNode=$('deck');
+      if(prior&&prior.piles?.length&&(frame.dealt.length>prior.dealt.length||frame.removed.length>prior.removed.length)){
+        const newCard=frame.dealt.length>prior.dealt.length?frame.dealt[frame.dealt.length-1]:frame.removed[frame.removed.length-1];
+        const sourceIndex=prior.piles.findIndex(p=>p.some(c=>c.id===newCard?.id));
+        if(sourceIndex>=0)sourceNode=pileOverlay?.querySelector('.deal-pile-card[data-pile-index="'+sourceIndex+'"]')||sourceNode;
+      }
+      const sourceRect=sourceNode.getBoundingClientRect();
       let startedNextBeforeLanding=false;
       const flightIndex=frame.dealt.length>previousPlaced?state.placed.length-1
         :frame.removed.length>previousRemoved?frame.removed.length-1:null;
@@ -4797,6 +4807,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
       }
       else{
         clearPileOverlay();
+        $('deck').style.visibility='';
         state.deck=cards.map(c=>({...c}));
         state.placed=[...placeRemoved(tableCards),...placed];
         state.removed=removed.filter(c=>!tableIds.has(c.id)).map(c=>({...c}));
