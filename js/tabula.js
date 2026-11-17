@@ -2775,6 +2775,9 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
  overlay.id='physicalCutOverlay';
  overlay.style.cssText='position:absolute;inset:0;z-index:5000;pointer-events:none;overflow:hidden;';
  surface.append(overlay);
+ // The physical cut piles replace the original stock until they are restacked.
+ const originalDeckVisibility=$('deck').style.visibility;
+ $('deck').style.visibility='hidden';
  surface.classList.add('cut-in-progress');
  const cutStyle=document.createElement('style');
  cutStyle.textContent='.cut-in-progress .slot,.cut-in-progress .zone-label,.cut-in-progress .slot-num{visibility:hidden!important}';
@@ -2850,7 +2853,7 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   await new Promise(resolve=>setTimeout(resolve,600));
   state.deck=TabulaShuffle.restack(state.deck,lengths,sequence);
-  overlay.remove();surface.classList.remove('cut-in-progress');render();saveLocal();play('shuffle');
+  overlay.remove();surface.classList.remove('cut-in-progress');$('deck').style.visibility=originalDeckVisibility;render();saveLocal();play('shuffle');
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');
  }
 }
