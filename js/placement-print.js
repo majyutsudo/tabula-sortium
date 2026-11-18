@@ -99,6 +99,7 @@ function editor(source){
  const background=()=>svg.querySelector('rect');
  function exportSvg(){
   const copy=svg.cloneNode(true);copy.removeAttribute('style');
+  copy.querySelectorAll('text').forEach(t=>{t.removeAttribute('text-decoration');t.removeAttribute('style')});
   if(transparent.checked)copy.querySelector('rect')?.remove();
   copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');
   return copy;
