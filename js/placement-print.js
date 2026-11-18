@@ -238,26 +238,6 @@ function editor(source){
  }
  elements.forEach(el=>{attachSelection(el,el);});
  for(const [card,hit] of hitMap)attachSelection(card,hit);
- /* original pointer handlers removed */
- /* elements.forEach(el=>{
-  el.style.cursor='move';
-  el.addEventListener('pointerdown',e=>{
-   if(mode.value!=='all'&&type(el)!==mode.value)return;
-   e.preventDefault();
-   if(e.shiftKey)select(el,true);
-   else if(!selection.has(el))select(el,false);
-   else if(selection.size>1){
-    // Preserve the group only if a drag actually begins; a click selects one.
-   }
-   if(!selection.has(el))return;
-   const p=point(e);if(!p)return;
-   drag={el,p,moved:false,plainMulti:!e.shiftKey&&selection.size>1,items:[...selection].map(item=>({item,...coords(item)}))};
-   el.setPointerCapture(e.pointerId);root.focus({preventScroll:true});
-  });
-  el.addEventListener('pointermove',e=>{if(!drag||drag.el!==el)return;const p=point(e);if(!p)return;const dx=p.x-drag.p.x,dy=p.y-drag.p.y;if(!drag.moved&&Math.hypot(dx,dy)>.1){remember();drag.moved=true;}if(!drag.moved)return;drag.items.forEach(v=>setPosition(v.item,v.x+dx,v.y+dy));});
-  el.addEventListener('pointerup',()=>{if(drag&&drag.el===el&&drag.plainMulti&&!drag.moved)select(el,false);drag=null;refresh();});
-  el.addEventListener('pointercancel',()=>{drag=null;refresh();});
- }); */
  root.addEventListener('keydown',e=>{
   if(e.key==='Escape'){if(selection.size){selection.clear();active=null;refresh();}else closeEditor();return;}
   if(e.target?.closest?.('input,textarea,select,[contenteditable]'))return;
