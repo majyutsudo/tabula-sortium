@@ -28,7 +28,9 @@ function printable(){
  const sx=zw/zr.width,sy=zh/zr.height;
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
  svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
- // Outlines first, then labels, matching TABULA's separate label layer.
+ // Draw order matches the tabletop's card/label layering preference.
+ const labelLayer=$('crossLabelLayer')?.value==='front'?'front':'behind';
+ svg.setAttribute('data-label-layer',labelLayer);
  const cardAnchors=[];
  for(const node of nodes){
   const idx=Number(node.dataset.index),item=live.cards[idx];
@@ -45,6 +47,7 @@ function printable(){
  }
  // Render only the card-name labels actually shown on the table, in their
  // real positions, including any intentional overlaps in the Celtic cross.
+ const labelNodes=[];
  for(const node of zone.querySelectorAll(':scope > .zone-label.unified-label')){
   if(!node.textContent.trim()||getComputedStyle(node).display==='none')continue;
   const rect=node.getBoundingClientRect();
@@ -60,8 +63,12 @@ function printable(){
   // Keep text horizontal by default, but retain the angle for editor controls.
   const match=cardAnchors.filter(a=>!a.used).sort((a,b)=>Math.hypot(a.x-x,a.y-(y-font))-Math.hypot(b.x-x,b.y-(y-font)))[0];
   if(match){match.used=true;label.setAttribute('data-card-angle',String(match.angle));}
-  svg.append(label);
+  labelNodes.push(label);
  }
+ if(labelLayer==='behind'){
+  const firstCard=[...svg.children].find(el=>el.localName==='g');
+  for(const label of labelNodes)svg.insertBefore(label,firstCard||null);
+ }else for(const label of labelNodes)svg.append(label);
  return svg;
 }
 function download(svg){
@@ -103,13 +110,15 @@ function normalizedBackgroundColor(value){
 function documentFromSvg(svg,transparent=false,dpi=300){
  const cards=[...svg.children].filter(el=>el.localName==='g'&&!el.hasAttribute('data-editor-overlay')&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
- return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,backgroundColor:normalizedBackgroundColor(svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff'),
+ return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,labelLayer:svg.getAttribute('data-label-layer')==='behind'?'behind':'front',backgroundColor:normalizedBackgroundColor(svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff'),
   cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
   labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
 }
 function svgFromDocument(doc){
  if(!doc||doc.format!=='tabula-placement-diagram'||doc.version!==2||!Array.isArray(doc.cards)||!Array.isArray(doc.labels)||doc.cards.length>500||doc.labels.length>500||doc.cards.length+doc.labels.length===0)throw Error('対応していない配置図データです。');
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
+ const labelLayer=doc.labelLayer==='behind'?'behind':'front';
+ svg.setAttribute('data-label-layer',labelLayer);
  const backgroundColor=normalizedBackgroundColor(doc.backgroundColor??'#ffffff');
  svg.append(element('rect',{width:210,height:297,fill:backgroundColor}));
  for(const data of doc.cards){
@@ -121,6 +130,10 @@ function svgFromDocument(doc){
  for(const data of doc.labels){
   if(typeof data.text!=='string'||data.text.length>2000)throw Error('ラベルが不正です。');
   const label=element('text');cleanAttrs(label,data.attrs,labelAttrs);label.textContent=data.text;svg.append(label);
+ }
+ if(labelLayer==='behind'){
+  const firstCard=[...svg.children].find(el=>el.localName==='g');
+  for(const label of [...svg.children].filter(el=>el.localName==='text'))svg.insertBefore(label,firstCard||null);
  }
  return svg;
 }
@@ -165,7 +178,7 @@ function editor(source,options={}){
  fileInput.onchange=async()=>{const file=fileInput.files?.[0];fileInput.value='';if(file)await loadProject(file);};
  button(head,'閉じる',()=>closeEditor());
  const intro=make('p',root,'卓上のカード配置をもとに、カードの枠線とラベルの位置・書式・色などを編集し、配置図として保存・印刷できます。','tp-intro');
- const main=make('div',root,undefined,'tp-main'),work=make('div',main,undefined,'tp-work'),sheet=make('div',work,undefined,'tp-sheet'),side=make('aside',main,undefined,'tp-side'),status=make('div',root,undefined,'tp-status');
+ const main=make('div',root,undefined,'tp-main'),work=make('div',main,undefined,'tp-work'),sheet=make('div',work,undefined,'tp-sheet'),side=make('div',main,undefined,'tp-side'),status=make('div',root,undefined,'tp-status');
  sheet.append(svg);document.body.append(root);
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
