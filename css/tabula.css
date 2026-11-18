@@ -629,7 +629,7 @@ body.gallery-open{overflow:hidden}
 .gallery-lightbox-view button{flex:none;min-width:37px;padding:9px 5px;font-size:20px}
 @media(max-width:500px){.gallery-head{padding-top:calc(10px + env(safe-area-inset-top))}.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 11px}.gallery-scroll{padding:12px 12px 50px}.gallery-lightbox-view :is(img,svg.card-art){max-width:calc(100vw - 108px)}.gallery-controls{gap:8px}.gallery-controls label{flex:1}.gallery-controls select{min-width:0;flex:1}}
 .face-preferences{display:flex;flex-wrap:wrap;gap:12px;padding:10px 16px;background:#24251f;border-bottom:1px solid #514b3b}.face-preferences label{display:flex;gap:8px;align-items:center;font:12px sans-serif}.face-preferences select{padding:6px}.tarot-face-art{object-fit:fill!important}
-.zone-label.unified-label{color:#e2cc96!important;text-decoration:none!important;border:1px solid #927849;background:#22291ff0;font:11px/1.25 sans-serif;padding:3px 6px;border-radius:4px;transform:translate(-50%,-100%)!important;max-width:min(240px,calc(100vw - 24px));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;z-index:2500!important;pointer-events:none}
+.zone-label.unified-label{color:#e2cc96!important;text-decoration:none!important;border:1px solid #927849;background:#22291ff0;font:11px/1.25 sans-serif;padding:3px 6px;border-radius:4px;transform:translate(-50%,-100%)!important;max-width:min(240px,calc(100vw - 24px));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;z-index:var(--table-label-z,1)!important;pointer-events:none}
 #tableLabelMode{min-height:38px;max-width:100%;color:#e2cc96}.table-card-view{display:flex;justify-content:center;padding:6px 0 18px}.table-card-view :is(img,svg.card-art){height:auto;max-height:65vh;max-width:100%;width:auto;aspect-ratio:2/3;object-fit:contain;border-radius:6px}.gallery-lightbox-bar{flex-wrap:wrap}.gallery-lightbox-view :is(img,svg.card-art){max-width:min(80vw,600px)}
 
 .modal-bg{z-index:21000}.detail-body{display:flex;align-items:center;justify-content:center;gap:24px;min-width:0;min-height:0}.detail-copy[hidden]{display:none!important}.detail-copy{border:0;background:transparent;box-shadow:none;max-height:65vh;overflow:auto;width:min(32vw,380px);min-width:220px;padding:12px 8px;text-align:left}.card-prose{white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.95 'Yu Mincho','Hiragino Mincho ProN',serif;color:#e7d9bd}.card-source{font:12px/1.7 sans-serif;color:#b2a68c;white-space:pre-wrap}.gallery-lightbox-view .detail-body{flex:1;max-height:100%}.gallery-lightbox-view .has-copy :is(img,svg.card-art){max-width:42vw}.table-card-view.has-copy :is(img,svg.card-art){max-width:50%}.gallery-lightbox-bar button{font-size:12px;padding:7px}#labelPlacement{min-height:38px}@media(max-width:700px){.detail-body.has-copy{flex-direction:column;overflow:auto;justify-content:flex-start}.detail-copy{width:100%;min-width:0;max-height:none;flex:none;padding:15px 5px}.gallery-lightbox-view .has-copy :is(img,svg.card-art),.table-card-view.has-copy :is(img,svg.card-art){max-width:100%;max-height:60vh;flex:none}.gallery-lightbox-view{align-items:stretch}.gallery-lightbox-view button{align-self:center}.table-card-view.has-copy{max-height:76vh}.card-prose{font-size:15px}}
@@ -2011,8 +2011,13 @@ aside .section :is(button,select,input,textarea),
  margin:6px 0 5px;
 }
 #tableManagement #tableDisplaySettings .label-cycle-options{
- gap:6px 10px;
+ grid-template-columns:minmax(0,1fr);
+ gap:7px;
  padding:4px 0 5px;
+}
+#tableManagement #tableDisplaySettings .label-cycle-options label{
+ min-width:0;
+ overflow-wrap:anywhere;
 }
 #tableManagement #tableDisplaySettings .label-cycle-options label,
 #tableManagement #tableDisplaySettings .label-cycle-placement{

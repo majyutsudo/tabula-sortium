@@ -300,7 +300,7 @@ const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.
    Mutable preference maps are recreated for every use, never shared by reference. */
 const DEFAULT_SETTINGS=Object.freeze({
  deckId:'builtin',cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',
- spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',
+ spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'front',
  sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',
  dealAnimation:'standard',openMode:'normal',framesVisible:false,
  initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,
@@ -2887,7 +2887,7 @@ function updateStandaloneAvailability(){const cutting=!!document.getElementById(
  if(initialOrderSelect.options.length!==initialChoices.length||[...initialOrderSelect.options].some((o,i)=>o.value!==initialChoices[i][0]||o.textContent!==initialChoices[i][1]))
   initialOrderSelect.replaceChildren(...initialChoices.map(([value,label])=>new Option(label,value)));
  if(!initialChoices.some(([value])=>value===settings.initialOrder))settings.initialOrder='ordered';
- initialOrderSelect.value=settings.initialOrder;$('quickWashDirection').value=settings.quickWashDirection||'random';$('quickWashRounds').value=settings.quickWashRounds||1;updateStandaloneAvailability();$('dealSkipFirst').value=Number(settings.dealSkipFirst)||0;$('dealSkipSchedule').value=settings.dealSkipSchedule||'';$('cutCountSetting').value=String(settings.cutCount??3);$('reversals').checked=settings.reversals;$('altarToggle').checked=settings.altar;$('quickLabels').textContent=settings.labels?'ポジション名：ON':'ポジション名：OFF';syncFrameVisibility();$('quickLabels').setAttribute('aria-pressed',String(settings.labels));$('crossLabelLayer').value=settings.crossLabelLayer==='front'?'front':'behind';syncToolbarSoundButton();$('shuffleMethod').value=settings.shuffleMethod||'overhand';$('visualTheme').value=settings.visualTheme||'classic';$('effectPreset').value=settings.effectPreset||'ritual';$('dealAnimation').value=TabulaDealAnimation.normalize(settings.dealAnimation);applyVisuals();syncRecipes();updateDealRuleSummary();updateStandaloneAvailability()}function applyVisuals(){document.body.dataset.visualTheme=settings.visualTheme||'classic';document.body.dataset.effectPreset=settings.effectPreset||'ritual';const desc={silent:'静かな反転。完成時の追加演出なし。',ritual:'暖かな金色の光。カードが厳かに反転される。',mystic:'青白い光輪。完成後も神秘的な発光を維持。',psychic:'紫の霊光。完成後もカードが明滅し続ける。'};if($('effectDescription'))$('effectDescription').textContent=desc[settings.effectPreset]||desc.ritual;updateCompletionAura()}let __effectTimer=null;function previewVisualEffect(finale=false){const stage=$('stage');stage.classList.remove('effect-demo','effect-finale');void stage.offsetWidth;stage.classList.add(finale?'effect-finale':'effect-demo');clearTimeout(__effectTimer);__effectTimer=setTimeout(()=>stage.classList.remove('effect-demo','effect-finale'),finale?3800:1900)}function coreTargetCount(){if(settings.spread==='free')return state.placed.length;return getSlots().length}function coreFaceUpCount(){if(settings.spread==='free')return state.placed.filter(p=>p.faceUp).length;return state.placed.filter(p=>p.slot!=null&&p.faceUp).length+(state.tablePiles||[]).filter(p=>Number.isInteger(p.slot)&&p.cards[0]?.faceUp).length}// Four Seasons: foundations are 0,6,7,8; their bottom-to-top sequence
+ initialOrderSelect.value=settings.initialOrder;$('quickWashDirection').value=settings.quickWashDirection||'random';$('quickWashRounds').value=settings.quickWashRounds||1;updateStandaloneAvailability();$('dealSkipFirst').value=Number(settings.dealSkipFirst)||0;$('dealSkipSchedule').value=settings.dealSkipSchedule||'';$('cutCountSetting').value=String(settings.cutCount??3);$('reversals').checked=settings.reversals;$('altarToggle').checked=settings.altar;$('quickLabels').textContent=settings.labels?'位置名：ON':'位置名：OFF';syncFrameVisibility();$('quickLabels').setAttribute('aria-pressed',String(settings.labels));$('crossLabelLayer').value=settings.crossLabelLayer==='front'?'front':'behind';syncToolbarSoundButton();$('shuffleMethod').value=settings.shuffleMethod||'overhand';$('visualTheme').value=settings.visualTheme||'classic';$('effectPreset').value=settings.effectPreset||'ritual';$('dealAnimation').value=TabulaDealAnimation.normalize(settings.dealAnimation);applyVisuals();syncRecipes();updateDealRuleSummary();updateStandaloneAvailability()}function applyVisuals(){document.body.dataset.visualTheme=settings.visualTheme||'classic';document.body.dataset.effectPreset=settings.effectPreset||'ritual';const desc={silent:'静かな反転。完成時の追加演出なし。',ritual:'暖かな金色の光。カードが厳かに反転される。',mystic:'青白い光輪。完成後も神秘的な発光を維持。',psychic:'紫の霊光。完成後もカードが明滅し続ける。'};if($('effectDescription'))$('effectDescription').textContent=desc[settings.effectPreset]||desc.ritual;updateCompletionAura()}let __effectTimer=null;function previewVisualEffect(finale=false){const stage=$('stage');stage.classList.remove('effect-demo','effect-finale');void stage.offsetWidth;stage.classList.add(finale?'effect-finale':'effect-demo');clearTimeout(__effectTimer);__effectTimer=setTimeout(()=>stage.classList.remove('effect-demo','effect-finale'),finale?3800:1900)}function coreTargetCount(){if(settings.spread==='free')return state.placed.length;return getSlots().length}function coreFaceUpCount(){if(settings.spread==='free')return state.placed.filter(p=>p.faceUp).length;return state.placed.filter(p=>p.slot!=null&&p.faceUp).length+(state.tablePiles||[]).filter(p=>Number.isInteger(p.slot)&&p.cards[0]?.faceUp).length}// Four Seasons: foundations are 0,6,7,8; their bottom-to-top sequence
 // must be a complete cyclic run in a single suit. Array index zero is top.
 const FOUR_SEASONS_FOUNDATIONS=[0,6,7,8];
 function fourSeasonsFoundationResult(pile){
@@ -3752,7 +3752,7 @@ installPileInteraction(deck,'A');installPileInteraction(deckB,'B');
 window.addEventListener('resize',render);
 // Independent disclosure state; no navigation or form submission on toggle.
 if((Number(settings.dealSkipFirst)||0)||(settings.dealSkipSchedule||'').trim())$('dealRulesDetails').open=true;
-const HELP_CONTENT="\n<p>TABULA SORTIUMは、タロット、プレイングカード、ルノルマンカード、登録した独自デッキなどを仮想の卓上で扱うアプリです。カードを混ぜ、配り、並べ、開くといった操作のほか、スプレッドの作成や占例の記録ができます。PCとスマートフォンに対応しており、使用するデッキや卓の状態によって表示される操作は変わります。</p>\n<h3>卓と周辺の操作</h3>\n<p>使用するデッキと展開法を選び、画面上部の「新しい占いを始める」で山札を用意します。卓上の山札をクリックまたはタップすると札を引き、ドラッグすると任意の場所へ置けます。配置したカードは表裏を切り替えたり、移動・回転したりできます。選択した札の角度はカード操作欄から調整できます。</p>\n<p>卓の操作には「ウォッシュ」「シャッフル」「カット」「ディール」「オープン」があります。ウォッシュは山札を広げて混ぜ、シャッフルは選択した方法や手順で札を混ぜ、カットは山札を分割して積み直します。ディールは選択した展開法に従って札を配り、オープンは配札した伏せ札を開きます。配札の回収や復元、山札への戻し方などは卓上の操作メニューから選択できます。</p>\n<p>「＋ 束を置く」では卓上にカードを重ねるための場所を追加できます。束のカードは移動や回収が可能です。配置された場所に空きが生じた場合は、必要に応じて「空きを詰める」「空きを一括補充」を使用できます。対応する操作は卓上にショートカットを表示することもできます。</p>\n<p>卓の周辺には、スプレッドの選択・確認、配置や配札に関する設定、カードサイズの変更、カード名・ポジション名の表示、配置枠の表示などの操作があります。虫眼鏡ではカードを拡大して確認でき、カード図鑑ではデッキの札を一覧・拡大表示できます。「手帖」ではスプレッドの登録、閲覧、編集を行います。占例の結果表示や記録・比較の機能も利用できます。</p>\n<p>画面上部では卓の切り替え、表示倍率の変更・リセットなどを行います。スマートフォンではピンチ操作による拡大・縮小と、卓面のドラッグによる表示位置の移動にも対応します。卓全体の表示倍率とカード自体の大きさは別々に変更できます。サウンドの切り替えやキャンドルなどの装飾も利用できます。</p>\n<h3>左メニュー</h3>\n<h4>Ⅰ. 卓の管理</h4>\n<p>現在の卓を確認し、卓を追加・切り替えます。追加方法には、独立した山札を持つ卓、メイン卓と山札を共有する卓、二組のデッキを扱うダブルデッキモードがあります。卓ごとの配札や表示設定を保ちながら作業できます。「卓の表示」ではカードとポジション名の重なり順、配置枠の表示を設定します。</p>\n<h4>Ⅱ. 使用するカード</h4>\n<p>使用するデッキを選択し、既存デッキの編集・管理や、新しいデッキの設計を行います。カードの表示では、名称・言語・外観・裏面色などを設定します。対応するデッキでは、数札の図像、上下の目印、カード名称セットなども選べます。カード群では使用する札の範囲、デッキ初期状態では山札の並び方、展開法ではフリースプレッドや各種スプレッドを指定します。正逆位置のランダム使用も設定できます。</p>\n<h4>Ⅲ. カード操作</h4>\n<p>単独ウォッシュの方向と巡回数、シャッフル手順の選択・編集・削除、単独シャッフル方式、カットの分割数を設定します。これらの設定は卓上で行う対応操作に反映されます。</p>\n<h4>Ⅳ. アルター設定</h4>\n<p>卓のビジュアルテーマ、カード操作時の演出プリセット、クロス色、キャンドルの表示を設定します。演出は「演出を試す」で確認できます。</p>\n<h4>Ⅴ. 保存・管理</h4>\n<p>現在の占例のJSON書き出し、全データのJSONバックアップ、外部JSONの読み込みを行います。設定のみの初期化と全データの初期化もここから選べます。作業状態は使用中のブラウザーに自動保存されますが、別の端末とは自動同期されません。大切な設定や記録は定期的にバックアップしてください。</p>\n<p>左メニューの各見出しはクリックまたはタップして開閉できます。項目の種類や選択肢は、デッキ、スプレッド、卓のモードによって異なる場合があります。</p>\n";
+const HELP_CONTENT="\n<p>TABULA SORTIUMは、タロット、プレイングカード、ルノルマンカード、登録した独自デッキなどを仮想の卓上で扱うアプリです。カードを混ぜ、配り、並べ、開くといった操作のほか、スプレッドの作成や占例の記録ができます。PCとスマートフォンに対応しており、使用するデッキや卓の状態によって表示される操作は変わります。</p>\n<h3>卓と周辺の操作</h3>\n<p>使用するデッキと展開法を選び、画面上部の「新しい占いを始める」で山札を用意します。卓上の山札をクリックまたはタップすると札を引き、ドラッグすると任意の場所へ置けます。配置したカードは表裏を切り替えたり、移動・回転したりできます。選択した札の角度はカード操作欄から調整できます。</p>\n<p>卓の操作には「ウォッシュ」「シャッフル」「カット」「ディール」「オープン」があります。ウォッシュは山札を広げて混ぜ、シャッフルは選択した方法や手順で札を混ぜ、カットは山札を分割して積み直します。ディールは選択した展開法に従って札を配り、オープンは配札した伏せ札を開きます。配札の回収や復元、山札への戻し方などは卓上の操作メニューから選択できます。</p>\n<p>「＋ 束を置く」では卓上にカードを重ねるための場所を追加できます。束のカードは移動や回収が可能です。配置された場所に空きが生じた場合は、必要に応じて「空きを詰める」「空きを一括補充」を使用できます。対応する操作は卓上にショートカットを表示することもできます。</p>\n<p>卓の周辺には、スプレッドの選択・確認、配置や配札に関する設定、カードサイズの変更、カード名・位置名の表示、配置枠の表示などの操作があります。虫眼鏡ではカードを拡大して確認でき、カード図鑑ではデッキの札を一覧・拡大表示できます。「手帖」ではスプレッドの登録、閲覧、編集を行います。占例の結果表示や記録・比較の機能も利用できます。</p>\n<p>画面上部では卓の切り替え、表示倍率の変更・リセットなどを行います。スマートフォンではピンチ操作による拡大・縮小と、卓面のドラッグによる表示位置の移動にも対応します。卓全体の表示倍率とカード自体の大きさは別々に変更できます。サウンドの切り替えやキャンドルなどの装飾も利用できます。</p>\n<h3>左メニュー</h3>\n<h4>Ⅰ. 卓の管理</h4>\n<p>現在の卓を確認し、卓を追加・切り替えます。追加方法には、独立した山札を持つ卓、メイン卓と山札を共有する卓、二組のデッキを扱うダブルデッキモードがあります。卓ごとの配札や表示設定を保ちながら作業できます。「卓の表示」ではカードと位置名の重なり順、配置枠の表示を設定します。</p>\n<h4>Ⅱ. 使用するカード</h4>\n<p>使用するデッキを選択し、既存デッキの編集・管理や、新しいデッキの設計を行います。カードの表示では、名称・言語・外観・裏面色などを設定します。対応するデッキでは、数札の図像、上下の目印、カード名称セットなども選べます。カード群では使用する札の範囲、デッキ初期状態では山札の並び方、展開法ではフリースプレッドや各種スプレッドを指定します。正逆位置のランダム使用も設定できます。</p>\n<h4>Ⅲ. カード操作</h4>\n<p>単独ウォッシュの方向と巡回数、シャッフル手順の選択・編集・削除、単独シャッフル方式、カットの分割数を設定します。これらの設定は卓上で行う対応操作に反映されます。</p>\n<h4>Ⅳ. アルター設定</h4>\n<p>卓のビジュアルテーマ、カード操作時の演出プリセット、クロス色、キャンドルの表示を設定します。演出は「演出を試す」で確認できます。</p>\n<h4>Ⅴ. 保存・管理</h4>\n<p>現在の占例のJSON書き出し、全データのJSONバックアップ、外部JSONの読み込みを行います。設定のみの初期化と全データの初期化もここから選べます。作業状態は使用中のブラウザーに自動保存されますが、別の端末とは自動同期されません。大切な設定や記録は定期的にバックアップしてください。</p>\n<p>左メニューの各見出しはクリックまたはタップして開閉できます。項目の種類や選択肢は、デッキ、スプレッド、卓のモードによって異なる場合があります。</p>\n";
 
 $('openHelp').addEventListener('click',()=>{modal('<div class="help-popup-content"><h2>操作説明・仕様</h2>'+HELP_CONTENT+'</div>')});
 
@@ -4271,7 +4271,7 @@ let labelMode='off',galleryHideIdentifiers=true,labelPlacement='below';
 try{labelPlacement=localStorage.getItem('tabula_label_placement')||'below'}catch(e){}
 try{galleryHideIdentifiers=localStorage.getItem('tabula_detail_symbols')!=='show'}catch(e){}
 try{labelMode=localStorage.getItem('tabula_label_mode')||'off'}catch(e){}
-const labelChoices=[['card','カード名'],['position','ポジション名'],['number','番号のみ'],['off','非表示']];
+const labelChoices=[['card','カード名'],['position','番号＋位置名'],['positionPlain','位置名'],['number','番号のみ'],['off','非表示']];
 const labelCycleKey='tabula_label_cycle_v1';
 let labelCycleModes=['card','position','off'];
 try{const saved=JSON.parse(localStorage.getItem(labelCycleKey)||'null');if(Array.isArray(saved)){const valid=labelChoices.map(x=>x[0]).filter(id=>saved.includes(id));if(valid.length)labelCycleModes=valid;}}catch(e){}
@@ -4298,7 +4298,7 @@ for(const [id,name] of labelChoices){
  });
 }
 labelSettings.append(labelSummary,labelHint,labelOptions);
-const placementSelect=document.createElement('select');placementSelect.id='labelPlacement';placementSelect.setAttribute('aria-label','ラベルの位置');placementSelect.innerHTML='<option value="below">カードの下</option><option value="above">カードの上</option>';placementSelect.value=labelPlacement;placementSelect.onchange=()=>{labelPlacement=placementSelect.value;localStorage.setItem('tabula_label_placement',labelPlacement);refreshTableLabels()};
+const placementSelect=document.createElement('select');placementSelect.id='labelPlacement';placementSelect.setAttribute('aria-label','ラベルの位置');placementSelect.innerHTML='<option value="below">カードの下</option><option value="center">カードの中央</option><option value="above">カードの上</option>';placementSelect.value=labelPlacement;placementSelect.onchange=()=>{labelPlacement=placementSelect.value;localStorage.setItem('tabula_label_placement',labelPlacement);refreshTableLabels()};
 const placementLabel=document.createElement('label');placementLabel.className='label-cycle-placement';placementLabel.append(document.createTextNode('位置 '),placementSelect);
 labelSettings.append(placementLabel,labelSelect);
 $('quickLabels').replaceWith(labelSettings);
@@ -4324,33 +4324,38 @@ function setTableLabelMode(mode){
  refreshTableLabels();syncToolbarLabelCycle();
 }
 function refreshTableLabels(){
- const zone=$('zone');zone.querySelectorAll('.slot-num').forEach(e=>e.hidden=!spreadWorkbench);zone.querySelectorAll('.zone-label').forEach(e=>e.remove());if(labelMode==='off'||spreadWorkbench)return;
+ const zone=$('zone');
+ // A shared stacking level applies to all visible label modes, including pile labels.
+ zone.style.setProperty('--table-label-z',settings.crossLabelLayer==='front'?'3000':'1');
+ zone.querySelectorAll('.slot-num').forEach(e=>e.hidden=!spreadWorkbench);zone.querySelectorAll('.zone-label').forEach(e=>e.remove());if(labelMode==='off'||spreadWorkbench)return;
  const slots=getSlots(),m=metrics();
  function add(item,slot,i){
   const t=document.createElement('span');t.className='zone-label unified-label';
   // Free-spread cards have no numbered slots, so display the card name alone.
   // Outside free spread, a + still identifies an auxiliary (unslotted) card.
-  const num=labelMode==='card'?'':item?.slot==null&&item?(settings.spread==='free'?'':'＋'):String(i+1);
+  const positionLabel=labelMode==='position'||labelMode==='positionPlain';
+  const num=labelMode==='card'||(labelMode==='positionPlain'&&slot)?'':item?.slot==null&&item?(settings.spread==='free'?'':'＋'):String(i+1);
   let text=num;
-  if(labelMode==='position'&&slot)text+=' · '+slot.name;
+  if(positionLabel&&slot)text+=(text?' · ':'')+slot.name;
   if(labelMode==='card'&&item?.faceUp){
    const c=workingCard(item.id);
    text+=(text?' · ':'')+(c?tableCardName(c):'カード')+(item.reversed?'〈逆〉':'');
   }
   if(!text)return;
   t.textContent=text;t.title=text;
+  if(positionLabel&&slot){t.dataset.positionName=slot.name;t.dataset.positionNumber=String(i+1);}
   // Card names follow the card; position names remain anchored to the spread.
   const follow=labelMode==='card'&&item;
   const x=follow?item.x:slot?.x??item.x,y=follow?item.y:slot?.y??item.y;
   const angle=follow?cardDisplayRotation(item):Number(slot?.angle)||0,rad=angle*Math.PI/180;
   const halfHeight=(Math.abs(Math.cos(rad))*m.h+Math.abs(Math.sin(rad))*m.w)/2;
   const lift=follow?cardDisplayLiftPx(item):0;
-  t.style.left=x+'%';t.style.top=`calc(${y}% + ${lift+(labelPlacement==='below'?halfHeight+2:-halfHeight-2)}px)`;t.style.setProperty('transform',labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
+  const offset=labelPlacement==='center'?0:labelPlacement==='below'?halfHeight+2:-halfHeight-2;
+  const labelTransform=labelPlacement==='center'?'translate(-50%,-50%)':labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)';
+  t.style.left=x+'%';t.style.top=`calc(${y}% + ${lift+offset}px)`;t.style.setProperty('transform',labelTransform,'important');
   zone.append(t);
-  const zw=zone.offsetWidth,lw=t.getBoundingClientRect().width/tableCamera.scale;
-  // Keep card-name labels centered on their cards, even at the table edges.
-   // Other label modes retain edge protection for narrow screens.
-   if(labelMode!=='card'&&zw&&lw){const center=Math.max(lw/2+3,Math.min(zw-lw/2-3,zw*x/100));t.style.left=center+'px';}
+  // All label modes stay anchored to the same card/position center,
+  // including near the table edges (no position-dependent horizontal clamping).
 
  }
  slots.forEach((slot,i)=>{if((state.tablePiles||[]).some(p=>p.slot===i))return;const item=state.placed.find(p=>p.slot===i);if(labelMode==='card'&&!item?.faceUp)return;add(item,slot,i)});
@@ -4365,19 +4370,19 @@ function refreshTableLabels(){
   const number=slot?String(pile.slot+1):pile.id.replace('pile-','');
   let label='';
   if(labelMode==='number')label=number;
-  else if(labelMode==='position')label=slot?number+' · '+slot.name:role+' '+number;
+  else if(labelMode==='position'||labelMode==='positionPlain')label=slot?(labelMode==='position'?number+' · ':'')+slot.name:labelMode==='position'?role+' '+number:role;
   else if(labelMode==='card'&&first?.faceUp)label=(definition?tableCardName(definition):'カード')+(first.reversed?'〈逆〉':'');
   if(!label)continue;
   const t=document.createElement('span');t.className='zone-label unified-label pile-label';
   t.textContent=label;t.title=label;
+  if(slot&&(labelMode==='position'||labelMode==='positionPlain')){t.dataset.positionName=slot.name;t.dataset.positionNumber=number;}
   const x=pile.x,y=pile.y;
   const halfHeight=m.h/2+5;
   t.style.left=x+'%';
-  t.style.top=`calc(${y}% + ${labelPlacement==='below'?halfHeight:-halfHeight}px)`;
-  t.style.setProperty('transform',labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
+  t.style.top=`calc(${y}% + ${labelPlacement==='center'?0:labelPlacement==='below'?halfHeight:-halfHeight}px)`;
+  t.style.setProperty('transform',labelPlacement==='center'?'translate(-50%,-50%)':labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
   zone.append(t);
-  const width=t.getBoundingClientRect().width/tableCamera.scale,zw=zone.offsetWidth;
-  if(labelMode!=='card'&&zw&&width)t.style.left=Math.max(width/2+3,Math.min(zw-width/2-3,zw*x/100))+'px';
+  // Pile labels use the same unclamped center alignment as card labels.
  }
 }
 function refreshDraggedSlotLabel(){refreshTableLabels()}
@@ -4459,7 +4464,7 @@ function openTableCard(index){
  const p=state.placed[index];if(!p)return;if(!p.faceUp){setStatus('表向きのカードを選ぶと拡大できます。');return}
  const c=workingCard(p.id);if(!c)return;
  const position=p.slot!=null?getSlots()[p.slot]:null;
- modal('<h2>'+escapeHTML(c.name)+(p.reversed?'〈逆位置〉':'〈正位置〉')+'</h2>'+(position?'<section class="table-reading-context" aria-label="ポジションの意味"><strong>'+escapeHTML(String(p.slot+1)+'. '+position.name)+'</strong>'+(position.detail?'<p>'+escapeHTML(position.detail)+'</p>':'')+'</section>':'')+'<div class="table-card-view detail-body"><div id="tableCardArtFrame"><img id="tableCardLarge" alt="'+escapeHTML(c.name)+'"></div><aside class="detail-copy" id="tableCardText" hidden></aside></div><div class="table-card-footer"><div class="row"><button type="button" id="tableCardPrev">前の札</button><button type="button" id="tableCardNext">次の札</button></div></div>');
+ modal('<h2>'+escapeHTML(c.name)+(p.reversed?'〈逆位置〉':'〈正位置〉')+'</h2>'+(position?'<section class="table-reading-context" aria-label="位置の意味"><strong>'+escapeHTML(String(p.slot+1)+'. '+position.name)+'</strong>'+(position.detail?'<p>'+escapeHTML(position.detail)+'</p>':'')+'</section>':'')+'<div class="table-card-view detail-body"><div id="tableCardArtFrame"><img id="tableCardLarge" alt="'+escapeHTML(c.name)+'"></div><aside class="detail-copy" id="tableCardText" hidden></aside></div><div class="table-card-footer"><div class="row"><button type="button" id="tableCardPrev">前の札</button><button type="button" id="tableCardNext">次の札</button></div></div>');
  $('modalBg').classList.add('card-viewer-active');$('modalClose').focus();
  const update=()=>{
   const appearance=appearanceForCard(p);

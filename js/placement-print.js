@@ -28,7 +28,9 @@ function printable(){
  const sx=zw/zr.width,sy=zh/zr.height;
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
  svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
- // Outlines first, then labels, matching TABULA's separate label layer.
+ // Draw order matches the tabletop's card/label layering preference.
+ const labelLayer=$('crossLabelLayer')?.value==='front'?'front':'behind';
+ svg.setAttribute('data-label-layer',labelLayer);
  const cardAnchors=[];
  for(const node of nodes){
   const idx=Number(node.dataset.index),item=live.cards[idx];
@@ -45,6 +47,7 @@ function printable(){
  }
  // Render only the card-name labels actually shown on the table, in their
  // real positions, including any intentional overlaps in the Celtic cross.
+ const labelNodes=[];
  for(const node of zone.querySelectorAll(':scope > .zone-label.unified-label')){
   if(!node.textContent.trim()||getComputedStyle(node).display==='none')continue;
   const rect=node.getBoundingClientRect();
@@ -55,12 +58,17 @@ function printable(){
   const x=toX(rect.left+rect.width/2);
   const y=toY(rect.top)+font*0.87;
   const label=element('text',{x,y,'text-anchor':'middle','font-family':style.fontFamily||'sans-serif','font-size':font,fill:'#111'},node.textContent.trim());
+  if(node.dataset.positionName&&node.dataset.positionNumber){label.setAttribute('data-position-name',node.dataset.positionName);label.setAttribute('data-position-number',node.dataset.positionNumber);}
   // Pair each label with the nearest unused card's expected below-card anchor.
   // Keep text horizontal by default, but retain the angle for editor controls.
   const match=cardAnchors.filter(a=>!a.used).sort((a,b)=>Math.hypot(a.x-x,a.y-(y-font))-Math.hypot(b.x-x,b.y-(y-font)))[0];
   if(match){match.used=true;label.setAttribute('data-card-angle',String(match.angle));}
-  svg.append(label);
+  labelNodes.push(label);
  }
+ if(labelLayer==='behind'){
+  const firstCard=[...svg.children].find(el=>el.localName==='g');
+  for(const label of labelNodes)svg.insertBefore(label,firstCard||null);
+ }else for(const label of labelNodes)svg.append(label);
  return svg;
 }
 function download(svg){
@@ -84,7 +92,7 @@ function print(svg){
 let draft=null;
 const cardAttrs=['transform'];
 const rectAttrs=['x','y','width','height','rx','fill','stroke','stroke-width','stroke-dasharray'];
-const labelAttrs=['x','y','text-anchor','font-family','font-size','fill','transform','data-label-angle','data-card-angle'];
+const labelAttrs=['x','y','text-anchor','font-family','font-size','fill','transform','data-label-angle','data-card-angle','data-position-name','data-position-number'];
 function attrsOf(node,allowed){return Object.fromEntries(allowed.filter(k=>node.hasAttribute(k)).map(k=>[k,node.getAttribute(k)]));}
 function cleanAttrs(node,attrs,allowed){
  if(!attrs||typeof attrs!=='object'||Array.isArray(attrs))throw Error('図形データが不正です。');
@@ -102,13 +110,15 @@ function normalizedBackgroundColor(value){
 function documentFromSvg(svg,transparent=false,dpi=300){
  const cards=[...svg.children].filter(el=>el.localName==='g'&&!el.hasAttribute('data-editor-overlay')&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
- return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,backgroundColor:normalizedBackgroundColor(svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff'),
+ return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,labelLayer:svg.getAttribute('data-label-layer')==='behind'?'behind':'front',backgroundColor:normalizedBackgroundColor(svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff'),
   cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
   labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
 }
 function svgFromDocument(doc){
  if(!doc||doc.format!=='tabula-placement-diagram'||doc.version!==2||!Array.isArray(doc.cards)||!Array.isArray(doc.labels)||doc.cards.length>500||doc.labels.length>500||doc.cards.length+doc.labels.length===0)throw Error('対応していない配置図データです。');
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
+ const labelLayer=doc.labelLayer==='behind'?'behind':'front';
+ svg.setAttribute('data-label-layer',labelLayer);
  const backgroundColor=normalizedBackgroundColor(doc.backgroundColor??'#ffffff');
  svg.append(element('rect',{width:210,height:297,fill:backgroundColor}));
  for(const data of doc.cards){
@@ -120,6 +130,10 @@ function svgFromDocument(doc){
  for(const data of doc.labels){
   if(typeof data.text!=='string'||data.text.length>2000)throw Error('ラベルが不正です。');
   const label=element('text');cleanAttrs(label,data.attrs,labelAttrs);label.textContent=data.text;svg.append(label);
+ }
+ if(labelLayer==='behind'){
+  const firstCard=[...svg.children].find(el=>el.localName==='g');
+  for(const label of [...svg.children].filter(el=>el.localName==='text'))svg.insertBefore(label,firstCard||null);
  }
  return svg;
 }
@@ -143,7 +157,7 @@ function editor(source,options={}){
  const svg=source.cloneNode(true),root=document.createElement('div');
  root.id='tabulaPrintEditor';root.tabIndex=-1;
  const css=document.createElement('style');
- css.textContent='#tabulaPrintEditor{position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;background:#211d19;color:#e9deca;font:13px Georgia,"Yu Mincho",serif}#tabulaPrintEditor *{box-sizing:border-box}#tabulaPrintEditor button,#tabulaPrintEditor input,#tabulaPrintEditor select{font:inherit;border:1px solid #827357;border-radius:4px;background:#302f29;color:#f3e8d3;padding:6px 9px;min-height:32px}#tabulaPrintEditor button{cursor:pointer}#tabulaPrintEditor button:hover{background:#4b4b3d}#tabulaPrintEditor button:disabled{opacity:.4;cursor:default}#tabulaPrintEditor .tp-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 15px;background:#242823;border-bottom:1px solid #806e4d}#tabulaPrintEditor .tp-head strong{font-size:17px;letter-spacing:.09em;color:#e8d09c;margin-right:12px}#tabulaPrintEditor .tp-spacer{flex:1}#tabulaPrintEditor .tp-head .tp-export{border-color:#c3a46a;color:#ffebbf}#tabulaPrintEditor .tp-intro{margin:0;padding:8px 15px;background:#242823;border-bottom:1px solid #514c3d;color:#d2c8b6;font:12px/1.6 sans-serif}#tabulaPrintEditor .tp-main{display:flex;flex:1;min-height:0}#tabulaPrintEditor .tp-work{flex:1;min-width:0;overflow:auto;padding:22px;background:radial-gradient(ellipse,#393027,#211b17)}#tabulaPrintEditor .tp-sheet{width:650px;margin:0 auto}#tabulaPrintEditor .tp-sheet svg{display:block;width:100%;height:auto;background:white;box-shadow:0 8px 30px #0009;touch-action:none;user-select:none}#tabulaPrintEditor .tp-side{width:275px;flex:none;overflow:auto;padding:16px;background:#242823;border-left:1px solid #655743}#tabulaPrintEditor .tp-section{border-bottom:1px solid #514c3d;padding-bottom:15px;margin-bottom:16px}#tabulaPrintEditor .tp-section h3{font-size:13px;font-weight:normal;letter-spacing:.1em;color:#e1c58d;margin:0 0 12px}#tabulaPrintEditor .tp-field{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}#tabulaPrintEditor .tp-field label{font:12px sans-serif;color:#d2c8b6}#tabulaPrintEditor .tp-field input,#tabulaPrintEditor .tp-field select{width:127px;min-width:0}#tabulaPrintEditor .tp-field input[type=checkbox]{width:auto;min-height:0;accent-color:#c3a46a}#tabulaPrintEditor .tp-actions{display:flex;gap:6px;flex-wrap:wrap}#tabulaPrintEditor .tp-note{color:#bcb19d;font:12px/1.6 sans-serif}#tabulaPrintEditor .tp-status{padding:7px 14px;background:#242823;border-top:1px solid #655743;color:#cbbd9e;font:12px sans-serif}#tabulaPrintEditor .tp-selected{stroke:#447dbb!important;stroke-width:.55!important;stroke-dasharray:2 1}#tabulaPrintEditor .tp-head select{max-width:120px}@media(max-width:760px){#tabulaPrintEditor .tp-main{flex-direction:column}#tabulaPrintEditor .tp-side{width:100%;max-height:42%;border-left:0;border-top:1px solid #655743}#tabulaPrintEditor .tp-work{padding:12px}}';
+ css.textContent='#tabulaPrintEditor{position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;background:#211d19;color:#e9deca;font:13px Georgia,"Yu Mincho",serif}#tabulaPrintEditor *{box-sizing:border-box}#tabulaPrintEditor button,#tabulaPrintEditor input,#tabulaPrintEditor select{font:inherit;border:1px solid #827357;border-radius:4px;background:#302f29;color:#f3e8d3;padding:6px 9px;min-height:32px}#tabulaPrintEditor button{cursor:pointer}#tabulaPrintEditor button:hover{background:#4b4b3d}#tabulaPrintEditor button:disabled{opacity:.4;cursor:default}#tabulaPrintEditor .tp-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 15px;background:#242823;border-bottom:1px solid #806e4d}#tabulaPrintEditor .tp-head strong{font-size:17px;letter-spacing:.09em;color:#e8d09c;margin-right:12px}#tabulaPrintEditor .tp-spacer{flex:1}#tabulaPrintEditor .tp-head .tp-export{border-color:#c3a46a;color:#ffebbf}#tabulaPrintEditor .tp-intro{margin:0;padding:8px 15px;background:#242823;border-bottom:1px solid #514c3d;color:#d2c8b6;font:12px/1.6 sans-serif}#tabulaPrintEditor .tp-main{display:flex;flex:1;min-height:0}#tabulaPrintEditor .tp-work{flex:1;min-width:0;overflow:auto;padding:22px;background:radial-gradient(ellipse,#393027,#211b17)}#tabulaPrintEditor .tp-sheet{width:min(650px,100%);margin:0 auto}#tabulaPrintEditor .tp-sheet svg{display:block;width:100%;height:auto;background:white;box-shadow:0 8px 30px #0009;touch-action:none;user-select:none}#tabulaPrintEditor .tp-side{width:275px;flex:none;overflow:auto;padding:16px;background:#242823;border-left:1px solid #655743}#tabulaPrintEditor .tp-section{border-bottom:1px solid #514c3d;padding-bottom:15px;margin-bottom:16px}#tabulaPrintEditor .tp-section h3{font-size:13px;font-weight:normal;letter-spacing:.1em;color:#e1c58d;margin:0 0 12px}#tabulaPrintEditor .tp-field{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}#tabulaPrintEditor .tp-field label{font:12px sans-serif;color:#d2c8b6}#tabulaPrintEditor .tp-field input,#tabulaPrintEditor .tp-field select{width:127px;min-width:0}#tabulaPrintEditor .tp-field input[type=checkbox]{width:auto;min-height:0;accent-color:#c3a46a}#tabulaPrintEditor .tp-actions{display:flex;gap:6px;flex-wrap:wrap}#tabulaPrintEditor .tp-note{color:#bcb19d;font:12px/1.6 sans-serif}#tabulaPrintEditor .tp-status{padding:7px 14px;background:#242823;border-top:1px solid #655743;color:#cbbd9e;font:12px sans-serif}#tabulaPrintEditor .tp-selected{stroke:#447dbb!important;stroke-width:.55!important;stroke-dasharray:2 1}#tabulaPrintEditor .tp-head select{max-width:120px}@media(max-width:760px){#tabulaPrintEditor{overflow-y:auto;overflow-x:hidden}#tabulaPrintEditor .tp-head{gap:6px;padding:8px 10px}#tabulaPrintEditor .tp-head strong{flex:1 1 100%;margin-right:0}#tabulaPrintEditor .tp-intro{padding:7px 10px}#tabulaPrintEditor .tp-main{flex:none;flex-direction:column;min-height:0;overflow:visible}#tabulaPrintEditor .tp-work{flex:none;min-height:0;height:auto;padding:12px;overflow:visible}#tabulaPrintEditor .tp-work.tp-zoomed{max-height:70vh;max-height:70dvh;overflow:auto;overscroll-behavior:contain}#tabulaPrintEditor .tp-sheet{width:min(650px,100%)}#tabulaPrintEditor .tp-side{width:100%;max-height:none;overflow:visible;border-left:0;border-top:1px solid #655743}#tabulaPrintEditor .tp-status{flex:none}}';
  root.append(css);
  const make=(tag,parent,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;if(parent)parent.append(el);return el;};
  const button=(parent,label,fn,cls)=>{const el=make('button',parent,label,cls);el.type='button';el.onclick=fn;return el;};
@@ -164,7 +178,7 @@ function editor(source,options={}){
  fileInput.onchange=async()=>{const file=fileInput.files?.[0];fileInput.value='';if(file)await loadProject(file);};
  button(head,'閉じる',()=>closeEditor());
  const intro=make('p',root,'卓上のカード配置をもとに、カードの枠線とラベルの位置・書式・色などを編集し、配置図として保存・印刷できます。','tp-intro');
- const main=make('div',root,undefined,'tp-main'),work=make('div',main,undefined,'tp-work'),sheet=make('div',work,undefined,'tp-sheet'),side=make('aside',main,undefined,'tp-side'),status=make('div',root,undefined,'tp-status');
+ const main=make('div',root,undefined,'tp-main'),work=make('div',main,undefined,'tp-work'),sheet=make('div',work,undefined,'tp-sheet'),side=make('div',main,undefined,'tp-side'),status=make('div',root,undefined,'tp-status');
  sheet.append(svg);document.body.append(root);
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
@@ -251,12 +265,34 @@ function editor(source,options={}){
   picker.onchange=()=>apply(picker.value);input.onchange=()=>apply(input.value);
  }
  function check(parent,label,value,fn){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('input',row);input.type='checkbox';input.checked=value;input.onchange=()=>{fn(input.checked);};}
+ function positionLabelText(el,numbered){const name=el.getAttribute('data-position-name'),number=el.getAttribute('data-position-number');return name&&number?(numbered?number+' · ':'')+name:null;}
+ function positionLabels(){return labels.filter(el=>positionLabelText(el,false)!==null);}
+ function applyZoom(){
+  const mobile=window.matchMedia('(max-width:760px)').matches;
+  work.classList.toggle('tp-zoomed',mobile&&zoom>100);
+  if(zoom===100){
+   // CSS percentage sizing avoids stale measurements during mobile layout.
+   sheet.style.width='min(650px,100%)';
+  }else{
+   const padding=mobile?24:44;
+   const base=Math.min(650,Math.max(1,work.clientWidth-padding));
+   sheet.style.width=base*zoom/100+'px';
+  }
+  sheet.style.margin=zoom>100?'0':'0 auto';
+ }
  function properties(){
   side.replaceChildren();
   const view=section('表示');
-  selectField(view,'倍率',[[100,'100%'],[150,'150%'],[200,'200%'],[400,'400%']],zoom,v=>{zoom=Number(v);sheet.style.width=650*zoom/100+'px';sheet.style.margin=zoom>100?'0':'0 auto';});
+  selectField(view,'倍率',[[100,'100%'],[150,'150%'],[200,'200%'],[400,'400%']],zoom,v=>{zoom=Number(v);applyZoom();});
   check(view,'5mmグリッド',showGrid,v=>{showGrid=v;grid.style.display=v?'':'none';});
    colorField(view,'背景色',bg.getAttribute('fill')||'#ffffff',v=>bg.setAttribute('fill',v));
+   if(positionLabels().length){
+    const first=positionLabels()[0];
+    selectField(view,'位置番号', [['with','表示する'],['without','表示しない']],first.textContent===positionLabelText(first,false)?'without':'with',v=>{
+     const numbered=v==='with';if(positionLabels().every(el=>el.textContent===positionLabelText(el,numbered)))return;
+     remember();positionLabels().forEach(el=>{el.textContent=positionLabelText(el,numbered);});
+    });
+   }
   if(!selection.size)make('p',side,'カード枠またはラベルをクリックすると、ここに編集項目が表示されます。','tp-note');
   else{
    const same=[...selection].every(el=>type(el)===type(active)),s=section(selection.size>1?selection.size+'件を編集':type(active)==='card'?'カード枠':'ラベル');
@@ -266,7 +302,7 @@ function editor(source,options={}){
    field(s,'Y (mm)',p.y.toFixed(2),v=>{const d=Number(v)-p.y;if(Number.isFinite(d))selection.forEach(el=>{const q=coords(el);setPosition(el,q.x,q.y+d);});});
    field(s,'角度 (°)',angle(active),v=>{if(Number.isFinite(Number(v)))selection.forEach(el=>setAngle(el,Number(v)));});
    if(same&&type(active)==='label'){
-    if(selection.size===1)field(s,'文字',active.textContent,v=>{active.textContent=v;},'text');
+    if(selection.size===1)field(s,'文字',active.textContent,v=>{active.textContent=v;active.removeAttribute('data-position-name');active.removeAttribute('data-position-number');},'text');
     field(s,'文字サイズ (mm)',active.getAttribute('font-size'),v=>{if(Number(v)>0)selection.forEach(el=>el.setAttribute('font-size',v));});
     selectField(s,'書体',[['serif','明朝体'],['sans-serif','ゴシック体'],['monospace','等幅']],active.getAttribute('font-family')||'serif',v=>{remember();selection.forEach(el=>el.setAttribute('font-family',v));});
     colorField(s,'文字色',active.getAttribute('fill')||'#111111',v=>selection.forEach(el=>el.setAttribute('fill',v)));
@@ -376,6 +412,13 @@ function editor(source,options={}){
  });
  svg.addEventListener('pointercancel',()=>{boxDrag=null;marquee.style.display='none';});
  if(initialDocument){transparent=!!initialDocument.transparent;dpi=[150,300,600].includes(initialDocument.dpi)?initialDocument.dpi:300;}
+ applyZoom();
+ // Refit after the mobile viewport settles and when the editor width changes.
+ const onResize=()=>{if(root.isConnected)applyZoom();else window.removeEventListener('resize',onResize);};
+ window.addEventListener('resize',onResize);
+ const resizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{if(root.isConnected)applyZoom();else resizeObserver.disconnect();}):null;
+ resizeObserver?.observe(work);
+ requestAnimationFrame(()=>{if(root.isConnected)applyZoom();});
  markSaved();root.focus();refresh();
 }
 function install(){
