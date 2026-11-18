@@ -300,7 +300,7 @@ const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.
    Mutable preference maps are recreated for every use, never shared by reference. */
 const DEFAULT_SETTINGS=Object.freeze({
  deckId:'builtin',cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',
- spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'behind',
+ spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'front',
  sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',
  dealAnimation:'standard',openMode:'normal',framesVisible:false,
  initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,
