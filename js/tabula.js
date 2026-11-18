@@ -4348,7 +4348,9 @@ function refreshTableLabels(){
   t.style.left=x+'%';t.style.top=`calc(${y}% + ${lift+(labelPlacement==='below'?halfHeight+2:-halfHeight-2)}px)`;t.style.setProperty('transform',labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
   zone.append(t);
   const zw=zone.offsetWidth,lw=t.getBoundingClientRect().width/tableCamera.scale;
-  if(zw&&lw){const center=Math.max(lw/2+3,Math.min(zw-lw/2-3,zw*x/100));t.style.left=center+'px';}
+  // Keep card-name labels centered on their cards, even at the table edges.
+   // Other label modes retain edge protection for narrow screens.
+   if(labelMode!=='card'&&zw&&lw){const center=Math.max(lw/2+3,Math.min(zw-lw/2-3,zw*x/100));t.style.left=center+'px';}
 
  }
  slots.forEach((slot,i)=>{if((state.tablePiles||[]).some(p=>p.slot===i))return;const item=state.placed.find(p=>p.slot===i);if(labelMode==='card'&&!item?.faceUp)return;add(item,slot,i)});
@@ -4375,7 +4377,7 @@ function refreshTableLabels(){
   t.style.setProperty('transform',labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
   zone.append(t);
   const width=t.getBoundingClientRect().width/tableCamera.scale,zw=zone.offsetWidth;
-  if(zw&&width)t.style.left=Math.max(width/2+3,Math.min(zw-width/2-3,zw*x/100))+'px';
+  if(labelMode!=='card'&&zw&&width)t.style.left=Math.max(width/2+3,Math.min(zw-width/2-3,zw*x/100))+'px';
  }
 }
 function refreshDraggedSlotLabel(){refreshTableLabels()}
@@ -5526,6 +5528,14 @@ $('dualNew').onclick=()=>{
 };
 dualRefreshControls();
 
+// Read-only bridge for print exports: use the current workspace and the same
+// label resolution as TABULA's visible tabletop, without parsing card artwork.
+globalThis.TabulaPlacementPrintData=()=>({
+ cards:state.placed.map(item=>({
+  ...item,
+  label:tableCardName(workingCard(item.id)||{id:item.id,name:item.id})
+ }))
+});
 installTableActionSettings();
 function positionDualDock(){
  const bar=$('dualModeBar'),toolbar=document.querySelector('.main>.toolbar'),stageShell=document.querySelector('.main>.stage-shell');

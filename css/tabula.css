@@ -105,6 +105,7 @@ aside .section.is-collapsed .fold-indicator{transform:rotate(-90deg)}
 @media(max-width:360px){.table-shortcuts{gap:3px;padding:7px 4px}.table-shortcuts button{font-size:9px}}
 
 .table-record-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:9px 12px 12px;background:#1b2421;border-bottom:1px solid #514b3a}
+.table-record-actions:has(#printPlacement){grid-template-columns:repeat(3,minmax(0,1fr))}
 .table-record-actions button{min-width:0;min-height:41px;background:#282f29;border-color:#9c8157;color:#f3e4c9;font-size:13px}
 .record-restore{display:flex;justify-content:flex-end;margin:9px 0 16px}
 .record-restore button{width:100%;max-width:300px}
