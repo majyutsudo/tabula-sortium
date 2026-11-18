@@ -95,6 +95,8 @@ function editor(source){
  overlay.append(gridDefs,element('rect',{width:210,height:297,fill:'url(#tabula-print-grid)'}));
  overlay.style.display='none';svg.append(overlay);
  let selected=null,drag=null;
+ const selectedTexts=new Set();
+ const selectedTargets=()=>[...selectedTexts];
  const control=(tag,label)=>{const e=document.createElement(tag);e.title=label;e.setAttribute('aria-label',label);e.style.cssText='padding:5px 8px;min-height:30px;color:#111;background:#fff;border:1px solid #aaa;border-radius:4px';toolbar.append(e);return e;};
  const heading=document.createElement('strong');heading.textContent='配置図エディター';toolbar.append(heading);
  const zoom=control('select','表示倍率');for(const n of [100,150,200,400]){const o=document.createElement('option');o.value=n;o.textContent=n+'%';zoom.append(o)}
@@ -129,31 +131,47 @@ function editor(source){
   copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');
   return copy;
  }
- function choose(t){
-  if(selected)selected.removeAttribute('text-decoration');
-  selected=t;
-  if(!t){value.value='';size.value='';angle.value='';return;}
-  t.setAttribute('text-decoration','underline');
-  value.value=t.textContent;size.value=Number(t.getAttribute('font-size')||3).toFixed(1);angle.value=String(angleOf(t));
-  family.value=t.getAttribute('font-family')==='sans-serif'?'sans-serif':t.getAttribute('font-family')==='monospace'?'monospace':'serif';
+ function choose(t,add=false){
+  if(!add)selectedTexts.clear();
+  if(t){
+   if(add&&selectedTexts.has(t))selectedTexts.delete(t);
+   else selectedTexts.add(t);
+  }
+  selected=t&&selectedTexts.has(t)?t:(selectedTargets().at(-1)||null);
+  texts.forEach(node=>{
+   if(selectedTexts.has(node))node.setAttribute('text-decoration','underline');
+   else node.removeAttribute('text-decoration');
+  });
+  if(!selected){value.value='';size.value='';angle.value='';return;}
+  value.value=selectedTexts.size>1?'':selected.textContent;
+  value.placeholder=selectedTexts.size>1?selectedTexts.size+'件選択中（文字編集は個別）':'ラベルの文字';
+  size.value=Number(selected.getAttribute('font-size')||3).toFixed(1);
+  angle.value=String(angleOf(selected));
+  family.value=selected.getAttribute('font-family')==='sans-serif'?'sans-serif':selected.getAttribute('font-family')==='monospace'?'monospace':'serif';
  }
  texts.forEach(t=>{t.style.cursor='move';t.addEventListener('pointerdown',e=>{
-  e.preventDefault();choose(t);const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+  e.preventDefault();choose(t,e.shiftKey);
+  if(!selectedTexts.has(t)){drag=null;return;}
+  const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
   const matrix=svg.getScreenCTM();if(!matrix)return;const p=pt.matrixTransform(matrix.inverse());
-  drag={t,startX:p.x,startY:p.y,x:Number(t.getAttribute('x')),y:Number(t.getAttribute('y'))};
+  drag={t,startX:p.x,startY:p.y,items:selectedTargets().map(node=>({node,x:Number(node.getAttribute('x')),y:Number(node.getAttribute('y'))}))};
   t.setPointerCapture(e.pointerId);
   root.focus({preventScroll:true});
  });t.addEventListener('pointermove',e=>{
   if(!drag||drag.t!==t)return;
   const matrix=svg.getScreenCTM();if(!matrix)return;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(matrix.inverse());
-  t.setAttribute('x',drag.x+p.x-drag.startX);t.setAttribute('y',drag.y+p.y-drag.startY);syncAngle(t);
+  for(const item of drag.items){
+   item.node.setAttribute('x',item.x+p.x-drag.startX);
+   item.node.setAttribute('y',item.y+p.y-drag.startY);
+   syncAngle(item.node);
+  }
  });t.addEventListener('pointerup',()=>drag=null);t.addEventListener('pointercancel',()=>drag=null);});
- size.oninput=()=>{if(selected&&Number(size.value)>0)selected.setAttribute('font-size',size.value)};
- family.onchange=()=>{if(selected)selected.setAttribute('font-family',family.value)};
- value.oninput=()=>{if(selected)selected.textContent=value.value};
- angle.oninput=()=>{if(selected&&angle.value!=='')setAngle(selected,Number(angle.value))};
- alignCard.onclick=()=>{if(selected){setAngle(selected,Number(selected.getAttribute('data-card-angle')||0));angle.value=String(angleOf(selected))}};
- horizontal.onclick=()=>{if(selected){setAngle(selected,0);angle.value='0'}};
+ size.oninput=()=>{if(Number(size.value)>0)for(const t of selectedTargets())t.setAttribute('font-size',size.value)};
+ family.onchange=()=>{for(const t of selectedTargets())t.setAttribute('font-family',family.value)};
+ value.oninput=()=>{if(selectedTexts.size===1&&selected)selected.textContent=value.value};
+ angle.oninput=()=>{if(angle.value!=='')for(const t of selectedTargets())setAngle(t,Number(angle.value))};
+ alignCard.onclick=()=>{for(const t of selectedTargets())setAngle(t,Number(t.getAttribute('data-card-angle')||0));if(selected)angle.value=String(angleOf(selected))};
+ horizontal.onclick=()=>{for(const t of selectedTargets())setAngle(t,0);if(selected)angle.value='0'};
  all.onclick=()=>{const n=Number(size.value);for(const t of texts){if(n>0)t.setAttribute('font-size',n);t.setAttribute('font-family',family.value)}};
  reset.onclick=()=>{if(!confirm('編集を初期状態に戻しますか？'))return;const orig=[...original.querySelectorAll('text')];texts.forEach((t,i)=>{const o=orig[i];if(!o)return;for(const attr of ['x','y','font-size','font-family'])t.setAttribute(attr,o.getAttribute(attr));t.textContent=o.textContent;setAngle(t,0)});choose(null)};
  svgButton.onclick=()=>download(exportSvg());
@@ -182,8 +200,10 @@ function editor(source){
   e.preventDefault();const step=e.altKey?0.1:e.shiftKey?2:0.5;
   const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;
   const dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
-  selected.setAttribute('x',Number(selected.getAttribute('x'))+dx);
-  selected.setAttribute('y',Number(selected.getAttribute('y'))+dy);syncAngle(selected);
+  for(const t of selectedTargets()){
+   t.setAttribute('x',Number(t.getAttribute('x'))+dx);
+   t.setAttribute('y',Number(t.getAttribute('y'))+dy);syncAngle(t);
+  }
  });
  root.tabIndex=-1;root.focus();
 }
