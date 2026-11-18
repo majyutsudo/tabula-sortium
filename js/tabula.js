@@ -4327,7 +4327,10 @@ function setTableLabelMode(mode){
  refreshTableLabels();syncToolbarLabelCycle();
 }
 function refreshTableLabels(){
- const zone=$('zone');zone.querySelectorAll('.slot-num').forEach(e=>e.hidden=!spreadWorkbench);zone.querySelectorAll('.zone-label').forEach(e=>e.remove());if(labelMode==='off'||spreadWorkbench)return;
+ const zone=$('zone');
+ // A shared stacking level applies to all visible label modes, including pile labels.
+ zone.style.setProperty('--table-label-z',settings.crossLabelLayer==='front'?'3000':'1');
+ zone.querySelectorAll('.slot-num').forEach(e=>e.hidden=!spreadWorkbench);zone.querySelectorAll('.zone-label').forEach(e=>e.remove());if(labelMode==='off'||spreadWorkbench)return;
  const slots=getSlots(),m=metrics();
  function add(item,slot,i){
   const t=document.createElement('span');t.className='zone-label unified-label';
