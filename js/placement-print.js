@@ -93,18 +93,23 @@ function cleanAttrs(node,attrs,allowed){
   node.setAttribute(k,v);
  }
 }
+function normalizedBackgroundColor(value){
+ if(typeof value!=='string')throw Error('背景色が不正です。');
+ if(/^#[0-9a-fA-F]{3}$/.test(value))return '#'+[...value.slice(1)].map(c=>c+c).join('').toLowerCase();
+ if(/^#[0-9a-fA-F]{6}$/.test(value))return value.toLowerCase();
+ throw Error('背景色が不正です。');
+}
 function documentFromSvg(svg,transparent=false,dpi=300){
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
- return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,backgroundColor:svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff',
+ return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,backgroundColor:normalizedBackgroundColor(svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff'),
   cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
   labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
 }
 function svgFromDocument(doc){
  if(!doc||doc.format!=='tabula-placement-diagram'||doc.version!==2||!Array.isArray(doc.cards)||!Array.isArray(doc.labels)||doc.cards.length>500||doc.labels.length>500||doc.cards.length+doc.labels.length===0)throw Error('対応していない配置図データです。');
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
- const backgroundColor=doc.backgroundColor??'#ffffff';
- if(typeof backgroundColor!=='string'||!/^#[0-9a-fA-F]{6}$/.test(backgroundColor))throw Error('背景色が不正です。');
+ const backgroundColor=normalizedBackgroundColor(doc.backgroundColor??'#ffffff');
  svg.append(element('rect',{width:210,height:297,fill:backgroundColor}));
  for(const data of doc.cards){
   const g=element('g');cleanAttrs(g,data.attrs,cardAttrs);
@@ -164,7 +169,7 @@ function editor(source,options={}){
  const labels=[...svg.children].filter(el=>el.localName==='text');
  const elements=[...cards,...labels],selection=new Set();
  const bg=svg.querySelector(':scope > rect');
- const initialBackground=bg.getAttribute('fill')||'#ffffff';
+ const initialBackground=normalizedBackgroundColor(bg.getAttribute('fill')||'#ffffff');
  const grid=element('g',{'data-editor-overlay':'grid','pointer-events':'none'}),defs=element('defs'),pattern=element('pattern',{id:'tp-print-grid',width:5,height:5,patternUnits:'userSpaceOnUse'});
  pattern.append(element('path',{d:'M5 0H0V5',stroke:'#9fb1c7','stroke-width':.12,fill:'none'}));defs.append(pattern);grid.append(defs,element('rect',{width:210,height:297,fill:'url(#tp-print-grid)'}));grid.style.display='none';svg.append(grid);
  let active=null,drag=null,history=[],future=[],zoom=100,showGrid=false,transparent=false,dpi=300,linkLabels=false;
