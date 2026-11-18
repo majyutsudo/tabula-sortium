@@ -96,14 +96,16 @@ function cleanAttrs(node,attrs,allowed){
 function documentFromSvg(svg,transparent=false,dpi=300){
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
- return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,
+ return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,backgroundColor:svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff',
   cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
   labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
 }
 function svgFromDocument(doc){
  if(!doc||doc.format!=='tabula-placement-diagram'||doc.version!==2||!Array.isArray(doc.cards)||!Array.isArray(doc.labels)||doc.cards.length>500||doc.labels.length>500||doc.cards.length+doc.labels.length===0)throw Error('対応していない配置図データです。');
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
- svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
+ const backgroundColor=doc.backgroundColor??'#ffffff';
+ if(typeof backgroundColor!=='string'||!/^#[0-9a-fA-F]{6}$/.test(backgroundColor))throw Error('背景色が不正です。');
+ svg.append(element('rect',{width:210,height:297,fill:backgroundColor}));
  for(const data of doc.cards){
   const g=element('g');cleanAttrs(g,data.attrs,cardAttrs);
   const rect=element('rect');cleanAttrs(rect,data.rect,rectAttrs);
@@ -146,7 +148,7 @@ function editor(source,options={}){
  const mode=make('select',head);
  [['all','すべて'],['card','カード枠'],['label','ラベル']].forEach(pair=>{const opt=make('option',mode,pair[1]);opt.value=pair[0];});
  const undoBtn=button(head,'↶ 元に戻す',undo),redoBtn=button(head,'↷ やり直す',redo);
- button(head,'初期配置に戻す',()=>{if(!confirm('カード枠とラベルの編集をすべて破棄し、最初の配置に戻します。よろしいですか？'))return;restore(initial);history=[];future=[];refresh();});
+ button(head,'初期配置に戻す',()=>{if(!confirm('カード枠・ラベル・背景色の編集をすべて破棄し、最初の配置に戻します。よろしいですか？'))return;restore(initial);bg.setAttribute('fill',initialBackground);history=[];future=[];refresh();});
  make('span',head,undefined,'tp-spacer');
  button(head,'SVG保存',()=>download(exportSvg()),'tp-export');
  button(head,'PNG保存',()=>savePng(),'tp-export');
@@ -162,6 +164,7 @@ function editor(source,options={}){
  const labels=[...svg.children].filter(el=>el.localName==='text');
  const elements=[...cards,...labels],selection=new Set();
  const bg=svg.querySelector(':scope > rect');
+ const initialBackground=bg.getAttribute('fill')||'#ffffff';
  const grid=element('g',{'data-editor-overlay':'grid','pointer-events':'none'}),defs=element('defs'),pattern=element('pattern',{id:'tp-print-grid',width:5,height:5,patternUnits:'userSpaceOnUse'});
  pattern.append(element('path',{d:'M5 0H0V5',stroke:'#9fb1c7','stroke-width':.12,fill:'none'}));defs.append(pattern);grid.append(defs,element('rect',{width:210,height:297,fill:'url(#tp-print-grid)'}));grid.style.display='none';svg.append(grid);
  let active=null,drag=null,history=[],future=[],zoom=100,showGrid=false,transparent=false,dpi=300,linkLabels=false;
@@ -185,8 +188,8 @@ function editor(source,options={}){
   labels.forEach(label=>label.style.pointerEvents=mode.value==='card'?'none':'');
  }
  mode.onchange=()=>{selection.clear();active=null;syncHits();refresh();};
- function dirty(){return JSON.stringify({items:snapshot(),transparent,dpi})!==savedState;}
- function markSaved(){savedState=JSON.stringify({items:snapshot(),transparent,dpi});refresh();}
+ function dirty(){return JSON.stringify({items:snapshot(),backgroundColor:bg.getAttribute('fill'),transparent,dpi})!==savedState;}
+ function markSaved(){savedState=JSON.stringify({items:snapshot(),backgroundColor:bg.getAttribute('fill'),transparent,dpi});refresh();}
  function currentDocument(){return documentFromSvg(svg,transparent,dpi);}
  function keepDraft(){draft=currentDocument();}
  function closeEditor(){keepDraft();root.remove();}
@@ -220,9 +223,11 @@ function editor(source,options={}){
   const snapshot=()=>elements.map(el=>({attrs:[...el.attributes].map(a=>[a.name,a.value]),text:type(el)==='label'?el.textContent:null,stroke:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-width'):null,fill:type(el)==='card'?el.querySelector('rect')?.getAttribute('fill')||'none':null,strokeColor:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke')||'#111':null,dash:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-dasharray')||'':null}));
  const initial=snapshot();
  function restore(state){state.forEach((v,i)=>{const el=elements[i];[...el.attributes].forEach(a=>el.removeAttribute(a.name));v.attrs.forEach(a=>el.setAttribute(a[0],a[1]));if(type(el)==='label')el.textContent=v.text;else {const rect=el.querySelector('rect');rect?.setAttribute('stroke-width',v.stroke||'.22');rect?.setAttribute('fill',v.fill||'none');rect?.setAttribute('stroke',v.strokeColor||'#111');if(v.dash)rect?.setAttribute('stroke-dasharray',v.dash);else rect?.removeAttribute('stroke-dasharray');}});selection.clear();active=null;syncHits();}
- function remember(){history.push(snapshot());if(history.length>100)history.shift();future=[];}
- function undo(){if(!history.length)return;future.push(snapshot());restore(history.pop());refresh();}
- function redo(){if(!future.length)return;history.push(snapshot());restore(future.pop());refresh();}
+ function historyState(){return {items:snapshot(),backgroundColor:bg.getAttribute('fill')||'#ffffff'};}
+ function restoreHistory(state){restore(state.items);bg.setAttribute('fill',state.backgroundColor);}
+ function remember(){history.push(historyState());if(history.length>100)history.shift();future=[];}
+ function undo(){if(!history.length)return;future.push(historyState());restoreHistory(history.pop());refresh();}
+ function redo(){if(!future.length)return;history.push(historyState());restoreHistory(future.pop());refresh();}
  function select(el,shift){if(!shift)selection.clear();if(el){if(shift&&selection.has(el))selection.delete(el);else selection.add(el);}active=selection.has(el)?el:([...selection].at(-1)||null);refresh();}
  function section(title){const el=make('div',side,undefined,'tp-section');make('h3',el,title);return el;}
  function field(parent,label,value,fn,kind='number'){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('input',row);input.type=kind;input.value=value;input.onchange=()=>{remember();fn(input.value);refresh();};return input;}
@@ -245,6 +250,7 @@ function editor(source,options={}){
   const view=section('表示');
   selectField(view,'倍率',[[100,'100%'],[150,'150%'],[200,'200%'],[400,'400%']],zoom,v=>{zoom=Number(v);sheet.style.width=650*zoom/100+'px';sheet.style.margin=zoom>100?'0':'0 auto';});
   check(view,'5mmグリッド',showGrid,v=>{showGrid=v;grid.style.display=v?'':'none';});
+   colorField(view,'背景色',bg.getAttribute('fill')||'#ffffff',v=>bg.setAttribute('fill',v));
   if(!selection.size)make('p',side,'カード枠またはラベルをクリックすると、ここに編集項目が表示されます。','tp-note');
   else{
    const same=[...selection].every(el=>type(el)===type(active)),s=section(selection.size>1?selection.size+'件を編集':type(active)==='card'?'カード枠':'ラベル');
