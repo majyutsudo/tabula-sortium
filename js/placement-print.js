@@ -141,6 +141,13 @@ function editor(source){
     field(s,'文字サイズ (mm)',active.getAttribute('font-size'),v=>{if(Number(v)>0)selection.forEach(el=>el.setAttribute('font-size',v));});
     selectField(s,'書体',[['serif','明朝体'],['sans-serif','ゴシック体'],['monospace','等幅']],active.getAttribute('font-family')||'serif',v=>{remember();selection.forEach(el=>el.setAttribute('font-family',v));});
     const actions=make('div',s,undefined,'tp-actions');
+    button(actions,'全ラベルに書式を適用',()=>{
+     if(!confirm('選択中のラベルの書体と文字サイズを、すべてのラベルに適用します。位置・角度・文字内容は変更しません。よろしいですか？'))return;
+     remember();
+     const size=active.getAttribute('font-size'),family=active.getAttribute('font-family');
+     labels.forEach(el=>{if(size!==null)el.setAttribute('font-size',size);if(family!==null)el.setAttribute('font-family',family);});
+     refresh();
+    });
     button(actions,'各カードの角度',()=>{remember();selection.forEach(el=>setAngle(el,Number(el.getAttribute('data-card-angle')||0)));refresh();});
     button(actions,'水平',()=>{remember();selection.forEach(el=>setAngle(el,0));refresh();});
    }
