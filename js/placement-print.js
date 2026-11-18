@@ -29,6 +29,7 @@ function printable(){
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
  svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
  // Outlines first, then labels, matching TABULA's separate label layer.
+ const cardAnchors=[];
  for(const node of nodes){
   const idx=Number(node.dataset.index),item=live.cards[idx];
   if(!item)continue;
@@ -39,6 +40,8 @@ function printable(){
   const g=element('g',{transform:`translate(${x} ${y}) rotate(${angle})`});
   g.append(element('rect',{x:-w/2,y:-h/2,width:w,height:h,rx:0.6,fill:'none',stroke:'#111','stroke-width':0.22}));
   svg.append(g);
+  const halfHeight=(Math.abs(Math.cos(angle*Math.PI/180))*h+Math.abs(Math.sin(angle*Math.PI/180))*w)/2;
+  cardAnchors.push({x,y:y+halfHeight,angle,used:false});
  }
  // Render only the card-name labels actually shown on the table, in their
  // real positions, including any intentional overlaps in the Celtic cross.
@@ -51,7 +54,12 @@ function printable(){
   const font=fontPx*sy*scale;
   const x=toX(rect.left+rect.width/2);
   const y=toY(rect.top)+font*0.87;
-  svg.append(element('text',{x,y,'text-anchor':'middle','font-family':style.fontFamily||'sans-serif','font-size':font,fill:'#111'},node.textContent.trim()));
+  const label=element('text',{x,y,'text-anchor':'middle','font-family':style.fontFamily||'sans-serif','font-size':font,fill:'#111'},node.textContent.trim());
+  // Pair each label with the nearest unused card's expected below-card anchor.
+  // Keep text horizontal by default, but retain the angle for editor controls.
+  const match=cardAnchors.filter(a=>!a.used).sort((a,b)=>Math.hypot(a.x-x,a.y-(y-font))-Math.hypot(b.x-x,b.y-(y-font)))[0];
+  if(match){match.used=true;label.setAttribute('data-card-angle',String(match.angle));}
+  svg.append(label);
  }
  return svg;
 }
@@ -86,6 +94,12 @@ function editor(source){
  const family=control('select','フォント');
  for(const [name,value] of [['明朝体','serif'],['ゴシック体','sans-serif'],['等幅','monospace']]){const o=document.createElement('option');o.textContent=name;o.value=value;family.append(o);}
  const value=control('input','ラベルの文字');value.placeholder='ラベルを選択';value.style.width='140px';
+ const angle=control('input','ラベルの回転角度 (度)');angle.type='number';angle.min='-360';angle.max='360';angle.step='1';angle.style.width='65px';
+ const alignCard=control('button','カードと同じ角度');alignCard.textContent='カードに合わせる';
+ const horizontal=control('button','水平に戻す');horizontal.textContent='水平';
+ const angleOf=t=>Number(t?.getAttribute('data-label-angle')||0);
+ function setAngle(t,n){if(!t||!Number.isFinite(n))return;const x=Number(t.getAttribute('x')),y=Number(t.getAttribute('y'));t.setAttribute('data-label-angle',String(n));if(n)t.setAttribute('transform',`rotate(${n} ${x} ${y})`);else t.removeAttribute('transform');}
+ function syncAngle(t){if(t)setAngle(t,angleOf(t));}
  const all=control('button','全ラベルに適用');all.textContent='全ラベルに適用';
  const reset=control('button','初期状態に戻す');reset.textContent='元に戻す';
  const transparentLabel=document.createElement('label');transparentLabel.style.cssText='display:flex;align-items:center;gap:3px';
@@ -107,9 +121,9 @@ function editor(source){
  function choose(t){
   if(selected)selected.removeAttribute('text-decoration');
   selected=t;
-  if(!t){value.value='';size.value='';return;}
+  if(!t){value.value='';size.value='';angle.value='';return;}
   t.setAttribute('text-decoration','underline');
-  value.value=t.textContent;size.value=Number(t.getAttribute('font-size')||3).toFixed(1);
+  value.value=t.textContent;size.value=Number(t.getAttribute('font-size')||3).toFixed(1);angle.value=String(angleOf(t));
   family.value=t.getAttribute('font-family')==='sans-serif'?'sans-serif':t.getAttribute('font-family')==='monospace'?'monospace':'serif';
  }
  texts.forEach(t=>{t.style.cursor='move';t.addEventListener('pointerdown',e=>{
@@ -120,13 +134,16 @@ function editor(source){
  });t.addEventListener('pointermove',e=>{
   if(!drag||drag.t!==t)return;
   const matrix=svg.getScreenCTM();if(!matrix)return;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(matrix.inverse());
-  t.setAttribute('x',drag.x+p.x-drag.startX);t.setAttribute('y',drag.y+p.y-drag.startY);
+  t.setAttribute('x',drag.x+p.x-drag.startX);t.setAttribute('y',drag.y+p.y-drag.startY);syncAngle(t);
  });t.addEventListener('pointerup',()=>drag=null);t.addEventListener('pointercancel',()=>drag=null);});
  size.oninput=()=>{if(selected&&Number(size.value)>0)selected.setAttribute('font-size',size.value)};
  family.onchange=()=>{if(selected)selected.setAttribute('font-family',family.value)};
  value.oninput=()=>{if(selected)selected.textContent=value.value};
+ angle.oninput=()=>{if(selected&&angle.value!=='')setAngle(selected,Number(angle.value))};
+ alignCard.onclick=()=>{if(selected){setAngle(selected,Number(selected.getAttribute('data-card-angle')||0));angle.value=String(angleOf(selected))}};
+ horizontal.onclick=()=>{if(selected){setAngle(selected,0);angle.value='0'}};
  all.onclick=()=>{const n=Number(size.value);for(const t of texts){if(n>0)t.setAttribute('font-size',n);t.setAttribute('font-family',family.value)}};
- reset.onclick=()=>{if(!confirm('編集を初期状態に戻しますか？'))return;const orig=[...original.querySelectorAll('text')];texts.forEach((t,i)=>{const o=orig[i];if(!o)return;for(const attr of ['x','y','font-size','font-family'])t.setAttribute(attr,o.getAttribute(attr));t.textContent=o.textContent});choose(null)};
+ reset.onclick=()=>{if(!confirm('編集を初期状態に戻しますか？'))return;const orig=[...original.querySelectorAll('text')];texts.forEach((t,i)=>{const o=orig[i];if(!o)return;for(const attr of ['x','y','font-size','font-family'])t.setAttribute(attr,o.getAttribute(attr));t.textContent=o.textContent;setAngle(t,0)});choose(null)};
  svgButton.onclick=()=>download(exportSvg());
  pngButton.onclick=async()=>{
   try{
