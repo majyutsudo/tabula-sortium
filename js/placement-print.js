@@ -79,135 +79,115 @@ function print(svg){
 }
 
 function editor(source){
- const svg=source.cloneNode(true);
- const root=document.createElement('div');root.id='tabulaPrintEditor';
- root.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#202027;display:flex;flex-direction:column;color:#eee;font:14px system-ui,sans-serif';
- const toolbar=document.createElement('div');toolbar.style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;background:#30303a';
- const stage=document.createElement('div');stage.style.cssText='flex:1;min-height:0;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:16px';
- svg.style.cssText='background:white;width:min(100%,650px);height:auto;box-shadow:0 4px 25px #0008;touch-action:none;user-select:none;flex-shrink:0';
- stage.append(svg);root.append(toolbar,stage);document.body.append(root);
- const texts=[...svg.querySelectorAll('text')];
- const baseViewBox='0 0 210 297';
- const overlay=element('g',{'data-editor-overlay':'grid', 'pointer-events':'none'});
- const gridDefs=element('defs');
- const pattern=element('pattern',{id:'tabula-print-grid',width:5,height:5,patternUnits:'userSpaceOnUse'});
- pattern.append(element('path',{d:'M 5 0 L 0 0 0 5',fill:'none',stroke:'#80a0b9','stroke-width':0.12}));gridDefs.append(pattern);
- overlay.append(gridDefs,element('rect',{width:210,height:297,fill:'url(#tabula-print-grid)'}));
- overlay.style.display='none';svg.append(overlay);
- let selected=null,drag=null;
- const selectedTexts=new Set();
- const selectedTargets=()=>[...selectedTexts];
- const control=(tag,label)=>{const e=document.createElement(tag);e.title=label;e.setAttribute('aria-label',label);e.style.cssText='padding:5px 8px;min-height:30px;color:#111;background:#fff;border:1px solid #aaa;border-radius:4px';toolbar.append(e);return e;};
- const heading=document.createElement('strong');heading.textContent='配置図エディター';toolbar.append(heading);
- const zoom=control('select','表示倍率');for(const n of [100,150,200,400]){const o=document.createElement('option');o.value=n;o.textContent=n+'%';zoom.append(o)}
- zoom.onchange=()=>{svg.style.width=(650*Number(zoom.value)/100)+'px';stage.style.justify=Number(zoom.value)>100?'flex-start':'center'};
- const gridLabel=document.createElement('label');gridLabel.style.cssText='display:flex;align-items:center;gap:3px';
- const gridToggle=document.createElement('input');gridToggle.type='checkbox';gridToggle.onchange=()=>overlay.style.display=gridToggle.checked?'':'none';gridLabel.append(gridToggle,document.createTextNode('5mmグリッド'));toolbar.append(gridLabel);
- const size=control('input','文字サイズ (mm)');size.type='number';size.min='1';size.max='30';size.step='0.5';size.style.width='64px';
- const family=control('select','フォント');
- for(const [name,value] of [['明朝体','serif'],['ゴシック体','sans-serif'],['等幅','monospace']]){const o=document.createElement('option');o.textContent=name;o.value=value;family.append(o);}
- const value=control('input','ラベルの文字');value.placeholder='ラベルを選択';value.style.width='140px';
- const angle=control('input','ラベルの回転角度 (度)');angle.type='number';angle.min='-360';angle.max='360';angle.step='1';angle.style.width='65px';
- const alignCard=control('button','カードと同じ角度');alignCard.textContent='カードに合わせる';
- const horizontal=control('button','水平に戻す');horizontal.textContent='水平';
- const angleOf=t=>Number(t?.getAttribute('data-label-angle')||0);
- function setAngle(t,n){if(!t||!Number.isFinite(n))return;const x=Number(t.getAttribute('x')),y=Number(t.getAttribute('y'));t.setAttribute('data-label-angle',String(n));if(n)t.setAttribute('transform',`rotate(${n} ${x} ${y})`);else t.removeAttribute('transform');}
- function syncAngle(t){if(t)setAngle(t,angleOf(t));}
- const all=control('button','全ラベルに適用');all.textContent='全ラベルに適用';
- const reset=control('button','初期状態に戻す');reset.textContent='元に戻す';
- const transparentLabel=document.createElement('label');transparentLabel.style.cssText='display:flex;align-items:center;gap:3px';
- const transparent=document.createElement('input');transparent.type='checkbox';transparentLabel.append(transparent,document.createTextNode('透明背景'));toolbar.append(transparentLabel);
- const dpi=control('select','PNG解像度');for(const n of [150,300,600]){const o=document.createElement('option');o.value=n;o.textContent=n+' dpi';if(n===300)o.selected=true;dpi.append(o);}
- const svgButton=control('button','SVG保存');svgButton.textContent='SVG保存';
- const pngButton=control('button','PNG保存');pngButton.textContent='PNG保存';
- const printButton=control('button','印刷');printButton.textContent='印刷';
- const close=control('button','閉じる');close.textContent='閉じる';
- const original=source.cloneNode(true);
- const background=()=>svg.querySelector('rect');
- function exportSvg(){
-  const copy=svg.cloneNode(true);copy.removeAttribute('style');copy.querySelector('[data-editor-overlay="grid"]')?.remove();
-  copy.querySelectorAll('text').forEach(t=>{t.removeAttribute('text-decoration');t.removeAttribute('style')});
-  if(transparent.checked)copy.querySelector('rect')?.remove();
-  copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');
-  return copy;
- }
- function choose(t,add=false){
-  if(!add)selectedTexts.clear();
-  if(t){
-   if(add&&selectedTexts.has(t))selectedTexts.delete(t);
-   else selectedTexts.add(t);
+ const svg=source.cloneNode(true),root=document.createElement('div');
+ root.id='tabulaPrintEditor';root.tabIndex=-1;
+ const css=document.createElement('style');
+ css.textContent='#tabulaPrintEditor{position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;background:#211d19;color:#e9deca;font:13px Georgia,"Yu Mincho",serif}#tabulaPrintEditor *{box-sizing:border-box}#tabulaPrintEditor button,#tabulaPrintEditor input,#tabulaPrintEditor select{font:inherit;border:1px solid #827357;border-radius:4px;background:#302f29;color:#f3e8d3;padding:6px 9px;min-height:32px}#tabulaPrintEditor button{cursor:pointer}#tabulaPrintEditor button:hover{background:#4b4b3d}#tabulaPrintEditor button:disabled{opacity:.4;cursor:default}#tabulaPrintEditor .tp-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 15px;background:#242823;border-bottom:1px solid #806e4d}#tabulaPrintEditor .tp-head strong{font-size:17px;letter-spacing:.09em;color:#e8d09c;margin-right:12px}#tabulaPrintEditor .tp-spacer{flex:1}#tabulaPrintEditor .tp-head .tp-export{border-color:#c3a46a;color:#ffebbf}#tabulaPrintEditor .tp-main{display:flex;flex:1;min-height:0}#tabulaPrintEditor .tp-work{flex:1;min-width:0;overflow:auto;padding:22px;background:radial-gradient(ellipse,#393027,#211b17)}#tabulaPrintEditor .tp-sheet{width:650px;margin:0 auto}#tabulaPrintEditor .tp-sheet svg{display:block;width:100%;height:auto;background:white;box-shadow:0 8px 30px #0009;touch-action:none;user-select:none}#tabulaPrintEditor .tp-side{width:275px;flex:none;overflow:auto;padding:16px;background:#242823;border-left:1px solid #655743}#tabulaPrintEditor .tp-section{border-bottom:1px solid #514c3d;padding-bottom:15px;margin-bottom:16px}#tabulaPrintEditor .tp-section h3{font-size:13px;font-weight:normal;letter-spacing:.1em;color:#e1c58d;margin:0 0 12px}#tabulaPrintEditor .tp-field{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}#tabulaPrintEditor .tp-field label{font:12px sans-serif;color:#d2c8b6}#tabulaPrintEditor .tp-field input,#tabulaPrintEditor .tp-field select{width:127px;min-width:0}#tabulaPrintEditor .tp-field input[type=checkbox]{width:auto;min-height:0;accent-color:#c3a46a}#tabulaPrintEditor .tp-actions{display:flex;gap:6px;flex-wrap:wrap}#tabulaPrintEditor .tp-note{color:#bcb19d;font:12px/1.6 sans-serif}#tabulaPrintEditor .tp-status{padding:7px 14px;background:#242823;border-top:1px solid #655743;color:#cbbd9e;font:12px sans-serif}#tabulaPrintEditor .tp-selected{stroke:#447dbb!important;stroke-width:.55!important;stroke-dasharray:2 1}#tabulaPrintEditor .tp-head select{max-width:120px}@media(max-width:760px){#tabulaPrintEditor .tp-main{flex-direction:column}#tabulaPrintEditor .tp-side{width:100%;max-height:42%;border-left:0;border-top:1px solid #655743}#tabulaPrintEditor .tp-work{padding:12px}}';
+ root.append(css);
+ const make=(tag,parent,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;if(parent)parent.append(el);return el;};
+ const button=(parent,label,fn,cls)=>{const el=make('button',parent,label,cls);el.type='button';el.onclick=fn;return el;};
+ const head=make('div',root,undefined,'tp-head');
+ make('strong',head,'TABULA · 配置図');
+ make('span',head,'選択対象','tp-note');
+ const mode=make('select',head);
+ [['all','すべて'],['card','カード枠'],['label','ラベル']].forEach(pair=>{const opt=make('option',mode,pair[1]);opt.value=pair[0];});
+ const undoBtn=button(head,'↶ 元に戻す',undo),redoBtn=button(head,'↷ やり直す',redo);
+ button(head,'初期配置に戻す',()=>{if(!confirm('カード枠とラベルの編集をすべて破棄し、最初の配置に戻します。よろしいですか？'))return;restore(initial);history=[];future=[];refresh();});
+ make('span',head,undefined,'tp-spacer');
+ button(head,'SVG保存',()=>download(exportSvg()),'tp-export');
+ button(head,'PNG保存',()=>savePng(),'tp-export');
+ button(head,'印刷 / PDF',()=>print(exportSvg()),'tp-export');
+ button(head,'閉じる',()=>root.remove());
+ const main=make('div',root,undefined,'tp-main'),work=make('div',main,undefined,'tp-work'),sheet=make('div',work,undefined,'tp-sheet'),side=make('aside',main,undefined,'tp-side'),status=make('div',root,undefined,'tp-status');
+ sheet.append(svg);document.body.append(root);
+ const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
+ const labels=[...svg.children].filter(el=>el.localName==='text');
+ const elements=[...cards,...labels],selection=new Set();
+ const bg=svg.querySelector(':scope > rect');
+ const grid=element('g',{'data-editor-overlay':'grid','pointer-events':'none'}),defs=element('defs'),pattern=element('pattern',{id:'tp-print-grid',width:5,height:5,patternUnits:'userSpaceOnUse'});
+ pattern.append(element('path',{d:'M5 0H0V5',stroke:'#9fb1c7','stroke-width':.12,fill:'none'}));defs.append(pattern);grid.append(defs,element('rect',{width:210,height:297,fill:'url(#tp-print-grid)'}));grid.style.display='none';svg.append(grid);
+ let active=null,drag=null,history=[],future=[],zoom=100,showGrid=false,transparent=false,dpi=300,linkLabels=false;
+ const type=el=>labels.includes(el)?'label':'card';
+ const coords=el=>{if(type(el)==='label')return{x:Number(el.getAttribute('x')),y:Number(el.getAttribute('y'))};const m=(el.getAttribute('transform')||'').match(/translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/);return{x:Number(m?.[1]||0),y:Number(m?.[2]||0)};};
+ const angle=el=>{if(type(el)==='label')return Number(el.getAttribute('data-label-angle')||0);const m=(el.getAttribute('transform')||'').match(/rotate\(\s*([-\d.]+)/);return Number(m?.[1]||0);};
+ function setAngle(el,n){const p=coords(el);if(type(el)==='card')el.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+n+')');else{el.setAttribute('data-label-angle',n);if(n)el.setAttribute('transform','rotate('+n+' '+p.x+' '+p.y+')');else el.removeAttribute('transform');}}
+ function setPosition(el,x,y){if(type(el)==='card')el.setAttribute('transform','translate('+x+' '+y+') rotate('+angle(el)+')');else{const a=angle(el);el.setAttribute('x',x);el.setAttribute('y',y);setAngle(el,a);}}
+ const snapshot=()=>elements.map(el=>({attrs:[...el.attributes].map(a=>[a.name,a.value]),text:type(el)==='label'?el.textContent:null,stroke:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-width'):null}));
+ const initial=snapshot();
+ function restore(state){state.forEach((v,i)=>{const el=elements[i];[...el.attributes].forEach(a=>el.removeAttribute(a.name));v.attrs.forEach(a=>el.setAttribute(a[0],a[1]));if(type(el)==='label')el.textContent=v.text;else el.querySelector('rect')?.setAttribute('stroke-width',v.stroke||'.22');});selection.clear();active=null;}
+ function remember(){history.push(snapshot());if(history.length>100)history.shift();future=[];}
+ function undo(){if(!history.length)return;future.push(snapshot());restore(history.pop());refresh();}
+ function redo(){if(!future.length)return;history.push(snapshot());restore(future.pop());refresh();}
+ function select(el,shift){if(!shift)selection.clear();if(el){if(shift&&selection.has(el))selection.delete(el);else selection.add(el);}active=selection.has(el)?el:([...selection].at(-1)||null);refresh();}
+ function section(title){const el=make('div',side,undefined,'tp-section');make('h3',el,title);return el;}
+ function field(parent,label,value,fn,kind='number'){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('input',row);input.type=kind;input.value=value;input.onchange=()=>{remember();fn(input.value);refresh();};return input;}
+ function selectField(parent,label,values,current,fn){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('select',row);values.forEach(pair=>{const o=make('option',input,pair[1]);o.value=pair[0];});input.value=current;input.onchange=()=>{fn(input.value);refresh();};return input;}
+ function check(parent,label,value,fn){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('input',row);input.type='checkbox';input.checked=value;input.onchange=()=>{fn(input.checked);};}
+ function properties(){
+  side.replaceChildren();
+  const view=section('表示');
+  selectField(view,'倍率',[[100,'100%'],[150,'150%'],[200,'200%'],[400,'400%']],zoom,v=>{zoom=Number(v);sheet.style.width=650*zoom/100+'px';sheet.style.margin=zoom>100?'0':'0 auto';});
+  check(view,'5mmグリッド',showGrid,v=>{showGrid=v;grid.style.display=v?'':'none';});
+  if(!selection.size)make('p',side,'カード枠またはラベルをクリックすると、ここに編集項目が表示されます。','tp-note');
+  else{
+   const same=[...selection].every(el=>type(el)===type(active)),s=section(selection.size>1?selection.size+'件を編集':type(active)==='card'?'カード枠':'ラベル');
+   if(!same)make('p',s,'枠とラベルを一緒に移動できます。書式の変更は同じ種類を選択してください。','tp-note');
+   const p=coords(active);
+   field(s,'X (mm)',p.x.toFixed(2),v=>{const d=Number(v)-p.x;if(Number.isFinite(d))selection.forEach(el=>{const q=coords(el);setPosition(el,q.x+d,q.y);});});
+   field(s,'Y (mm)',p.y.toFixed(2),v=>{const d=Number(v)-p.y;if(Number.isFinite(d))selection.forEach(el=>{const q=coords(el);setPosition(el,q.x,q.y+d);});});
+   field(s,'角度 (°)',angle(active),v=>{if(Number.isFinite(Number(v)))selection.forEach(el=>setAngle(el,Number(v)));});
+   if(same&&type(active)==='label'){
+    if(selection.size===1)field(s,'文字',active.textContent,v=>{active.textContent=v;},'text');
+    field(s,'文字サイズ (mm)',active.getAttribute('font-size'),v=>{if(Number(v)>0)selection.forEach(el=>el.setAttribute('font-size',v));});
+    selectField(s,'書体',[['serif','明朝体'],['sans-serif','ゴシック体'],['monospace','等幅']],active.getAttribute('font-family')||'serif',v=>{remember();selection.forEach(el=>el.setAttribute('font-family',v));});
+    const actions=make('div',s,undefined,'tp-actions');
+    button(actions,'各カードの角度',()=>{remember();selection.forEach(el=>setAngle(el,Number(el.getAttribute('data-card-angle')||0)));refresh();});
+    button(actions,'水平',()=>{remember();selection.forEach(el=>setAngle(el,0));refresh();});
+   }
+   if(same&&type(active)==='card')field(s,'枠線幅 (mm)',active.querySelector('rect')?.getAttribute('stroke-width')||'.22',v=>{if(Number(v)>=0)selection.forEach(el=>el.querySelector('rect')?.setAttribute('stroke-width',v));});
+   make('p',s,'Shift＋クリックで複数選択。矢印キーで微調整できます。','tp-note');
   }
-  selected=t&&selectedTexts.has(t)?t:(selectedTargets().at(-1)||null);
-  texts.forEach(node=>{
-   if(selectedTexts.has(node))node.setAttribute('text-decoration','underline');
-   else node.removeAttribute('text-decoration');
+  const output=section('書き出し設定');
+  check(output,'透明背景',transparent,v=>transparent=v);
+  selectField(output,'PNG解像度',[[150,'150 dpi'],[300,'300 dpi'],[600,'600 dpi']],dpi,v=>dpi=Number(v));
+  make('p',output,'グリッドと選択枠は出力しません。','tp-note');
+ }
+ function refresh(){
+  elements.forEach(el=>{const on=selection.has(el);if(type(el)==='card')el.querySelector('rect')?.classList.toggle('tp-selected',on);else if(on)el.setAttribute('text-decoration','underline');else el.removeAttribute('text-decoration');});
+  undoBtn.disabled=!history.length;redoBtn.disabled=!future.length;
+  status.textContent=selection.size?'選択 '+selection.size+'件　｜　矢印 0.5mm ・ Shift＋矢印 2mm ・ Alt＋矢印 0.1mm':'選択なし　｜　クリックで選択 ・ Shift＋クリックで追加';
+  properties();
+ }
+ function exportSvg(){const copy=svg.cloneNode(true);copy.removeAttribute('style');copy.querySelector('[data-editor-overlay="grid"]')?.remove();copy.querySelectorAll('.tp-selected').forEach(el=>el.classList.remove('tp-selected'));copy.querySelectorAll('text').forEach(el=>{el.removeAttribute('text-decoration');el.removeAttribute('style');});if(transparent)copy.querySelector(':scope > rect')?.remove();copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');return copy;}
+ async function savePng(){try{const xml=new XMLSerializer().serializeToString(exportSvg()),url=URL.createObjectURL(new Blob([xml],{type:'image/svg+xml;charset=utf-8'}));try{const img=new Image();await new Promise((ok,fail)=>{img.onload=ok;img.onerror=()=>fail(Error('SVGの変換に失敗しました'));img.src=url;});const canvas=document.createElement('canvas'),factor=dpi/25.4;canvas.width=Math.round(210*factor);canvas.height=Math.round(297*factor);const ctx=canvas.getContext('2d');if(!ctx)throw Error('画像用メモリ不足');ctx.drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(ok=>canvas.toBlob(ok,'image/png'));if(!blob)throw Error('PNGを生成できませんでした');const href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download='TABULA-配置図-'+dpi+'dpi.png';a.click();setTimeout(()=>URL.revokeObjectURL(href),2000);}finally{URL.revokeObjectURL(url);}}catch(e){alert(e.message);}}
+ function point(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const m=svg.getScreenCTM();return m?p.matrixTransform(m.inverse()):null;}
+ elements.forEach(el=>{
+  el.style.cursor='move';
+  el.addEventListener('pointerdown',e=>{
+   if(mode.value!=='all'&&type(el)!==mode.value)return;
+   e.preventDefault();
+   if(!selection.has(el)||e.shiftKey)select(el,e.shiftKey);
+   if(!selection.has(el))return;
+   const p=point(e);if(!p)return;
+   drag={el,p,moved:false,items:[...selection].map(item=>({item,...coords(item)}))};
+   el.setPointerCapture(e.pointerId);root.focus({preventScroll:true});
   });
-  if(!selected){value.value='';size.value='';angle.value='';return;}
-  value.value=selectedTexts.size>1?'':selected.textContent;
-  value.placeholder=selectedTexts.size>1?selectedTexts.size+'件選択中（文字編集は個別）':'ラベルの文字';
-  size.value=Number(selected.getAttribute('font-size')||3).toFixed(1);
-  angle.value=String(angleOf(selected));
-  family.value=selected.getAttribute('font-family')==='sans-serif'?'sans-serif':selected.getAttribute('font-family')==='monospace'?'monospace':'serif';
- }
- texts.forEach(t=>{t.style.cursor='move';t.addEventListener('pointerdown',e=>{
-  e.preventDefault();choose(t,e.shiftKey);
-  if(!selectedTexts.has(t)){drag=null;return;}
-  const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
-  const matrix=svg.getScreenCTM();if(!matrix)return;const p=pt.matrixTransform(matrix.inverse());
-  drag={t,startX:p.x,startY:p.y,items:selectedTargets().map(node=>({node,x:Number(node.getAttribute('x')),y:Number(node.getAttribute('y'))}))};
-  t.setPointerCapture(e.pointerId);
-  root.focus({preventScroll:true});
- });t.addEventListener('pointermove',e=>{
-  if(!drag||drag.t!==t)return;
-  const matrix=svg.getScreenCTM();if(!matrix)return;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(matrix.inverse());
-  for(const item of drag.items){
-   item.node.setAttribute('x',item.x+p.x-drag.startX);
-   item.node.setAttribute('y',item.y+p.y-drag.startY);
-   syncAngle(item.node);
-  }
- });t.addEventListener('pointerup',()=>drag=null);t.addEventListener('pointercancel',()=>drag=null);});
- size.oninput=()=>{if(Number(size.value)>0)for(const t of selectedTargets())t.setAttribute('font-size',size.value)};
- family.onchange=()=>{for(const t of selectedTargets())t.setAttribute('font-family',family.value)};
- value.oninput=()=>{if(selectedTexts.size===1&&selected)selected.textContent=value.value};
- angle.oninput=()=>{if(angle.value!=='')for(const t of selectedTargets())setAngle(t,Number(angle.value))};
- alignCard.onclick=()=>{for(const t of selectedTargets())setAngle(t,Number(t.getAttribute('data-card-angle')||0));if(selected)angle.value=String(angleOf(selected))};
- horizontal.onclick=()=>{for(const t of selectedTargets())setAngle(t,0);if(selected)angle.value='0'};
- all.onclick=()=>{const n=Number(size.value);for(const t of texts){if(n>0)t.setAttribute('font-size',n);t.setAttribute('font-family',family.value)}};
- reset.onclick=()=>{if(!confirm('編集を初期状態に戻しますか？'))return;const orig=[...original.querySelectorAll('text')];texts.forEach((t,i)=>{const o=orig[i];if(!o)return;for(const attr of ['x','y','font-size','font-family'])t.setAttribute(attr,o.getAttribute(attr));t.textContent=o.textContent;setAngle(t,0)});choose(null)};
- svgButton.onclick=()=>download(exportSvg());
- pngButton.onclick=async()=>{
-  try{
-   const xml=new XMLSerializer().serializeToString(exportSvg());
-   const blob=new Blob([xml],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob);
-   const img=new Image();try{
-    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('SVGの画像変換に失敗しました'));img.src=url});
-    const canvas=document.createElement('canvas');const factor=Number(dpi.value)/25.4;
-    canvas.width=Math.round(210*factor);canvas.height=Math.round(297*factor);
-    const ctx=canvas.getContext('2d');if(!ctx)throw Error('画像用メモリを確保できません');
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    const png=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-    if(!png)throw Error('PNGを生成できませんでした');
-    const link=URL.createObjectURL(png),a=document.createElement('a');a.href=link;a.download='TABULA-配置図-'+dpi.value+'dpi.png';a.click();setTimeout(()=>URL.revokeObjectURL(link),2000);
-   }finally{URL.revokeObjectURL(url)}
-  }catch(e){alert(e.message)}
- };
- printButton.onclick=()=>print(exportSvg());
- close.onclick=()=>root.remove();
- root.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){root.remove();return;}
-  if(!selected||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
-  const target=e.target;if(target?.closest?.('input,textarea,select,[contenteditable]'))return;
-  e.preventDefault();const step=e.altKey?0.1:e.shiftKey?2:0.5;
-  const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;
-  const dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
-  for(const t of selectedTargets()){
-   t.setAttribute('x',Number(t.getAttribute('x'))+dx);
-   t.setAttribute('y',Number(t.getAttribute('y'))+dy);syncAngle(t);
-  }
+  el.addEventListener('pointermove',e=>{if(!drag||drag.el!==el)return;const p=point(e);if(!p)return;const dx=p.x-drag.p.x,dy=p.y-drag.p.y;if(!drag.moved&&Math.hypot(dx,dy)>.1){remember();drag.moved=true;}if(!drag.moved)return;drag.items.forEach(v=>setPosition(v.item,v.x+dx,v.y+dy));});
+  el.addEventListener('pointerup',()=>{drag=null;refresh();});
+  el.addEventListener('pointercancel',()=>{drag=null;refresh();});
  });
- root.tabIndex=-1;root.focus();
+ root.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(selection.size){selection.clear();active=null;refresh();}else root.remove();return;}
+  if(e.target?.closest?.('input,textarea,select,[contenteditable]'))return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return;}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return;}
+  if(!selection.size||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
+  e.preventDefault();remember();const step=e.altKey?.1:e.shiftKey?2:.5;
+  const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
+  selection.forEach(el=>{const p=coords(el);setPosition(el,p.x+dx,p.y+dy);});refresh();
+ });
+ root.focus();refresh();
 }
-
 function install(){
  const bar=document.querySelector('.main > .toolbar');if(!bar||$('printPlacement'))return;
  const button=document.createElement('button');button.type='button';button.id='printPlacement';button.textContent='配置図を編集・出力';button.title='カード枠とラベルを編集してSVG・PNG保存／印刷';
