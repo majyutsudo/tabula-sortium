@@ -25,7 +25,7 @@ function printable(){
   const angle=parseFloat(node.style.getPropertyValue('--rotation'))||0;
   const width=parseFloat(node.style.width)||node.offsetWidth;
   const height=parseFloat(node.style.height)||node.offsetHeight;
-  return {x:Number.isFinite(x)?x:50,y:Number.isFinite(y)?y:50,angle,width,height,label:String(item.label||item.id||'カード'),idx};
+  return {x:Number.isFinite(x)?x:50,y:Number.isFinite(y)?y:50,angle,width,height,label:String(item.label||item.id||'カード')+(item.reversed?'〈逆〉':''),idx};
  }).filter(Boolean);
  if(!entries.length)throw Error('印刷できるカードがありません。');
  // Derive the native card dimensions from the untransformed DOM, not the camera.
@@ -41,9 +41,13 @@ function printable(){
   const w=e.width*scale,h=e.height*scale;
   const g=element('g',{transform:`translate(${x} ${y}) rotate(${e.angle})`});
   g.append(element('rect',{x:-w/2,y:-h/2,width:w,height:h,rx:0.6,fill:'none',stroke:'#111','stroke-width':0.22}));
+  svg.append(g);
+  // Card-name labels remain upright and BELOW the rotated card outline.
+  const rad=e.angle*Math.PI/180;
+  const halfHeight=(Math.abs(Math.cos(rad))*h+Math.abs(Math.sin(rad))*w)/2;
   const font=Math.min(3.5,Math.max(1.6,w/Math.max(6,e.label.length)*1.3));
-  const text=element('text',{x:0,y:h/2-2.4,'text-anchor':'middle','font-family':'serif','font-size':font,fill:'#111'},e.label);
-  g.append(text);svg.append(g);
+  const labelY=y+halfHeight+Math.max(1.2,2*scale);
+  svg.append(element('text',{x,y:labelY+font,'text-anchor':'middle','font-family':'sans-serif','font-size':font,fill:'#111'},e.label));
  }
  return svg;
 }
