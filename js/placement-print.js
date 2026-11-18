@@ -225,7 +225,7 @@ function editor(source,options={}){
    hit.setAttribute('transform',card.getAttribute('transform')||'');
    hit.setAttribute('pointer-events',mode.value==='card'?'all':'stroke');
   }
-  labels.forEach(label=>label.style.pointerEvents=mode.value==='card'?'none':'');
+  labels.forEach(label=>label.style.pointerEvents=mode.value==='card'?'none':'visiblePainted');
  }
  mode.onchange=()=>{selection.clear();active=null;syncHits();refresh();};
  function dirty(){return JSON.stringify(currentDocument())!==savedState;}
@@ -274,7 +274,7 @@ function editor(source,options={}){
   const restoredLabels=[...restored.children].filter(el=>el.localName==='text');
   if(restoredCards.length!==cards.length||restoredLabels.filter(el=>!el.hasAttribute('data-free-text')).length!==labels.length)throw Error('カード・ラベル数が一致しません。');
   restoredCards.forEach((el,i)=>{const target=cards[i];[...target.attributes].forEach(a=>target.removeAttribute(a.name));[...el.attributes].forEach(a=>target.setAttribute(a.name,a.value));target.replaceChildren(el.querySelector('rect').cloneNode(true));});
-  let baseIndex=0;restoredLabels.forEach(el=>{if(el.hasAttribute('data-free-text')){const text=el.cloneNode(true);svg.insertBefore(text,grid);labels.push(text);freeTexts.push(text);elements.push(text);attachSelection(text,text);}else{const target=labels[baseIndex++];[...target.attributes].forEach(a=>target.removeAttribute(a.name));[...el.attributes].forEach(a=>target.setAttribute(a.name,a.value));target.textContent=el.textContent;}});
+  let baseIndex=0;restoredLabels.forEach(el=>{if(el.hasAttribute('data-free-text')){const text=el.cloneNode(true);svg.append(text);labels.push(text);freeTexts.push(text);elements.push(text);attachSelection(text,text);}else{const target=labels[baseIndex++];[...target.attributes].forEach(a=>target.removeAttribute(a.name));[...el.attributes].forEach(a=>target.setAttribute(a.name,a.value));target.textContent=el.textContent;}});
   for(const line of restored.querySelectorAll('[data-arrow-object="true"]'))addArrow(line.cloneNode(true),line.getAttribute('data-arrow-layer')||'back');
   bg.setAttribute('fill',doc.backgroundColor||'#fff');transparent=!!doc.transparent;dpi=doc.dpi||300;
   selection.clear();active=null;syncHits();
@@ -380,7 +380,7 @@ function editor(source,options={}){
   const value=prompt('追加するテキストを入力してください','注釈');if(value===null||!value.trim())return;
   remember();
   const el=element('text',{x:105,y:148,'text-anchor':'middle','font-family':'serif','font-size':4,fill:'#111111','data-free-text':'true'},value.slice(0,2000));
-  svg.insertBefore(el,grid);labels.push(el);freeTexts.push(el);elements.push(el);attachSelection(el,el);select(el,false);
+  svg.append(el);labels.push(el);freeTexts.push(el);elements.push(el);attachSelection(el,el);mode.value='label';select(el,false);
  }
  function removeSelected(){
   const removable=[...selection].filter(el=>arrows.includes(el)||freeTexts.includes(el));if(!removable.length)return;
