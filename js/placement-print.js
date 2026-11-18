@@ -211,7 +211,7 @@ function editor(source,options={}){
  const originalDocument=documentFromSvg(svg,!!initialDocument?.transparent,initialDocument?.dpi||300);
  const initialBackground=bg.getAttribute('fill')||'#fff';
  const hitLayer=element('g',{'data-editor-overlay':'hits'});
- const hitMap=new Map();
+ const hitMap=new Map(),freeTextHits=new Map();
  for(const card of cards){
   const rect=card.querySelector('rect');
   const hit=element('rect',{x:rect.getAttribute('x'),y:rect.getAttribute('y'),width:rect.getAttribute('width'),height:rect.getAttribute('height'),rx:rect.getAttribute('rx')||0,fill:'transparent',stroke:'transparent','stroke-width':2,'pointer-events':'stroke'});
@@ -226,6 +226,7 @@ function editor(source,options={}){
    hit.setAttribute('pointer-events',mode.value==='card'?'all':'stroke');
   }
   labels.forEach(label=>label.style.pointerEvents=mode.value==='card'?'none':'visiblePainted');
+  freeTexts.forEach(updateFreeTextHit);
  }
  mode.onchange=()=>{selection.clear();active=null;syncHits();refresh();};
  function dirty(){return JSON.stringify(currentDocument())!==savedState;}
@@ -267,14 +268,14 @@ function editor(source,options={}){
  function restoreDocument(doc){
   const restored=svgFromDocument(doc);
   for(const el of [...elements]){if(type(el)==='arrow'){el.nextElementSibling?.getAttribute('data-arrow-head-for')==='true'&&el.nextElementSibling.remove();el.remove();}else if(freeTexts.includes(el))el.remove();}
-  arrows.length=0;freeTexts.length=0;
+  arrows.length=0;freeTexts.length=0;for(const hit of freeTextHits.values())hit.remove();freeTextHits.clear();
   elements.splice(0,elements.length,...cards,...labels.filter(el=>!el.hasAttribute('data-free-text')));
   labels.splice(0,labels.length,...elements.filter(el=>el.localName==='text'));
   const restoredCards=[...restored.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
   const restoredLabels=[...restored.children].filter(el=>el.localName==='text');
   if(restoredCards.length!==cards.length||restoredLabels.filter(el=>!el.hasAttribute('data-free-text')).length!==labels.length)throw Error('カード・ラベル数が一致しません。');
   restoredCards.forEach((el,i)=>{const target=cards[i];[...target.attributes].forEach(a=>target.removeAttribute(a.name));[...el.attributes].forEach(a=>target.setAttribute(a.name,a.value));target.replaceChildren(el.querySelector('rect').cloneNode(true));});
-  let baseIndex=0;restoredLabels.forEach(el=>{if(el.hasAttribute('data-free-text')){const text=el.cloneNode(true);svg.append(text);labels.push(text);freeTexts.push(text);elements.push(text);attachSelection(text,text);}else{const target=labels[baseIndex++];[...target.attributes].forEach(a=>target.removeAttribute(a.name));[...el.attributes].forEach(a=>target.setAttribute(a.name,a.value));target.textContent=el.textContent;}});
+  let baseIndex=0;restoredLabels.forEach(el=>{if(el.hasAttribute('data-free-text')){const text=el.cloneNode(true);svg.append(text);labels.push(text);freeTexts.push(text);elements.push(text);attachSelection(text,text);attachFreeTextHit(text);}else{const target=labels[baseIndex++];[...target.attributes].forEach(a=>target.removeAttribute(a.name));[...el.attributes].forEach(a=>target.setAttribute(a.name,a.value));target.textContent=el.textContent;}});
   for(const line of restored.querySelectorAll('[data-arrow-object="true"]'))addArrow(line.cloneNode(true),line.getAttribute('data-arrow-layer')||'back');
   bg.setAttribute('fill',doc.backgroundColor||'#fff');transparent=!!doc.transparent;dpi=doc.dpi||300;
   selection.clear();active=null;syncHits();
@@ -372,15 +373,31 @@ function editor(source,options={}){
   status.textContent=(dirty()?'● 未保存　｜　':'保存済み　｜　')+(selection.size?'選択 '+selection.size+'件　｜　矢印 0.5mm ・ Shift＋矢印 2mm ・ Alt＋矢印 0.1mm':'選択なし　｜　余白ドラッグで範囲選択 ・ Shiftで追加');
   properties();
  }
- function exportSvg(){const copy=svg.cloneNode(true);copy.removeAttribute('style');copy.querySelector('[data-editor-overlay="grid"]')?.remove();copy.querySelector('[data-editor-overlay="hits"]')?.remove();copy.querySelector('[data-editor-overlay="marquee"]')?.remove();copy.querySelectorAll('.tp-selected').forEach(el=>el.classList.remove('tp-selected'));copy.querySelectorAll('text').forEach(el=>{el.removeAttribute('text-decoration');el.removeAttribute('style');});copy.querySelectorAll('[data-editor-arrow-head]').forEach(el=>el.removeAttribute('data-editor-arrow-head'));if(transparent)copy.querySelector(':scope > rect')?.remove();copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');return copy;}
+ function exportSvg(){const copy=svg.cloneNode(true);copy.removeAttribute('style');copy.querySelector('[data-editor-overlay="grid"]')?.remove();copy.querySelector('[data-editor-overlay="hits"]')?.remove();copy.querySelector('[data-editor-overlay="marquee"]')?.remove();copy.querySelectorAll('[data-editor-overlay="free-text-hit"]').forEach(el=>el.remove());copy.querySelectorAll('.tp-selected').forEach(el=>el.classList.remove('tp-selected'));copy.querySelectorAll('text').forEach(el=>{el.removeAttribute('text-decoration');el.removeAttribute('style');});copy.querySelectorAll('[data-editor-arrow-head]').forEach(el=>el.removeAttribute('data-editor-arrow-head'));if(transparent)copy.querySelector(':scope > rect')?.remove();copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');return copy;}
  async function savePng(){try{const xml=new XMLSerializer().serializeToString(exportSvg()),url=URL.createObjectURL(new Blob([xml],{type:'image/svg+xml;charset=utf-8'}));try{const img=new Image();await new Promise((ok,fail)=>{img.onload=ok;img.onerror=()=>fail(Error('SVGの変換に失敗しました'));img.src=url;});const canvas=document.createElement('canvas'),factor=dpi/25.4;canvas.width=Math.round(210*factor);canvas.height=Math.round(297*factor);const ctx=canvas.getContext('2d');if(!ctx)throw Error('画像用メモリ不足');ctx.drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(ok=>canvas.toBlob(ok,'image/png'));if(!blob)throw Error('PNGを生成できませんでした');const href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download='TABULA-配置図-'+dpi+'dpi.png';a.click();setTimeout(()=>URL.revokeObjectURL(href),2000);}finally{URL.revokeObjectURL(url);}}catch(e){alert(e.message);}}
  function point(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const m=svg.getScreenCTM();return m?p.matrixTransform(m.inverse()):null;}
  function startArrow(){arrowTool=!arrowTool;addArrowBtn.textContent=arrowTool?'用紙をクリックして矢印を置く':'＋ 矢印';}
+ function attachFreeTextHit(el){
+  // A transparent, generous hit box avoids relying on thin glyph outlines.
+  const hit=element('rect',{fill:'transparent','pointer-events':'all','data-editor-overlay':'free-text-hit'});
+  svg.append(hit);
+  attachSelection(el,hit);
+  freeTextHits.set(el,hit);
+  updateFreeTextHit(el);
+ }
+ function updateFreeTextHit(el){
+  const hit=freeTextHits.get(el);if(!hit)return;
+  const b=el.getBBox(),pad=2;
+  hit.setAttribute('x',b.x-pad);hit.setAttribute('y',b.y-pad);
+  hit.setAttribute('width',Math.max(4,b.width+pad*2));hit.setAttribute('height',Math.max(5,b.height+pad*2));
+  hit.setAttribute('transform',el.getAttribute('transform')||'');
+  hit.setAttribute('pointer-events',mode.value==='card'||mode.value==='arrow'?'none':'all');
+ }
  function addFreeText(){
   const value=prompt('追加するテキストを入力してください','注釈');if(value===null||!value.trim())return;
   remember();
   const el=element('text',{x:105,y:148,'text-anchor':'middle','font-family':'serif','font-size':4,fill:'#111111','data-free-text':'true'},value.slice(0,2000));
-  svg.append(el);labels.push(el);freeTexts.push(el);elements.push(el);attachSelection(el,el);mode.value='label';select(el,false);
+  svg.append(el);labels.push(el);freeTexts.push(el);elements.push(el);attachSelection(el,el);attachFreeTextHit(el);mode.value='label';select(el,false);
  }
  function removeSelected(){
   const removable=[...selection].filter(el=>arrows.includes(el)||freeTexts.includes(el));if(!removable.length)return;
@@ -389,6 +406,7 @@ function editor(source,options={}){
    const arr=arrows.includes(el)?arrows:freeTexts;
    for(const list of [arr,elements,labels]){const i=list.indexOf(el);if(i>=0)list.splice(i,1);}
     if(el.getAttribute('data-arrow-object')==='true')el.nextElementSibling?.getAttribute('data-arrow-head-for')==='true'&&el.nextElementSibling.remove();
+   freeTextHits.get(el)?.remove();freeTextHits.delete(el);
    el.remove();
   }
   selection.clear();active=null;refresh();
