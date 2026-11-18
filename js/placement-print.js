@@ -158,7 +158,7 @@ function editor(source,options={}){
  make('strong',head,'TABULA · 配置図');
  make('span',head,'選択対象','tp-note');
  const mode=make('select',head);
- [['all','すべて'],['card','カード枠'],['label','ラベル']].forEach(pair=>{const opt=make('option',mode,pair[1]);opt.value=pair[0];});
+ [['all','すべて'],['card','カード枠'],['label','ラベル'],['arrow','矢印']].forEach(pair=>{const opt=make('option',mode,pair[1]);opt.value=pair[0];});
  const undoBtn=button(head,'↶ 元に戻す',undo),redoBtn=button(head,'↷ やり直す',redo);
  const addTextBtn=button(head,'＋ テキスト',()=>addFreeText());
  const addArrowBtn=button(head,'＋ 矢印',()=>startArrow());
@@ -206,7 +206,7 @@ function editor(source,options={}){
  const grid=element('g',{'data-editor-overlay':'grid','pointer-events':'none'}),defs=element('defs'),pattern=element('pattern',{id:'tp-print-grid',width:5,height:5,patternUnits:'userSpaceOnUse'});
  pattern.append(element('path',{d:'M5 0H0V5',stroke:'#9fb1c7','stroke-width':.12,fill:'none'}));defs.append(pattern);grid.append(defs,element('rect',{width:210,height:297,fill:'url(#tp-print-grid)'}));grid.style.display='none';svg.append(grid);
  let active=null,drag=null,history=[],future=[],zoom=100,showGrid=false,transparent=false,dpi=300,linkLabels=false;
- let savedState='',boxDrag=null;
+ let savedState='',boxDrag=null,arrowDrawing=null;
  const initialDocument=options.document||null;
  const initialBackground=bg.getAttribute('fill')||'#fff';
  const hitLayer=element('g',{'data-editor-overlay':'hits'});
@@ -330,6 +330,8 @@ function editor(source,options={}){
    if(same&&type(active)==='arrow'){
     colorField(s,'矢印色',active.getAttribute('stroke')||'#111111',v=>selection.forEach(el=>{el.setAttribute('stroke',v);updateArrow(el);}));
     field(s,'線幅 (mm)',active.getAttribute('stroke-width')||'.4',v=>{if(Number(v)>0)selection.forEach(el=>{el.setAttribute('stroke-width',v);updateArrow(el);});});
+    field(s,'終点 X (mm)',active.getAttribute('x2'),v=>{if(Number.isFinite(Number(v)))selection.forEach(el=>{el.setAttribute('x2',v);updateArrow(el);});});
+    field(s,'終点 Y (mm)',active.getAttribute('y2'),v=>{if(Number.isFinite(Number(v)))selection.forEach(el=>{el.setAttribute('y2',v);updateArrow(el);});});
     selectField(s,'線種',[['','実線'],['2 1.2','破線'],['.35 1.2','点線']],active.getAttribute('stroke-dasharray')||'',v=>{remember();selection.forEach(el=>{if(v)el.setAttribute('stroke-dasharray',v);else el.removeAttribute('stroke-dasharray');});});
     selectField(s,'先端',[['arrow','矢印'],['none','なし']],active.getAttribute('data-arrow-head')||'arrow',v=>{remember();selection.forEach(el=>{el.setAttribute('data-arrow-head',v);updateArrow(el);});});
     selectField(s,'重なり順',[['back','カードの背後'],['front','カードの前面']],active.getAttribute('data-arrow-layer')||'back',v=>{remember();selection.forEach(el=>{el.setAttribute('data-arrow-layer',v);if(v==='back')svg.insertBefore(el,cards[0]||labels[0]);else svg.insertBefore(el,grid);updateArrow(el);});});
@@ -356,7 +358,7 @@ function editor(source,options={}){
   }
   const output=section('書き出し設定');
   selectField(output,'背景',[['#fff','白'],['none','透明'],['custom','任意の色']],transparent?'none':/^#(?:fff|ffffff)$/i.test(bg.getAttribute('fill')||'')?'#fff':'custom',v=>{
-   remember();transparent=v==='none';if(v==='#fff')bg.setAttribute('fill','#fff');if(v==='custom'&&transparent)bg.setAttribute('fill','#f5e8c8');refresh();
+   remember();const wasTransparent=transparent;transparent=v==='none';if(v==='#fff')bg.setAttribute('fill','#fff');if(v==='custom'&&wasTransparent)bg.setAttribute('fill','#f5e8c8');refresh();
   });
   colorField(output,'背景色',bg.getAttribute('fill')||'#ffffff',v=>{bg.setAttribute('fill',v);transparent=false;});
 
@@ -423,18 +425,20 @@ function editor(source,options={}){
  svg.addEventListener('pointerdown',e=>{
   if(!(e.target===svg||e.target===bg||e.target===grid||e.target.parentNode===grid))return;
   const p=point(e);if(!p)return;
-  if(arrowTool){arrowTool=false;addArrowBtn.textContent='＋ 矢印';remember();const line=element('line',{x1:p.x,y1:p.y,x2:p.x+18,y2:p.y-12,stroke:'#111111','stroke-width':.4,'data-arrow-head':'arrow'});addArrow(line);select(line,false);return;}
+  if(arrowTool){arrowTool=false;addArrowBtn.textContent='＋ 矢印';remember();const line=element('line',{x1:p.x,y1:p.y,x2:p.x,y2:p.y,stroke:'#111111','stroke-width':.4,'data-arrow-head':'arrow'});addArrow(line);arrowDrawing={line,pointer:e.pointerId,start:p};svg.setPointerCapture(e.pointerId);select(line,false);return;}
   if(!e.shiftKey){selection.clear();active=null;}refresh();
   boxDrag={pointer:e.pointerId,start:p};marquee.style.display='';marquee.setAttribute('x',p.x);marquee.setAttribute('y',p.y);marquee.setAttribute('width',0);marquee.setAttribute('height',0);
   svg.setPointerCapture(e.pointerId);root.focus({preventScroll:true});
  });
  svg.addEventListener('pointermove',e=>{
+  if(arrowDrawing&&arrowDrawing.pointer===e.pointerId){const p=point(e);if(p){arrowDrawing.line.setAttribute('x2',p.x);arrowDrawing.line.setAttribute('y2',p.y);updateArrow(arrowDrawing.line);}return;}
   if(!boxDrag||boxDrag.pointer!==e.pointerId)return;
   const p=point(e);if(!p)return;
   const x=Math.min(p.x,boxDrag.start.x),y=Math.min(p.y,boxDrag.start.y),w=Math.abs(p.x-boxDrag.start.x),h=Math.abs(p.y-boxDrag.start.y);
   Object.entries({x,y,width:w,height:h}).forEach(([k,v])=>marquee.setAttribute(k,v));
  });
  svg.addEventListener('pointerup',e=>{
+  if(arrowDrawing&&arrowDrawing.pointer===e.pointerId){const p=point(e),line=arrowDrawing.line;arrowDrawing=null;if(p&&Math.hypot(p.x-Number(line.getAttribute('x1')),p.y-Number(line.getAttribute('y1')))<1){line.setAttribute('x2',Number(line.getAttribute('x1'))+18);line.setAttribute('y2',Number(line.getAttribute('y1'))-12);}updateArrow(line);refresh();return;}
   if(!boxDrag||boxDrag.pointer!==e.pointerId)return;
   const p=point(e),start=boxDrag.start;boxDrag=null;marquee.style.display='none';
   if(!p||Math.hypot(p.x-start.x,p.y-start.y)<1){refresh();return;}
