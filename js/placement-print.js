@@ -38,7 +38,7 @@ function printable(){
   const w=node.offsetWidth*scale,h=node.offsetHeight*scale;
   const angle=parseFloat(node.style.getPropertyValue('--rotation'))||0;
   const g=element('g',{transform:`translate(${x} ${y}) rotate(${angle})`});
-  g.append(element('rect',{x:-w/2,y:-h/2,width:w,height:h,rx:0.6,fill:'none',stroke:'#111','stroke-width':0.22}));
+  g.append(element('rect',{x:-w/2,y:-h/2,width:w,height:h,rx:0.6,fill:'#fff',stroke:'#111','stroke-width':0.22}));
   svg.append(g);
   const halfHeight=(Math.abs(Math.cos(angle*Math.PI/180))*h+Math.abs(Math.sin(angle*Math.PI/180))*w)/2;
   cardAnchors.push({x,y:y+halfHeight,angle,used:false});
@@ -258,13 +258,16 @@ function editor(source,options={}){
    }
    if(same&&type(active)==='card'){
     const rect=active.querySelector('rect');
+    selectField(s,'内側の塗り',[['#fff','白'],['none','透明']],rect?.getAttribute('fill')==='none'?'none':'#fff',v=>{
+     remember();selection.forEach(el=>el.querySelector('rect')?.setAttribute('fill',v));
+    });
     field(s,'枠線幅 (mm)',rect?.getAttribute('stroke-width')||'.22',v=>{if(Number(v)>=0)selection.forEach(el=>el.querySelector('rect')?.setAttribute('stroke-width',v));});
     const dashItems=[['','実線'],['2 1.2','破線'],['.35 1.2','点線'],['3 1 0.4 1','一点鎖線']];
     selectField(s,'線の種類',dashItems,rect?.getAttribute('stroke-dasharray')||'',v=>{remember();selection.forEach(el=>{const r=el.querySelector('rect');if(v)r?.setAttribute('stroke-dasharray',v);else r?.removeAttribute('stroke-dasharray');});});
     button(s,'全カード枠に適用',()=>{
-     if(!confirm('選択中のカード枠の線幅と線の種類を、全カード枠に適用しますか？'))return;
-     remember();const width=rect.getAttribute('stroke-width'),dash=rect.getAttribute('stroke-dasharray');
-     cards.forEach(el=>{const r=el.querySelector('rect');r.setAttribute('stroke-width',width);if(dash)r.setAttribute('stroke-dasharray',dash);else r.removeAttribute('stroke-dasharray');});refresh();
+     if(!confirm('選択中のカード枠の塗り・線幅・線の種類を、全カード枠に適用しますか？'))return;
+     remember();const width=rect.getAttribute('stroke-width'),dash=rect.getAttribute('stroke-dasharray'),fill=rect.getAttribute('fill')||'none';
+     cards.forEach(el=>{const r=el.querySelector('rect');r.setAttribute('fill',fill);r.setAttribute('stroke-width',width);if(dash)r.setAttribute('stroke-dasharray',dash);else r.removeAttribute('stroke-dasharray');});refresh();
     });
    }
    make('p',s,'Shift＋クリックで複数選択。矢印キーで微調整できます。','tp-note');
