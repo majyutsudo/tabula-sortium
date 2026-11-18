@@ -69,11 +69,91 @@ function print(svg){
  win.document.write('<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>TABULA 配置図</title><style>@page{size:A4 portrait;margin:0}body{margin:0}svg{width:210mm;height:297mm;display:block}@media screen{body{background:#ddd}svg{background:white;margin:auto}}</style></head><body>'+xml+'</body></html>');
  win.document.close();win.focus();setTimeout(()=>win.print(),300);
 }
+
+function editor(source){
+ const svg=source.cloneNode(true);
+ const root=document.createElement('div');root.id='tabulaPrintEditor';
+ root.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#202027;display:flex;flex-direction:column;color:#eee;font:14px system-ui,sans-serif';
+ const toolbar=document.createElement('div');toolbar.style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;background:#30303a';
+ const stage=document.createElement('div');stage.style.cssText='flex:1;min-height:0;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:16px';
+ svg.style.cssText='background:white;width:min(100%,650px);height:auto;box-shadow:0 4px 25px #0008;touch-action:none;user-select:none;flex-shrink:0';
+ stage.append(svg);root.append(toolbar,stage);document.body.append(root);
+ const texts=[...svg.querySelectorAll('text')];
+ let selected=null,drag=null;
+ const control=(tag,label)=>{const e=document.createElement(tag);e.title=label;e.setAttribute('aria-label',label);e.style.cssText='padding:5px 8px;min-height:30px;color:#111;background:#fff;border:1px solid #aaa;border-radius:4px';toolbar.append(e);return e;};
+ const heading=document.createElement('strong');heading.textContent='配置図エディター';toolbar.append(heading);
+ const size=control('input','文字サイズ (mm)');size.type='number';size.min='1';size.max='30';size.step='0.5';size.style.width='64px';
+ const family=control('select','フォント');
+ for(const [name,value] of [['明朝体','serif'],['ゴシック体','sans-serif'],['等幅','monospace']]){const o=document.createElement('option');o.textContent=name;o.value=value;family.append(o);}
+ const value=control('input','ラベルの文字');value.placeholder='ラベルを選択';value.style.width='140px';
+ const all=control('button','全ラベルに適用');all.textContent='全ラベルに適用';
+ const reset=control('button','初期状態に戻す');reset.textContent='元に戻す';
+ const transparentLabel=document.createElement('label');transparentLabel.style.cssText='display:flex;align-items:center;gap:3px';
+ const transparent=document.createElement('input');transparent.type='checkbox';transparentLabel.append(transparent,document.createTextNode('透明背景'));toolbar.append(transparentLabel);
+ const dpi=control('select','PNG解像度');for(const n of [150,300,600]){const o=document.createElement('option');o.value=n;o.textContent=n+' dpi';if(n===300)o.selected=true;dpi.append(o);}
+ const svgButton=control('button','SVG保存');svgButton.textContent='SVG保存';
+ const pngButton=control('button','PNG保存');pngButton.textContent='PNG保存';
+ const printButton=control('button','印刷');printButton.textContent='印刷';
+ const close=control('button','閉じる');close.textContent='閉じる';
+ const original=source.cloneNode(true);
+ const background=()=>svg.querySelector('rect');
+ function exportSvg(){
+  const copy=svg.cloneNode(true);copy.removeAttribute('style');
+  if(transparent.checked)copy.querySelector('rect')?.remove();
+  copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');
+  return copy;
+ }
+ function choose(t){
+  if(selected)selected.removeAttribute('text-decoration');
+  selected=t;
+  if(!t){value.value='';size.value='';return;}
+  t.setAttribute('text-decoration','underline');
+  value.value=t.textContent;size.value=Number(t.getAttribute('font-size')||3).toFixed(1);
+  family.value=t.getAttribute('font-family')==='sans-serif'?'sans-serif':t.getAttribute('font-family')==='monospace'?'monospace':'serif';
+ }
+ texts.forEach(t=>{t.style.cursor='move';t.addEventListener('pointerdown',e=>{
+  e.preventDefault();choose(t);const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+  const matrix=svg.getScreenCTM();if(!matrix)return;const p=pt.matrixTransform(matrix.inverse());
+  drag={t,startX:p.x,startY:p.y,x:Number(t.getAttribute('x')),y:Number(t.getAttribute('y'))};
+  t.setPointerCapture(e.pointerId);
+ });t.addEventListener('pointermove',e=>{
+  if(!drag||drag.t!==t)return;
+  const matrix=svg.getScreenCTM();if(!matrix)return;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(matrix.inverse());
+  t.setAttribute('x',drag.x+p.x-drag.startX);t.setAttribute('y',drag.y+p.y-drag.startY);
+ });t.addEventListener('pointerup',()=>drag=null);t.addEventListener('pointercancel',()=>drag=null);});
+ size.oninput=()=>{if(selected&&Number(size.value)>0)selected.setAttribute('font-size',size.value)};
+ family.onchange=()=>{if(selected)selected.setAttribute('font-family',family.value)};
+ value.oninput=()=>{if(selected)selected.textContent=value.value};
+ all.onclick=()=>{const n=Number(size.value);for(const t of texts){if(n>0)t.setAttribute('font-size',n);t.setAttribute('font-family',family.value)}};
+ reset.onclick=()=>{if(!confirm('編集を初期状態に戻しますか？'))return;const orig=[...original.querySelectorAll('text')];texts.forEach((t,i)=>{const o=orig[i];if(!o)return;for(const attr of ['x','y','font-size','font-family'])t.setAttribute(attr,o.getAttribute(attr));t.textContent=o.textContent});choose(null)};
+ svgButton.onclick=()=>download(exportSvg());
+ pngButton.onclick=async()=>{
+  try{
+   const xml=new XMLSerializer().serializeToString(exportSvg());
+   const blob=new Blob([xml],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob);
+   const img=new Image();try{
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('SVGの画像変換に失敗しました'));img.src=url});
+    const canvas=document.createElement('canvas');const factor=Number(dpi.value)/25.4;
+    canvas.width=Math.round(210*factor);canvas.height=Math.round(297*factor);
+    const ctx=canvas.getContext('2d');if(!ctx)throw Error('画像用メモリを確保できません');
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    const png=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    if(!png)throw Error('PNGを生成できませんでした');
+    const link=URL.createObjectURL(png),a=document.createElement('a');a.href=link;a.download='TABULA-配置図-'+dpi.value+'dpi.png';a.click();setTimeout(()=>URL.revokeObjectURL(link),2000);
+   }finally{URL.revokeObjectURL(url)}
+  }catch(e){alert(e.message)}
+ };
+ printButton.onclick=()=>print(exportSvg());
+ close.onclick=()=>root.remove();
+ root.addEventListener('keydown',e=>{if(e.key==='Escape'){root.remove()}});
+ root.tabIndex=-1;root.focus();
+}
+
 function install(){
  const bar=document.querySelector('.main > .toolbar');if(!bar||$('printPlacement'))return;
- const button=document.createElement('button');button.type='button';button.id='printPlacement';button.textContent='配置図を印刷';button.title='現在の卓を、カードの外枠と名前だけでA4印刷／PDF保存';
+ const button=document.createElement('button');button.type='button';button.id='printPlacement';button.textContent='配置図を編集・出力';button.title='カード枠とラベルを編集してSVG・PNG保存／印刷';
  button.addEventListener('click',()=>{
-  try{const svg=printable();print(svg)}catch(e){alert(e.message)}
+  try{if($('tabulaPrintEditor'))return;editor(printable())}catch(e){alert(e.message)}
  });
  bar.append(button);
 }
