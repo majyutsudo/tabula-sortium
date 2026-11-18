@@ -90,7 +90,6 @@ function cleanAttrs(node,attrs,allowed){
  if(!attrs||typeof attrs!=='object'||Array.isArray(attrs))throw Error('図形データが不正です。');
  for(const [k,v] of Object.entries(attrs)){
   if(!allowed.includes(k)||typeof v!=='string'||v.length>500||/url\s*\(|javascript:|[<>]/i.test(v))throw Error('許可されない図形属性があります。');
-  if(k==='font-family'&&!/^(serif|sans-serif|monospace|[\w\s,"'-]+)$/.test(v))throw Error('書体が不正です。');
   node.setAttribute(k,v);
  }
 }
@@ -344,14 +343,14 @@ function install(){
  button.addEventListener('click',()=>{
   if($('tabulaPrintEditor'))return;
   if(draft){
-   const choice=prompt('配置図を開く方法を選んでください。\\n1：前回の編集を再開\\n2：現在の卓から新規作成\\n3：保存したJSONを読み込む','1');
+   const choice=prompt('配置図を開く方法を選んでください。\n1：前回の編集を再開\n2：現在の卓から新規作成\n3：保存したJSONを読み込む','1');
    if(choice===null)return;
    if(choice.trim()==='1'){try{editor(svgFromDocument(draft),{document:draft});}catch(e){alert(e.message);}return;}
    if(choice.trim()==='3'){chooseDiagramFile();return;}
    if(choice.trim()!=='2')return;
    if(!confirm('現在の卓から新しい配置図を作ります。前回の一時編集状態は置き換わります。JSONに保存していない場合は失われます。よろしいですか？'))return;
   }else{
-   const choice=prompt('配置図を開く方法を選んでください。\\n1：現在の卓から新規作成\\n2：保存したJSONを読み込む','1');
+   const choice=prompt('配置図を開く方法を選んでください。\n1：現在の卓から新規作成\n2：保存したJSONを読み込む','1');
    if(choice===null)return;
    if(choice.trim()==='2'){chooseDiagramFile();return;}
    if(choice.trim()!=='1')return;
