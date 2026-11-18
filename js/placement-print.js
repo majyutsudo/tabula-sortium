@@ -55,6 +55,7 @@ function printable(){
   const x=toX(rect.left+rect.width/2);
   const y=toY(rect.top)+font*0.87;
   const label=element('text',{x,y,'text-anchor':'middle','font-family':style.fontFamily||'sans-serif','font-size':font,fill:'#111'},node.textContent.trim());
+  if(node.dataset.positionName&&node.dataset.positionNumber){label.setAttribute('data-position-name',node.dataset.positionName);label.setAttribute('data-position-number',node.dataset.positionNumber);}
   // Pair each label with the nearest unused card's expected below-card anchor.
   // Keep text horizontal by default, but retain the angle for editor controls.
   const match=cardAnchors.filter(a=>!a.used).sort((a,b)=>Math.hypot(a.x-x,a.y-(y-font))-Math.hypot(b.x-x,b.y-(y-font)))[0];
@@ -84,7 +85,7 @@ function print(svg){
 let draft=null;
 const cardAttrs=['transform'];
 const rectAttrs=['x','y','width','height','rx','fill','stroke','stroke-width','stroke-dasharray'];
-const labelAttrs=['x','y','text-anchor','font-family','font-size','fill','transform','data-label-angle','data-card-angle'];
+const labelAttrs=['x','y','text-anchor','font-family','font-size','fill','transform','data-label-angle','data-card-angle','data-position-name','data-position-number'];
 function attrsOf(node,allowed){return Object.fromEntries(allowed.filter(k=>node.hasAttribute(k)).map(k=>[k,node.getAttribute(k)]));}
 function cleanAttrs(node,attrs,allowed){
  if(!attrs||typeof attrs!=='object'||Array.isArray(attrs))throw Error('図形データが不正です。');
@@ -251,12 +252,21 @@ function editor(source,options={}){
   picker.onchange=()=>apply(picker.value);input.onchange=()=>apply(input.value);
  }
  function check(parent,label,value,fn){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('input',row);input.type='checkbox';input.checked=value;input.onchange=()=>{fn(input.checked);};}
+ function positionLabelText(el,numbered){const name=el.getAttribute('data-position-name'),number=el.getAttribute('data-position-number');return name&&number?(numbered?number+' · ':'')+name:null;}
+ function positionLabels(){return labels.filter(el=>positionLabelText(el,false)!==null);}
  function properties(){
   side.replaceChildren();
   const view=section('表示');
   selectField(view,'倍率',[[100,'100%'],[150,'150%'],[200,'200%'],[400,'400%']],zoom,v=>{zoom=Number(v);sheet.style.width=650*zoom/100+'px';sheet.style.margin=zoom>100?'0':'0 auto';});
   check(view,'5mmグリッド',showGrid,v=>{showGrid=v;grid.style.display=v?'':'none';});
    colorField(view,'背景色',bg.getAttribute('fill')||'#ffffff',v=>bg.setAttribute('fill',v));
+   if(positionLabels().length){
+    const first=positionLabels()[0];
+    selectField(view,'ポジション番号', [['with','表示する'],['without','表示しない']],first.textContent===positionLabelText(first,false)?'without':'with',v=>{
+     const numbered=v==='with';if(positionLabels().every(el=>el.textContent===positionLabelText(el,numbered)))return;
+     remember();positionLabels().forEach(el=>{el.textContent=positionLabelText(el,numbered);});
+    });
+   }
   if(!selection.size)make('p',side,'カード枠またはラベルをクリックすると、ここに編集項目が表示されます。','tp-note');
   else{
    const same=[...selection].every(el=>type(el)===type(active)),s=section(selection.size>1?selection.size+'件を編集':type(active)==='card'?'カード枠':'ラベル');
@@ -266,7 +276,7 @@ function editor(source,options={}){
    field(s,'Y (mm)',p.y.toFixed(2),v=>{const d=Number(v)-p.y;if(Number.isFinite(d))selection.forEach(el=>{const q=coords(el);setPosition(el,q.x,q.y+d);});});
    field(s,'角度 (°)',angle(active),v=>{if(Number.isFinite(Number(v)))selection.forEach(el=>setAngle(el,Number(v)));});
    if(same&&type(active)==='label'){
-    if(selection.size===1)field(s,'文字',active.textContent,v=>{active.textContent=v;},'text');
+    if(selection.size===1)field(s,'文字',active.textContent,v=>{active.textContent=v;active.removeAttribute('data-position-name');active.removeAttribute('data-position-number');},'text');
     field(s,'文字サイズ (mm)',active.getAttribute('font-size'),v=>{if(Number(v)>0)selection.forEach(el=>el.setAttribute('font-size',v));});
     selectField(s,'書体',[['serif','明朝体'],['sans-serif','ゴシック体'],['monospace','等幅']],active.getAttribute('font-family')||'serif',v=>{remember();selection.forEach(el=>el.setAttribute('font-family',v));});
     colorField(s,'文字色',active.getAttribute('fill')||'#111111',v=>selection.forEach(el=>el.setAttribute('fill',v)));
