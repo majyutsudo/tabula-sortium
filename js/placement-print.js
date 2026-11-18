@@ -343,7 +343,7 @@ function editor(source,options={}){
  markSaved();root.focus();refresh();
 }
 function install(){
- const bar=document.querySelector('.main > .toolbar');if(!bar||$('printPlacement'))return;
+ const bar=document.querySelector('.table-record-actions')||document.querySelector('.main > .toolbar');if(!bar||$('printPlacement'))return;
  const button=document.createElement('button');button.type='button';button.id='printPlacement';button.textContent='配置図を編集・出力';button.title='カード枠とラベルを編集してSVG・PNG保存／印刷';
  button.addEventListener('click',()=>{
   if($('tabulaPrintEditor'))return;
