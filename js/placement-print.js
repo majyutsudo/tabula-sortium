@@ -84,6 +84,7 @@ function print(svg){
 let draft=null;
 const cardAttrs=['transform'];
 const rectAttrs=['x','y','width','height','rx','fill','stroke','stroke-width','stroke-dasharray'];
+const arrowAttrs=['x1','y1','x2','y2','stroke','stroke-width','stroke-dasharray','data-arrow-head','data-arrow-layer'];
 const labelAttrs=['x','y','text-anchor','font-family','font-size','fill','transform','data-label-angle','data-card-angle'];
 function attrsOf(node,allowed){return Object.fromEntries(allowed.filter(k=>node.hasAttribute(k)).map(k=>[k,node.getAttribute(k)]));}
 function cleanAttrs(node,attrs,allowed){
@@ -96,24 +97,36 @@ function cleanAttrs(node,attrs,allowed){
 function documentFromSvg(svg,transparent=false,dpi=300){
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
- return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,
-  cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
+ const arrows=[...svg.querySelectorAll('[data-arrow-object="true"]')];
+ return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,backgroundColor:svg.querySelector(':scope > rect')?.getAttribute('fill')||'#fff',
+  arrows:arrows.map(el=>attrsOf(el,arrowAttrs)),cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
   labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
 }
 function svgFromDocument(doc){
  if(!doc||doc.format!=='tabula-placement-diagram'||doc.version!==2||!Array.isArray(doc.cards)||!Array.isArray(doc.labels)||doc.cards.length>500||doc.labels.length>500||doc.cards.length+doc.labels.length===0)throw Error('対応していない配置図データです。');
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
- svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
+ svg.append(element('rect',{width:210,height:297,fill:/^#[0-9a-fA-F]{3,6}$/.test(doc.backgroundColor||'')?doc.backgroundColor:'#fff'}));
  for(const data of doc.cards){
   const g=element('g');cleanAttrs(g,data.attrs,cardAttrs);
   const rect=element('rect');cleanAttrs(rect,data.rect,rectAttrs);
   if(!['x','y','width','height'].every(k=>Number.isFinite(Number(rect.getAttribute(k))))||Number(rect.getAttribute('width'))<=0||Number(rect.getAttribute('height'))<=0)throw Error('カード枠の寸法が不正です。');
   g.append(rect);svg.append(g);
  }
+ if(doc.arrows!==undefined){
+  if(!Array.isArray(doc.arrows)||doc.arrows.length>200)throw Error('矢印データが不正です。');
+  for(const data of doc.arrows){
+   const line=element('line',{'data-arrow-object':'true'});cleanAttrs(line,data,arrowAttrs);
+   if(!['x1','y1','x2','y2'].every(k=>Number.isFinite(Number(line.getAttribute(k)))))throw Error('矢印座標が不正です。');
+   if(line.getAttribute('data-arrow-layer')==='front')svg.append(line);
+   else svg.insertBefore(line,svg.querySelector(':scope > g')||svg.querySelector(':scope > text'));
+  }
+ }
  for(const data of doc.labels){
   if(typeof data.text!=='string'||data.text.length>2000)throw Error('ラベルが不正です。');
   const label=element('text');cleanAttrs(label,data.attrs,labelAttrs);label.textContent=data.text;svg.append(label);
  }
+ // Restore front arrows after labels so their visual order survives JSON reload.
+ for(const line of [...svg.querySelectorAll('[data-arrow-object="true"][data-arrow-layer="front"]')])svg.append(line);
  return svg;
 }
 async function parseDiagramFile(file){
@@ -160,8 +173,32 @@ function editor(source,options={}){
  sheet.append(svg);document.body.append(root);
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
- const elements=[...cards,...labels],selection=new Set();
+ const elements=[...cards,...labels,...svg.querySelectorAll('[data-arrow-object="true"]')],selection=new Set();
  const bg=svg.querySelector(':scope > rect');
+ let arrowTool=false;
+ const arrows=[...svg.querySelectorAll('[data-arrow-object="true"]')];
+ function arrowHead(line){
+  const x1=Number(line.getAttribute('x1')),y1=Number(line.getAttribute('y1')),x2=Number(line.getAttribute('x2')),y2=Number(line.getAttribute('y2'));
+  const len=Math.hypot(x2-x1,y2-y1)||1,ux=(x2-x1)/len,uy=(y2-y1)/len;
+  const size=Math.max(2,Number(line.getAttribute('stroke-width')||.4)*6),wing=size*.42;
+  return [x2-ux*size-uy*wing,y2-uy*size+ux*wing,x2,y2,x2-ux*size+uy*wing,y2-uy*size-ux*wing].join(' ');
+ }
+ function updateArrow(line){
+  let head=line.nextElementSibling;
+  if(!head||head.getAttribute('data-arrow-head-for')!=='true'){
+   head=element('polygon',{'data-arrow-head-for':'true','pointer-events':'none'});line.after(head);
+  }
+  head.setAttribute('points',arrowHead(line));head.setAttribute('fill',line.getAttribute('stroke')||'#111');
+  head.style.display=line.getAttribute('data-arrow-head')==='none'?'none':'';
+ }
+ function addArrow(line,layer='back'){
+  line.setAttribute('data-arrow-object','true');line.setAttribute('data-arrow-layer',layer);
+  if(layer==='back')svg.insertBefore(line,cards[0]||labels[0]||grid);
+  else svg.insertBefore(line,grid);
+  arrows.push(line);elements.push(line);attachSelection(line,line);updateArrow(line);
+ }
+ for(const line of [...arrows]){line.setAttribute('data-arrow-object','true');updateArrow(line);}
+
  const grid=element('g',{'data-editor-overlay':'grid','pointer-events':'none'}),defs=element('defs'),pattern=element('pattern',{id:'tp-print-grid',width:5,height:5,patternUnits:'userSpaceOnUse'});
  pattern.append(element('path',{d:'M5 0H0V5',stroke:'#9fb1c7','stroke-width':.12,fill:'none'}));defs.append(pattern);grid.append(defs,element('rect',{width:210,height:297,fill:'url(#tp-print-grid)'}));grid.style.display='none';svg.append(grid);
  let active=null,drag=null,history=[],future=[],zoom=100,showGrid=false,transparent=false,dpi=300,linkLabels=false;
@@ -212,11 +249,11 @@ function editor(source,options={}){
    remember();restore(data.elements);transparent=!!data.transparent;dpi=[150,300,600].includes(data.dpi)?data.dpi:300;syncHits();markSaved();
   }catch(err){alert('読み込みに失敗しました: '+err.message);}
  }
- const type=el=>labels.includes(el)?'label':'card';
- const coords=el=>{if(type(el)==='label')return{x:Number(el.getAttribute('x')),y:Number(el.getAttribute('y'))};const m=(el.getAttribute('transform')||'').match(/translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/);return{x:Number(m?.[1]||0),y:Number(m?.[2]||0)};};
- const angle=el=>{if(type(el)==='label')return Number(el.getAttribute('data-label-angle')||0);const m=(el.getAttribute('transform')||'').match(/rotate\(\s*([-\d.]+)/);return Number(m?.[1]||0);};
- function setAngle(el,n){const p=coords(el);if(type(el)==='card')el.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+n+')');else{el.setAttribute('data-label-angle',n);if(n)el.setAttribute('transform','rotate('+n+' '+p.x+' '+p.y+')');else el.removeAttribute('transform');}}
- function setPosition(el,x,y){if(type(el)==='card')el.setAttribute('transform','translate('+x+' '+y+') rotate('+angle(el)+')');else{const a=angle(el);el.setAttribute('x',x);el.setAttribute('y',y);setAngle(el,a);}}
+ const type=el=>arrows.includes(el)?'arrow':labels.includes(el)?'label':'card';
+ const coords=el=>{if(type(el)==='arrow')return{x:Number(el.getAttribute('x1')),y:Number(el.getAttribute('y1'))};if(type(el)==='label')return{x:Number(el.getAttribute('x')),y:Number(el.getAttribute('y'))};const m=(el.getAttribute('transform')||'').match(/translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/);return{x:Number(m?.[1]||0),y:Number(m?.[2]||0)};};
+ const angle=el=>{if(type(el)==='arrow')return Math.atan2(Number(el.getAttribute('y2'))-Number(el.getAttribute('y1')),Number(el.getAttribute('x2'))-Number(el.getAttribute('x1')))*180/Math.PI;if(type(el)==='label')return Number(el.getAttribute('data-label-angle')||0);const m=(el.getAttribute('transform')||'').match(/rotate\(\s*([-\d.]+)/);return Number(m?.[1]||0);};
+ function setAngle(el,n){const p=coords(el);if(type(el)==='arrow'){const len=Math.hypot(Number(el.getAttribute('x2'))-p.x,Number(el.getAttribute('y2'))-p.y);el.setAttribute('x2',p.x+len*Math.cos(n*Math.PI/180));el.setAttribute('y2',p.y+len*Math.sin(n*Math.PI/180));updateArrow(el);return;}if(type(el)==='card')el.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+n+')');else{el.setAttribute('data-label-angle',n);if(n)el.setAttribute('transform','rotate('+n+' '+p.x+' '+p.y+')');else el.removeAttribute('transform');}}
+ function setPosition(el,x,y){if(type(el)==='arrow'){const p=coords(el),dx=x-p.x,dy=y-p.y;el.setAttribute('x1',x);el.setAttribute('y1',y);el.setAttribute('x2',Number(el.getAttribute('x2'))+dx);el.setAttribute('y2',Number(el.getAttribute('y2'))+dy);updateArrow(el);return;}if(type(el)==='card')el.setAttribute('transform','translate('+x+' '+y+') rotate('+angle(el)+')');else{const a=angle(el);el.setAttribute('x',x);el.setAttribute('y',y);setAngle(el,a);}}
   const snapshot=()=>elements.map(el=>({attrs:[...el.attributes].map(a=>[a.name,a.value]),text:type(el)==='label'?el.textContent:null,stroke:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-width'):null,fill:type(el)==='card'?el.querySelector('rect')?.getAttribute('fill')||'none':null,strokeColor:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke')||'#111':null,dash:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-dasharray')||'':null}));
  const initial=snapshot();
  function restore(state){state.forEach((v,i)=>{const el=elements[i];[...el.attributes].forEach(a=>el.removeAttribute(a.name));v.attrs.forEach(a=>el.setAttribute(a[0],a[1]));if(type(el)==='label')el.textContent=v.text;else {const rect=el.querySelector('rect');rect?.setAttribute('stroke-width',v.stroke||'.22');rect?.setAttribute('fill',v.fill||'none');rect?.setAttribute('stroke',v.strokeColor||'#111');if(v.dash)rect?.setAttribute('stroke-dasharray',v.dash);else rect?.removeAttribute('stroke-dasharray');}});selection.clear();active=null;syncHits();}
