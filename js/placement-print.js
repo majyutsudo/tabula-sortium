@@ -15,31 +15,21 @@ function printable(){
  if(!zr.width||!zr.height)throw Error('卓の寸法を取得できません。');
  const nodes=[...zone.querySelectorAll(':scope > .card')];
  if(!nodes.length)throw Error('卓上にカードがありません。');
- const saved=JSON.parse(localStorage.getItem('tabula_sortium_v01')||'null');
- const single=saved?.state?.placed||[];
- const dual=JSON.parse(localStorage.getItem('tabula_dual_session_v1')||'null');
- const catalog=globalThis.TabulaCatalog?.cards||[];
- const entries=nodes.map((node)=>{
-  const idx=Number(node.dataset.index),item=single[idx]||{};
-  const rect=node.getBoundingClientRect();
-  // Positions are read from the tabletop itself, so custom spreads and rotations
-  // are reproduced even when the viewing camera is zoomed.
+ const live=globalThis.TabulaPlacementPrintData?.();
+ if(!live||!Array.isArray(live.cards))throw Error('卓情報を取得できません。ページを再読み込みしてください。');
+ const entries=nodes.map(node=>{
+  const idx=Number(node.dataset.index),item=live.cards[idx];
+  if(!item)return null;
+  // Position and size are taken from the actual card element, never its artwork.
   const x=parseFloat(node.style.left),y=parseFloat(node.style.top);
-  const rot=(node.style.getPropertyValue('--rotation').trim()||'0deg');
-  const angle=parseFloat(rot)||0;
-  const width=parseFloat(node.style.width)||rect.width;
-  const height=parseFloat(node.style.height)||rect.height;
-  const front=node.querySelector('.face.front');
-  const visibleName=front?.querySelector('.card-name')?.textContent?.trim();
-  const svgTexts=[...(front?.querySelectorAll('svg text')||[])].map(t=>t.textContent.trim()).filter(Boolean);
-  const id=item.id||node.dataset.cardId;
-  const fromCatalog=catalog.find(c=>c.id===id)?.name;
-  const label=visibleName||svgTexts.at(-1)||fromCatalog||id||'カード';
-  return {x:Number.isFinite(x)?x:50,y:Number.isFinite(y)?y:50,angle,width,height,label,idx};
- });
+  const angle=parseFloat(node.style.getPropertyValue('--rotation'))||0;
+  const width=parseFloat(node.style.width)||node.offsetWidth;
+  const height=parseFloat(node.style.height)||node.offsetHeight;
+  return {x:Number.isFinite(x)?x:50,y:Number.isFinite(y)?y:50,angle,width,height,label:String(item.label||item.id||'カード'),idx};
+ }).filter(Boolean);
+ if(!entries.length)throw Error('印刷できるカードがありません。');
  // Derive the native card dimensions from the untransformed DOM, not the camera.
  const zw=zone.offsetWidth,zh=zone.offsetHeight;
- const mmPerUnit=180/Math.max(zw,zh);
  const pageW=210,pageH=297,margin=12;
  const scale=Math.min((pageW-2*margin)/zw,(pageH-2*margin)/zh);
  const contentW=zw*scale,contentH=zh*scale;
