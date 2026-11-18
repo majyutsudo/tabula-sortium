@@ -87,9 +87,20 @@ function editor(source){
  svg.style.cssText='background:white;width:min(100%,650px);height:auto;box-shadow:0 4px 25px #0008;touch-action:none;user-select:none;flex-shrink:0';
  stage.append(svg);root.append(toolbar,stage);document.body.append(root);
  const texts=[...svg.querySelectorAll('text')];
+ const baseViewBox='0 0 210 297';
+ const overlay=element('g',{'data-editor-overlay':'grid', 'pointer-events':'none'});
+ const gridDefs=element('defs');
+ const pattern=element('pattern',{id:'tabula-print-grid',width:5,height:5,patternUnits:'userSpaceOnUse'});
+ pattern.append(element('path',{d:'M 5 0 L 0 0 0 5',fill:'none',stroke:'#80a0b9','stroke-width':0.12}));gridDefs.append(pattern);
+ overlay.append(gridDefs,element('rect',{width:210,height:297,fill:'url(#tabula-print-grid)'}));
+ overlay.style.display='none';svg.append(overlay);
  let selected=null,drag=null;
  const control=(tag,label)=>{const e=document.createElement(tag);e.title=label;e.setAttribute('aria-label',label);e.style.cssText='padding:5px 8px;min-height:30px;color:#111;background:#fff;border:1px solid #aaa;border-radius:4px';toolbar.append(e);return e;};
  const heading=document.createElement('strong');heading.textContent='配置図エディター';toolbar.append(heading);
+ const zoom=control('select','表示倍率');for(const n of [100,150,200,400]){const o=document.createElement('option');o.value=n;o.textContent=n+'%';zoom.append(o)}
+ zoom.onchange=()=>{svg.style.width=(650*Number(zoom.value)/100)+'px';stage.style.justify=Number(zoom.value)>100?'flex-start':'center'};
+ const gridLabel=document.createElement('label');gridLabel.style.cssText='display:flex;align-items:center;gap:3px';
+ const gridToggle=document.createElement('input');gridToggle.type='checkbox';gridToggle.onchange=()=>overlay.style.display=gridToggle.checked?'':'none';gridLabel.append(gridToggle,document.createTextNode('5mmグリッド'));toolbar.append(gridLabel);
  const size=control('input','文字サイズ (mm)');size.type='number';size.min='1';size.max='30';size.step='0.5';size.style.width='64px';
  const family=control('select','フォント');
  for(const [name,value] of [['明朝体','serif'],['ゴシック体','sans-serif'],['等幅','monospace']]){const o=document.createElement('option');o.textContent=name;o.value=value;family.append(o);}
@@ -112,7 +123,7 @@ function editor(source){
  const original=source.cloneNode(true);
  const background=()=>svg.querySelector('rect');
  function exportSvg(){
-  const copy=svg.cloneNode(true);copy.removeAttribute('style');
+  const copy=svg.cloneNode(true);copy.removeAttribute('style');copy.querySelector('[data-editor-overlay="grid"]')?.remove();
   copy.querySelectorAll('text').forEach(t=>{t.removeAttribute('text-decoration');t.removeAttribute('style')});
   if(transparent.checked)copy.querySelector('rect')?.remove();
   copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');
@@ -131,6 +142,7 @@ function editor(source){
   const matrix=svg.getScreenCTM();if(!matrix)return;const p=pt.matrixTransform(matrix.inverse());
   drag={t,startX:p.x,startY:p.y,x:Number(t.getAttribute('x')),y:Number(t.getAttribute('y'))};
   t.setPointerCapture(e.pointerId);
+  root.focus({preventScroll:true});
  });t.addEventListener('pointermove',e=>{
   if(!drag||drag.t!==t)return;
   const matrix=svg.getScreenCTM();if(!matrix)return;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(matrix.inverse());
@@ -163,7 +175,16 @@ function editor(source){
  };
  printButton.onclick=()=>print(exportSvg());
  close.onclick=()=>root.remove();
- root.addEventListener('keydown',e=>{if(e.key==='Escape'){root.remove()}});
+ root.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){root.remove();return;}
+  if(!selected||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
+  const target=e.target;if(target?.closest?.('input,textarea,select,[contenteditable]'))return;
+  e.preventDefault();const step=e.altKey?0.1:e.shiftKey?2:0.5;
+  const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;
+  const dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
+  selected.setAttribute('x',Number(selected.getAttribute('x'))+dx);
+  selected.setAttribute('y',Number(selected.getAttribute('y'))+dy);syncAngle(selected);
+ });
  root.tabIndex=-1;root.focus();
 }
 
