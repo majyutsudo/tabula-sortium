@@ -4354,10 +4354,8 @@ function refreshTableLabels(){
   const labelTransform=labelPlacement==='center'?'translate(-50%,-50%)':labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)';
   t.style.left=x+'%';t.style.top=`calc(${y}% + ${lift+offset}px)`;t.style.setProperty('transform',labelTransform,'important');
   zone.append(t);
-  const zw=zone.offsetWidth,lw=t.getBoundingClientRect().width/tableCamera.scale;
-  // Keep card-name labels centered on their cards, even at the table edges.
-   // Other label modes retain edge protection for narrow screens.
-   if(labelMode!=='card'&&zw&&lw){const center=Math.max(lw/2+3,Math.min(zw-lw/2-3,zw*x/100));t.style.left=center+'px';}
+  // All label modes stay anchored to the same card/position center,
+  // including near the table edges (no position-dependent horizontal clamping).
 
  }
  slots.forEach((slot,i)=>{if((state.tablePiles||[]).some(p=>p.slot===i))return;const item=state.placed.find(p=>p.slot===i);if(labelMode==='card'&&!item?.faceUp)return;add(item,slot,i)});
@@ -4384,8 +4382,7 @@ function refreshTableLabels(){
   t.style.top=`calc(${y}% + ${labelPlacement==='center'?0:labelPlacement==='below'?halfHeight:-halfHeight}px)`;
   t.style.setProperty('transform',labelPlacement==='center'?'translate(-50%,-50%)':labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
   zone.append(t);
-  const width=t.getBoundingClientRect().width/tableCamera.scale,zw=zone.offsetWidth;
-  if(labelMode!=='card'&&zw&&width)t.style.left=Math.max(width/2+3,Math.min(zw-width/2-3,zw*x/100))+'px';
+  // Pile labels use the same unclamped center alignment as card labels.
  }
 }
 function refreshDraggedSlotLabel(){refreshTableLabels()}
