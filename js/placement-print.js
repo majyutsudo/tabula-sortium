@@ -262,7 +262,7 @@ function editor(source,options={}){
    colorField(view,'背景色',bg.getAttribute('fill')||'#ffffff',v=>bg.setAttribute('fill',v));
    if(positionLabels().length){
     const first=positionLabels()[0];
-    selectField(view,'ポジション番号', [['with','表示する'],['without','表示しない']],first.textContent===positionLabelText(first,false)?'without':'with',v=>{
+    selectField(view,'位置番号', [['with','表示する'],['without','表示しない']],first.textContent===positionLabelText(first,false)?'without':'with',v=>{
      const numbered=v==='with';if(positionLabels().every(el=>el.textContent===positionLabelText(el,numbered)))return;
      remember();positionLabels().forEach(el=>{el.textContent=positionLabelText(el,numbered);});
     });
