@@ -100,7 +100,7 @@ function normalizedBackgroundColor(value){
  throw Error('背景色が不正です。');
 }
 function documentFromSvg(svg,transparent=false,dpi=300){
- const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
+ const cards=[...svg.children].filter(el=>el.localName==='g'&&!el.hasAttribute('data-editor-overlay')&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
  return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,backgroundColor:normalizedBackgroundColor(svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff'),
   cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
