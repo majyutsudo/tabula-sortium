@@ -21,7 +21,8 @@ function printable(){
   const idx=Number(node.dataset.index),item=live.cards[idx];
   if(!item)return null;
   // Position and size are taken from the actual card element, never its artwork.
-  const x=parseFloat(node.style.left),y=parseFloat(node.style.top);
+  // The DOM top uses calc(…% + …px), which parseFloat cannot read. Use model coordinates.
+  const x=Number(item.x),y=Number(item.y);
   const angle=parseFloat(node.style.getPropertyValue('--rotation'))||0;
   const width=parseFloat(node.style.width)||node.offsetWidth;
   const height=parseFloat(node.style.height)||node.offsetHeight;
