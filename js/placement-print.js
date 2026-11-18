@@ -332,7 +332,12 @@ function editor(source,options={}){
   const x1=Math.min(p.x,start.x),x2=Math.max(p.x,start.x),y1=Math.min(p.y,start.y),y2=Math.max(p.y,start.y);
   for(const el of elements){
    if(mode.value!=='all'&&type(el)!==mode.value)continue;
-   const bounds=el.getBBox(),matrix=el.getCTM(),corners=[[bounds.x,bounds.y],[bounds.x+bounds.width,bounds.y],[bounds.x+bounds.width,bounds.y+bounds.height],[bounds.x,bounds.y+bounds.height]];
+   // Compare in the SVG page's user coordinates, not viewport coordinates.
+   // getScreenCTM() includes the element's rotation and page zoom.
+   const bounds=el.getBBox(),screen=el.getScreenCTM(),page=svg.getScreenCTM();
+   if(!screen||!page)continue;
+   const matrix=page.inverse().multiply(screen);
+   const corners=[[bounds.x,bounds.y],[bounds.x+bounds.width,bounds.y],[bounds.x+bounds.width,bounds.y+bounds.height],[bounds.x,bounds.y+bounds.height]];
    const inside=corners.every(([x,y])=>{const q=svg.createSVGPoint();q.x=x;q.y=y;const t=q.matrixTransform(matrix);return t.x>=x1&&t.x<=x2&&t.y>=y1&&t.y<=y2;});
    if(inside)selection.add(el);
   }
