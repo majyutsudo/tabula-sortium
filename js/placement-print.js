@@ -78,7 +78,62 @@ function print(svg){
  win.document.close();win.focus();setTimeout(()=>win.print(),300);
 }
 
-function editor(source){
+
+// A placement diagram is a document, not a live view of the table.
+// Store only known SVG geometry and typography; never import arbitrary SVG markup.
+let draft=null;
+const cardAttrs=['transform'];
+const rectAttrs=['x','y','width','height','rx','fill','stroke','stroke-width','stroke-dasharray'];
+const labelAttrs=['x','y','text-anchor','font-family','font-size','fill','transform','data-label-angle','data-card-angle'];
+function attrsOf(node,allowed){return Object.fromEntries(allowed.filter(k=>node.hasAttribute(k)).map(k=>[k,node.getAttribute(k)]));}
+function cleanAttrs(node,attrs,allowed){
+ if(!attrs||typeof attrs!=='object'||Array.isArray(attrs))throw Error('図形データが不正です。');
+ for(const [k,v] of Object.entries(attrs)){
+  if(!allowed.includes(k)||typeof v!=='string'||v.length>500||/url\s*\(|javascript:|[<>]/i.test(v))throw Error('許可されない図形属性があります。');
+  if(k==='font-family'&&!/^(serif|sans-serif|monospace|[\w\s,"'-]+)$/.test(v))throw Error('書体が不正です。');
+  node.setAttribute(k,v);
+ }
+}
+function documentFromSvg(svg,transparent=false,dpi=300){
+ const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
+ const labels=[...svg.children].filter(el=>el.localName==='text');
+ return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,
+  cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
+  labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
+}
+function svgFromDocument(doc){
+ if(!doc||doc.format!=='tabula-placement-diagram'||doc.version!==2||!Array.isArray(doc.cards)||!Array.isArray(doc.labels)||doc.cards.length>500||doc.labels.length>500||doc.cards.length+doc.labels.length===0)throw Error('対応していない配置図データです。');
+ const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
+ svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
+ for(const data of doc.cards){
+  const g=element('g');cleanAttrs(g,data.attrs,cardAttrs);
+  const rect=element('rect');cleanAttrs(rect,data.rect,rectAttrs);
+  if(!['x','y','width','height'].every(k=>Number.isFinite(Number(rect.getAttribute(k))))||Number(rect.getAttribute('width'))<=0||Number(rect.getAttribute('height'))<=0)throw Error('カード枠の寸法が不正です。');
+  g.append(rect);svg.append(g);
+ }
+ for(const data of doc.labels){
+  if(typeof data.text!=='string'||data.text.length>2000)throw Error('ラベルが不正です。');
+  const label=element('text');cleanAttrs(label,data.attrs,labelAttrs);label.textContent=data.text;svg.append(label);
+ }
+ return svg;
+}
+async function parseDiagramFile(file){
+ if(file.size>2000000)throw Error('ファイルが大きすぎます。');
+ const data=JSON.parse(await file.text());
+ if(data.version!==2||data.format!=='tabula-placement-diagram')throw Error('独立した配置図JSON（v2）ではありません。以前の形式は元の卓から開いてください。');
+ return data;
+}
+function chooseDiagramFile(){
+ const input=document.createElement('input');input.type='file';input.accept='.json,application/json';
+ input.onchange=async()=>{
+  const file=input.files?.[0];if(!file)return;
+  try{const data=await parseDiagramFile(file);const svg=svgFromDocument(data);draft=null;editor(svg,{document:data});}
+  catch(e){alert('配置図を開けませんでした: '+e.message);}
+ };
+ input.click();
+}
+
+function editor(source,options={}){
  const svg=source.cloneNode(true),root=document.createElement('div');
  root.id='tabulaPrintEditor';root.tabIndex=-1;
  const css=document.createElement('style');
@@ -112,6 +167,7 @@ function editor(source){
  pattern.append(element('path',{d:'M5 0H0V5',stroke:'#9fb1c7','stroke-width':.12,fill:'none'}));defs.append(pattern);grid.append(defs,element('rect',{width:210,height:297,fill:'url(#tp-print-grid)'}));grid.style.display='none';svg.append(grid);
  let active=null,drag=null,history=[],future=[],zoom=100,showGrid=false,transparent=false,dpi=300,linkLabels=false;
  let savedState='',boxDrag=null;
+ const initialDocument=options.document||null;
  const hitLayer=element('g',{'data-editor-overlay':'hits'});
  const hitMap=new Map();
  for(const card of cards){
@@ -132,9 +188,11 @@ function editor(source){
  mode.onchange=()=>{selection.clear();active=null;syncHits();refresh();};
  function dirty(){return JSON.stringify({items:snapshot(),transparent,dpi})!==savedState;}
  function markSaved(){savedState=JSON.stringify({items:snapshot(),transparent,dpi});refresh();}
- function closeEditor(){if(dirty()&&!confirm('未保存の編集内容があります。保存せずに閉じますか？'))return;root.remove();}
+ function currentDocument(){return documentFromSvg(svg,transparent,dpi);}
+ function keepDraft(){draft=currentDocument();}
+ function closeEditor(){keepDraft();root.remove();}
  function saveProject(){
-  const data={format:'tabula-placement-diagram',version:1,page:{width:210,height:297},elements:snapshot(),transparent,dpi};
+  const data=currentDocument();
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='TABULA-配置図-編集データ.json';document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);markSaved();
@@ -143,19 +201,19 @@ function editor(source){
   try{
    if(file.size>2000000)throw Error('ファイルが大きすぎます。');
    const data=JSON.parse(await file.text());
-   if(data.format!=='tabula-placement-diagram'||data.version!==1||!Array.isArray(data.elements)||data.elements.length!==elements.length)throw Error('この卓の配置図と互換性のない編集データです。');
+   if(data.format!=='tabula-placement-diagram')throw Error('配置図データではありません。');
+   if(data.version===2){
+    const loaded=svgFromDocument(data);
+    if(!confirm('保存した配置図を開きます。現在の編集画面を置き換えますか？'))return;
+    keepDraft();root.remove();draft=null;editor(loaded,{document:data});return;
+   }
+   if(data.version!==1||!Array.isArray(data.elements)||data.elements.length!==elements.length)throw Error('旧形式の編集データです。元の卓と同じ枚数の配置図から読み込んでください。');
    if(!data.elements.every((v,i)=>v&&Array.isArray(v.attrs)&&v.attrs.every(a=>Array.isArray(a)&&a.length===2&&typeof a[0]==='string'&&typeof a[1]==='string')&&(type(elements[i])==='label'?typeof v.text==='string':typeof v.stroke==='string')))throw Error('編集データが不正です。');
-   if(!confirm('現在の配置図を読み込んだ編集データで置き換えます。よろしいですか？'))return;
+   if(!confirm('現在の配置図を旧形式の編集データで置き換えますか？'))return;
    remember();restore(data.elements);transparent=!!data.transparent;dpi=[150,300,600].includes(data.dpi)?data.dpi:300;syncHits();markSaved();
   }catch(err){alert('読み込みに失敗しました: '+err.message);}
  }
- 
- const type=el=>labels.includes(el)?'label':'card';
- const coords=el=>{if(type(el)==='label')return{x:Number(el.getAttribute('x')),y:Number(el.getAttribute('y'))};const m=(el.getAttribute('transform')||'').match(/translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/);return{x:Number(m?.[1]||0),y:Number(m?.[2]||0)};};
- const angle=el=>{if(type(el)==='label')return Number(el.getAttribute('data-label-angle')||0);const m=(el.getAttribute('transform')||'').match(/rotate\(\s*([-\d.]+)/);return Number(m?.[1]||0);};
- function setAngle(el,n){const p=coords(el);if(type(el)==='card')el.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+n+')');else{el.setAttribute('data-label-angle',n);if(n)el.setAttribute('transform','rotate('+n+' '+p.x+' '+p.y+')');else el.removeAttribute('transform');}}
- function setPosition(el,x,y){if(type(el)==='card')el.setAttribute('transform','translate('+x+' '+y+') rotate('+angle(el)+')');else{const a=angle(el);el.setAttribute('x',x);el.setAttribute('y',y);setAngle(el,a);}}
- const snapshot=()=>elements.map(el=>({attrs:[...el.attributes].map(a=>[a.name,a.value]),text:type(el)==='label'?el.textContent:null,stroke:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-width'):null,dash:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-dasharray')||'':null}));
+  const snapshot=()=>elements.map(el=>({attrs:[...el.attributes].map(a=>[a.name,a.value]),text:type(el)==='label'?el.textContent:null,stroke:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-width'):null,dash:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-dasharray')||'':null}));
  const initial=snapshot();
  function restore(state){state.forEach((v,i)=>{const el=elements[i];[...el.attributes].forEach(a=>el.removeAttribute(a.name));v.attrs.forEach(a=>el.setAttribute(a[0],a[1]));if(type(el)==='label')el.textContent=v.text;else {const rect=el.querySelector('rect');rect?.setAttribute('stroke-width',v.stroke||'.22');if(v.dash)rect?.setAttribute('stroke-dasharray',v.dash);else rect?.removeAttribute('stroke-dasharray');}});selection.clear();active=null;syncHits();}
  function remember(){history.push(snapshot());if(history.length>100)history.shift();future=[];}
@@ -277,13 +335,28 @@ function editor(source){
   active=[...selection].at(-1)||null;refresh();
  });
  svg.addEventListener('pointercancel',()=>{boxDrag=null;marquee.style.display='none';});
+ if(initialDocument){transparent=!!initialDocument.transparent;dpi=[150,300,600].includes(initialDocument.dpi)?initialDocument.dpi:300;}
  markSaved();root.focus();refresh();
 }
 function install(){
  const bar=document.querySelector('.main > .toolbar');if(!bar||$('printPlacement'))return;
  const button=document.createElement('button');button.type='button';button.id='printPlacement';button.textContent='配置図を編集・出力';button.title='カード枠とラベルを編集してSVG・PNG保存／印刷';
  button.addEventListener('click',()=>{
-  try{if($('tabulaPrintEditor'))return;editor(printable())}catch(e){alert(e.message)}
+  if($('tabulaPrintEditor'))return;
+  if(draft){
+   const choice=prompt('配置図を開く方法を選んでください。\\n1：前回の編集を再開\\n2：現在の卓から新規作成\\n3：保存したJSONを読み込む','1');
+   if(choice===null)return;
+   if(choice.trim()==='1'){try{editor(svgFromDocument(draft),{document:draft});}catch(e){alert(e.message);}return;}
+   if(choice.trim()==='3'){chooseDiagramFile();return;}
+   if(choice.trim()!=='2')return;
+   if(!confirm('現在の卓から新しい配置図を作ります。前回の一時編集状態は置き換わります。JSONに保存していない場合は失われます。よろしいですか？'))return;
+  }else{
+   const choice=prompt('配置図を開く方法を選んでください。\\n1：現在の卓から新規作成\\n2：保存したJSONを読み込む','1');
+   if(choice===null)return;
+   if(choice.trim()==='2'){chooseDiagramFile();return;}
+   if(choice.trim()!=='1')return;
+  }
+  try{const fresh=printable();draft=null;editor(fresh);}catch(e){alert(e.message);}
  });
  bar.append(button);
 }
