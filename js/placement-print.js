@@ -17,38 +17,41 @@ function printable(){
  if(!nodes.length)throw Error('卓上にカードがありません。');
  const live=globalThis.TabulaPlacementPrintData?.();
  if(!live||!Array.isArray(live.cards))throw Error('卓情報を取得できません。ページを再読み込みしてください。');
- const entries=nodes.map(node=>{
-  const idx=Number(node.dataset.index),item=live.cards[idx];
-  if(!item)return null;
-  // Position and size are taken from the actual card element, never its artwork.
-  // The DOM top uses calc(…% + …px), which parseFloat cannot read. Use model coordinates.
-  const x=Number(item.x),y=Number(item.y);
-  const angle=parseFloat(node.style.getPropertyValue('--rotation'))||0;
-  const width=parseFloat(node.style.width)||node.offsetWidth;
-  const height=parseFloat(node.style.height)||node.offsetHeight;
-  return {x:Number.isFinite(x)?x:50,y:Number.isFinite(y)?y:50,angle,width,height,label:String(item.label||item.id||'カード')+(item.reversed?'〈逆〉':''),idx};
- }).filter(Boolean);
- if(!entries.length)throw Error('印刷できるカードがありません。');
- // Derive the native card dimensions from the untransformed DOM, not the camera.
+ // Use actual on-screen geometry for BOTH cards and labels. The labels are
+ // independent DOM elements; their positions must never be inferred from cards.
  const zw=zone.offsetWidth,zh=zone.offsetHeight;
  const pageW=210,pageH=297,margin=12;
  const scale=Math.min((pageW-2*margin)/zw,(pageH-2*margin)/zh);
- const contentW=zw*scale,contentH=zh*scale;
- const ox=(pageW-contentW)/2,oy=(pageH-contentH)/2;
+ const ox=(pageW-zw*scale)/2,oy=(pageH-zh*scale)/2;
+ const toX=px=>ox+(px-zr.left)*zw/zr.width*scale;
+ const toY=px=>oy+(px-zr.top)*zh/zr.height*scale;
+ const sx=zw/zr.width,sy=zh/zr.height;
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
  svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
- for(const e of entries){
-  const x=ox+e.x/100*contentW,y=oy+e.y/100*contentH;
-  const w=e.width*scale,h=e.height*scale;
-  const g=element('g',{transform:`translate(${x} ${y}) rotate(${e.angle})`});
+ // Outlines first, then labels, matching TABULA's separate label layer.
+ for(const node of nodes){
+  const idx=Number(node.dataset.index),item=live.cards[idx];
+  if(!item)continue;
+  const rect=node.getBoundingClientRect();
+  const x=toX(rect.left+rect.width/2),y=toY(rect.top+rect.height/2);
+  const w=node.offsetWidth*scale,h=node.offsetHeight*scale;
+  const angle=parseFloat(node.style.getPropertyValue('--rotation'))||0;
+  const g=element('g',{transform:`translate(${x} ${y}) rotate(${angle})`});
   g.append(element('rect',{x:-w/2,y:-h/2,width:w,height:h,rx:0.6,fill:'none',stroke:'#111','stroke-width':0.22}));
   svg.append(g);
-  // Card-name labels remain upright and BELOW the rotated card outline.
-  const rad=e.angle*Math.PI/180;
-  const halfHeight=(Math.abs(Math.cos(rad))*h+Math.abs(Math.sin(rad))*w)/2;
-  const font=Math.min(3.5,Math.max(1.6,w/Math.max(6,e.label.length)*1.3));
-  const labelY=y+halfHeight+Math.max(1.2,2*scale);
-  svg.append(element('text',{x,y:labelY+font,'text-anchor':'middle','font-family':'sans-serif','font-size':font,fill:'#111'},e.label));
+ }
+ // Render only the card-name labels actually shown on the table, in their
+ // real positions, including any intentional overlaps in the Celtic cross.
+ for(const node of zone.querySelectorAll(':scope > .zone-label.unified-label')){
+  if(!node.textContent.trim()||getComputedStyle(node).display==='none')continue;
+  const rect=node.getBoundingClientRect();
+  if(!rect.width||!rect.height)continue;
+  const style=getComputedStyle(node);
+  const fontPx=parseFloat(style.fontSize)||12;
+  const font=fontPx*sy*scale;
+  const x=toX(rect.left+rect.width/2);
+  const y=toY(rect.top)+font*0.87;
+  svg.append(element('text',{x,y,'text-anchor':'middle','font-family':style.fontFamily||'sans-serif','font-size':font,fill:'#111'},node.textContent.trim()));
  }
  return svg;
 }
