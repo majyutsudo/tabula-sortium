@@ -84,8 +84,7 @@ function print(svg){
 let draft=null;
 const cardAttrs=['transform'];
 const rectAttrs=['x','y','width','height','rx','fill','stroke','stroke-width','stroke-dasharray'];
-const arrowAttrs=['x1','y1','x2','y2','stroke','stroke-width','stroke-dasharray','data-arrow-head','data-arrow-layer'];
-const labelAttrs=['x','y','text-anchor','font-family','font-size','fill','transform','data-label-angle','data-card-angle','data-free-text'];
+const labelAttrs=['x','y','text-anchor','font-family','font-size','fill','transform','data-label-angle','data-card-angle'];
 function attrsOf(node,allowed){return Object.fromEntries(allowed.filter(k=>node.hasAttribute(k)).map(k=>[k,node.getAttribute(k)]));}
 function cleanAttrs(node,attrs,allowed){
  if(!attrs||typeof attrs!=='object'||Array.isArray(attrs))throw Error('図形データが不正です。');
@@ -97,37 +96,24 @@ function cleanAttrs(node,attrs,allowed){
 function documentFromSvg(svg,transparent=false,dpi=300){
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
- const arrows=[...svg.querySelectorAll('[data-arrow-object="true"]')];
- const freeTexts=labels.filter(el=>el.getAttribute('data-free-text')==='true');
- return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,backgroundColor:svg.querySelector(':scope > rect')?.getAttribute('fill')||'#fff',
-  arrows:arrows.map(el=>attrsOf(el,arrowAttrs)),cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
+ return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,
+  cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
   labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
 }
 function svgFromDocument(doc){
  if(!doc||doc.format!=='tabula-placement-diagram'||doc.version!==2||!Array.isArray(doc.cards)||!Array.isArray(doc.labels)||doc.cards.length>500||doc.labels.length>500||doc.cards.length+doc.labels.length===0)throw Error('対応していない配置図データです。');
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
- svg.append(element('rect',{width:210,height:297,fill:/^#[0-9a-fA-F]{3,6}$/.test(doc.backgroundColor||'')?doc.backgroundColor:'#fff'}));
+ svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
  for(const data of doc.cards){
   const g=element('g');cleanAttrs(g,data.attrs,cardAttrs);
   const rect=element('rect');cleanAttrs(rect,data.rect,rectAttrs);
   if(!['x','y','width','height'].every(k=>Number.isFinite(Number(rect.getAttribute(k))))||Number(rect.getAttribute('width'))<=0||Number(rect.getAttribute('height'))<=0)throw Error('カード枠の寸法が不正です。');
   g.append(rect);svg.append(g);
  }
- if(doc.arrows!==undefined){
-  if(!Array.isArray(doc.arrows)||doc.arrows.length>200)throw Error('矢印データが不正です。');
-  for(const data of doc.arrows){
-   const line=element('line',{'data-arrow-object':'true'});cleanAttrs(line,data,arrowAttrs);
-   if(!['x1','y1','x2','y2'].every(k=>Number.isFinite(Number(line.getAttribute(k)))))throw Error('矢印座標が不正です。');
-   if(line.getAttribute('data-arrow-layer')==='front')svg.append(line);
-   else svg.insertBefore(line,svg.querySelector(':scope > g')||svg.querySelector(':scope > text'));
-  }
- }
  for(const data of doc.labels){
   if(typeof data.text!=='string'||data.text.length>2000)throw Error('ラベルが不正です。');
   const label=element('text');cleanAttrs(label,data.attrs,labelAttrs);label.textContent=data.text;svg.append(label);
  }
- // Restore front arrows after labels so their visual order survives JSON reload.
- for(const line of [...svg.querySelectorAll('[data-arrow-object="true"][data-arrow-layer="front"]')])svg.append(line);
  return svg;
 }
 async function parseDiagramFile(file){
@@ -158,11 +144,9 @@ function editor(source,options={}){
  make('strong',head,'TABULA · 配置図');
  make('span',head,'選択対象','tp-note');
  const mode=make('select',head);
- [['all','すべて'],['card','カード枠'],['label','ラベル'],['arrow','矢印']].forEach(pair=>{const opt=make('option',mode,pair[1]);opt.value=pair[0];});
+ [['all','すべて'],['card','カード枠'],['label','ラベル']].forEach(pair=>{const opt=make('option',mode,pair[1]);opt.value=pair[0];});
  const undoBtn=button(head,'↶ 元に戻す',undo),redoBtn=button(head,'↷ やり直す',redo);
- const addTextBtn=button(head,'＋ テキスト',()=>addFreeText());
- const addArrowBtn=button(head,'＋ 矢印',()=>startArrow());
- button(head,'初期配置に戻す',()=>{if(!confirm('カード枠・文字・矢印の編集を破棄し、最初の配置に戻します。よろしいですか？'))return;restoreDocument(originalDocument);history=[];future=[];refresh();});
+ button(head,'初期配置に戻す',()=>{if(!confirm('カード枠とラベルの編集をすべて破棄し、最初の配置に戻します。よろしいですか？'))return;restore(initial);history=[];future=[];refresh();});
  make('span',head,undefined,'tp-spacer');
  button(head,'SVG保存',()=>download(exportSvg()),'tp-export');
  button(head,'PNG保存',()=>savePng(),'tp-export');
@@ -176,42 +160,15 @@ function editor(source,options={}){
  sheet.append(svg);document.body.append(root);
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
- const elements=[...cards,...labels,...svg.querySelectorAll('[data-arrow-object="true"]')],selection=new Set();
+ const elements=[...cards,...labels],selection=new Set();
  const bg=svg.querySelector(':scope > rect');
- let arrowTool=false;
- const arrows=[...svg.querySelectorAll('[data-arrow-object="true"]')];
- function arrowHead(line){
-  const x1=Number(line.getAttribute('x1')),y1=Number(line.getAttribute('y1')),x2=Number(line.getAttribute('x2')),y2=Number(line.getAttribute('y2'));
-  const len=Math.hypot(x2-x1,y2-y1)||1,ux=(x2-x1)/len,uy=(y2-y1)/len;
-  const size=Math.max(2,Number(line.getAttribute('stroke-width')||.4)*6),wing=size*.42;
-  return [x2-ux*size-uy*wing,y2-uy*size+ux*wing,x2,y2,x2-ux*size+uy*wing,y2-uy*size-ux*wing].join(' ');
- }
- function updateArrow(line){
-  let head=line.nextElementSibling;
-  if(!head||head.getAttribute('data-arrow-head-for')!=='true'){
-   head=element('polygon',{'data-arrow-head-for':'true','pointer-events':'none'});line.after(head);
-  }
-  head.setAttribute('points',arrowHead(line));head.setAttribute('fill',line.getAttribute('stroke')||'#111');
-  head.style.display=line.getAttribute('data-arrow-head')==='none'?'none':'';
-  head.setAttribute('data-editor-arrow-head','true');
- }
- function addArrow(line,layer='back'){
-  line.setAttribute('data-arrow-object','true');line.setAttribute('data-arrow-layer',layer);
-  if(layer==='back')svg.insertBefore(line,cards[0]||labels[0]||grid);
-  else svg.insertBefore(line,grid);
-  arrows.push(line);elements.push(line);attachSelection(line,line);updateArrow(line);
- }
- for(const line of [...arrows]){line.setAttribute('data-arrow-object','true');updateArrow(line);}
-
  const grid=element('g',{'data-editor-overlay':'grid','pointer-events':'none'}),defs=element('defs'),pattern=element('pattern',{id:'tp-print-grid',width:5,height:5,patternUnits:'userSpaceOnUse'});
  pattern.append(element('path',{d:'M5 0H0V5',stroke:'#9fb1c7','stroke-width':.12,fill:'none'}));defs.append(pattern);grid.append(defs,element('rect',{width:210,height:297,fill:'url(#tp-print-grid)'}));grid.style.display='none';svg.append(grid);
  let active=null,drag=null,history=[],future=[],zoom=100,showGrid=false,transparent=false,dpi=300,linkLabels=false;
- let savedState='',boxDrag=null,arrowDrawing=null;
+ let savedState='',boxDrag=null;
  const initialDocument=options.document||null;
- const originalDocument=documentFromSvg(svg,!!initialDocument?.transparent,initialDocument?.dpi||300);
- const initialBackground=bg.getAttribute('fill')||'#fff';
  const hitLayer=element('g',{'data-editor-overlay':'hits'});
- const hitMap=new Map(),freeTextHits=new Map();
+ const hitMap=new Map();
  for(const card of cards){
   const rect=card.querySelector('rect');
   const hit=element('rect',{x:rect.getAttribute('x'),y:rect.getAttribute('y'),width:rect.getAttribute('width'),height:rect.getAttribute('height'),rx:rect.getAttribute('rx')||0,fill:'transparent',stroke:'transparent','stroke-width':2,'pointer-events':'stroke'});
@@ -225,12 +182,11 @@ function editor(source,options={}){
    hit.setAttribute('transform',card.getAttribute('transform')||'');
    hit.setAttribute('pointer-events',mode.value==='card'?'all':'stroke');
   }
-  labels.forEach(label=>label.style.pointerEvents=mode.value==='card'?'none':'visiblePainted');
-  freeTexts.forEach(updateFreeTextHit);
+  labels.forEach(label=>label.style.pointerEvents=mode.value==='card'?'none':'');
  }
  mode.onchange=()=>{selection.clear();active=null;syncHits();refresh();};
- function dirty(){return JSON.stringify(currentDocument())!==savedState;}
- function markSaved(){savedState=JSON.stringify(currentDocument());refresh();}
+ function dirty(){return JSON.stringify({items:snapshot(),transparent,dpi})!==savedState;}
+ function markSaved(){savedState=JSON.stringify({items:snapshot(),transparent,dpi});refresh();}
  function currentDocument(){return documentFromSvg(svg,transparent,dpi);}
  function keepDraft(){draft=currentDocument();}
  function closeEditor(){keepDraft();root.remove();}
@@ -256,32 +212,17 @@ function editor(source,options={}){
    remember();restore(data.elements);transparent=!!data.transparent;dpi=[150,300,600].includes(data.dpi)?data.dpi:300;syncHits();markSaved();
   }catch(err){alert('読み込みに失敗しました: '+err.message);}
  }
- const type=el=>arrows.includes(el)?'arrow':labels.includes(el)?'label':'card';
- const coords=el=>{if(type(el)==='arrow')return{x:Number(el.getAttribute('x1')),y:Number(el.getAttribute('y1'))};if(type(el)==='label')return{x:Number(el.getAttribute('x')),y:Number(el.getAttribute('y'))};const m=(el.getAttribute('transform')||'').match(/translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/);return{x:Number(m?.[1]||0),y:Number(m?.[2]||0)};};
- const angle=el=>{if(type(el)==='arrow')return Math.atan2(Number(el.getAttribute('y2'))-Number(el.getAttribute('y1')),Number(el.getAttribute('x2'))-Number(el.getAttribute('x1')))*180/Math.PI;if(type(el)==='label')return Number(el.getAttribute('data-label-angle')||0);const m=(el.getAttribute('transform')||'').match(/rotate\(\s*([-\d.]+)/);return Number(m?.[1]||0);};
- function setAngle(el,n){const p=coords(el);if(type(el)==='arrow'){const len=Math.hypot(Number(el.getAttribute('x2'))-p.x,Number(el.getAttribute('y2'))-p.y);el.setAttribute('x2',p.x+len*Math.cos(n*Math.PI/180));el.setAttribute('y2',p.y+len*Math.sin(n*Math.PI/180));updateArrow(el);return;}if(type(el)==='card')el.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+n+')');else{el.setAttribute('data-label-angle',n);if(n)el.setAttribute('transform','rotate('+n+' '+p.x+' '+p.y+')');else el.removeAttribute('transform');}}
- function setPosition(el,x,y){if(type(el)==='arrow'){const p=coords(el),dx=x-p.x,dy=y-p.y;el.setAttribute('x1',x);el.setAttribute('y1',y);el.setAttribute('x2',Number(el.getAttribute('x2'))+dx);el.setAttribute('y2',Number(el.getAttribute('y2'))+dy);updateArrow(el);return;}if(type(el)==='card')el.setAttribute('transform','translate('+x+' '+y+') rotate('+angle(el)+')');else{const a=angle(el);el.setAttribute('x',x);el.setAttribute('y',y);setAngle(el,a);}}
+ const type=el=>labels.includes(el)?'label':'card';
+ const coords=el=>{if(type(el)==='label')return{x:Number(el.getAttribute('x')),y:Number(el.getAttribute('y'))};const m=(el.getAttribute('transform')||'').match(/translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/);return{x:Number(m?.[1]||0),y:Number(m?.[2]||0)};};
+ const angle=el=>{if(type(el)==='label')return Number(el.getAttribute('data-label-angle')||0);const m=(el.getAttribute('transform')||'').match(/rotate\(\s*([-\d.]+)/);return Number(m?.[1]||0);};
+ function setAngle(el,n){const p=coords(el);if(type(el)==='card')el.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+n+')');else{el.setAttribute('data-label-angle',n);if(n)el.setAttribute('transform','rotate('+n+' '+p.x+' '+p.y+')');else el.removeAttribute('transform');}}
+ function setPosition(el,x,y){if(type(el)==='card')el.setAttribute('transform','translate('+x+' '+y+') rotate('+angle(el)+')');else{const a=angle(el);el.setAttribute('x',x);el.setAttribute('y',y);setAngle(el,a);}}
   const snapshot=()=>elements.map(el=>({attrs:[...el.attributes].map(a=>[a.name,a.value]),text:type(el)==='label'?el.textContent:null,stroke:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-width'):null,fill:type(el)==='card'?el.querySelector('rect')?.getAttribute('fill')||'none':null,strokeColor:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke')||'#111':null,dash:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-dasharray')||'':null}));
  const initial=snapshot();
- function restore(state){state.forEach((v,i)=>{const el=elements[i];if(!el)return;[...el.attributes].forEach(a=>el.removeAttribute(a.name));v.attrs.forEach(a=>el.setAttribute(a[0],a[1]));if(type(el)==='label')el.textContent=v.text;else if(type(el)==='card'){const rect=el.querySelector('rect');rect?.setAttribute('stroke-width',v.stroke||'.22');rect?.setAttribute('fill',v.fill||'none');rect?.setAttribute('stroke',v.strokeColor||'#111');if(v.dash)rect?.setAttribute('stroke-dasharray',v.dash);else rect?.removeAttribute('stroke-dasharray');}else updateArrow(el);});selection.clear();active=null;syncHits();}
- function remember(){history.push(currentDocument());if(history.length>100)history.shift();future=[];}
- function restoreDocument(doc){
-  const restored=svgFromDocument(doc);
-  for(const el of [...elements]){if(type(el)==='arrow'){el.nextElementSibling?.getAttribute('data-arrow-head-for')==='true'&&el.nextElementSibling.remove();el.remove();}else if(freeTexts.includes(el))el.remove();}
-  arrows.length=0;freeTexts.length=0;for(const hit of freeTextHits.values())hit.remove();freeTextHits.clear();
-  elements.splice(0,elements.length,...cards,...labels.filter(el=>!el.hasAttribute('data-free-text')));
-  labels.splice(0,labels.length,...elements.filter(el=>el.localName==='text'));
-  const restoredCards=[...restored.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
-  const restoredLabels=[...restored.children].filter(el=>el.localName==='text');
-  if(restoredCards.length!==cards.length||restoredLabels.filter(el=>!el.hasAttribute('data-free-text')).length!==labels.length)throw Error('カード・ラベル数が一致しません。');
-  restoredCards.forEach((el,i)=>{const target=cards[i];[...target.attributes].forEach(a=>target.removeAttribute(a.name));[...el.attributes].forEach(a=>target.setAttribute(a.name,a.value));target.replaceChildren(el.querySelector('rect').cloneNode(true));});
-  let baseIndex=0;restoredLabels.forEach(el=>{if(el.hasAttribute('data-free-text')){const text=el.cloneNode(true);svg.append(text);labels.push(text);freeTexts.push(text);elements.push(text);attachSelection(text,text);attachFreeTextHit(text);}else{const target=labels[baseIndex++];[...target.attributes].forEach(a=>target.removeAttribute(a.name));[...el.attributes].forEach(a=>target.setAttribute(a.name,a.value));target.textContent=el.textContent;}});
-  for(const line of restored.querySelectorAll('[data-arrow-object="true"]'))addArrow(line.cloneNode(true),line.getAttribute('data-arrow-layer')||'back');
-  bg.setAttribute('fill',doc.backgroundColor||'#fff');transparent=!!doc.transparent;dpi=doc.dpi||300;
-  selection.clear();active=null;syncHits();
- }
- function undo(){if(!history.length)return;future.push(currentDocument());restoreDocument(history.pop());refresh();}
- function redo(){if(!future.length)return;history.push(currentDocument());restoreDocument(future.pop());refresh();}
+ function restore(state){state.forEach((v,i)=>{const el=elements[i];[...el.attributes].forEach(a=>el.removeAttribute(a.name));v.attrs.forEach(a=>el.setAttribute(a[0],a[1]));if(type(el)==='label')el.textContent=v.text;else {const rect=el.querySelector('rect');rect?.setAttribute('stroke-width',v.stroke||'.22');rect?.setAttribute('fill',v.fill||'none');rect?.setAttribute('stroke',v.strokeColor||'#111');if(v.dash)rect?.setAttribute('stroke-dasharray',v.dash);else rect?.removeAttribute('stroke-dasharray');}});selection.clear();active=null;syncHits();}
+ function remember(){history.push(snapshot());if(history.length>100)history.shift();future=[];}
+ function undo(){if(!history.length)return;future.push(snapshot());restore(history.pop());refresh();}
+ function redo(){if(!future.length)return;history.push(snapshot());restore(future.pop());refresh();}
  function select(el,shift){if(!shift)selection.clear();if(el){if(shift&&selection.has(el))selection.delete(el);else selection.add(el);}active=selection.has(el)?el:([...selection].at(-1)||null);refresh();}
  function section(title){const el=make('div',side,undefined,'tp-section');make('h3',el,title);return el;}
  function field(parent,label,value,fn,kind='number'){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('input',row);input.type=kind;input.value=value;input.onchange=()=>{remember();fn(input.value);refresh();};return input;}
@@ -304,9 +245,9 @@ function editor(source,options={}){
   const view=section('表示');
   selectField(view,'倍率',[[100,'100%'],[150,'150%'],[200,'200%'],[400,'400%']],zoom,v=>{zoom=Number(v);sheet.style.width=650*zoom/100+'px';sheet.style.margin=zoom>100?'0':'0 auto';});
   check(view,'5mmグリッド',showGrid,v=>{showGrid=v;grid.style.display=v?'':'none';});
-  if(!selection.size)make('p',side,'カード枠・文字・矢印を選択すると、ここに編集項目が表示されます。','tp-note');
+  if(!selection.size)make('p',side,'カード枠またはラベルをクリックすると、ここに編集項目が表示されます。','tp-note');
   else{
-   const same=[...selection].every(el=>type(el)===type(active)),s=section(selection.size>1?selection.size+'件を編集':type(active)==='card'?'カード枠':type(active)==='arrow'?'矢印':freeTexts.includes(active)?'フリーテキスト':'ラベル');
+   const same=[...selection].every(el=>type(el)===type(active)),s=section(selection.size>1?selection.size+'件を編集':type(active)==='card'?'カード枠':'ラベル');
    if(!same)make('p',s,'枠とラベルを一緒に移動できます。書式の変更は同じ種類を選択してください。','tp-note');
    const p=coords(active);
    field(s,'X (mm)',p.x.toFixed(2),v=>{const d=Number(v)-p.x;if(Number.isFinite(d))selection.forEach(el=>{const q=coords(el);setPosition(el,q.x+d,q.y);});});
@@ -318,26 +259,15 @@ function editor(source,options={}){
     selectField(s,'書体',[['serif','明朝体'],['sans-serif','ゴシック体'],['monospace','等幅']],active.getAttribute('font-family')||'serif',v=>{remember();selection.forEach(el=>el.setAttribute('font-family',v));});
     colorField(s,'文字色',active.getAttribute('fill')||'#111111',v=>selection.forEach(el=>el.setAttribute('fill',v)));
     const actions=make('div',s,undefined,'tp-actions');
-    if(freeTexts.includes(active))button(actions,'このテキストを削除',()=>removeSelected());
-    if(!freeTexts.includes(active))button(actions,'全ラベルに書式を適用',()=>{
+    button(actions,'全ラベルに書式を適用',()=>{
      if(!confirm('選択中のラベルの書体と文字サイズを、すべてのラベルに適用します。位置・角度・文字内容は変更しません。よろしいですか？'))return;
      remember();
      const size=active.getAttribute('font-size'),family=active.getAttribute('font-family');
-     labels.filter(el=>!freeTexts.includes(el)).forEach(el=>{if(size!==null)el.setAttribute('font-size',size);if(family!==null)el.setAttribute('font-family',family);});
+     labels.forEach(el=>{if(size!==null)el.setAttribute('font-size',size);if(family!==null)el.setAttribute('font-family',family);});
      refresh();
     });
-    if(!freeTexts.includes(active))button(actions,'各カードの角度',()=>{remember();selection.forEach(el=>setAngle(el,Number(el.getAttribute('data-card-angle')||0)));refresh();});
+    button(actions,'各カードの角度',()=>{remember();selection.forEach(el=>setAngle(el,Number(el.getAttribute('data-card-angle')||0)));refresh();});
     button(actions,'水平',()=>{remember();selection.forEach(el=>setAngle(el,0));refresh();});
-   }
-   if(same&&type(active)==='arrow'){
-    colorField(s,'矢印色',active.getAttribute('stroke')||'#111111',v=>selection.forEach(el=>{el.setAttribute('stroke',v);updateArrow(el);}));
-    field(s,'線幅 (mm)',active.getAttribute('stroke-width')||'.4',v=>{if(Number(v)>0)selection.forEach(el=>{el.setAttribute('stroke-width',v);updateArrow(el);});});
-    field(s,'終点 X (mm)',active.getAttribute('x2'),v=>{if(Number.isFinite(Number(v)))selection.forEach(el=>{el.setAttribute('x2',v);updateArrow(el);});});
-    field(s,'終点 Y (mm)',active.getAttribute('y2'),v=>{if(Number.isFinite(Number(v)))selection.forEach(el=>{el.setAttribute('y2',v);updateArrow(el);});});
-    selectField(s,'線種',[['','実線'],['2 1.2','破線'],['.35 1.2','点線']],active.getAttribute('stroke-dasharray')||'',v=>{remember();selection.forEach(el=>{if(v)el.setAttribute('stroke-dasharray',v);else el.removeAttribute('stroke-dasharray');});});
-    selectField(s,'先端',[['arrow','矢印'],['none','なし']],active.getAttribute('data-arrow-head')||'arrow',v=>{remember();selection.forEach(el=>{el.setAttribute('data-arrow-head',v);updateArrow(el);});});
-    selectField(s,'重なり順',[['back','カードの背後'],['front','カードの前面']],active.getAttribute('data-arrow-layer')||'back',v=>{remember();selection.forEach(el=>{el.setAttribute('data-arrow-layer',v);if(v==='back')svg.insertBefore(el,cards[0]||labels[0]);else svg.insertBefore(el,grid);updateArrow(el);});});
-    button(s,'矢印を削除',()=>removeSelected());
    }
    if(same&&type(active)==='card'){
     const rect=active.querySelector('rect');
@@ -359,59 +289,20 @@ function editor(source,options={}){
    make('p',s,'Shift＋クリックで複数選択。矢印キーで微調整できます。','tp-note');
   }
   const output=section('書き出し設定');
-  selectField(output,'背景',[['#fff','白'],['none','透明'],['custom','任意の色']],transparent?'none':/^#(?:fff|ffffff)$/i.test(bg.getAttribute('fill')||'')?'#fff':'custom',v=>{
-   remember();const wasTransparent=transparent;transparent=v==='none';if(v==='#fff')bg.setAttribute('fill','#fff');if(v==='custom'&&wasTransparent)bg.setAttribute('fill','#f5e8c8');refresh();
-  });
-  colorField(output,'背景色',bg.getAttribute('fill')||'#ffffff',v=>{bg.setAttribute('fill',v);transparent=false;});
-
+  check(output,'透明背景',transparent,v=>transparent=v);
   selectField(output,'PNG解像度',[[150,'150 dpi'],[300,'300 dpi'],[600,'600 dpi']],dpi,v=>dpi=Number(v));
   make('p',output,'グリッドと選択枠は出力しません。','tp-note');
  }
  function refresh(){
-  elements.forEach(el=>{const on=selection.has(el);if(type(el)==='card')el.querySelector('rect')?.classList.toggle('tp-selected',on);else if(type(el)==='label'){if(on)el.setAttribute('text-decoration','underline');else el.removeAttribute('text-decoration');}else {el.classList.toggle('tp-selected',on);updateArrow(el);}});
+  elements.forEach(el=>{const on=selection.has(el);if(type(el)==='card')el.querySelector('rect')?.classList.toggle('tp-selected',on);else if(on)el.setAttribute('text-decoration','underline');else el.removeAttribute('text-decoration');});
   syncHits();undoBtn.disabled=!history.length;redoBtn.disabled=!future.length;
   status.textContent=(dirty()?'● 未保存　｜　':'保存済み　｜　')+(selection.size?'選択 '+selection.size+'件　｜　矢印 0.5mm ・ Shift＋矢印 2mm ・ Alt＋矢印 0.1mm':'選択なし　｜　余白ドラッグで範囲選択 ・ Shiftで追加');
   properties();
  }
- function exportSvg(){const copy=svg.cloneNode(true);copy.removeAttribute('style');copy.querySelector('[data-editor-overlay="grid"]')?.remove();copy.querySelector('[data-editor-overlay="hits"]')?.remove();copy.querySelector('[data-editor-overlay="marquee"]')?.remove();copy.querySelectorAll('[data-editor-overlay="free-text-hit"]').forEach(el=>el.remove());copy.querySelectorAll('.tp-selected').forEach(el=>el.classList.remove('tp-selected'));copy.querySelectorAll('text').forEach(el=>{el.removeAttribute('text-decoration');el.removeAttribute('style');});copy.querySelectorAll('[data-editor-arrow-head]').forEach(el=>el.removeAttribute('data-editor-arrow-head'));if(transparent)copy.querySelector(':scope > rect')?.remove();copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');return copy;}
+ function exportSvg(){const copy=svg.cloneNode(true);copy.removeAttribute('style');copy.querySelector('[data-editor-overlay="grid"]')?.remove();copy.querySelector('[data-editor-overlay="hits"]')?.remove();copy.querySelector('[data-editor-overlay="marquee"]')?.remove();copy.querySelectorAll('.tp-selected').forEach(el=>el.classList.remove('tp-selected'));copy.querySelectorAll('text').forEach(el=>{el.removeAttribute('text-decoration');el.removeAttribute('style');});if(transparent)copy.querySelector(':scope > rect')?.remove();copy.setAttribute('width','210mm');copy.setAttribute('height','297mm');return copy;}
  async function savePng(){try{const xml=new XMLSerializer().serializeToString(exportSvg()),url=URL.createObjectURL(new Blob([xml],{type:'image/svg+xml;charset=utf-8'}));try{const img=new Image();await new Promise((ok,fail)=>{img.onload=ok;img.onerror=()=>fail(Error('SVGの変換に失敗しました'));img.src=url;});const canvas=document.createElement('canvas'),factor=dpi/25.4;canvas.width=Math.round(210*factor);canvas.height=Math.round(297*factor);const ctx=canvas.getContext('2d');if(!ctx)throw Error('画像用メモリ不足');ctx.drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(ok=>canvas.toBlob(ok,'image/png'));if(!blob)throw Error('PNGを生成できませんでした');const href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download='TABULA-配置図-'+dpi+'dpi.png';a.click();setTimeout(()=>URL.revokeObjectURL(href),2000);}finally{URL.revokeObjectURL(url);}}catch(e){alert(e.message);}}
  function point(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const m=svg.getScreenCTM();return m?p.matrixTransform(m.inverse()):null;}
- function startArrow(){arrowTool=!arrowTool;addArrowBtn.textContent=arrowTool?'用紙をクリックして矢印を置く':'＋ 矢印';}
- function attachFreeTextHit(el){
-  // A transparent, generous hit box avoids relying on thin glyph outlines.
-  const hit=element('rect',{fill:'transparent','pointer-events':'all','data-editor-overlay':'free-text-hit'});
-  svg.append(hit);
-  attachSelection(el,hit);
-  freeTextHits.set(el,hit);
-  updateFreeTextHit(el);
- }
- function updateFreeTextHit(el){
-  const hit=freeTextHits.get(el);if(!hit)return;
-  const b=el.getBBox(),pad=2;
-  hit.setAttribute('x',b.x-pad);hit.setAttribute('y',b.y-pad);
-  hit.setAttribute('width',Math.max(4,b.width+pad*2));hit.setAttribute('height',Math.max(5,b.height+pad*2));
-  hit.setAttribute('transform',el.getAttribute('transform')||'');
-  hit.setAttribute('pointer-events',mode.value==='card'||mode.value==='arrow'?'none':'all');
- }
- function addFreeText(){
-  const value=prompt('追加するテキストを入力してください','注釈');if(value===null||!value.trim())return;
-  remember();
-  const el=element('text',{x:105,y:148,'text-anchor':'middle','font-family':'serif','font-size':4,fill:'#111111','data-free-text':'true'},value.slice(0,2000));
-  svg.append(el);labels.push(el);freeTexts.push(el);elements.push(el);attachSelection(el,el);attachFreeTextHit(el);mode.value='label';select(el,false);
- }
- function removeSelected(){
-  const removable=[...selection].filter(el=>arrows.includes(el)||freeTexts.includes(el));if(!removable.length)return;
-  remember();
-  for(const el of removable){
-   const arr=arrows.includes(el)?arrows:freeTexts;
-   for(const list of [arr,elements,labels]){const i=list.indexOf(el);if(i>=0)list.splice(i,1);}
-    if(el.getAttribute('data-arrow-object')==='true')el.nextElementSibling?.getAttribute('data-arrow-head-for')==='true'&&el.nextElementSibling.remove();
-   freeTextHits.get(el)?.remove();freeTextHits.delete(el);
-   el.remove();
-  }
-  selection.clear();active=null;refresh();
- }
-  function attachSelection(el,target){
+ function attachSelection(el,target){
   target.style.cursor='move';
   target.addEventListener('pointerdown',e=>{
    if(mode.value!=='all'&&type(el)!==mode.value)return;
@@ -433,7 +324,6 @@ function editor(source,options={}){
   if(e.target?.closest?.('input,textarea,select,[contenteditable]'))return;
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return;}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return;}
-  if((e.key==='Delete'||e.key==='Backspace')&&[...selection].every(el=>arrows.includes(el)||freeTexts.includes(el))&&selection.size){e.preventDefault();removeSelected();return;}
   if(!selection.size||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
   e.preventDefault();remember();const step=e.altKey?.1:e.shiftKey?2:.5;
   const dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
@@ -444,20 +334,17 @@ function editor(source,options={}){
  svg.addEventListener('pointerdown',e=>{
   if(!(e.target===svg||e.target===bg||e.target===grid||e.target.parentNode===grid))return;
   const p=point(e);if(!p)return;
-  if(arrowTool){arrowTool=false;addArrowBtn.textContent='＋ 矢印';remember();const line=element('line',{x1:p.x,y1:p.y,x2:p.x,y2:p.y,stroke:'#111111','stroke-width':.4,'data-arrow-head':'arrow'});addArrow(line);arrowDrawing={line,pointer:e.pointerId,start:p};svg.setPointerCapture(e.pointerId);select(line,false);return;}
   if(!e.shiftKey){selection.clear();active=null;}refresh();
   boxDrag={pointer:e.pointerId,start:p};marquee.style.display='';marquee.setAttribute('x',p.x);marquee.setAttribute('y',p.y);marquee.setAttribute('width',0);marquee.setAttribute('height',0);
   svg.setPointerCapture(e.pointerId);root.focus({preventScroll:true});
  });
  svg.addEventListener('pointermove',e=>{
-  if(arrowDrawing&&arrowDrawing.pointer===e.pointerId){const p=point(e);if(p){arrowDrawing.line.setAttribute('x2',p.x);arrowDrawing.line.setAttribute('y2',p.y);updateArrow(arrowDrawing.line);}return;}
   if(!boxDrag||boxDrag.pointer!==e.pointerId)return;
   const p=point(e);if(!p)return;
   const x=Math.min(p.x,boxDrag.start.x),y=Math.min(p.y,boxDrag.start.y),w=Math.abs(p.x-boxDrag.start.x),h=Math.abs(p.y-boxDrag.start.y);
   Object.entries({x,y,width:w,height:h}).forEach(([k,v])=>marquee.setAttribute(k,v));
  });
  svg.addEventListener('pointerup',e=>{
-  if(arrowDrawing&&arrowDrawing.pointer===e.pointerId){const p=point(e),line=arrowDrawing.line;arrowDrawing=null;if(p&&Math.hypot(p.x-Number(line.getAttribute('x1')),p.y-Number(line.getAttribute('y1')))<1){line.setAttribute('x2',Number(line.getAttribute('x1'))+18);line.setAttribute('y2',Number(line.getAttribute('y1'))-12);}updateArrow(line);refresh();return;}
   if(!boxDrag||boxDrag.pointer!==e.pointerId)return;
   const p=point(e),start=boxDrag.start;boxDrag=null;marquee.style.display='none';
   if(!p||Math.hypot(p.x-start.x,p.y-start.y)<1){refresh();return;}
