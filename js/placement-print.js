@@ -343,8 +343,7 @@ function editor(source,options={}){
  markSaved();root.focus();refresh();
 }
 function install(){
- const bar=document.querySelector('.table-record-actions')||document.querySelector('.main > .toolbar');if(!bar||$('printPlacement'))return;
- const button=document.createElement('button');button.type='button';button.id='printPlacement';button.textContent='配置図を編集・出力';button.title='カード枠とラベルを編集してSVG・PNG保存／印刷';
+ const button=$('printPlacement');if(!button)return;
  button.addEventListener('click',()=>{
   if($('tabulaPrintEditor'))return;
   if(draft){
@@ -362,7 +361,7 @@ function install(){
   }
   try{const fresh=printable();draft=null;editor(fresh);}catch(e){alert(e.message);}
  });
- bar.append(button);
 }
+
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
 })();
