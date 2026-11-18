@@ -2011,8 +2011,13 @@ aside .section :is(button,select,input,textarea),
  margin:6px 0 5px;
 }
 #tableManagement #tableDisplaySettings .label-cycle-options{
- gap:6px 10px;
+ grid-template-columns:minmax(0,1fr);
+ gap:7px;
  padding:4px 0 5px;
+}
+#tableManagement #tableDisplaySettings .label-cycle-options label{
+ min-width:0;
+ overflow-wrap:anywhere;
 }
 #tableManagement #tableDisplaySettings .label-cycle-options label,
 #tableManagement #tableDisplaySettings .label-cycle-placement{
