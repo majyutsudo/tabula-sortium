@@ -217,9 +217,9 @@ function editor(source,options={}){
  const angle=el=>{if(type(el)==='label')return Number(el.getAttribute('data-label-angle')||0);const m=(el.getAttribute('transform')||'').match(/rotate\(\s*([-\d.]+)/);return Number(m?.[1]||0);};
  function setAngle(el,n){const p=coords(el);if(type(el)==='card')el.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+n+')');else{el.setAttribute('data-label-angle',n);if(n)el.setAttribute('transform','rotate('+n+' '+p.x+' '+p.y+')');else el.removeAttribute('transform');}}
  function setPosition(el,x,y){if(type(el)==='card')el.setAttribute('transform','translate('+x+' '+y+') rotate('+angle(el)+')');else{const a=angle(el);el.setAttribute('x',x);el.setAttribute('y',y);setAngle(el,a);}}
-  const snapshot=()=>elements.map(el=>({attrs:[...el.attributes].map(a=>[a.name,a.value]),text:type(el)==='label'?el.textContent:null,stroke:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-width'):null,dash:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-dasharray')||'':null}));
+  const snapshot=()=>elements.map(el=>({attrs:[...el.attributes].map(a=>[a.name,a.value]),text:type(el)==='label'?el.textContent:null,stroke:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-width'):null,fill:type(el)==='card'?el.querySelector('rect')?.getAttribute('fill')||'none':null,strokeColor:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke')||'#111':null,dash:type(el)==='card'?el.querySelector('rect')?.getAttribute('stroke-dasharray')||'':null}));
  const initial=snapshot();
- function restore(state){state.forEach((v,i)=>{const el=elements[i];[...el.attributes].forEach(a=>el.removeAttribute(a.name));v.attrs.forEach(a=>el.setAttribute(a[0],a[1]));if(type(el)==='label')el.textContent=v.text;else {const rect=el.querySelector('rect');rect?.setAttribute('stroke-width',v.stroke||'.22');if(v.dash)rect?.setAttribute('stroke-dasharray',v.dash);else rect?.removeAttribute('stroke-dasharray');}});selection.clear();active=null;syncHits();}
+ function restore(state){state.forEach((v,i)=>{const el=elements[i];[...el.attributes].forEach(a=>el.removeAttribute(a.name));v.attrs.forEach(a=>el.setAttribute(a[0],a[1]));if(type(el)==='label')el.textContent=v.text;else {const rect=el.querySelector('rect');rect?.setAttribute('stroke-width',v.stroke||'.22');rect?.setAttribute('fill',v.fill||'none');rect?.setAttribute('stroke',v.strokeColor||'#111');if(v.dash)rect?.setAttribute('stroke-dasharray',v.dash);else rect?.removeAttribute('stroke-dasharray');}});selection.clear();active=null;syncHits();}
  function remember(){history.push(snapshot());if(history.length>100)history.shift();future=[];}
  function undo(){if(!history.length)return;future.push(snapshot());restore(history.pop());refresh();}
  function redo(){if(!future.length)return;history.push(snapshot());restore(future.pop());refresh();}
@@ -227,6 +227,18 @@ function editor(source,options={}){
  function section(title){const el=make('div',side,undefined,'tp-section');make('h3',el,title);return el;}
  function field(parent,label,value,fn,kind='number'){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('input',row);input.type=kind;input.value=value;input.onchange=()=>{remember();fn(input.value);refresh();};return input;}
  function selectField(parent,label,values,current,fn){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('select',row);values.forEach(pair=>{const o=make('option',input,pair[1]);o.value=pair[0];});input.value=current;input.onchange=()=>{fn(input.value);refresh();};return input;}
+ function colorField(parent,label,current,fn){
+  const row=make('div',parent,undefined,'tp-field');make('label',row,label);
+  const controls=make('div',row);controls.style.cssText='display:flex;gap:4px;width:127px;align-items:center';
+  const picker=make('input',controls);picker.type='color';picker.style.cssText='width:42px;min-width:42px;padding:2px;height:32px';
+  const input=make('input',controls);input.type='text';input.style.cssText='width:81px;min-width:0;padding:5px 3px;font:11px sans-serif';
+  const valid=v=>/^#[0-9a-fA-F]{6}$/.test(v);
+  const normalize=v=>/^#[0-9a-fA-F]{3}$/.test(v)?'#'+[...v.slice(1)].map(c=>c+c).join(''):v;
+  let value=normalize(current||'#111111');if(!valid(value))value='#111111';
+  picker.value=value;input.value=value;
+  const apply=v=>{v=normalize(v.trim());if(!valid(v)){input.value=picker.value;return;}remember();fn(v);refresh();};
+  picker.onchange=()=>apply(picker.value);input.onchange=()=>apply(input.value);
+ }
  function check(parent,label,value,fn){const row=make('div',parent,undefined,'tp-field');make('label',row,label);const input=make('input',row);input.type='checkbox';input.checked=value;input.onchange=()=>{fn(input.checked);};}
  function properties(){
   side.replaceChildren();
@@ -245,6 +257,7 @@ function editor(source,options={}){
     if(selection.size===1)field(s,'文字',active.textContent,v=>{active.textContent=v;},'text');
     field(s,'文字サイズ (mm)',active.getAttribute('font-size'),v=>{if(Number(v)>0)selection.forEach(el=>el.setAttribute('font-size',v));});
     selectField(s,'書体',[['serif','明朝体'],['sans-serif','ゴシック体'],['monospace','等幅']],active.getAttribute('font-family')||'serif',v=>{remember();selection.forEach(el=>el.setAttribute('font-family',v));});
+    colorField(s,'文字色',active.getAttribute('fill')||'#111111',v=>selection.forEach(el=>el.setAttribute('fill',v)));
     const actions=make('div',s,undefined,'tp-actions');
     button(actions,'全ラベルに書式を適用',()=>{
      if(!confirm('選択中のラベルの書体と文字サイズを、すべてのラベルに適用します。位置・角度・文字内容は変更しません。よろしいですか？'))return;
@@ -258,16 +271,19 @@ function editor(source,options={}){
    }
    if(same&&type(active)==='card'){
     const rect=active.querySelector('rect');
-    selectField(s,'内側の塗り',[['#fff','白'],['none','透明']],rect?.getAttribute('fill')==='none'?'none':'#fff',v=>{
-     remember();selection.forEach(el=>el.querySelector('rect')?.setAttribute('fill',v));
+    const fill=rect?.getAttribute('fill')||'none';
+    selectField(s,'内側の塗り',[['none','透明'],['#fff','白'],['custom','任意の色']],fill==='none'?'none':fill==='#fff'||fill==='#ffffff'?'#fff':'custom',v=>{
+     remember();selection.forEach(el=>el.querySelector('rect')?.setAttribute('fill',v==='custom'?(fill==='none'?'#f5e8c8':fill):v));
     });
+    colorField(s,'塗り色',fill==='none'?'#ffffff':fill,v=>selection.forEach(el=>el.querySelector('rect')?.setAttribute('fill',v)));
+    colorField(s,'枠線色',rect?.getAttribute('stroke')||'#111111',v=>selection.forEach(el=>el.querySelector('rect')?.setAttribute('stroke',v)));
     field(s,'枠線幅 (mm)',rect?.getAttribute('stroke-width')||'.22',v=>{if(Number(v)>=0)selection.forEach(el=>el.querySelector('rect')?.setAttribute('stroke-width',v));});
     const dashItems=[['','実線'],['2 1.2','破線'],['.35 1.2','点線'],['3 1 0.4 1','一点鎖線']];
     selectField(s,'線の種類',dashItems,rect?.getAttribute('stroke-dasharray')||'',v=>{remember();selection.forEach(el=>{const r=el.querySelector('rect');if(v)r?.setAttribute('stroke-dasharray',v);else r?.removeAttribute('stroke-dasharray');});});
     button(s,'全カード枠に適用',()=>{
-     if(!confirm('選択中のカード枠の塗り・線幅・線の種類を、全カード枠に適用しますか？'))return;
-     remember();const width=rect.getAttribute('stroke-width'),dash=rect.getAttribute('stroke-dasharray'),fill=rect.getAttribute('fill')||'none';
-     cards.forEach(el=>{const r=el.querySelector('rect');r.setAttribute('fill',fill);r.setAttribute('stroke-width',width);if(dash)r.setAttribute('stroke-dasharray',dash);else r.removeAttribute('stroke-dasharray');});refresh();
+     if(!confirm('選択中のカード枠の塗り・枠線色・線幅・線の種類を、全カード枠に適用しますか？'))return;
+     remember();const width=rect.getAttribute('stroke-width'),dash=rect.getAttribute('stroke-dasharray'),fill=rect.getAttribute('fill')||'none',strokeColor=rect.getAttribute('stroke')||'#111';
+     cards.forEach(el=>{const r=el.querySelector('rect');r.setAttribute('fill',fill);r.setAttribute('stroke',strokeColor);r.setAttribute('stroke-width',width);if(dash)r.setAttribute('stroke-dasharray',dash);else r.removeAttribute('stroke-dasharray');});refresh();
     });
    }
    make('p',s,'Shift＋クリックで複数選択。矢印キーで微調整できます。','tp-note');
