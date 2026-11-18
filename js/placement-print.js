@@ -162,7 +162,7 @@ function editor(source,options={}){
  const undoBtn=button(head,'↶ 元に戻す',undo),redoBtn=button(head,'↷ やり直す',redo);
  const addTextBtn=button(head,'＋ テキスト',()=>addFreeText());
  const addArrowBtn=button(head,'＋ 矢印',()=>startArrow());
- button(head,'初期配置に戻す',()=>{if(!confirm('カード枠とラベルの編集をすべて破棄し、最初の配置に戻します。よろしいですか？'))return;restore(initial);history=[];future=[];refresh();});
+ button(head,'初期配置に戻す',()=>{if(!confirm('カード枠・文字・矢印の編集を破棄し、最初の配置に戻します。よろしいですか？'))return;restoreDocument(originalDocument);history=[];future=[];refresh();});
  make('span',head,undefined,'tp-spacer');
  button(head,'SVG保存',()=>download(exportSvg()),'tp-export');
  button(head,'PNG保存',()=>savePng(),'tp-export');
@@ -208,6 +208,7 @@ function editor(source,options={}){
  let active=null,drag=null,history=[],future=[],zoom=100,showGrid=false,transparent=false,dpi=300,linkLabels=false;
  let savedState='',boxDrag=null,arrowDrawing=null;
  const initialDocument=options.document||null;
+ const originalDocument=documentFromSvg(svg,!!initialDocument?.transparent,initialDocument?.dpi||300);
  const initialBackground=bg.getAttribute('fill')||'#fff';
  const hitLayer=element('g',{'data-editor-overlay':'hits'});
  const hitMap=new Map();
@@ -317,14 +318,14 @@ function editor(source,options={}){
     colorField(s,'文字色',active.getAttribute('fill')||'#111111',v=>selection.forEach(el=>el.setAttribute('fill',v)));
     const actions=make('div',s,undefined,'tp-actions');
     if(freeTexts.includes(active))button(actions,'このテキストを削除',()=>removeSelected());
-    button(actions,'全ラベルに書式を適用',()=>{
+    if(!freeTexts.includes(active))button(actions,'全ラベルに書式を適用',()=>{
      if(!confirm('選択中のラベルの書体と文字サイズを、すべてのラベルに適用します。位置・角度・文字内容は変更しません。よろしいですか？'))return;
      remember();
      const size=active.getAttribute('font-size'),family=active.getAttribute('font-family');
      labels.filter(el=>!freeTexts.includes(el)).forEach(el=>{if(size!==null)el.setAttribute('font-size',size);if(family!==null)el.setAttribute('font-family',family);});
      refresh();
     });
-    button(actions,'各カードの角度',()=>{remember();selection.forEach(el=>setAngle(el,Number(el.getAttribute('data-card-angle')||0)));refresh();});
+    if(!freeTexts.includes(active))button(actions,'各カードの角度',()=>{remember();selection.forEach(el=>setAngle(el,Number(el.getAttribute('data-card-angle')||0)));refresh();});
     button(actions,'水平',()=>{remember();selection.forEach(el=>setAngle(el,0));refresh();});
    }
    if(same&&type(active)==='arrow'){
