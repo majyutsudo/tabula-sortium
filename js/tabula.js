@@ -4274,7 +4274,7 @@ let labelMode='off',galleryHideIdentifiers=true,labelPlacement='below';
 try{labelPlacement=localStorage.getItem('tabula_label_placement')||'below'}catch(e){}
 try{galleryHideIdentifiers=localStorage.getItem('tabula_detail_symbols')!=='show'}catch(e){}
 try{labelMode=localStorage.getItem('tabula_label_mode')||'off'}catch(e){}
-const labelChoices=[['card','カード名'],['position','ポジション名'],['number','番号のみ'],['off','非表示']];
+const labelChoices=[['card','カード名'],['position','ポジション名（番号付き）'],['positionPlain','ポジション名（番号なし）'],['number','番号のみ'],['off','非表示']];
 const labelCycleKey='tabula_label_cycle_v1';
 let labelCycleModes=['card','position','off'];
 try{const saved=JSON.parse(localStorage.getItem(labelCycleKey)||'null');if(Array.isArray(saved)){const valid=labelChoices.map(x=>x[0]).filter(id=>saved.includes(id));if(valid.length)labelCycleModes=valid;}}catch(e){}
@@ -4301,7 +4301,7 @@ for(const [id,name] of labelChoices){
  });
 }
 labelSettings.append(labelSummary,labelHint,labelOptions);
-const placementSelect=document.createElement('select');placementSelect.id='labelPlacement';placementSelect.setAttribute('aria-label','ラベルの位置');placementSelect.innerHTML='<option value="below">カードの下</option><option value="above">カードの上</option>';placementSelect.value=labelPlacement;placementSelect.onchange=()=>{labelPlacement=placementSelect.value;localStorage.setItem('tabula_label_placement',labelPlacement);refreshTableLabels()};
+const placementSelect=document.createElement('select');placementSelect.id='labelPlacement';placementSelect.setAttribute('aria-label','ラベルの位置');placementSelect.innerHTML='<option value="below">カードの下</option><option value="center">カードの中央</option><option value="above">カードの上</option>';placementSelect.value=labelPlacement;placementSelect.onchange=()=>{labelPlacement=placementSelect.value;localStorage.setItem('tabula_label_placement',labelPlacement);refreshTableLabels()};
 const placementLabel=document.createElement('label');placementLabel.className='label-cycle-placement';placementLabel.append(document.createTextNode('位置 '),placementSelect);
 labelSettings.append(placementLabel,labelSelect);
 $('quickLabels').replaceWith(labelSettings);
@@ -4333,22 +4333,26 @@ function refreshTableLabels(){
   const t=document.createElement('span');t.className='zone-label unified-label';
   // Free-spread cards have no numbered slots, so display the card name alone.
   // Outside free spread, a + still identifies an auxiliary (unslotted) card.
-  const num=labelMode==='card'?'':item?.slot==null&&item?(settings.spread==='free'?'':'＋'):String(i+1);
+  const positionLabel=labelMode==='position'||labelMode==='positionPlain';
+  const num=labelMode==='card'||(labelMode==='positionPlain'&&slot)?'':item?.slot==null&&item?(settings.spread==='free'?'':'＋'):String(i+1);
   let text=num;
-  if(labelMode==='position'&&slot)text+=' · '+slot.name;
+  if(positionLabel&&slot)text+=(text?' · ':'')+slot.name;
   if(labelMode==='card'&&item?.faceUp){
    const c=workingCard(item.id);
    text+=(text?' · ':'')+(c?tableCardName(c):'カード')+(item.reversed?'〈逆〉':'');
   }
   if(!text)return;
   t.textContent=text;t.title=text;
+  if(positionLabel&&slot){t.dataset.positionName=slot.name;t.dataset.positionNumber=String(i+1);}
   // Card names follow the card; position names remain anchored to the spread.
   const follow=labelMode==='card'&&item;
   const x=follow?item.x:slot?.x??item.x,y=follow?item.y:slot?.y??item.y;
   const angle=follow?cardDisplayRotation(item):Number(slot?.angle)||0,rad=angle*Math.PI/180;
   const halfHeight=(Math.abs(Math.cos(rad))*m.h+Math.abs(Math.sin(rad))*m.w)/2;
   const lift=follow?cardDisplayLiftPx(item):0;
-  t.style.left=x+'%';t.style.top=`calc(${y}% + ${lift+(labelPlacement==='below'?halfHeight+2:-halfHeight-2)}px)`;t.style.setProperty('transform',labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
+  const offset=labelPlacement==='center'?0:labelPlacement==='below'?halfHeight+2:-halfHeight-2;
+  const labelTransform=labelPlacement==='center'?'translate(-50%,-50%)':labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)';
+  t.style.left=x+'%';t.style.top=`calc(${y}% + ${lift+offset}px)`;t.style.setProperty('transform',labelTransform,'important');
   zone.append(t);
   const zw=zone.offsetWidth,lw=t.getBoundingClientRect().width/tableCamera.scale;
   // Keep card-name labels centered on their cards, even at the table edges.
@@ -4368,16 +4372,17 @@ function refreshTableLabels(){
   const number=slot?String(pile.slot+1):pile.id.replace('pile-','');
   let label='';
   if(labelMode==='number')label=number;
-  else if(labelMode==='position')label=slot?number+' · '+slot.name:role+' '+number;
+  else if(labelMode==='position'||labelMode==='positionPlain')label=slot?(labelMode==='position'?number+' · ':'')+slot.name:labelMode==='position'?role+' '+number:role;
   else if(labelMode==='card'&&first?.faceUp)label=(definition?tableCardName(definition):'カード')+(first.reversed?'〈逆〉':'');
   if(!label)continue;
   const t=document.createElement('span');t.className='zone-label unified-label pile-label';
   t.textContent=label;t.title=label;
+  if(slot&&(labelMode==='position'||labelMode==='positionPlain')){t.dataset.positionName=slot.name;t.dataset.positionNumber=number;}
   const x=pile.x,y=pile.y;
   const halfHeight=m.h/2+5;
   t.style.left=x+'%';
-  t.style.top=`calc(${y}% + ${labelPlacement==='below'?halfHeight:-halfHeight}px)`;
-  t.style.setProperty('transform',labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
+  t.style.top=`calc(${y}% + ${labelPlacement==='center'?0:labelPlacement==='below'?halfHeight:-halfHeight}px)`;
+  t.style.setProperty('transform',labelPlacement==='center'?'translate(-50%,-50%)':labelPlacement==='below'?'translate(-50%,0)':'translate(-50%,-100%)','important');
   zone.append(t);
   const width=t.getBoundingClientRect().width/tableCamera.scale,zw=zone.offsetWidth;
   if(labelMode!=='card'&&zw&&width)t.style.left=Math.max(width/2+3,Math.min(zw-width/2-3,zw*x/100))+'px';
