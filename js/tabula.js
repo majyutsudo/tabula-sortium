@@ -5529,6 +5529,14 @@ $('dualNew').onclick=()=>{
 };
 dualRefreshControls();
 
+// Read-only bridge for print exports: use the current workspace and the same
+// label resolution as TABULA's visible tabletop, without parsing card artwork.
+globalThis.TabulaPlacementPrintData=()=>({
+ cards:state.placed.map(item=>({
+  ...item,
+  label:tableCardName(workingCard(item.id)||{id:item.id,name:item.id})
+ }))
+});
 installTableActionSettings();
 function positionDualDock(){
  const bar=$('dualModeBar'),toolbar=document.querySelector('.main>.toolbar'),stageShell=document.querySelector('.main>.stage-shell');
