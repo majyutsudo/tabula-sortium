@@ -58,3 +58,83 @@
   color: #d1c7b3;
   font: 11px/1.5 'Yu Mincho','Hiragino Mincho ProN',serif;
 }
+
+/* Astral: a discreet, slowly breathing violet-gold shop sign. */
+.sidebar-notice-link { position:relative;isolation:isolate;overflow:hidden; }
+.sidebar-notice-link > * { position:relative;z-index:1; }
+.sidebar-notice-astral {
+  background:
+    radial-gradient(ellipse at 50% 12%,#4c374d 0%,#28212c 48%,#151718 100%);
+  border-color:#746052;
+  box-shadow:inset 0 0 0 3px #151116,inset 0 0 0 4px #9d79594f,0 7px 18px #0006;
+}
+.sidebar-notice-astral::before {
+  content:"";position:absolute;inset:8px;border:1px solid #ad8a7052;
+  pointer-events:none;
+}
+.sidebar-notice-astral .sidebar-notice-title {
+  color:#ffdfb6;
+  text-shadow:0 0 4px #ffe6b383,0 0 13px #cfa3c57b,0 0 21px #9462ab4d;
+  animation:astral-sign-glow 6.5s ease-in-out infinite alternate;
+}
+.sidebar-notice-astral .sidebar-notice-ornament,
+.sidebar-notice-astral .sidebar-notice-subtitle {color:#bfa597}
+.sidebar-notice-astral:hover .sidebar-notice-title {text-shadow:0 0 7px #ffe9c0,0 0 19px #ca93db,0 0 28px #8b5aaf9e}
+
+/* Emporium: a lively late-Showa-style illuminated commerce sign. */
+.sidebar-notice-emporium {
+  padding-top:22px;padding-bottom:20px;
+  border:2px solid #d39b47;border-radius:2px;
+  background:
+    repeating-linear-gradient(135deg,transparent 0 16px,#ffcf6320 16px 17px,transparent 17px 33px),
+    radial-gradient(ellipse at 50% 18%,#754222,#43221c 50%,#241a19 100%);
+  box-shadow:inset 0 0 0 3px #271a16,inset 0 0 0 5px #edbe6cba,0 0 12px #db862d59,0 8px 20px #0007;
+}
+.sidebar-notice-emporium::before {
+  content:"";position:absolute;inset:8px;border:1px dashed #edbc65a8;pointer-events:none;
+}
+.sidebar-notice-emporium::after {
+  content:"";position:absolute;top:-100%;left:-95%;height:280%;width:62%;
+  background:linear-gradient(90deg,transparent,#ffe5a500 24%,#fff0aa38 50%,#ffe5a500 76%,transparent);
+  transform:rotate(23deg);pointer-events:none;
+  animation:emporium-sign-shine 9s ease-in-out infinite;
+}
+.sidebar-notice-emporium .sidebar-notice-ornament {
+  color:#ffe29f;letter-spacing:.23em;text-shadow:0 0 8px #f3a848b3;
+}
+.sidebar-notice-emporium .sidebar-notice-title {
+  color:#fff0b8;font-weight:bold;font-size:20px;letter-spacing:.018em;
+  text-shadow:0 0 3px #fff4cc,0 0 9px #ffcc63d6,0 0 20px #ff8120c0,1px 2px 1px #4d221a;
+  animation:emporium-neon-pulse 3.1s ease-in-out infinite;
+}
+.sidebar-notice-emporium .sidebar-notice-subtitle {
+  color:#ffce79;font-size:8px;letter-spacing:.035em;text-shadow:0 0 8px #c87635c2;
+}
+.sidebar-notice-emporium .sidebar-notice-description {
+  color:#fff1d5;font-weight:bold;font-size:12px;
+  text-shadow:0 1px 2px #30140c,0 0 9px #e8873970;
+}
+.sidebar-notice-emporium:hover {
+  border-color:#ffe1a0;
+  box-shadow:inset 0 0 0 3px #271a16,inset 0 0 0 5px #ffe1a0,0 0 22px #f8a13cb4;
+}
+@keyframes astral-sign-glow {
+  0%,100% {filter:brightness(.97);text-shadow:0 0 4px #ffe6b383,0 0 13px #cfa3c57b,0 0 21px #9462ab4d}
+  50% {filter:brightness(1.06);text-shadow:0 0 6px #fff0d0ac,0 0 17px #d19dd998,0 0 25px #9462ab6e}
+}
+@keyframes emporium-neon-pulse {
+  0%,100% {filter:brightness(1)}
+  48% {filter:brightness(1.18)}
+  55% {filter:brightness(1.12)}
+}
+@keyframes emporium-sign-shine {
+  0%,71% {transform:translateX(0) rotate(23deg);opacity:0}
+  74% {opacity:.75}
+  86% {transform:translateX(580%) rotate(23deg);opacity:.6}
+  89%,100% {transform:translateX(580%) rotate(23deg);opacity:0}
+}
+@media (prefers-reduced-motion:reduce) {
+  .sidebar-notice-astral .sidebar-notice-title,
+  .sidebar-notice-emporium .sidebar-notice-title,
+  .sidebar-notice-emporium::after {animation:none!important}
+}
