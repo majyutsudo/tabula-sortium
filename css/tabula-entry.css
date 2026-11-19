@@ -1,0 +1,193 @@
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#090706;color:#e8cc92;font-family:Georgia,'Times New Roman',serif} .scene{position:relative;width:100%;height:100svh;min-height:420px;overflow:hidden;background:#090706 url(../images/entry/background.png) center center/contain no-repeat} .scene:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 36%,#0004 100%)} .deck,.deal-card{position:absolute;width:clamp(68px,7.5vw,112px);aspect-ratio:2/3;z-index:4;cursor:pointer;border:0;padding:0;background:transparent;touch-action:manipulation} .deck{left:31%;top:73%;transform:translate(-50%,-50%)} .deck:before{content:"";position:absolute;inset:3px -8px 1px 7px;border-radius:5px;background:repeating-linear-gradient(to right,#ad9164 0 1px,#493521 1px 3px);box-shadow:7px 9px 14px #000c}.back,.front{position:absolute;inset:0;display:grid;place-items:center;border:4px solid #bd9252;border-radius:5px;overflow:hidden;backface-visibility:hidden;box-shadow:0 9px 23px #000b}.back{background:#39190e url("../images/decks/tabula-tarot/backs/sepia.webp") center/100% 100% no-repeat;border:0}.back:before,.back:after,.back i{display:none}.deal-card{display:none;left:50%;top:56%;transform:translate(-50%,-50%);perspective:1000px}.deal-card .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1.2s ease}.deal-card.flipped .inner{transform:rotateY(180deg)}.front{transform:rotateY(180deg);background:radial-gradient(circle,#f2e2b9,#b98f59);color:#482a14;border-color:#d6b782;text-align:center}.front:before{content:"";position:absolute;inset:7px;border:1px solid #805a33}.front span{position:relative;font-size:clamp(11px,1.25vw,15px);letter-spacing:.02em;line-height:1.35;white-space:nowrap}.front small{position:absolute;bottom:12px}.deal-card.dealing{display:block;position:fixed;z-index:9;pointer-events:none;will-change:left,top}.deal-card.placed{display:block}.enter{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:clamp(68px,7.5vw,112px);aspect-ratio:2/3;z-index:8;display:none}.enter.show{display:block}.status{position:absolute;bottom:7%;left:50%;transform:translateX(-50%);z-index:6;width:min(90%,600px);text-align:center;font-size:clamp(11px,1.2vw,15px);letter-spacing:.1em;text-shadow:0 2px 9px #000,0 0 9px #000;color:#e6c897}.reset{position:absolute;right:2%;bottom:2%;z-index:10;border:1px solid #8e6d3d;background:#1c120dc9;color:#e2c38d;padding:8px 14px;border-radius:3px;font-family:inherit;cursor:pointer}.deck:hover,.deal-card.placed:hover{filter:brightness(1.14)}@media(max-width:650px){.scene{background-position:center center}.deck{left:28%;top:73%}.deal-card,.enter{top:52%}.status{bottom:10%;line-height:1.6}.reset{bottom:2%}}@media(prefers-reduced-motion:reduce){.deal-card .inner{transition-duration:.01ms}}
+
+/* v14: wait after dealing begins before the deck gradually disappears */
+.deck{left:50%;top:79%;opacity:1;transition:opacity 3.6s ease-in-out,filter 3.6s ease-in-out;z-index:5}
+.deck.vanishing{opacity:0;filter:blur(5px);pointer-events:none}
+@media(max-width:650px){.deck{left:50%;top:78%}}
+
+/* v15: spectral tarot, celestial ring, and final spotlight */
+.celestial{position:absolute;left:50%;top:56%;width:min(75vw,78vh);aspect-ratio:1;transform:translate(-50%,-50%) scale(.7) rotate(-18deg);z-index:2;pointer-events:none;opacity:0;transition:opacity 1.8s ease,transform 8.5s cubic-bezier(.18,.55,.28,1);filter:drop-shadow(0 0 8px #e0ad6040)}
+.scene.ritual .celestial{opacity:.72;transform:translate(-50%,-50%) scale(1) rotate(32deg)}
+.scene.arrived .celestial{opacity:0;transition:opacity 1.5s ease}
+.spectres{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.spectre{position:absolute;left:50%;top:56%;width:clamp(64px,7vw,112px);aspect-ratio:2/3;border-radius:4px;background:#25170f center/100% 100% no-repeat;box-shadow:0 0 22px #c69b4d66,0 0 50px #9c713a33;border:1px solid #e3c18a9c;opacity:0;transform:translate(-50%,-50%) scale(.4);filter:sepia(.35) saturate(.75);will-change:opacity,transform}
+.spectre.active{animation:spectral-rise 4.2s ease-in-out forwards;animation-delay:var(--delay)}
+@keyframes spectral-rise{0%{opacity:0;transform:translate(calc(-50% + var(--x0)),calc(-50% + var(--y0))) scale(.25) rotate(var(--r0))}23%{opacity:.46}55%{opacity:.38}100%{opacity:0;transform:translate(calc(-50% + var(--x1)),calc(-50% + var(--y1))) scale(.85) rotate(var(--r1))}}
+.ritual-glow{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:0;background:radial-gradient(ellipse 42% 55% at 50% 56%,transparent 12%,#05040745 72%,#020103a8 100%);transition:opacity 1.8s ease}
+.scene.arrived .ritual-glow{opacity:1}
+.scene.arrived .deal-card.placed{filter:drop-shadow(0 0 18px #d4a4618c) drop-shadow(0 0 45px #bb8b4733)}
+@media(max-width:650px){.celestial{top:52%;width:95vw}.spectre{top:52%}.spectre{width:clamp(42px,11vw,78px)}.ritual-glow{background:radial-gradient(ellipse 65% 48% at 50% 52%,transparent 8%,#02010388 100%)}}
+@media(prefers-reduced-motion:reduce){.celestial,.spectre{animation:none!important;transition:none!important}}
+
+/* v16: theatrical orbit, card reveal and readable entrance */
+.spectre{offset-path:none;transform-origin:center center;}
+.spectre.active{animation:ghost-dance 7.6s cubic-bezier(.36,.02,.24,1) both;animation-delay:var(--delay)}
+@keyframes ghost-dance{
+0%{opacity:0;transform:translate(calc(-50% + var(--x0)),calc(-50% + var(--y0))) scale(.16) rotate(-55deg);filter:blur(9px) sepia(.7)}
+18%{opacity:.68;filter:blur(1px) sepia(.3)}
+38%{opacity:.7;transform:translate(calc(-50% + var(--x1)),calc(-50% + var(--y1))) scale(.95) rotate(var(--r1));filter:blur(0) sepia(.2)}
+61%{opacity:.6;transform:translate(calc(-50% + var(--x2)),calc(-50% + var(--y2))) scale(1.08) rotate(var(--r2))}
+82%{opacity:.35;filter:blur(2px) sepia(.5)}
+100%{opacity:0;transform:translate(-50%,-50%) scale(.07) rotate(145deg);filter:blur(12px)}
+}
+.scene.ritual .celestial{animation:circle-pulse 8.5s ease-in-out both}
+@keyframes circle-pulse{0%{filter:drop-shadow(0 0 0px #d8ae64)}40%{filter:drop-shadow(0 0 16px #d8ae6488)}75%{filter:drop-shadow(0 0 24px #d8ae64aa)}100%{filter:drop-shadow(0 0 0px #d8ae64)}}
+.deal-card.dealing{filter:drop-shadow(0 0 12px #d7a65788)}
+.deal-card.placed{transition:filter .7s ease}
+.deal-card .front{background:radial-gradient(ellipse at 50% 35%,#fff3d2 0%,#e3bf7d 48%,#8e5a2e 100%);border:3px double #7d4c25;box-shadow:inset 0 0 0 4px #e9d29a,inset 0 0 0 6px #926333,0 0 28px #d3a15c99;}
+.deal-card .front:before{content:'✦';position:absolute;top:10%;font-size:clamp(16px,2.5vw,26px);color:#885525}
+.deal-card .front span{font-size:clamp(14px,1.5vw,20px);font-weight:bold;letter-spacing:.075em;line-height:1.65;text-shadow:0 1px 1px #fff6d4}
+.deal-card.flipped{filter:drop-shadow(0 0 22px #f3d08ccc) drop-shadow(0 0 58px #e6ac5888)!important;animation:reveal-beat 1.8s ease-out both}
+@keyframes reveal-beat{0%{scale:1}38%{scale:1.22}100%{scale:1.1}}
+.enter-banner{position:absolute;left:50%;top:calc(56% + clamp(100px,13vw,158px));transform:translate(-50%,18px);z-index:9;opacity:0;pointer-events:none;text-align:center;transition:opacity .85s ease,transform .85s ease;white-space:nowrap}
+.enter-banner.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.enter-banner a{display:block;text-decoration:none;color:#ffdda0;font-size:clamp(22px,3.4vw,48px);font-weight:bold;letter-spacing:.14em;text-shadow:0 0 5px #2c1505,0 0 18px #d9a355,0 0 40px #c0833d;animation:banner-shine 2.8s ease-in-out infinite alternate}
+.enter-banner a:hover{color:#fff6da;text-shadow:0 0 14px #ffe5a4,0 0 45px #ffc16c}
+.enter-banner small{display:block;color:#e1bd7e;letter-spacing:.22em;font-size:clamp(10px,1vw,13px);margin-top:7px;text-shadow:0 2px 8px #000}
+@keyframes banner-shine{from{filter:brightness(.9)}to{filter:brightness(1.3)}}
+.scene.arrived .status{opacity:.8}
+@media(max-width:650px){.enter-banner{top:calc(52% + 105px)}.enter-banner a{font-size:clamp(19px,6vw,32px)}.deal-card .front span{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.spectre.active,.deal-card.flipped,.enter-banner a{animation:none!important}}
+/* v17: a card that banks and turns in three dimensions during its flight */
+.deal-card.dealing{perspective:950px;filter:drop-shadow(0 0 13px #e7ba6a99)}
+.deal-card.dealing .inner{transition:none;transform:rotateY(var(--flight-y,0deg)) rotateX(var(--flight-x,0deg)) rotateZ(var(--flight-z,0deg));}
+.deal-card .fortune-mark{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;letter-spacing:.12em;line-height:1.1}
+.deal-card .fortune-mark em{font-style:normal;font-size:clamp(29px,4vw,55px);color:#74471f;text-shadow:0 1px #fff3c3}
+.deal-card .fortune-mark b{font-size:clamp(10px,1.1vw,15px);letter-spacing:.14em}
+.deal-card .fortune-mark small{font-size:clamp(6px,.65vw,9px);letter-spacing:.08em;color:#7a512c}
+.deal-card .front:before{content:none}
+@media(max-width:650px){.deal-card .fortune-mark em{font-size:32px}.deal-card .fortune-mark b{font-size:11px}.deal-card .fortune-mark small{font-size:7px}}
+
+/* v18: passing apparitions and a genuine random major-arcana draw */
+.spectre{background-size:cover;background-position:center;box-shadow:0 0 12px #cba16d44,0 0 28px #a77b3c22;border:2px solid #b88b50;outline:1px solid #342014;outline-offset:-5px}
+.spectre.active{animation:passing-vision var(--life,2.7s) cubic-bezier(.24,.12,.52,.9) both;animation-delay:var(--delay,0s)}
+@keyframes passing-vision{
+ 0%{opacity:0;transform:translate(calc(-50% + var(--x0)),calc(-50% + var(--y0))) rotate(var(--r0)) rotateY(-58deg) scale(.48);filter:blur(9px) sepia(.6)}
+ 22%{opacity:.62;filter:blur(1px) sepia(.22)}
+ 46%{opacity:.73;transform:translate(calc(-50% + var(--xm)),calc(-50% + var(--ym))) rotate(var(--rm)) rotateY(8deg) scale(.94);filter:blur(0) sepia(.12)}
+ 76%{opacity:.36;filter:blur(3px) sepia(.4)}
+ 100%{opacity:0;transform:translate(calc(-50% + var(--x1)),calc(-50% + var(--y1))) rotate(var(--r1)) rotateY(62deg) scale(.62);filter:blur(11px) sepia(.65)}
+}
+.deal-card .front{display:flex;align-items:stretch;justify-content:stretch;padding:4px;background:#d7b88a;border:3px solid #c9a36c;box-shadow:inset 0 0 0 2px #52351c,0 0 25px #a87c48a6}
+.deal-card .front:before{content:none}
+.deal-card .front .drawn-art{display:block;width:100%;height:100%;object-fit:cover;object-position:center;border:1px solid #624126;filter:saturate(.88) sepia(.08)}
+.deal-card .front .drawn-caption{position:absolute;bottom:4px;left:4px;right:4px;padding:4px 1px 3px;background:linear-gradient(transparent,#21150ce8 20%);color:#f9e6b9;font-size:clamp(7px,.68vw,10px);letter-spacing:.06em;text-shadow:0 1px 3px #000;white-space:normal;line-height:1.2}
+.scene.arrived .deal-card.placed{cursor:pointer}
+@media(prefers-reduced-motion:reduce){.spectre.active{animation:none!important}}
+
+/* v19: fluid Bézier flight paths, and a full-screen radiance on revelation */
+.spectre.active{animation:vision-drift var(--life,3s) linear var(--delay,0s) both;offset-rotate:0deg;transform:translate(-50%,-50%);}
+@keyframes vision-drift{
+ 0%{offset-distance:0%;opacity:0;filter:blur(8px) sepia(.55);scale:.63;rotate:var(--r0)}
+ 18%{opacity:.6;filter:blur(1.5px) sepia(.23)}
+ 42%{opacity:.76;filter:blur(0) sepia(.12);scale:1;rotate:var(--rm)}
+ 72%{opacity:.47;filter:blur(1px) sepia(.25)}
+ 100%{offset-distance:100%;opacity:0;filter:blur(9px) sepia(.65);scale:.72;rotate:var(--r1)}
+}
+.revelation-flash{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;overflow:hidden;isolation:isolate}
+.revelation-flash::before{content:"";position:absolute;left:50%;top:56%;width:210vmax;height:210vmax;border-radius:50%;transform:translate(-50%,-50%) scale(.005);background:radial-gradient(circle,#fff9e6 0%,#fff0b8 14%,#ffcf75dd 33%,#d99a4088 53%,#b37b2533 70%,transparent 78%);opacity:0;will-change:transform,opacity}
+.revelation-flash.burst{animation:flash-layer 2.35s ease-out both}
+.revelation-flash.burst::before{animation:flash-wave 2.35s cubic-bezier(.15,.6,.25,1) both}
+@keyframes flash-layer{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+@keyframes flash-wave{0%{transform:translate(-50%,-50%) scale(.005);opacity:0}9%{opacity:.98}37%{transform:translate(-50%,-50%) scale(.65);opacity:1}65%{transform:translate(-50%,-50%) scale(1.05);opacity:.75}100%{transform:translate(-50%,-50%) scale(1.35);opacity:0}}
+.enter-banner.revealed a{color:#ffe6a7;text-shadow:0 0 6px #fff5d0,0 0 19px #ffd17a,0 0 44px #e9a947,0 0 85px #b87b2f;animation:golden-arrival 1.3s ease-out both,banner-shine 2.8s ease-in-out 1.3s infinite alternate}
+@keyframes golden-arrival{0%{filter:brightness(4) blur(7px);letter-spacing:.24em}100%{filter:brightness(1);letter-spacing:.14em}}
+@media(max-width:650px){.revelation-flash::before{top:52%}}
+@media(prefers-reduced-motion:reduce){.revelation-flash.burst,.revelation-flash.burst::before,.enter-banner.revealed a{animation:none!important}.revelation-flash{display:none}}
+
+/* v20: the distant sky answers the released card after a beat */
+.scene.ritual .celestial{animation-delay:1.5s;animation-fill-mode:both}
+.scene.ritual:not(.sky-awake) .celestial{opacity:0}
+.scene.ritual.sky-awake .celestial{opacity:.72}
+.enter-banner{transform:translate(-50%,0);transition:opacity 1.15s ease;}
+.enter-banner.show{transform:translate(-50%,0)}
+.enter-banner.revealed a{animation:golden-still 1.5s ease-out both,banner-shine 2.8s ease-in-out 1.5s infinite alternate}
+@keyframes golden-still{0%{filter:brightness(2.5) blur(5px);opacity:.35}100%{filter:brightness(1) blur(0);opacity:1}}
+/* v21: a larger, varied procession with depth and smooth curved motion */
+.spectre.active{animation-name:vision-drift-many}
+@keyframes vision-drift-many{
+ 0%{offset-distance:0%;opacity:0;filter:blur(8px) sepia(.5);scale:calc(var(--depth)*.55);rotate:var(--r0)}
+ 20%{opacity:.54;filter:blur(1px) sepia(.2)}
+ 48%{opacity:.73;filter:blur(0) sepia(.12);scale:var(--depth);rotate:var(--rm)}
+ 78%{opacity:.42;filter:blur(2px) sepia(.27)}
+ 100%{offset-distance:100%;opacity:0;filter:blur(10px) sepia(.5);scale:calc(var(--depth)*.65);rotate:var(--r1)}
+}
+
+/* v22: a staggered, purposefully dealt major-arcana tableau */
+.spectre.spread-card{background-size:100% 100%;outline:1px solid #ac874e;outline-offset:-4px}
+.spectre.spread-card.active{animation:spread-arrival var(--life,3s) cubic-bezier(.32,.04,.2,1) var(--delay,0s) both;offset-rotate:0deg;transform:translate(-50%,-50%)}
+@keyframes spread-arrival{
+  0%{offset-distance:0%;opacity:0;filter:blur(9px) sepia(.6);scale:calc(var(--depth)*.5);rotate:var(--r0)}
+  18%{opacity:.58;filter:blur(2px) sepia(.22)}
+  58%{offset-distance:83%;opacity:.85;filter:blur(0) sepia(.08);scale:var(--depth);rotate:var(--r1)}
+  74%{offset-distance:100%;opacity:.78;filter:blur(0);scale:var(--depth);rotate:0deg}
+  85%{offset-distance:100%;opacity:.7;filter:blur(0);scale:var(--depth);rotate:0deg}
+  100%{offset-distance:100%;opacity:0;filter:blur(6px);scale:calc(var(--depth)*.88);rotate:0deg}
+}
+.deal-card.dealing .front{visibility:hidden!important}
+.deal-card.dealing .inner{transform:rotateX(var(--flight-x,0deg)) rotateZ(var(--flight-z,0deg))!important}
+
+/* v23: cards bank and turn in three dimensions along broad, continuous arcs. */
+.spectre.spread-card{background:none!important;border:0!important;outline:0!important;perspective:900px;overflow:visible;transform-style:preserve-3d}
+.spectre.spread-card.active{animation:spread-flight-v23 var(--life) cubic-bezier(.42,0,.35,1) var(--delay) both;offset-rotate:0deg}
+.ghost-inner{position:absolute;inset:0;display:block;transform-style:preserve-3d;animation:ghost-turn-v23 var(--life) ease-in-out var(--delay) both}
+.ghost-front,.ghost-back{position:absolute;inset:0;display:block;border-radius:3px;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 7px 17px #000a;border:2px solid #b59461;background-size:100% 100%;background-position:center}
+.ghost-front{background-color:#261b14}
+.ghost-back{transform:rotateY(180deg);background-image:url("../images/decks/tabula-tarot/backs/sepia.webp")}
+@keyframes spread-flight-v23{
+ 0%{offset-distance:0%;opacity:0;filter:blur(6px);scale:calc(var(--depth)*.48);rotate:var(--r0)}
+ 12%{opacity:.7;filter:blur(1px)}
+ 36%{opacity:.9;filter:blur(0);scale:calc(var(--depth)*1.12)}
+ 73%{offset-distance:89%;opacity:.87;scale:var(--depth);rotate:var(--r1)}
+ 84%{offset-distance:100%;opacity:.85;filter:blur(0);scale:var(--depth);rotate:0deg}
+ 92%{offset-distance:100%;opacity:.72}
+ 100%{offset-distance:100%;opacity:0;filter:blur(5px);scale:calc(var(--depth)*.95);rotate:0deg}
+}
+@keyframes ghost-turn-v23{
+ 0%{transform:rotateY(0deg) rotateX(-13deg) rotateZ(-13deg)}
+ 30%{transform:rotateY(calc(var(--spin)*.28)) rotateX(19deg) rotateZ(17deg)}
+ 65%{transform:rotateY(calc(var(--spin)*.72)) rotateX(-10deg) rotateZ(-10deg)}
+ 84%,100%{transform:rotateY(var(--spin)) rotateX(0deg) rotateZ(0deg)}
+}
+
+/* v26: keep the celestial wheel turning until the chosen card is revealed. */
+.scene.ritual .celestial{
+  animation:celestial-continuous-turn 34s linear infinite;
+  animation-delay:0s;
+  transform:translate(-50%,-50%) scale(1) rotate(0deg);
+  transition:opacity 1.5s ease;
+}
+.scene.ritual:not(.sky-awake) .celestial{opacity:0}
+.scene.ritual.sky-awake .celestial,
+.scene.ritual.arrived.sky-awake:not(.revealing) .celestial{opacity:.72}
+.scene.ritual.revealing .celestial{opacity:0}
+@keyframes celestial-continuous-turn{
+  from{transform:translate(-50%,-50%) scale(1) rotate(0deg)}
+  to{transform:translate(-50%,-50%) scale(1) rotate(360deg)}
+}
+@media(prefers-reduced-motion:reduce){.scene.ritual .celestial{animation:none}}
+
+/* v27: constant-progress Bézier travel and independently interpolated 3D motion.
+   Avoid keyframe speed jumps (0→89%→100%) and expensive animated blur. */
+.spectre.spread-card.active{
+  animation:spread-travel-smooth var(--life) linear var(--delay) both;
+  offset-rotate:0deg;
+  will-change:offset-distance,opacity,scale;
+  filter:none;
+}
+.spectre.spread-card .ghost-inner{
+  animation:ghost-turn-smooth var(--life) linear var(--delay) both;
+  will-change:transform;
+}
+@keyframes spread-travel-smooth{
+  0%{offset-distance:0%;opacity:0;scale:calc(var(--depth)*.50);rotate:var(--r0)}
+  12%{opacity:.72}
+  35%{opacity:.90;scale:calc(var(--depth)*1.06)}
+  70%{opacity:.85;scale:var(--depth)}
+  86%{opacity:.75}
+  100%{offset-distance:100%;opacity:0;scale:calc(var(--depth)*.96);rotate:0deg}
+}
+@keyframes ghost-turn-smooth{
+  0%{transform:rotateY(0deg) rotateX(-13deg) rotateZ(-13deg)}
+  100%{transform:rotateY(var(--spin)) rotateX(0deg) rotateZ(0deg)}
+}
