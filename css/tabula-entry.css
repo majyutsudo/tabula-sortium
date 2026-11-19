@@ -329,3 +329,23 @@
  .entry-v30 > .drawn-label{padding:5px 12px}
  .entry-v30 .enter-banner{top:calc(var(--label-top) + 77px)}
 }
+
+/* v30: reveal at the original card size; expand only under the flash. */
+.entry-v30 .deal-card.placed{
+ top:56%;
+ width:clamp(68px,7.5vw,112px);
+ transition:filter .7s ease;
+}
+.entry-v30 .deal-card.placed.flipped.expanded{
+ top:var(--reveal-center);
+ width:var(--reveal-card-width);
+ transition:top .55s ease-in-out,width .55s ease-in-out,filter .7s ease;
+}
+/* Prevent the older reveal-beat scaling from exposing the resize. */
+.entry-v30 .deal-card.flipped{animation:none;scale:1}
+/* Ensure the background flash covers the card's width and movement. */
+.entry-v30 .revelation-flash{z-index:12}
+@media(max-width:650px){
+ .entry-v30 .deal-card.placed{top:52%;width:clamp(68px,7.5vw,112px)}
+ .entry-v30 .deal-card.placed.flipped.expanded{top:var(--reveal-center);width:var(--reveal-card-width)}
+}
