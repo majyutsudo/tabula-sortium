@@ -292,7 +292,7 @@
  --reveal-center:43%;
  --reveal-card-width:clamp(168px,26vw,215px);
  --reveal-half-height:clamp(126px,19.5vw,161.25px);
- --label-top:calc(var(--reveal-center) + var(--reveal-half-height) + 14px);
+ --label-top:calc(var(--reveal-center) + var(--reveal-half-height) + 27px);
 }
 .entry-v30 .deal-card.placed{
  top:var(--reveal-center);
