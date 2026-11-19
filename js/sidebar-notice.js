@@ -21,6 +21,16 @@
       appearance: 'emporium',
       weight: 1,
       enabled: true
+    },
+    {
+      id: 'books',
+      title: '魔術堂の著作',
+      subtitle: 'BOOKS & GRIMOIRES',
+      description: 'Amazonで書籍を見る',
+      href: 'https://www.amazon.co.jp/dp/B0G6Y6ZQ96?th=1',
+      appearance: 'books',
+      weight: 1,
+      enabled: true
     }
   ];
 
