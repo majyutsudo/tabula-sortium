@@ -12,7 +12,7 @@
       description: 'もう一つの、魔術堂',
       href: 'https://majyutsudo.wpcomstaging.com/',
       appearance: 'astral',
-      weight: 1,
+      weight: 0,
       enabled: true
     },
     {
