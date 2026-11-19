@@ -103,12 +103,21 @@
   color:#ffe29f;letter-spacing:.23em;text-shadow:0 0 8px #f3a848b3;
 }
 .sidebar-notice-emporium .sidebar-notice-title {
-  color:#fff0b8;font-weight:bold;font-size:20px;letter-spacing:.018em;
+  /* The shop's primary identity: oversized illuminated kanji, not the annex name. */
+  color:#fff0b8;font-weight:bold;font-size:clamp(28px,2.4vw,34px);
+  line-height:1.2;letter-spacing:.16em;padding-left:.16em;
+  white-space:nowrap;
   text-shadow:0 0 3px #fff4cc,0 0 9px #ffcc63d6,0 0 20px #ff8120c0,1px 2px 1px #4d221a;
   animation:emporium-neon-pulse 3.1s ease-in-out infinite;
 }
 .sidebar-notice-emporium .sidebar-notice-subtitle {
-  color:#ffce79;font-size:8px;letter-spacing:.035em;text-shadow:0 0 8px #c87635c2;
+  /* A small secondary shop descriptor under the big 魔術堂 sign. */
+  color:#ffce79;font-size:11px;line-height:1.3;
+  font-style:italic;font-variant:small-caps;letter-spacing:.25em;
+  padding-left:.25em;text-shadow:0 0 8px #c87635c2;
+}
+.sidebar-notice-emporium .sidebar-notice-description {
+  border-top:1px solid #e8ab5766;margin-top:4px;padding-top:9px;
 }
 .sidebar-notice-emporium .sidebar-notice-description {
   color:#fff1d5;font-weight:bold;font-size:12px;
