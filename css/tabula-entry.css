@@ -285,3 +285,46 @@
  .entry-v30 > .drawn-label #drawnTitle{font-size:13px}
  .entry-v30 .enter-banner{top:calc(52% + 162px)}
 }
+
+/* v30 refinement: enlarge the revealed card, place translated names below it,
+   and keep the CTA below the label without overlapping the instruction line. */
+.entry-v30{
+ --reveal-center:43%;
+ --reveal-card-width:clamp(168px,26vw,215px);
+ --label-top:calc(var(--reveal-center) + var(--reveal-card-width) * .75 + 14px);
+}
+.entry-v30 .deal-card.placed{
+ top:var(--reveal-center);
+ width:var(--reveal-card-width);
+ transition:width .7s ease,filter .7s ease;
+}
+.entry-v30 .deal-card .completed-major-rank{font-size:clamp(12px,1.5vw,19px)}
+.entry-v30 .completed-major .completed-major-name{font-size:clamp(8px,.9vw,13px)}
+.entry-v30 .completed-major .completed-major-subtitle{font-size:clamp(5px,.6vw,8px)}
+.entry-v30 > .drawn-label{
+ top:var(--label-top);
+ min-width:190px;max-width:min(88vw,380px);
+ padding:9px 18px 8px;
+}
+.entry-v30 > .drawn-label #drawnTitle{font-size:clamp(15px,1.5vw,20px)}
+.entry-v30 > .drawn-label #drawnLanguage{
+ display:block;margin-top:5px;
+ font:400 clamp(12px,1vw,14px)/1.35 Georgia,'Yu Mincho','Hiragino Mincho ProN',serif;
+ letter-spacing:.035em;color:#d0b586;white-space:normal;
+}
+.entry-v30 .enter-banner{
+ top:calc(var(--label-top) + 102px);
+}
+.entry-v30.revealing .status{opacity:0;pointer-events:none}
+@media(max-width:650px){
+ .entry-v30{--reveal-center:43%;--reveal-card-width:clamp(132px,30vw,170px)}
+ .entry-v30 > .drawn-label{top:var(--label-top);min-width:170px;max-width:86vw}
+ .entry-v30 > .drawn-label #drawnTitle{font-size:15px}
+ .entry-v30 > .drawn-label #drawnLanguage{font-size:12px}
+ .entry-v30 .enter-banner{top:calc(var(--label-top) + 96px)}
+}
+@media(max-height:600px){
+ .entry-v30{--reveal-center:38%;--reveal-card-width:clamp(105px,21vh,145px)}
+ .entry-v30 > .drawn-label{padding:5px 12px}
+ .entry-v30 .enter-banner{top:calc(var(--label-top) + 77px)}
+}
