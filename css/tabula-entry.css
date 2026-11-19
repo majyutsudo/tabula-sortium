@@ -219,13 +219,18 @@
  top:var(--card-center);width:var(--small-width);
  transition:filter .7s ease;
 }
+/* A hidden, instantaneous swap to the enlarged card: no moving edge. */
+.entry-v30 .deal-card.placed.flipped{
+ opacity:0;animation:none;scale:1;transition:none;
+}
 .entry-v30 .deal-card.placed.flipped.expanded{
  top:calc(var(--card-bottom) - var(--large-half-height));
  width:var(--large-width);
- /* Identical timing preserves the lower edge throughout enlargement. */
- transition:width .6s ease-in-out,top .6s ease-in-out,filter .7s ease;
+ opacity:0;transition:none;
 }
-.entry-v30 .deal-card.flipped{animation:none;scale:1}
+.entry-v30 .deal-card.placed.flipped.expanded.appearing{
+ opacity:1;transition:opacity 1.15s ease-in;
+}
 .entry-v30 .revelation-flash{z-index:12}
 /* Keep the name attached visually to the original card's bottom position. */
 .entry-v30 > .drawn-label{
