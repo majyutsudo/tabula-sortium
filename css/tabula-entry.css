@@ -216,3 +216,72 @@
 /* Reserve the space beneath the revealed card for its label. */
 .entry-v30 .enter-banner{top:calc(56% + clamp(157px,17vw,215px))}
 @media(max-width:650px){.entry-v30 .enter-banner{top:calc(52% + 145px)}}
+
+/* v30 reveal repair: native image in a faithful TABULA full-card frame. */
+.entry-v30 .deal-card .front .drawn-face{position:absolute;inset:0;width:100%;height:100%}
+.entry-v30 .deal-card .front .drawn-face .completed-major{
+ position:relative;display:block;width:100%;height:100%;
+ background:linear-gradient(135deg,#fbefcf,#e5cda1);
+ border:2px solid #735b37;border-radius:3px;
+ box-shadow:inset 0 0 0 2px #ad8b51,inset 0 0 0 4px #fbefcf,inset 0 0 0 5px #8b7049;
+ font-family:Georgia,'Times New Roman',serif;color:#49341e;
+}
+.entry-v30 .completed-major .completed-major-art{
+ position:absolute;left:6.25%;top:10.4%;width:87.5%;height:73.8%;
+ display:block;object-fit:contain;border:0;filter:none;max-width:none;
+}
+.entry-v30 .completed-major .completed-major-rank{
+ position:absolute;top:2%;left:0;width:100%;height:6%;
+ display:flex;align-items:center;justify-content:center;
+ color:#43301b;font-size:clamp(9px,1.3vw,15px);font-weight:400;line-height:1;
+}
+.entry-v30 .completed-major .completed-major-rule{
+ position:absolute;top:8.2%;height:1px;left:6%;right:6%;
+ background:linear-gradient(to right,#a28554 0 34%,transparent 34% 66%,#a28554 66% 100%);
+}
+.entry-v30 .completed-major .completed-major-name{
+ position:absolute;top:86.9%;left:2%;width:96%;height:5%;
+ display:flex;align-items:center;justify-content:center;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ color:#49341e;font-family:'Yu Mincho','Hiragino Mincho ProN',Georgia,serif;
+ font-size:clamp(6px,.72vw,11px);line-height:1;
+}
+.entry-v30 .completed-major .completed-major-subtitle{
+ position:absolute;top:93%;left:0;width:100%;height:3%;
+ display:flex;align-items:center;justify-content:center;
+ color:#6c5130;font-size:clamp(4px,.48vw,7px);line-height:1;letter-spacing:.02em;
+ white-space:nowrap;overflow:hidden;
+}
+.entry-v30 .completed-major .completed-major-corner{
+ position:absolute;width:5px;height:5px;border:1px solid #997841;transform:rotate(45deg);
+}
+.entry-v30 .completed-major .completed-major-corner.a{left:4%;top:4%}
+.entry-v30 .completed-major .completed-major-corner.b{right:4%;top:4%}
+.entry-v30 .completed-major .completed-major-corner.c{left:4%;bottom:4%}
+.entry-v30 .completed-major .completed-major-corner.d{right:4%;bottom:4%}
+
+/* The title is a scene-level overlay: never a child of the 3D rotating card. */
+.entry-v30 > .drawn-label{
+ position:absolute;top:calc(56% + clamp(97px,12vw,150px));left:50%;
+ transform:translate(-50%,7px);z-index:10;
+ width:max-content;min-width:180px;max-width:min(84vw,360px);
+ padding:9px 19px 7px;border:1px solid #b3915e;border-radius:3px;
+ background:linear-gradient(120deg,#120d0bef,#25170fee,#120d0bef);
+ box-shadow:0 5px 25px #000c,0 0 12px #b58c3940;
+ text-align:center;color:#f3dca9;opacity:0;pointer-events:none;
+ transition:opacity .75s ease 1.0s,transform .75s ease 1.0s;
+}
+.entry-v30.revealing > .drawn-label{opacity:1;transform:translate(-50%,0)}
+.entry-v30 > .drawn-label #drawnTitle{
+ display:block;font:500 clamp(13px,1.45vw,18px)/1.35 Georgia,'Yu Mincho',serif;
+ white-space:normal;letter-spacing:.035em;text-shadow:0 1px 3px #000;
+}
+.entry-v30 > .drawn-label #drawnLanguage{
+ display:block;margin-top:4px;font-size:9px;color:#bd9e6c;letter-spacing:.17em;
+}
+.entry-v30 .enter-banner{top:calc(56% + clamp(170px,21vw,245px))}
+@media(max-width:650px){
+ .entry-v30 > .drawn-label{top:calc(52% + 100px);min-width:150px;max-width:82vw;padding:8px 12px}
+ .entry-v30 > .drawn-label #drawnTitle{font-size:13px}
+ .entry-v30 .enter-banner{top:calc(52% + 162px)}
+}
