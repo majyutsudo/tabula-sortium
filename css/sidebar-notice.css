@@ -358,3 +358,25 @@
   letter-spacing:.11em;
   text-shadow:0 0 6px #c48f4580;
 }
+
+/* Astral uses the same shop-name hierarchy as Emporium: 魔術堂 / astral. */
+.sidebar-notice-astral .sidebar-notice-title {
+  order:1;
+  font:normal 20px/1.3 'Yu Mincho','Hiragino Mincho ProN',serif;
+  letter-spacing:.07em;
+  color:#ead9b8;
+  text-shadow:0 0 5px #d6b0df66,0 0 12px #9670b34d;
+  animation:astral-sign-glow 7.5s ease-in-out infinite alternate;
+}
+.sidebar-notice-astral .sidebar-notice-subtitle {
+  order:2;
+  color:#cbb9cd;
+  font:italic 13px/1.2 Georgia,'Times New Roman',serif;
+  letter-spacing:.19em;
+  padding-left:.19em;
+  text-shadow:0 0 7px #a889bb47;
+  animation:none;
+}
+@media (prefers-reduced-motion:reduce) {
+  .sidebar-notice-astral .sidebar-notice-title {animation:none!important}
+}
