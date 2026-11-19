@@ -324,3 +324,37 @@
   .sidebar-notice-story .sidebar-notice-subtitle,
   .sidebar-notice-emporium .sidebar-notice-title {animation:none!important}
 }
+
+/* Astral and Emporium use the same editorial density as the two book notices. */
+.sidebar-notice-astral .sidebar-notice-detail {
+  font:9px/1.5 Georgia,'Times New Roman',serif;
+  letter-spacing:.13em;
+  color:#baa7bf;
+  border-top:1px solid #8d78875e;
+  padding-top:7px;margin-top:2px;
+}
+.sidebar-notice-astral .sidebar-notice-stamp {
+  display:block;
+  border:1px solid #9c829a8c;
+  padding:5px 9px;
+  margin:3px 0;
+  color:#cbb7d2;
+  font:9px/1.2 Georgia,'Times New Roman',serif;
+  letter-spacing:.12em;
+}
+.sidebar-notice-emporium .sidebar-notice-detail {
+  font:11px/1.35 'Yu Mincho','Hiragino Mincho ProN',serif;
+  letter-spacing:.04em;color:#e7cc9e;
+  border-top:1px solid #ac8c576c;
+  padding-top:7px;margin-top:2px;
+}
+.sidebar-notice-emporium .sidebar-notice-stamp {
+  display:block;
+  padding:4px 9px;margin:3px 0;
+  border:1px double #cfab68;
+  background:#86602d25;
+  color:#f0d79a;
+  font:10px/1.25 Georgia,'Times New Roman',serif;
+  letter-spacing:.11em;
+  text-shadow:0 0 6px #c48f4580;
+}
