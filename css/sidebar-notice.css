@@ -1,0 +1,60 @@
+/* Optional notices at the foot of the settings sidebar. */
+.sidebar-notice {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #46483d;
+}
+.sidebar-notice[hidden] { display: none; }
+.sidebar-notice-heading {
+  margin: 0 0 9px;
+  color: #9e9b87;
+  font: 10px/1.4 sans-serif;
+  letter-spacing: .11em;
+}
+.sidebar-notice-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 17px 10px 15px;
+  min-height: 136px;
+  text-align: center;
+  text-decoration: none;
+  color: #e8d7b5;
+  border: 1px solid #79694b;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 3px #0f1514b8, inset 0 0 0 4px #9b81494d, 0 6px 18px #0004;
+  transition: border-color .2s ease,filter .2s ease;
+}
+.sidebar-notice-link:hover,.sidebar-notice-link:focus-visible {
+  filter: brightness(1.17);
+  border-color: #dac18b;
+}
+.sidebar-notice-link:focus-visible { outline: 2px solid #dec08b;outline-offset: 3px; }
+.sidebar-notice-astral {
+  background: radial-gradient(circle at 50% 0%,#6e5549 0%,#302a2c 38%,#161d1c 100%);
+}
+.sidebar-notice-emporium {
+  background: radial-gradient(circle at 50% 0%,#655136 0%,#34352a 40%,#1a211d 100%);
+}
+.sidebar-notice-ornament {
+  font: 9px/1.2 Georgia,serif;
+  color: #bba678;
+  letter-spacing: .2em;
+}
+.sidebar-notice-title {
+  color: #f3e3c4;
+  font: 18px/1.25 Georgia,'Yu Mincho',serif;
+  letter-spacing: .045em;
+}
+.sidebar-notice-subtitle {
+  max-width: 100%;
+  font: 9px/1.4 Georgia,serif;
+  color: #c7ad7c;
+  letter-spacing: .075em;
+}
+.sidebar-notice-description {
+  color: #d1c7b3;
+  font: 11px/1.5 'Yu Mincho','Hiragino Mincho ProN',serif;
+}
