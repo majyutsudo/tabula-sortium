@@ -524,11 +524,13 @@ function initialDeckSettings(id){
  };
 }
 function defaultReversalsForDeck(id){return initialDeckSettings(id).reversals}
-function syncDeckReversals(){
- const id=settings.deckId||'builtin';
- const map=settings.reversalsByDeck;
- settings.reversals=(map&&typeof map==='object'&&!Array.isArray(map)&&typeof map[id]==='boolean')
+function reversalsForDeck(id,preferences=settings){
+ const map=preferences.reversalsByDeck;
+ return map&&typeof map==='object'&&!Array.isArray(map)&&typeof map[id]==='boolean'
   ?map[id]:defaultReversalsForDeck(id);
+}
+function syncDeckReversals(){
+ settings.reversals=reversalsForDeck(settings.deckId||'builtin');
 }
 function setDeckReversals(enabled){
  const id=settings.deckId||'builtin';
@@ -695,8 +697,8 @@ function soundAtAnimationEnd(node,animationName,volume=1){
   // Preserve the selected frame presentation when starting a new reading.
   initializePresetFrames(state,settings.spread);
   state.deck=settings.initialOrder==='random'
-   ?randomize(state.deck.map(c=>({...c,reversed:settings.reversals?Math.random()<.5:!!c.reversed})))
-   :sortPhysicalCards(state.deck,settings.initialOrder);
+   ?randomize(state.deck.map(c=>({...c,reversed:settings.reversals?Math.random()<.5:false})))
+   :sortPhysicalCards(state.deck,settings.initialOrder).map(c=>settings.reversals?c:{...c,reversed:false});
   state.dealCheckpoint=null;state.cutStage=null;state.selected=null;state.completionShown=false;
   render();dualSave();
   setStatus('新しい占いを始めました。山札 '+state.deck.length+'枚。');
@@ -705,7 +707,7 @@ function soundAtAnimationEnd(node,animationName,volume=1){
  // Preserve the selected frame presentation when starting a new reading.
  state={deck:(settings.initialOrder==='random'
   ?randomize(TabulaPhysicalIdentity.nextReading(state,selectedCards(),{reversals:settings.reversals}))
-  :sortPhysicalCards(TabulaPhysicalIdentity.nextReading(state,selectedCards()),settings.initialOrder)),
+  :sortPhysicalCards(TabulaPhysicalIdentity.nextReading(state,selectedCards()),settings.initialOrder).map(c=>settings.reversals?c:{...c,reversed:false})),
   placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};initializePresetFrames(state,settings.spread);render();setStatus(`新しい占いを始めました（山札${state.deck.length}枚）。`);saveLocal()}function defaultDealOrder(spread){return TabulaCardRules.defaultDealOrder(presets,spread)}
 function getDealOrder(spread=settings.spread){
  const order=TabulaCardRules.getDealOrder(presets,spread,settings.spreadDealOrders);
@@ -3348,7 +3350,16 @@ function customModal(){
 }$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewVisualEffect(true)};$('previewEffect').onclick=()=>previewVisualEffect(true);colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('カード構成は一組モードで変更してください。');return}if(e.target.value==='custom'){e.target.value=settings.pool;customModal();return}settings.pool=e.target.value;initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{if(changeActiveSpread(e.target.value))setStatus('展開法を切り替えました。山札の配列は維持しています。');else{e.target.value=settings.spread;syncSpreadShortcut();}};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
 $('resetSpreadDealOrder').onclick=()=>{settings.spreadDealOrders={...(settings.spreadDealOrders||{})};delete settings.spreadDealOrders[settings.spread];syncDealOrderField();saveLocal();setStatus('このスプレッドの配札順を番号順に戻しました。')};
 $('playingOrientationMarks').onchange=e=>{settings.playingOrientationMarks=e.target.checked;render();saveLocal()};
-$('reversals').onchange=e=>{setDeckReversals(e.target.checked);initialize()};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
+$('reversals').onchange=e=>{
+ setDeckReversals(e.target.checked);
+ if(dualSession){
+  // Keep cards on the table untouched; only the undealt stock adopts the
+  // newly selected orientation policy. The active table saves its own map.
+  if(!settings.reversals)state.deck=state.deck.map(c=>({...c,reversed:false}));
+  render();dualSave();
+  setStatus(settings.reversals?'このデッキで正逆位置を使用します。':'このデッキの未配札カードを正位置に揃えました。配置済みのカードは維持します。');
+ }else initialize();
+};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
 function openSequentially(){if(openingBusy)return;const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...(!dualSession?TabulaTablePiles.closedTopCards(state):[])];if(!closed.length){setStatus('開ける伏せ札がありません。');return}openingBusy=true;$('quickOpen').disabled=true;$('quickRevealAll').disabled=true;const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;const pace=settings.openMode==='quick'?Math.max(110,Math.round(basePace/2)):basePace;let index=0;function step(){if(index>=closed.length){openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;render();maybeTriggerCompletionEffect();saveLocal();setStatus(closed.length+'枚を'+(settings.openMode==='quick'?'一度に':'順番に')+'開きました。');return}closed[index].faceUp=true;index++;play('flip');render();saveLocal();setStatus(`カードを開いています：${index}/${closed.length}枚`);setTimeout(step,pace)}step()}
 /* All spread selectors must use the same collect-or-cancel transaction.
    Never discard pile frames containing physical cards. */
@@ -5078,9 +5089,12 @@ function independentTableWorkspace(){
  const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(idsA,idsB,{spread:settings.spread}),'table2','追加卓Ⅰ');
  const own=c=>({...c,instanceId:'A:'+c.id,sourceDeck:'A'});
  w.workspaceKind='independent';w.piles.A=state.deck.map(own);
- Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),tablePiles:(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)})),spread:settings.spread,cardSize:zoom,deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles())});
- Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),deckId,pool:pool==='included'?'all':pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles())});
- w.piles.B=randomize(w.piles.B.map(c=>({...c,reversed:settings.reversals?Math.random()<.5:false})));
+ Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),tablePiles:(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)})),spread:settings.spread,cardSize:zoom,deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:dualClone(settings)});
+ const extraSettings=dualClone(settings);
+ extraSettings.deckId=deckId;extraSettings.pool=pool==='included'?'all':pool;
+ extraSettings.reversals=reversalsForDeck(deckId,extraSettings);
+ Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),deckId,pool:extraSettings.pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:extraSettings});
+ w.piles.B=randomize(w.piles.B.map(c=>({...c,reversed:extraSettings.reversals?Math.random()<.5:false})));
  w.appearances={A:validAppearance(settings.deckAppearance),B:'standard'};
  w.backColors={A:settings.cardBackColor||'sepia',B:deckId===BUILTIN_PLAYING.id?playingBackPreference():registered?.backColor||'navy'};
  TabulaMultiWorkspace.validate(w);return w;
@@ -5175,6 +5189,9 @@ function dualRestoreView(){
  settings.spread=t.spread||'free';
  if(isIndependentTables()){
   settings.deckId=t.deckId||'builtin';settings.pool=t.pool||'all';
+  // Legacy additional tables may have no savedSettings. Re-resolve the
+  // selected deck policy instead of inheriting the previous table's toggle.
+  syncDeckReversals();
   const d=deckLibrary.find(x=>x.id===settings.deckId);
   settings.cardDesign=d?.faceStyle||(settings.deckId==='simple'?'simple':'standard');
   settings.cardBackColor=d?.backColor||(dualSession.backColors?.[dualSession.activePile]||'sepia');
