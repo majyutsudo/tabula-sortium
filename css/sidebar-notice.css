@@ -265,6 +265,8 @@
 }
 .sidebar-notice-emporium::after {content:none;animation:none}
 .sidebar-notice-emporium .sidebar-notice-ornament {color:#c6b28c}
+.sidebar-notice-emporium .sidebar-notice-title {order:1}
+.sidebar-notice-emporium .sidebar-notice-subtitle {order:2}
 .sidebar-notice-emporium .sidebar-notice-subtitle {
   color:#f1cf8e;
   font:italic 13px/1.2 Georgia,'Times New Roman',serif;
