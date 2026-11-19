@@ -4,8 +4,8 @@
   const notices = [
     {
       id: 'astral',
-      title: '魔術堂 astral',
-      subtitle: 'ASTRAL',
+      title: '魔術堂',
+      subtitle: 'astral',
       heading: 'MAJYUTSUDO / THE OTHER ENTRANCE',
       detail: 'WORDS · CHANCE · SOUND',
       stamp: 'OPEN AFTER DARK',
@@ -74,7 +74,7 @@
   link.href = selected.href;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.setAttribute('aria-label', (selected.id === 'emporium' ? '魔術堂 emporium' : selected.title + (selected.detail || '')) + ' を別タブで開く');
+  link.setAttribute('aria-label', (selected.id === 'emporium' ? '魔術堂 emporium' : selected.id === 'astral' ? '魔術堂 astral' : selected.title + (selected.detail || '')) + ' を別タブで開く');
   // Keep each notice as a self-contained, accessible framed advertisement.
   const fields = [
     ['ornament', selected.heading],
