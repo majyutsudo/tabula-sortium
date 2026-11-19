@@ -52,6 +52,19 @@
       appearance: 'story',
       weight: 1,
       enabled: true
+    },
+    {
+      id: 'playing-cards',
+      title: 'プレイングカード入門',
+      subtitle: 'PLAYING CARDS',
+      heading: 'MAJYUTSUDO / CARTOMANCY',
+      detail: '52枚の象徴体系と成功の儀式',
+      stamp: 'RÉUSSITE · 12 PAGES',
+      description: 'A5冊子 · ¥330',
+      href: 'https://majyutsudo.base.shop/items/156742585',
+      appearance: 'playing-cards',
+      weight: 1,
+      enabled: true
     }
   ];
 
