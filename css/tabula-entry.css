@@ -278,3 +278,9 @@
 /* v0.665: Invisible direct-table passage. Positioned independently of animated cards. */
 .entry-v30 .secret-table-passage{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:48px;height:48px;display:block;z-index:11;background:transparent;border:0;opacity:0;cursor:default;touch-action:manipulation}
 .entry-v30 .secret-table-passage:focus-visible{opacity:1;outline:2px solid #cda96e;outline-offset:2px;background:#251c14b3}
+
+/* v0.666: Invisible shortcut follows the contain-scaled illustrated backdrop, rather than the viewport corners. Coordinates correspond to the background artwork as shown at 1365:905. */
+.entry-v30 .cat-secret-map{position:absolute;inset:0;width:100%;height:100%;z-index:11;pointer-events:none;overflow:visible}
+.entry-v30 .cat-secret-map a{pointer-events:none}
+.entry-v30 .cat-secret-map a rect{pointer-events:all;cursor:default}
+.entry-v30 .cat-secret-map a:focus-visible rect{stroke:#cda96e;stroke-width:3}
