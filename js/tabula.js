@@ -5075,12 +5075,15 @@ function updateAppearanceControls(){
 function dualBackTone(deck){const tone=dualSession?.backColors?.[deck]||DUAL_BACK_DEFAULTS[deck]||'sepia';return Object.hasOwn(TABULA_BACK_PALETTE,tone)?tone:'sepia'}
 
 function isIndependentTables(){return !!dualSession&&dualSession.workspaceKind==='independent'}
+// Follow the current main deck until the user explicitly chooses an extra deck.
+let independentDeckSelectionCustomized=false;
 function independentDeckChoices(){
- const p=$('independentDeckSelect');if(!p)return;const old=p.value;
+ const p=$('independentDeckSelect');if(!p)return;
+ const preferred=independentDeckSelectionCustomized?p.value:(settings.deckId||'builtin');
  p.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
  for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
  for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+'（'+TabulaDeckBlueprint.generate(d).length+'枚）',d.id));
- p.value=Array.from(p.options).some(o=>o.value===old)?old:'builtin';
+ p.value=Array.from(p.options).some(o=>o.value===preferred)?preferred:'builtin';
  updateIndependentPool();
 }
 function updateIndependentPool(){
@@ -5088,7 +5091,7 @@ function updateIndependentPool(){
  pool.disabled=!!blueprint;
  if(blueprint)pool.value='included';
 }
-$('independentDeckSelect').addEventListener('change',updateIndependentPool);
+$('independentDeckSelect').addEventListener('change',()=>{independentDeckSelectionCustomized=true;updateIndependentPool();});
 function independentTableWorkspace(){
  const deckId=$('independentDeckSelect').value,pool=$('independentDeckPool').value;
  const registered=deckLibrary.find(d=>d.id===deckId),blueprint=blueprintFor(deckId);
