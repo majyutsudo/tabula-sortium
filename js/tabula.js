@@ -3353,8 +3353,19 @@ $('playingOrientationMarks').onchange=e=>{settings.playingOrientationMarks=e.tar
 $('reversals').onchange=e=>{
  setDeckReversals(e.target.checked);
  if(dualSession){
+  // Preferences belong to deck IDs across workspaces. Copy the preference
+  // to other independent tables without touching any of their physical cards.
+  if(isIndependentTables()){
+   const deckId=settings.deckId,choice=settings.reversals;
+   for(const table of Object.values(dualSession.tables)){
+    const stored=table.savedSettings;
+    if(!stored)continue;
+    stored.reversalsByDeck={...(stored.reversalsByDeck||{}),[deckId]:choice};
+    if(table.deckId===deckId)stored.reversals=choice;
+   }
+  }
   // Keep cards on the table untouched; only the undealt stock adopts the
-  // newly selected orientation policy. The active table saves its own map.
+  // newly selected orientation policy.
   if(!settings.reversals)state.deck=state.deck.map(c=>({...c,reversed:false}));
   render();dualSave();
   setStatus(settings.reversals?'このデッキで正逆位置を使用します。':'このデッキの未配札カードを正位置に揃えました。配置済みのカードは維持します。');
