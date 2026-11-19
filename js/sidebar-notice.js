@@ -14,8 +14,8 @@
     },
     {
       id: 'emporium',
-      title: '魔術堂 emporium',
-      subtitle: 'THE HOUSE OF COMMERCE AND CONJURATION',
+      title: '魔術堂',
+      subtitle: 'emporium',
       description: 'オンライン・ショップ',
       href: 'https://majyutsudo.base.shop/',
       appearance: 'emporium',
@@ -43,7 +43,7 @@
   link.href = selected.href;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.setAttribute('aria-label', selected.title + ' を別タブで開く');
+  link.setAttribute('aria-label', (selected.id === 'emporium' ? '魔術堂 emporium' : selected.title) + ' を別タブで開く');
   for (const [kind, content] of [
     ['ornament', '✧  MAJYUTSUDO  ✧'],
     ['title', selected.title],
