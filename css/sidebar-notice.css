@@ -393,3 +393,35 @@
     padding:14px 12px 18px;
   }
 }
+
+/* Playing-card booklet: compact antique playing-card label, same sidebar footprint. */
+.sidebar-notice-playing-cards {
+  min-height:190px;
+  gap:5px;
+  padding:16px 10px 13px;
+  border:1px solid #9c7860;
+  background:linear-gradient(155deg,#30271f,#25231e 58%,#1b211c);
+  box-shadow:inset 0 0 0 3px #141713,inset 0 0 0 4px #aa8a635e,0 7px 18px #0006;
+}
+.sidebar-notice-playing-cards::before {
+  content:"";position:absolute;inset:9px;border:1px solid #a68c745c;pointer-events:none;
+}
+.sidebar-notice-playing-cards .sidebar-notice-ornament {
+  color:#bba28b;font-size:8px;letter-spacing:.08em;
+}
+.sidebar-notice-playing-cards .sidebar-notice-subtitle {
+  color:#d5b18d;font:italic 13px/1.2 Georgia,serif;letter-spacing:.13em;
+}
+.sidebar-notice-playing-cards .sidebar-notice-title {
+  color:#f0ddc0;font:normal 15px/1.35 'Yu Mincho','Hiragino Mincho ProN',serif;letter-spacing:.04em;
+}
+.sidebar-notice-playing-cards .sidebar-notice-detail {
+  color:#cbb7a3;font:10px/1.4 'Yu Mincho','Hiragino Mincho ProN',serif;
+}
+.sidebar-notice-playing-cards .sidebar-notice-stamp {
+  display:block;margin:3px 0 1px;padding:4px 8px;border:1px solid #a36b60;
+  color:#dba398;font:9px/1.25 Georgia,serif;letter-spacing:.06em;
+}
+.sidebar-notice-playing-cards .sidebar-notice-description {
+  color:#c6b5a0;font-size:10px;
+}
