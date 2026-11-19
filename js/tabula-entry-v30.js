@@ -1,11 +1,10 @@
-const scene=document.getElementById('scene'),deck=document.getElementById('deck'),card=document.getElementById('card'),enter=document.getElementById('enter'),status=document.getElementById('status');let phase=0,raf=0,timer=0,fadeTimer=0,skyTimer=0,ghostTimers=[];const DURATION=12000,FADE_DELAY=1300,AWAKEN_DELAY=1500;
+const scene=document.getElementById('scene'),deck=document.getElementById('deck'),card=document.getElementById('card'),enter=document.getElementById('enter'),status=document.getElementById('status');let phase=0,raf=0,timer=0,expandTimer=0,fadeTimer=0,skyTimer=0,ghostTimers=[];const DURATION=12000,FADE_DELAY=1300,AWAKEN_DELAY=1500;
 
 const spectres=document.getElementById('spectres');
 const tarotRoot='images/decks/tabula-tarot/base/';
 const majorNames=['THE FOOL','THE MAGICIAN','THE HIGH PRIESTESS','THE EMPRESS','THE EMPEROR','THE HIEROPHANT','THE LOVERS','THE CHARIOT','STRENGTH','THE HERMIT','WHEEL OF FORTUNE','JUSTICE','THE HANGED MAN','DEATH','TEMPERANCE','THE DEVIL','THE TOWER','THE STAR','THE MOON','THE SUN','JUDGEMENT','THE WORLD'];
 const majorUrl=n=>`${tarotRoot}major_${String(n).padStart(2,'0')}.webp`;
-const labelLanguages=['ja','en','fr'];
-let selectedMajor=null,selectedLanguage='en';
+let selectedMajor=null;
 function shuffledMajors(){const a=Array.from({length:22},(_,i)=>i);for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function summonSpectres(others){
  spectres.replaceChildren();ghostTimers.forEach(clearTimeout);ghostTimers=[];
@@ -44,8 +43,8 @@ function summonSpectres(others){
  });
 }
 function drawMajor(){
- const order=shuffledMajors(),n=order[0],language=labelLanguages[Math.floor(Math.random()*labelLanguages.length)];
- selectedMajor=n;selectedLanguage=language;
+ const order=shuffledMajors(),n=order[0];
+ selectedMajor=n;
  // Do not render the face or its title during the flight.
  return order.slice(1);
 }
@@ -60,8 +59,11 @@ card.style.setProperty('--flight-z',bank+'deg');
 card.style.setProperty('--flight-x',pitch+'deg');
 if(t<1)raf=requestAnimationFrame(frame);else{card.className='deal-card placed';card.style.left='';card.style.top='';card.style.transform='';card.style.removeProperty('--flight-y');card.style.removeProperty('--flight-z');card.style.removeProperty('--flight-x');phase=2;scene.classList.add('arrived');status.textContent='選ばれた大アルカナを裏返して、運命の一枚をご覧ください。'}}raf=requestAnimationFrame(frame)}
 function flip(){if(phase!==2||selectedMajor===null)return;phase=3;
- document.getElementById('drawnFace').innerHTML=TabulaEntryFace.face(selectedMajor,selectedLanguage);
- document.getElementById('drawnTitle').textContent=TabulaEntryFace.title(selectedMajor,selectedLanguage);
- const secondaryLanguage=selectedLanguage==='ja'?(Math.random()<.5?'en':'fr'):'ja';
- document.getElementById('drawnLanguage').textContent=TabulaEntryFace.title(selectedMajor,secondaryLanguage);
- scene.classList.add('revealing');card.classList.add('flipped');const flash=document.getElementById('revelationFlash');flash.classList.remove('burst');void flash.offsetWidth;flash.classList.add('burst');status.textContent='';timer=setTimeout(()=>{enter.classList.add('show');const banner=document.getElementById('enterBanner');banner.classList.add('show','revealed');phase=4},1850)}function reset(){clearTimeout(timer);clearTimeout(fadeTimer);clearTimeout(skyTimer);cancelAnimationFrame(raf);phase=0;scene.classList.remove('ritual','arrived','sky-awake','revealing');document.getElementById('revelationFlash').classList.remove('burst');spectres.replaceChildren();ghostTimers.forEach(clearTimeout);ghostTimers=[];card.style.left='';card.style.top='';card.style.transform='';card.style.removeProperty('--flight-y');card.style.removeProperty('--flight-z');card.style.removeProperty('--flight-x');card.className='deal-card';enter.classList.remove('show');document.getElementById('enterBanner').classList.remove('show','revealed');deck.classList.remove('vanishing');deck.style.pointerEvents='';document.getElementById('drawnFace').replaceChildren();selectedMajor=null;document.getElementById('drawnTitle').textContent='';document.getElementById('drawnLanguage').textContent='';status.textContent='山札をクリックして、一枚のカードを引いてください。'}deck.addEventListener('click',deal);card.addEventListener('click',()=>{if(phase===2)flip();else if(phase===4)return});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click()}});document.getElementById('reset').addEventListener('click',reset);
+ document.getElementById('drawnFace').innerHTML=TabulaEntryFace.face(selectedMajor,'en');
+ document.getElementById('drawnTitle').textContent=TabulaEntryFace.title(selectedMajor,'en');
+ document.getElementById('drawnLanguage').textContent=TabulaEntryFace.title(selectedMajor,'ja');
+ scene.classList.add('revealing');card.classList.add('flipped');const flash=document.getElementById('revelationFlash');flash.classList.remove('burst');void flash.offsetWidth;flash.classList.add('burst');
+ // The flash hides the physical enlargement: retain the small card until
+ // its first bright wave has arrived, then expand beneath the light.
+ expandTimer=setTimeout(()=>{if(phase===3||phase===4)card.classList.add('expanded')},420);
+ status.textContent='';timer=setTimeout(()=>{enter.classList.add('show');const banner=document.getElementById('enterBanner');banner.classList.add('show','revealed');phase=4},1850)}function reset(){clearTimeout(timer);clearTimeout(expandTimer);clearTimeout(fadeTimer);clearTimeout(skyTimer);cancelAnimationFrame(raf);phase=0;scene.classList.remove('ritual','arrived','sky-awake','revealing');document.getElementById('revelationFlash').classList.remove('burst');spectres.replaceChildren();ghostTimers.forEach(clearTimeout);ghostTimers=[];card.style.left='';card.style.top='';card.style.transform='';card.style.removeProperty('--flight-y');card.style.removeProperty('--flight-z');card.style.removeProperty('--flight-x');card.className='deal-card';enter.classList.remove('show');document.getElementById('enterBanner').classList.remove('show','revealed');deck.classList.remove('vanishing');deck.style.pointerEvents='';document.getElementById('drawnFace').replaceChildren();selectedMajor=null;document.getElementById('drawnTitle').textContent='';document.getElementById('drawnLanguage').textContent='';status.textContent='山札をクリックして、一枚のカードを引いてください。'}deck.addEventListener('click',deal);card.addEventListener('click',()=>{if(phase===2)flip();else if(phase===4)return});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click()}});document.getElementById('reset').addEventListener('click',reset);
