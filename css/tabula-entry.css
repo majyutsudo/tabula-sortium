@@ -194,10 +194,10 @@
 
 /* v30: full TABULA artwork frame for the revealed card, with a separate
    legible title below it. The 21 passing cards remain lightweight WebP. */
-.deal-card .front{padding:0;border:0;background:transparent;overflow:hidden}
-.deal-card .front .drawn-face{width:100%;height:100%;display:block}
-.deal-card .front .drawn-face svg{width:100%;height:100%;display:block}
-.deal-card .drawn-label{
+.entry-v30 .deal-card .front{padding:0;border:0;background:transparent;overflow:hidden}
+.entry-v30 .deal-card .front .drawn-face{width:100%;height:100%;display:block}
+.entry-v30 .deal-card .front .drawn-face svg{width:100%;height:100%;display:block}
+.entry-v30 .deal-card .drawn-label{
  position:absolute;top:calc(100% + 9px);left:50%;transform:translate(-50%,5px);
  width:max-content;max-width:min(84vw,340px);min-width:min(180px,70vw);
  padding:8px 17px 7px;background:linear-gradient(120deg,#120d0bed,#25170fe9,#120d0bed);
@@ -205,10 +205,14 @@
  color:#f3dca9;text-align:center;box-shadow:0 5px 25px #000c,0 0 12px #b58c3940;
  pointer-events:none;opacity:0;transition:opacity .85s ease .45s,transform .85s ease .45s;
 }
-.deal-card.flipped .drawn-label{opacity:1;transform:translate(-50%,0)}
-.deal-card .drawn-label #drawnTitle{display:block;white-space:normal;font-size:clamp(12px,1.2vw,17px);line-height:1.35;letter-spacing:.035em;font-weight:500;text-shadow:0 1px 3px #000}
-.deal-card .drawn-label #drawnLanguage{display:block;margin-top:3px;font-size:9px;letter-spacing:.17em;color:#bd9e6c}
+.entry-v30 .deal-card.flipped .drawn-label{opacity:1;transform:translate(-50%,0)}
+.entry-v30 .deal-card .drawn-label #drawnTitle{display:block;white-space:normal;font-size:clamp(12px,1.2vw,17px);line-height:1.35;letter-spacing:.035em;font-weight:500;text-shadow:0 1px 3px #000}
+.entry-v30 .deal-card .drawn-label #drawnLanguage{display:block;margin-top:3px;font-size:9px;letter-spacing:.17em;color:#bd9e6c}
 @media(max-width:650px){
- .deal-card .drawn-label{max-width:80vw;padding:7px 11px 6px;min-width:160px}
- .deal-card .drawn-label #drawnTitle{font-size:13px}
+ .entry-v30 .deal-card .drawn-label{max-width:80vw;padding:7px 11px 6px;min-width:160px}
+ .entry-v30 .deal-card .drawn-label #drawnTitle{font-size:13px}
 }
+
+/* Reserve the space beneath the revealed card for its label. */
+.entry-v30 .enter-banner{top:calc(56% + clamp(157px,17vw,215px))}
+@media(max-width:650px){.entry-v30 .enter-banner{top:calc(52% + 145px)}}
