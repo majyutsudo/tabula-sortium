@@ -1,0 +1,382 @@
+/* Optional notices at the foot of the settings sidebar. */
+.sidebar-notice {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #46483d;
+}
+.sidebar-notice[hidden] { display: none; }
+.sidebar-notice-heading {
+  margin: 0 0 9px;
+  color: #9e9b87;
+  font: 10px/1.4 sans-serif;
+  letter-spacing: .11em;
+}
+.sidebar-notice-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 17px 10px 15px;
+  min-height: 136px;
+  text-align: center;
+  text-decoration: none;
+  color: #e8d7b5;
+  border: 1px solid #79694b;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 3px #0f1514b8, inset 0 0 0 4px #9b81494d, 0 6px 18px #0004;
+  transition: border-color .2s ease,filter .2s ease;
+}
+.sidebar-notice-link:hover,.sidebar-notice-link:focus-visible {
+  filter: brightness(1.17);
+  border-color: #dac18b;
+}
+.sidebar-notice-link:focus-visible { outline: 2px solid #dec08b;outline-offset: 3px; }
+.sidebar-notice-astral {
+  background: radial-gradient(circle at 50% 0%,#6e5549 0%,#302a2c 38%,#161d1c 100%);
+}
+.sidebar-notice-emporium {
+  background: radial-gradient(circle at 50% 0%,#655136 0%,#34352a 40%,#1a211d 100%);
+}
+.sidebar-notice-ornament {
+  font: 9px/1.2 Georgia,serif;
+  color: #bba678;
+  letter-spacing: .2em;
+}
+.sidebar-notice-title {
+  color: #f3e3c4;
+  font: 18px/1.25 Georgia,'Yu Mincho',serif;
+  letter-spacing: .045em;
+}
+.sidebar-notice-subtitle {
+  max-width: 100%;
+  font: 9px/1.4 Georgia,serif;
+  color: #c7ad7c;
+  letter-spacing: .075em;
+}
+.sidebar-notice-description {
+  color: #d1c7b3;
+  font: 11px/1.5 'Yu Mincho','Hiragino Mincho ProN',serif;
+}
+
+/* Astral: a discreet, slowly breathing violet-gold shop sign. */
+.sidebar-notice-link { position:relative;isolation:isolate;overflow:hidden; }
+.sidebar-notice-link > * { position:relative;z-index:1; }
+.sidebar-notice-astral {
+  background:
+    radial-gradient(ellipse at 50% 12%,#4c374d 0%,#28212c 48%,#151718 100%);
+  border-color:#746052;
+  box-shadow:inset 0 0 0 3px #151116,inset 0 0 0 4px #9d79594f,0 7px 18px #0006;
+}
+.sidebar-notice-astral::before {
+  content:"";position:absolute;inset:8px;border:1px solid #ad8a7052;
+  pointer-events:none;
+}
+.sidebar-notice-astral .sidebar-notice-title {
+  color:#ffdfb6;
+  text-shadow:0 0 4px #ffe6b383,0 0 13px #cfa3c57b,0 0 21px #9462ab4d;
+  animation:astral-sign-glow 6.5s ease-in-out infinite alternate;
+}
+.sidebar-notice-astral .sidebar-notice-ornament,
+.sidebar-notice-astral .sidebar-notice-subtitle {color:#bfa597}
+.sidebar-notice-astral:hover .sidebar-notice-title {text-shadow:0 0 7px #ffe9c0,0 0 19px #ca93db,0 0 28px #8b5aaf9e}
+
+/* Emporium: a lively late-Showa-style illuminated commerce sign. */
+.sidebar-notice-emporium {
+  padding-top:22px;padding-bottom:20px;
+  border:2px solid #d39b47;border-radius:2px;
+  background:
+    repeating-linear-gradient(135deg,transparent 0 16px,#ffcf6320 16px 17px,transparent 17px 33px),
+    radial-gradient(ellipse at 50% 18%,#754222,#43221c 50%,#241a19 100%);
+  box-shadow:inset 0 0 0 3px #271a16,inset 0 0 0 5px #edbe6cba,0 0 12px #db862d59,0 8px 20px #0007;
+}
+.sidebar-notice-emporium::before {
+  content:"";position:absolute;inset:8px;border:1px dashed #edbc65a8;pointer-events:none;
+}
+.sidebar-notice-emporium::after {
+  content:"";position:absolute;top:-100%;left:-95%;height:280%;width:62%;
+  background:linear-gradient(90deg,transparent,#ffe5a500 24%,#fff0aa38 50%,#ffe5a500 76%,transparent);
+  transform:rotate(23deg);pointer-events:none;
+  animation:emporium-sign-shine 9s ease-in-out infinite;
+}
+.sidebar-notice-emporium .sidebar-notice-ornament {
+  color:#ffe29f;letter-spacing:.23em;text-shadow:0 0 8px #f3a848b3;
+}
+.sidebar-notice-emporium .sidebar-notice-title {
+  color:#fff0b8;font-weight:bold;font-size:20px;letter-spacing:.018em;
+  text-shadow:0 0 3px #fff4cc,0 0 9px #ffcc63d6,0 0 20px #ff8120c0,1px 2px 1px #4d221a;
+  animation:emporium-neon-pulse 3.1s ease-in-out infinite;
+}
+.sidebar-notice-emporium .sidebar-notice-subtitle {
+  color:#ffce79;font-size:8px;letter-spacing:.035em;text-shadow:0 0 8px #c87635c2;
+}
+.sidebar-notice-emporium .sidebar-notice-description {
+  color:#fff1d5;font-weight:bold;font-size:12px;
+  text-shadow:0 1px 2px #30140c,0 0 9px #e8873970;
+}
+.sidebar-notice-emporium:hover {
+  border-color:#ffe1a0;
+  box-shadow:inset 0 0 0 3px #271a16,inset 0 0 0 5px #ffe1a0,0 0 22px #f8a13cb4;
+}
+@keyframes astral-sign-glow {
+  0%,100% {filter:brightness(.97);text-shadow:0 0 4px #ffe6b383,0 0 13px #cfa3c57b,0 0 21px #9462ab4d}
+  50% {filter:brightness(1.06);text-shadow:0 0 6px #fff0d0ac,0 0 17px #d19dd998,0 0 25px #9462ab6e}
+}
+@keyframes emporium-neon-pulse {
+  0%,100% {filter:brightness(1)}
+  48% {filter:brightness(1.18)}
+  55% {filter:brightness(1.12)}
+}
+@keyframes emporium-sign-shine {
+  0%,71% {transform:translateX(0) rotate(23deg);opacity:0}
+  74% {opacity:.75}
+  86% {transform:translateX(580%) rotate(23deg);opacity:.6}
+  89%,100% {transform:translateX(580%) rotate(23deg);opacity:0}
+}
+@media (prefers-reduced-motion:reduce) {
+  .sidebar-notice-astral .sidebar-notice-title,
+  .sidebar-notice-emporium .sidebar-notice-title,
+  .sidebar-notice-emporium::after {animation:none!important}
+}
+
+/* 『魔術への招待状』: archive slip, recalling astral's INVITATION dossier. */
+.sidebar-notice-books {
+  gap:7px;
+  padding:21px 12px 18px;
+  border:1px solid #94806a;
+  border-radius:2px;
+  background:
+    linear-gradient(180deg,#292720 0%,#22231f 55%,#181a18 100%);
+  box-shadow:inset 0 0 0 3px #131715,inset 0 0 0 4px #a0937852,0 8px 18px #0007;
+}
+.sidebar-notice-books::before {
+  content:"";position:absolute;inset:9px;
+  border:1px solid #a59a795a;pointer-events:none;
+}
+.sidebar-notice-books .sidebar-notice-ornament {
+  font:9px/1.3 Georgia,'Times New Roman',serif;
+  letter-spacing:.16em;color:#bcb09a;
+}
+.sidebar-notice-books .sidebar-notice-subtitle {
+  order:1;
+  font:normal 17px/1.2 Georgia,'Times New Roman',serif;
+  letter-spacing:.18em;padding-left:.18em;color:#f0dcad;
+  text-shadow:0 0 11px #caab6c71;
+  animation:invitation-heading-glow 7.5s ease-in-out infinite alternate;
+}
+.sidebar-notice-books .sidebar-notice-title {
+  order:2;
+  font:normal 15px/1.5 'Yu Mincho','Hiragino Mincho ProN',serif;
+  letter-spacing:.08em;color:#e6d7bb;
+}
+.sidebar-notice-books .sidebar-notice-description {
+  order:4;
+  font:10px/1.5 'Yu Mincho','Hiragino Mincho ProN',sans-serif;
+  color:#d2c6aa;
+  letter-spacing:.015em;
+}
+.sidebar-notice-books .sidebar-notice-stamp {
+  order:3;
+  display:block;margin:5px 0 3px;
+  padding:4px 8px;
+  transform:rotate(-5deg);
+  border:1.5px double #a77a6c;
+  color:#c9998c;
+  font:10px/1.3 Georgia,'Yu Mincho',serif;
+  letter-spacing:.055em;
+  text-shadow:0 0 4px #8e46374a;
+}
+@keyframes invitation-heading-glow {
+  from {filter:brightness(.93)}
+  to {filter:brightness(1.08)}
+}
+@media (prefers-reduced-motion:reduce) {
+  .sidebar-notice-books .sidebar-notice-subtitle {animation:none!important}
+}
+
+/* Four unified archival notices. INVITATION remains the visual reference. */
+.sidebar-notice-link {
+  min-height:190px;
+  gap:7px;
+  padding:20px 11px 17px;
+  border-radius:2px;
+}
+.sidebar-notice-link .sidebar-notice-ornament {
+  order:0;
+  font:9px/1.3 Georgia,'Times New Roman',serif;
+  letter-spacing:.115em;
+  text-align:center;
+}
+.sidebar-notice-link .sidebar-notice-subtitle {
+  order:1;
+}
+.sidebar-notice-link .sidebar-notice-title {
+  order:2;
+}
+.sidebar-notice-link .sidebar-notice-detail {
+  order:3;
+  display:block;
+  font:12px/1.4 'Yu Mincho','Hiragino Mincho ProN',serif;
+  color:#d0c3a6;
+}
+.sidebar-notice-link .sidebar-notice-stamp {
+  order:4;
+}
+.sidebar-notice-link .sidebar-notice-description {
+  order:5;
+  text-align:center;
+  font-size:10px;
+  font-weight:normal;
+}
+
+/* Astral: the quiet, violet-gold 'other entrance'. */
+.sidebar-notice-astral {
+  border:1px solid #82716d;
+  background:linear-gradient(180deg,#2c2630 0%,#22212a 54%,#191a1e 100%);
+  box-shadow:inset 0 0 0 3px #14151a,inset 0 0 0 4px #9a877f66,0 8px 18px #0007;
+}
+.sidebar-notice-astral::before {
+  inset:9px;
+  border:1px solid #9e8e926b;
+}
+.sidebar-notice-astral .sidebar-notice-ornament {color:#b8a9a4}
+.sidebar-notice-astral .sidebar-notice-subtitle {
+  color:#ead9b8;font:normal 17px/1.2 Georgia,serif;letter-spacing:.2em;padding-left:.2em;
+  text-shadow:0 0 10px #a989bb55;
+  animation:astral-sign-glow 7.5s ease-in-out infinite alternate;
+}
+.sidebar-notice-astral .sidebar-notice-title {
+  color:#dfd2c4;
+  font:normal 15px/1.4 'Yu Mincho','Hiragino Mincho ProN',serif;
+  letter-spacing:.045em;
+  text-shadow:none;animation:none;
+}
+.sidebar-notice-astral .sidebar-notice-description {color:#c9bbba}
+
+/* Emporium: warm brass, a modest shop sign rather than a giant neon headline. */
+.sidebar-notice-emporium {
+  border:1px solid #ab9164;
+  background:linear-gradient(180deg,#342a20 0%,#2b2821 56%,#1d201b 100%);
+  box-shadow:inset 0 0 0 3px #181a17,inset 0 0 0 4px #a98d5e8c,0 8px 18px #0007;
+}
+.sidebar-notice-emporium::before {
+  inset:9px;
+  border:1px solid #b09b745c;
+}
+.sidebar-notice-emporium::after {content:none;animation:none}
+.sidebar-notice-emporium .sidebar-notice-ornament {color:#c6b28c}
+.sidebar-notice-emporium .sidebar-notice-title {order:1}
+.sidebar-notice-emporium .sidebar-notice-subtitle {order:2}
+.sidebar-notice-emporium .sidebar-notice-subtitle {
+  color:#f1cf8e;
+  font:italic 13px/1.2 Georgia,'Times New Roman',serif;
+  letter-spacing:.19em;padding-left:.19em;text-shadow:0 0 8px #db9b5166;
+}
+.sidebar-notice-emporium .sidebar-notice-title {
+  color:#f5dfb8;
+  font:normal 20px/1.3 'Yu Mincho','Hiragino Mincho ProN',serif;
+  letter-spacing:.07em;padding-left:0;
+  text-shadow:0 0 6px #ffd496aa,0 0 15px #c27a3875;
+  animation:emporium-neon-pulse 6.5s ease-in-out infinite;
+}
+.sidebar-notice-emporium .sidebar-notice-description {
+  color:#e4ceb0;text-shadow:none;
+}
+.sidebar-notice-emporium:hover {
+  border-color:#d1b788;
+  box-shadow:inset 0 0 0 3px #181a17,inset 0 0 0 4px #bf9d69a0,0 0 13px #ce974e66;
+}
+
+/* INVITATION's established lettering, stamp and subdued glow are retained. */
+.sidebar-notice-books .sidebar-notice-stamp {order:4}
+.sidebar-notice-books .sidebar-notice-description {order:5}
+
+/* Story of Majyutsuko: companion card, not an identical "unprocessed" dossier. */
+.sidebar-notice-story {
+  background:linear-gradient(180deg,#2c2c24 0%,#25271f 55%,#191c19 100%);
+  border:1px solid #8f866f;
+  box-shadow:inset 0 0 0 3px #131713,inset 0 0 0 4px #98917478,0 8px 18px #0007;
+}
+.sidebar-notice-story::before {
+  content:"";position:absolute;inset:9px;border:1px solid #a7a08266;pointer-events:none;
+}
+.sidebar-notice-story .sidebar-notice-ornament {color:#bfb29d}
+.sidebar-notice-story .sidebar-notice-subtitle {
+  color:#eddbb1;
+  font:normal 17px/1.2 Georgia,'Times New Roman',serif;
+  letter-spacing:.19em;padding-left:.19em;
+  text-shadow:0 0 11px #c1a77766;
+  animation:invitation-heading-glow 7.5s ease-in-out infinite alternate;
+}
+.sidebar-notice-story .sidebar-notice-title {
+  color:#e6d8bb;
+  font:normal 15px/1.35 'Yu Mincho','Hiragino Mincho ProN',serif;
+  letter-spacing:.075em;
+}
+.sidebar-notice-story .sidebar-notice-stamp {
+  display:block;margin:4px 0 3px;padding:4px 9px;
+  border:1px solid #a69470;color:#d9c79e;
+  font:10px/1.3 Georgia,serif;letter-spacing:.09em;
+}
+.sidebar-notice-story .sidebar-notice-description {color:#d1c5ac}
+@media (prefers-reduced-motion:reduce) {
+  .sidebar-notice-astral .sidebar-notice-subtitle,
+  .sidebar-notice-story .sidebar-notice-subtitle,
+  .sidebar-notice-emporium .sidebar-notice-title {animation:none!important}
+}
+
+/* Astral and Emporium use the same editorial density as the two book notices. */
+.sidebar-notice-astral .sidebar-notice-detail {
+  font:9px/1.5 Georgia,'Times New Roman',serif;
+  letter-spacing:.13em;
+  color:#baa7bf;
+  border-top:1px solid #8d78875e;
+  padding-top:7px;margin-top:2px;
+}
+.sidebar-notice-astral .sidebar-notice-stamp {
+  display:block;
+  border:1px solid #9c829a8c;
+  padding:5px 9px;
+  margin:3px 0;
+  color:#cbb7d2;
+  font:9px/1.2 Georgia,'Times New Roman',serif;
+  letter-spacing:.12em;
+}
+.sidebar-notice-emporium .sidebar-notice-detail {
+  font:11px/1.35 'Yu Mincho','Hiragino Mincho ProN',serif;
+  letter-spacing:.04em;color:#e7cc9e;
+  border-top:1px solid #ac8c576c;
+  padding-top:7px;margin-top:2px;
+}
+.sidebar-notice-emporium .sidebar-notice-stamp {
+  display:block;
+  padding:4px 9px;margin:3px 0;
+  border:1px double #cfab68;
+  background:#86602d25;
+  color:#f0d79a;
+  font:10px/1.25 Georgia,'Times New Roman',serif;
+  letter-spacing:.11em;
+  text-shadow:0 0 6px #c48f4580;
+}
+
+/* Astral uses the same shop-name hierarchy as Emporium: 魔術堂 / astral. */
+.sidebar-notice-astral .sidebar-notice-title {
+  order:1;
+  font:normal 20px/1.3 'Yu Mincho','Hiragino Mincho ProN',serif;
+  letter-spacing:.07em;
+  color:#ead9b8;
+  text-shadow:0 0 5px #d6b0df66,0 0 12px #9670b34d;
+  animation:astral-sign-glow 7.5s ease-in-out infinite alternate;
+}
+.sidebar-notice-astral .sidebar-notice-subtitle {
+  order:2;
+  color:#cbb9cd;
+  font:italic 13px/1.2 Georgia,'Times New Roman',serif;
+  letter-spacing:.19em;
+  padding-left:.19em;
+  text-shadow:0 0 7px #a889bb47;
+  animation:none;
+}
+@media (prefers-reduced-motion:reduce) {
+  .sidebar-notice-astral .sidebar-notice-title {animation:none!important}
+}
