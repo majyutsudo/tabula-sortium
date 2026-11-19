@@ -24,9 +24,9 @@
     },
     {
       id: 'books',
-      title: '魔術堂の著作',
-      subtitle: 'BOOKS & GRIMOIRES',
-      description: 'Amazonで書籍を見る',
+      title: '魔術への招待状',
+      subtitle: 'INVITATION',
+      description: 'Amazon（ペーパーバック／Kindle）',
       href: 'https://www.amazon.co.jp/dp/B0G6Y6ZQ96?th=1',
       appearance: 'books',
       weight: 1,
@@ -55,7 +55,7 @@
   link.rel = 'noopener noreferrer';
   link.setAttribute('aria-label', selected.title + ' を別タブで開く');
   for (const [kind, content] of [
-    ['ornament', '✧  MAJYUTSUDO  ✧'],
+    ['ornament', selected.id === 'books' ? 'MAJYUTSUDO / ARCHIVES' : '✧  MAJYUTSUDO  ✧'],
     ['title', selected.title],
     ['subtitle', selected.subtitle],
     ['description', selected.description]
@@ -64,6 +64,13 @@
     element.className = 'sidebar-notice-' + kind;
     element.textContent = content;
     link.append(element);
+  }
+  if (selected.id === 'books') {
+    const stamp = document.createElement('span');
+    stamp.className = 'sidebar-notice-stamp';
+    stamp.textContent = '未処理  UNPROCESSED';
+    stamp.setAttribute('aria-hidden', 'true');
+    link.append(stamp);
   }
   container.replaceChildren(link);
   container.hidden = false;
