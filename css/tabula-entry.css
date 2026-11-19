@@ -229,7 +229,7 @@
  opacity:0;transition:none;
 }
 .entry-v30 .deal-card.placed.flipped.expanded.appearing{
- opacity:1;transition:opacity 1.15s ease-in;
+ opacity:1;transition:opacity 2.6s ease-in-out;
 }
 .entry-v30 .revelation-flash{z-index:12}
 /* Keep the name attached visually to the original card's bottom position. */
@@ -241,9 +241,9 @@
  background:linear-gradient(120deg,#120d0bef,#25170fee,#120d0bef);
  box-shadow:0 5px 25px #000c,0 0 12px #b58c3940;
  text-align:center;color:#f3dca9;opacity:0;pointer-events:none;
- transition:opacity .75s ease 1s,transform .75s ease 1s;
+ transition:none;
 }
-.entry-v30.revealing > .drawn-label{opacity:1;transform:translate(-50%,0)}
+.entry-v30.revealing > .drawn-label{opacity:1;transform:translate(-50%,0);transition:opacity 1.1s ease 1.4s,transform 1.1s ease 1.4s}
 .entry-v30 > .drawn-label #drawnTitle{
  display:block;font:500 clamp(15px,1.5vw,20px)/1.35 Georgia,'Yu Mincho',serif;
  white-space:normal;letter-spacing:.035em;text-shadow:0 1px 3px #000;
