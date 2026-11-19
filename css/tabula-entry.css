@@ -274,3 +274,7 @@
  .entry-v30 > .drawn-label{padding:5px 12px}
  .entry-v30 .enter-banner{top:calc(var(--card-bottom) + 102px)}
 }
+
+/* v0.665: Invisible direct-table passage. Positioned independently of animated cards. */
+.entry-v30 .secret-table-passage{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));width:48px;height:48px;display:block;z-index:11;background:transparent;border:0;opacity:0;cursor:default;touch-action:manipulation}
+.entry-v30 .secret-table-passage:focus-visible{opacity:1;outline:2px solid #cda96e;outline-offset:2px;background:#251c14b3}
