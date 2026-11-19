@@ -5,6 +5,33 @@ const tarotRoot='images/decks/tabula-tarot/base/';
 const majorNames=['THE FOOL','THE MAGICIAN','THE HIGH PRIESTESS','THE EMPRESS','THE EMPEROR','THE HIEROPHANT','THE LOVERS','THE CHARIOT','STRENGTH','THE HERMIT','WHEEL OF FORTUNE','JUSTICE','THE HANGED MAN','DEATH','TEMPERANCE','THE DEVIL','THE TOWER','THE STAR','THE MOON','THE SUN','JUDGEMENT','THE WORLD'];
 const majorUrl=n=>`${tarotRoot}major_${String(n).padStart(2,'0')}.webp`;
 let selectedMajor=null;
+// Attested magical names and the seven Greek vowels, recombined here for
+// atmosphere. Each three-line sequence is a modern arrangement, not a PGM quote.
+const vocesPatterns=[
+ ['ΙΑΩ','ΙΑΩ · ΑΒΡΑΣΑΞ','ΙΑΩ · ΑΒΡΑΣΑΞ · ΑΕΗΙΟΥΩ'],
+ ['ΑΕΗΙΟΥΩ','ΑΕΗΙΟΥΩ · ΙΑΩ','ΑΕΗΙΟΥΩ · ΙΑΩ · ΣΑΒΑΩΘ'],
+ ['ΑΒΛΑΝΑΘΑΝΑΛΒΑ','ΑΒΛΑΝΑΘΑΝΑΛΒΑ · ΙΑΩ','ΑΒΛΑΝΑΘΑΝΑΛΒΑ · ΙΑΩ · ΑΒΡΑΣΑΞ'],
+ ['ΙΑΩ','ΙΑΩ · ΑΔΩΝΑΙ','ΙΑΩ · ΑΔΩΝΑΙ · ΣΑΒΑΩΘ'],
+ ['ΑΒΡΑΣΑΞ','ΑΒΡΑΣΑΞ · ΙΑΩ','ΑΒΡΑΣΑΞ · ΙΑΩ · ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ'],
+ ['ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ','ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ · ΙΑΩ','ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ · ΙΑΩ · ΑΕΗΙΟΥΩ'],
+ ['ΣΑΒΑΩΘ','ΣΑΒΑΩΘ · ΑΔΩΝΑΙ','ΣΑΒΑΩΘ · ΑΔΩΝΑΙ · ΙΑΩ'],
+ ['ΑΕΗΙΟΥΩ','ΑΕΗΙΟΥΩ · ΑΒΡΑΣΑΞ','ΑΕΗΙΟΥΩ · ΑΒΡΑΣΑΞ · ΙΑΩ'],
+ ['ΑΔΩΝΑΙ','ΑΔΩΝΑΙ · ΙΑΩ','ΑΔΩΝΑΙ · ΙΑΩ · ΑΒΛΑΝΑΘΑΝΑΛΒΑ'],
+ ['ΙΑΩ','ΙΑΩ · ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ','ΙΑΩ · ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ · ΣΑΒΑΩΘ'],
+ ['ΑΒΡΑΣΑΞ','ΑΒΡΑΣΑΞ · ΣΑΒΑΩΘ','ΑΒΡΑΣΑΞ · ΣΑΒΑΩΘ · ΑΕΗΙΟΥΩ'],
+ ['ΑΒΛΑΝΑΘΑΝΑΛΒΑ','ΑΒΛΑΝΑΘΑΝΑΛΒΑ · ΑΕΗΙΟΥΩ','ΑΒΛΑΝΑΘΑΝΑΛΒΑ · ΑΕΗΙΟΥΩ · ΙΑΩ'],
+ ['ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ','ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ · ΑΒΡΑΣΑΞ','ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ · ΑΒΡΑΣΑΞ · ΙΑΩ'],
+ ['ΙΑΩ','ΙΑΩ · ΑΕΗΙΟΥΩ','ΙΑΩ · ΑΕΗΙΟΥΩ · ΑΒΛΑΝΑΘΑΝΑΛΒΑ'],
+ ['ΑΕΗΙΟΥΩ','ΑΕΗΙΟΥΩ · ΣΑΒΑΩΘ','ΑΕΗΙΟΥΩ · ΣΑΒΑΩΘ · ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ'],
+ ['ΑΒΡΑΣΑΞ','ΑΒΡΑΣΑΞ · ΑΔΩΝΑΙ','ΑΒΡΑΣΑΞ · ΑΔΩΝΑΙ · ΙΑΩ']
+];
+let previousVocesIndex=-1;
+function selectVoces(){
+ let next=Math.floor(Math.random()*vocesPatterns.length);
+ if(next===previousVocesIndex)next=(next+1+Math.floor(Math.random()*(vocesPatterns.length-1)))%vocesPatterns.length;
+ previousVocesIndex=next;
+ return vocesPatterns[next];
+}
 function shuffledMajors(){const a=Array.from({length:22},(_,i)=>i);for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function summonSpectres(others){
  spectres.replaceChildren();ghostTimers.forEach(clearTimeout);ghostTimers=[];
@@ -49,7 +76,7 @@ function drawMajor(){
  return order.slice(1);
 }
 function centerOf(el){const r=el.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}}
-function deal(){if(phase!==0)return;phase=1;scene.classList.remove('arrived','sky-awake','revealing');scene.classList.add('ritual');summonSpectres(drawMajor());skyTimer=setTimeout(()=>{if(phase===1)scene.classList.add('sky-awake')},AWAKEN_DELAY);const a=centerOf(deck),s=scene.getBoundingClientRect(),cx=s.left+s.width*.5,cy=s.top+s.height*(innerWidth<=650?.52:.56);const dx=a.x-cx,dy=a.y-cy,angle0=Math.atan2(dy,dx),r0=Math.hypot(dx,dy),outer=Math.max(r0,Math.min(innerWidth*.35,innerHeight*.39));const started=performance.now();card.className='deal-card dealing';deck.style.pointerEvents='none';fadeTimer=setTimeout(()=>{if(phase===1)deck.classList.add('vanishing')},FADE_DELAY);status.textContent='カードがゆっくりと螺旋を描いています…';function frame(now){if(phase!==1)return;const t=Math.min(1,(now-started)/DURATION),r=t<.15?r0+(outer-r0)*t/.15:outer*(1-(t-.15)/.85),theta=angle0+Math.PI*2*(.75*t+.25*t*t*t*t);card.style.left=(cx+r*Math.cos(theta))+'px';card.style.top=(cy+r*Math.sin(theta))+'px';card.style.transform='translate(-50%,-50%)';
+function deal(){if(phase!==0)return;phase=1;const voces=selectVoces();let vocesStage=-1;scene.classList.remove('arrived','sky-awake','revealing');scene.classList.add('ritual');summonSpectres(drawMajor());skyTimer=setTimeout(()=>{if(phase===1)scene.classList.add('sky-awake')},AWAKEN_DELAY);const a=centerOf(deck),s=scene.getBoundingClientRect(),cx=s.left+s.width*.5,cy=s.top+s.height*(innerWidth<=650?.52:.56);const dx=a.x-cx,dy=a.y-cy,angle0=Math.atan2(dy,dx),r0=Math.hypot(dx,dy),outer=Math.max(r0,Math.min(innerWidth*.35,innerHeight*.39));const started=performance.now();card.className='deal-card dealing';deck.style.pointerEvents='none';fadeTimer=setTimeout(()=>{if(phase===1)deck.classList.add('vanishing')},FADE_DELAY);status.textContent=voces[0];function frame(now){if(phase!==1)return;const t=Math.min(1,(now-started)/DURATION),r=t<.15?r0+(outer-r0)*t/.15:outer*(1-(t-.15)/.85),theta=angle0+Math.PI*2*(.75*t+.25*t*t*t*t);const nextStage=t<1/3?0:t<2/3?1:2;if(nextStage!==vocesStage){vocesStage=nextStage;status.textContent=voces[nextStage]}card.style.left=(cx+r*Math.cos(theta))+'px';card.style.top=(cy+r*Math.sin(theta))+'px';card.style.transform='translate(-50%,-50%)';
 // Keep the divination face concealed throughout the entire flight.
 // The back banks gently with the trajectory, but never exposes the front.
 const bank=Math.sin(t*Math.PI*2)*16*(1-.45*t);
@@ -57,7 +84,7 @@ const pitch=Math.sin(t*Math.PI*3)*9*(1-t);
 card.style.setProperty('--flight-y','0deg');
 card.style.setProperty('--flight-z',bank+'deg');
 card.style.setProperty('--flight-x',pitch+'deg');
-if(t<1)raf=requestAnimationFrame(frame);else{card.className='deal-card placed';card.style.left='';card.style.top='';card.style.transform='';card.style.removeProperty('--flight-y');card.style.removeProperty('--flight-z');card.style.removeProperty('--flight-x');phase=2;scene.classList.add('arrived');status.textContent='選ばれた大アルカナを裏返して、運命の一枚をご覧ください。'}}raf=requestAnimationFrame(frame)}
+if(t<1)raf=requestAnimationFrame(frame);else{card.className='deal-card placed';card.style.left='';card.style.top='';card.style.transform='';card.style.removeProperty('--flight-y');card.style.removeProperty('--flight-z');card.style.removeProperty('--flight-x');phase=2;scene.classList.add('arrived');status.textContent='さあ、運命をご覧なさい。'}}raf=requestAnimationFrame(frame)}
 function flip(){if(phase!==2||selectedMajor===null)return;phase=3;
  document.getElementById('drawnFace').innerHTML=TabulaEntryFace.face(selectedMajor,'en');
  document.getElementById('drawnTitle').textContent=TabulaEntryFace.title(selectedMajor,'en');
@@ -66,4 +93,4 @@ function flip(){if(phase!==2||selectedMajor===null)return;phase=3;
  // Replace the card invisibly at full size as the flash begins. There is no
  // enlargement animation: only the finished, stationary face fades into view.
  expandTimer=setTimeout(()=>{if(phase===3||phase===4)card.classList.add('appearing')},650);
- status.textContent='';timer=setTimeout(()=>{enter.classList.add('show');const banner=document.getElementById('enterBanner');banner.classList.add('show','revealed');phase=4},650)}function reset(){clearTimeout(timer);clearTimeout(expandTimer);clearTimeout(fadeTimer);clearTimeout(skyTimer);cancelAnimationFrame(raf);phase=0;scene.classList.remove('ritual','arrived','sky-awake','revealing');document.getElementById('revelationFlash').classList.remove('burst');spectres.replaceChildren();ghostTimers.forEach(clearTimeout);ghostTimers=[];card.style.left='';card.style.top='';card.style.transform='';card.style.removeProperty('--flight-y');card.style.removeProperty('--flight-z');card.style.removeProperty('--flight-x');card.className='deal-card';enter.classList.remove('show');document.getElementById('enterBanner').classList.remove('show','revealed');deck.classList.remove('vanishing');deck.style.pointerEvents='';document.getElementById('drawnFace').replaceChildren();selectedMajor=null;document.getElementById('drawnTitle').textContent='';document.getElementById('drawnLanguage').textContent='';status.textContent='山札をクリックして、一枚のカードを引いてください。'}deck.addEventListener('click',deal);card.addEventListener('click',()=>{if(phase===2)flip();else if(phase===4)return});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click()}});document.getElementById('reset').addEventListener('click',reset);
+ status.textContent='';timer=setTimeout(()=>{enter.classList.add('show');const banner=document.getElementById('enterBanner');banner.classList.add('show','revealed');phase=4},650)}function reset(){clearTimeout(timer);clearTimeout(expandTimer);clearTimeout(fadeTimer);clearTimeout(skyTimer);cancelAnimationFrame(raf);phase=0;scene.classList.remove('ritual','arrived','sky-awake','revealing');document.getElementById('revelationFlash').classList.remove('burst');spectres.replaceChildren();ghostTimers.forEach(clearTimeout);ghostTimers=[];card.style.left='';card.style.top='';card.style.transform='';card.style.removeProperty('--flight-y');card.style.removeProperty('--flight-z');card.style.removeProperty('--flight-x');card.className='deal-card';enter.classList.remove('show');document.getElementById('enterBanner').classList.remove('show','revealed');deck.classList.remove('vanishing');deck.style.pointerEvents='';document.getElementById('drawnFace').replaceChildren();selectedMajor=null;document.getElementById('drawnTitle').textContent='';document.getElementById('drawnLanguage').textContent='';status.textContent='一枚、引いてください。'}deck.addEventListener('click',deal);card.addEventListener('click',()=>{if(phase===2)flip();else if(phase===4)return});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click()}});document.getElementById('reset').addEventListener('click',reset);
