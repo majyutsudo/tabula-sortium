@@ -5192,6 +5192,9 @@ function dualRestoreView(){
   // Legacy additional tables may have no savedSettings. Re-resolve the
   // selected deck policy instead of inheriting the previous table's toggle.
   syncDeckReversals();
+  // Repair old independent workspaces that inherited the other deck's
+  // reversed stock. Already dealt/table cards keep their physical state.
+  if(!settings.reversals)state.deck=state.deck.map(c=>c.reversed?{...c,reversed:false}:c);
   const d=deckLibrary.find(x=>x.id===settings.deckId);
   settings.cardDesign=d?.faceStyle||(settings.deckId==='simple'?'simple':'standard');
   settings.cardBackColor=d?.backColor||(dualSession.backColors?.[dualSession.activePile]||'sepia');
