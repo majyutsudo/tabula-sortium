@@ -78,6 +78,41 @@ function download(svg){
  a.href=url;a.download='TABULA-配置図.svg';document.body.append(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
+// Create a self-contained, single-page A4 PDF; no network library or print dialog needed.
+async function createPlacementPdf(svg){
+ const xml=new XMLSerializer().serializeToString(svg);
+ const svgUrl=URL.createObjectURL(new Blob([xml],{type:'image/svg+xml;charset=utf-8'}));
+ let jpeg;
+ const width=Math.round(210*150/25.4),height=Math.round(297*150/25.4);
+ try{
+  const img=new Image();
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('配置図の画像変換に失敗しました。'));img.src=svgUrl;});
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('PDF作成用のメモリを確保できませんでした。');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height);
+  ctx.drawImage(img,0,0,width,height);
+  jpeg=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.94));
+  canvas.width=0;canvas.height=0;
+  if(!jpeg)throw Error('PDF用画像を生成できませんでした。');
+ }finally{URL.revokeObjectURL(svgUrl);}
+ const imageBytes=new Uint8Array(await jpeg.arrayBuffer());
+ const encoder=new TextEncoder(),chunks=[],offsets=[0];
+ let pos=0;
+ const add=part=>{const bytes=typeof part==='string'?encoder.encode(part):part;chunks.push(bytes);pos+=bytes.byteLength;};
+ const object=(id,parts)=>{offsets[id]=pos;add(id+' 0 obj\n');for(const part of parts)add(part);add('\nendobj\n');};
+ add('%PDF-1.4\n%TABULA\n');
+ object(1,['<< /Type /Catalog /Pages 2 0 R >>']);
+ object(2,['<< /Type /Pages /Kids [3 0 R] /Count 1 >>']);
+ object(3,['<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.276 841.89] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>']);
+ object(4,['<< /Type /XObject /Subtype /Image /Width '+width+' /Height '+height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+imageBytes.byteLength+' >>\nstream\n',imageBytes,'\nendstream']);
+ const commands='q\n595.276 0 0 841.89 0 0 cm\n/Im0 Do\nQ\n';
+ object(5,['<< /Length '+encoder.encode(commands).byteLength+' >>\nstream\n',commands,'endstream']);
+ const xref=pos;
+ add('xref\n0 6\n0000000000 65535 f \n');
+ for(let id=1;id<=5;id++)add(String(offsets[id]).padStart(10,'0')+' 00000 n \n');
+ add('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n');
+ return new Blob(chunks,{type:'application/pdf'});
+}
 function print(svg){
  // Use the same dismissible in-app preview in Safari and installed home-screen apps.
   const previous=document.getElementById('tabulaStandalonePrintPreview');
@@ -87,25 +122,67 @@ function print(svg){
   overlay.setAttribute('role','dialog');
   overlay.setAttribute('aria-modal','true');
   overlay.setAttribute('aria-label','配置図の印刷プレビュー');
+  const standalone=window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+  let pdfUrl=null,pdfFile=null;
   overlay.innerHTML='<style>'+
    '#tabulaStandalonePrintPreview{position:fixed;inset:0;z-index:2147483647;background:#e2e2e2;color:#222;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 0 env(safe-area-inset-bottom,0px)}'+
    '#tabulaStandalonePrintPreview .tp-print-controls{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:#222;color:white}'+
-   '#tabulaStandalonePrintPreview button{font:inherit;padding:9px 13px;border:1px solid #999;border-radius:6px;background:white;color:#222;cursor:pointer}'+
+   '#tabulaStandalonePrintPreview button,#tabulaStandalonePrintPreview .tp-pdf-download,#tabulaStandalonePrintPreview .tp-pdf-open{font:inherit;padding:9px 13px;border:1px solid #999;border-radius:6px;background:white;color:#222;cursor:pointer;text-decoration:none}'+
    '#tabulaStandalonePrintPreview .tp-print-paper{width:min(100%,210mm);margin:12px auto;background:white;box-shadow:0 2px 12px #999}'+
    '#tabulaStandalonePrintPreview .tp-print-paper svg{width:100%;height:auto;display:block}'+
    '#tabulaStandalonePrintPreview .tp-print-note{padding:0 12px 16px;font-size:13px;line-height:1.6}'+
-   '@media print{@page{size:A4 portrait;margin:0}body>*:not(#tabulaStandalonePrintPreview){display:none!important}'+
-   '#tabulaStandalonePrintPreview{position:static!important;inset:auto!important;overflow:visible!important;background:white!important;padding:0!important}'+
+   '@media print{@page{size:A4 portrait;margin:0}'+
+   ':root,html,body{background:#fff!important;background-image:none!important;color:#111!important;margin:0!important;padding:0!important;min-height:0!important;height:auto!important;overflow:visible!important}'+
+   'body>*:not(#tabulaStandalonePrintPreview){display:none!important}'+
+   '#tabulaStandalonePrintPreview{position:static!important;inset:auto!important;display:block!important;width:205mm!important;height:285mm!important;max-width:205mm!important;max-height:285mm!important;min-height:0!important;overflow:hidden!important;background:#fff!important;margin:0!important;padding:0!important;box-shadow:none!important;break-after:avoid!important;page-break-after:avoid!important}'+
    '#tabulaStandalonePrintPreview .tp-print-controls,#tabulaStandalonePrintPreview .tp-print-note{display:none!important}'+
-   '#tabulaStandalonePrintPreview .tp-print-paper{width:210mm!important;margin:0!important;box-shadow:none!important}'+
-   '#tabulaStandalonePrintPreview .tp-print-paper svg{width:210mm!important;height:297mm!important}}'+
-   '</style><div class="tp-print-controls"><button type="button" data-action="close">← 配置図に戻る</button><button type="button" data-action="save">SVG保存</button><button type="button" data-action="print">印刷 / PDF</button></div><div class="tp-print-paper"></div><p class="tp-print-note">印刷後は「配置図に戻る」で編集画面に戻れます。印刷画面が開かない場合はSVG保存をご利用ください。</p>';
+   '#tabulaStandalonePrintPreview .tp-print-paper{display:block!important;width:205mm!important;height:285mm!important;max-height:285mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;break-inside:avoid!important;page-break-inside:avoid!important}'+
+   '#tabulaStandalonePrintPreview .tp-print-paper svg{display:block!important;width:205mm!important;height:285mm!important;max-height:285mm!important}}'+
+   '</style><div class="tp-print-controls"><button type="button" data-action="close">← 配置図に戻る</button><button type="button" data-action="save">SVG保存</button><button type="button" data-action="print">印刷 / PDF</button><button type="button" data-action="create-pdf">PDFを作成</button><a class="tp-pdf-download" data-action="download-pdf" download="TABULA-配置図.pdf" hidden>PDFを保存</a><button type="button" data-action="share-pdf" hidden>PDFを共有・保存</button></div><div class="tp-print-paper"></div><p class="tp-print-note">「印刷 / PDF」はブラウザの印刷画面を開きます。A4で余分なページが表示される場合は印刷範囲を1ページ目に指定してください。「PDFを作成」ではA4・1ページのPDFを保存できます。</p>';
   overlay.querySelector('.tp-print-paper').append(svg.cloneNode(true));
-  const dismiss=()=>{overlay.remove();document.removeEventListener('keydown',onKey);};
+  const dismiss=()=>{overlay.remove();document.removeEventListener('keydown',onKey);if(pdfUrl)URL.revokeObjectURL(pdfUrl);};
   const onKey=e=>{if(e.key==='Escape')dismiss();};
   overlay.querySelector('[data-action="close"]').addEventListener('click',dismiss);
   overlay.querySelector('[data-action="save"]').addEventListener('click',()=>download(svg));
-  overlay.querySelector('[data-action="print"]').addEventListener('click',()=>window.print());
+  const printButton=overlay.querySelector('[data-action="print"]');
+  if(standalone)printButton.hidden=true;
+  printButton.addEventListener('click',()=>window.print());
+  const pdfButton=overlay.querySelector('[data-action="create-pdf"]');
+  const pdfLink=overlay.querySelector('[data-action="download-pdf"]');
+  const shareButton=overlay.querySelector('[data-action="share-pdf"]');
+  pdfButton.addEventListener('click',async()=>{
+   pdfButton.disabled=true;pdfButton.textContent='PDF作成中…';
+   try{
+    const blob=await createPlacementPdf(svg);
+    if(pdfUrl)URL.revokeObjectURL(pdfUrl);
+    pdfUrl=URL.createObjectURL(blob);
+    pdfFile=typeof File==='function'?new File([blob],'TABULA-配置図.pdf',{type:'application/pdf'}):null;
+    pdfLink.href=pdfUrl;
+    // Show exactly one export action: native sharing in standalone mode,
+    // otherwise a regular PDF download. Always retain download fallback.
+    let canShareFile=false;
+    if(standalone&&pdfFile&&typeof navigator.share==='function'){
+     try{canShareFile=typeof navigator.canShare==='function'&&navigator.canShare({files:[pdfFile]});}
+     catch(_){canShareFile=false;}
+    }
+    shareButton.hidden=!canShareFile;
+    pdfLink.hidden=canShareFile;
+    pdfButton.textContent='PDFを再作成';
+   }catch(e){alert('PDFを作成できませんでした。'+(e?.message||''));pdfButton.textContent='PDFを作成';}
+   finally{pdfButton.disabled=false;}
+  });
+  shareButton.addEventListener('click',async()=>{
+   if(!pdfFile)return;
+   try{await navigator.share({files:[pdfFile],title:'TABULA 配置図'});}
+   catch(e){
+    if(e?.name!=='AbortError'){
+     shareButton.hidden=true;
+     pdfLink.hidden=false;
+     alert('共有を開けませんでした。「PDFを保存」をお試しください。');
+    }
+   }
+  });
+
   document.addEventListener('keydown',onKey);
   document.body.append(overlay);
   overlay.querySelector('[data-action="close"]').focus();
