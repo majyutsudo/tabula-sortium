@@ -79,9 +79,7 @@ function download(svg){
  setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 function print(svg){
- const standalone=window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
- if(standalone){
-  // iOS home-screen apps can open an unclosable blank window. Keep the preview in-app.
+ // Use the same dismissible in-app preview in Safari and installed home-screen apps.
   const previous=document.getElementById('tabulaStandalonePrintPreview');
   if(previous)previous.remove();
   const overlay=document.createElement('section');
@@ -101,7 +99,7 @@ function print(svg){
    '#tabulaStandalonePrintPreview .tp-print-controls,#tabulaStandalonePrintPreview .tp-print-note{display:none!important}'+
    '#tabulaStandalonePrintPreview .tp-print-paper{width:210mm!important;margin:0!important;box-shadow:none!important}'+
    '#tabulaStandalonePrintPreview .tp-print-paper svg{width:210mm!important;height:297mm!important}}'+
-   '</style><div class="tp-print-controls"><button type="button" data-action="close">← 配置図に戻る</button><button type="button" data-action="save">SVG保存</button><button type="button" data-action="print">印刷 / PDF</button></div><div class="tp-print-paper"></div><p class="tp-print-note">ホーム画面アプリでは印刷画面が開かない場合があります。その場合はSVG保存を利用するか、SafariでTABULAを開いて印刷してください。</p>';
+   '</style><div class="tp-print-controls"><button type="button" data-action="close">← 配置図に戻る</button><button type="button" data-action="save">SVG保存</button><button type="button" data-action="print">印刷 / PDF</button></div><div class="tp-print-paper"></div><p class="tp-print-note">印刷後は「配置図に戻る」で編集画面に戻れます。印刷画面が開かない場合はSVG保存をご利用ください。</p>';
   overlay.querySelector('.tp-print-paper').append(svg.cloneNode(true));
   const dismiss=()=>{overlay.remove();document.removeEventListener('keydown',onKey);};
   const onKey=e=>{if(e.key==='Escape')dismiss();};
@@ -111,13 +109,6 @@ function print(svg){
   document.addEventListener('keydown',onKey);
   document.body.append(overlay);
   overlay.querySelector('[data-action="close"]').focus();
-  return;
- }
- const xml=new XMLSerializer().serializeToString(svg);
- const win=window.open('','_blank');
- if(!win){download(svg);alert('ポップアップが制限されたためSVGを保存しました。SVGを開いて印刷してください。');return;}
- win.document.write('<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>TABULA 配置図</title><style>@page{size:A4 portrait;margin:0}body{margin:0}svg{width:210mm;height:297mm;display:block}@media screen{body{background:#ddd}svg{background:white;margin:auto}}</style></head><body>'+xml+'</body></html>');
- win.document.close();win.focus();setTimeout(()=>win.print(),300);
 }
 
 
