@@ -136,7 +136,7 @@ function print(svg){
    '#tabulaStandalonePrintPreview .tp-print-controls,#tabulaStandalonePrintPreview .tp-print-note{display:none!important}'+
    '#tabulaStandalonePrintPreview .tp-print-paper{width:210mm!important;margin:0!important;box-shadow:none!important}'+
    '#tabulaStandalonePrintPreview .tp-print-paper svg{width:210mm!important;height:297mm!important}}'+
-   '</style><div class="tp-print-controls"><button type="button" data-action="close">← 配置図に戻る</button><button type="button" data-action="save">SVG保存</button><button type="button" data-action="print">印刷 / PDF</button><button type="button" data-action="create-pdf">PDFを作成</button><a class="tp-pdf-download" data-action="download-pdf" download="TABULA-配置図.pdf" hidden>PDFを保存</a><button type="button" data-action="share-pdf" hidden>PDFを共有・保存</button></div><div class="tp-print-paper"></div><p class="tp-print-note">印刷機能が使えない場合は「PDFを作成」を押してください。PDFはA4・1ページです。</p>';
+   '</style><div class="tp-print-controls"><button type="button" data-action="close">← 配置図に戻る</button><button type="button" data-action="save">SVG保存</button><button type="button" data-action="print">印刷 / PDF</button><button type="button" data-action="create-pdf">PDFを作成</button><a class="tp-pdf-download" data-action="download-pdf" download="TABULA-配置図.pdf" hidden>PDFを保存</a><button type="button" data-action="share-pdf" hidden>PDFを共有・保存</button></div><div class="tp-print-paper"></div><p class="tp-print-note">印刷機能が使えない場合は「PDFを作成」を押してください。iPhoneでは「PDFを共有・保存」から「ファイルに保存」を選べます。PDFはA4・1ページです。</p>';
   overlay.querySelector('.tp-print-paper').append(svg.cloneNode(true));
   const dismiss=()=>{overlay.remove();document.removeEventListener('keydown',onKey);if(pdfUrl)URL.revokeObjectURL(pdfUrl);};
   const onKey=e=>{if(e.key==='Escape')dismiss();};
@@ -154,9 +154,14 @@ function print(svg){
     const blob=await createPlacementPdf(svg);
     if(pdfUrl)URL.revokeObjectURL(pdfUrl);
     pdfUrl=URL.createObjectURL(blob);
-    pdfFile=new File([blob],'TABULA-配置図.pdf',{type:'application/pdf'});
+    pdfFile=typeof File==='function'?new File([blob],'TABULA-配置図.pdf',{type:'application/pdf'}):null;
     pdfLink.href=pdfUrl;pdfLink.hidden=false;
-    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[pdfFile]}))shareButton.hidden=false;
+    shareButton.hidden=true;
+    // Sharing support can differ between Safari and standalone mode.
+    // A failure to inspect sharing capability must not invalidate the PDF.
+    try{
+     if(pdfFile&&navigator.share&&navigator.canShare?.({files:[pdfFile]}))shareButton.hidden=false;
+    }catch(_){shareButton.hidden=true;}
     pdfButton.textContent='PDFを再作成';
    }catch(e){alert('PDFを作成できませんでした。'+(e?.message||''));pdfButton.textContent='PDFを作成';}
    finally{pdfButton.disabled=false;}
