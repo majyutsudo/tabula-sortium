@@ -3597,7 +3597,7 @@ async function openCeremonially(mode){
    }
   }
   if(openingStopRequested){render();saveLocal();setStatus('FLOATのオープンを中断しました。残りの伏せ札から再開できます。');return;}
-  setStatus(total+'枚を+(mode==='bloom'?'BLOOM（開花）':'FLOAT（浮遊反転）')+'で開きました。');
+  setStatus(total+'枚を'+(mode==='bloom'?'BLOOM（開花）':'FLOAT（浮遊反転）')+'で開きました。');
   render();saveLocal();maybeTriggerCompletionEffect();
  }finally{
   $('zone').classList.remove('ceremonial-opening-active');
