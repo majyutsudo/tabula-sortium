@@ -968,12 +968,21 @@ function simpleCardMarkup(c){
 function celticCrossShift(){return window.innerWidth<=780?Math.round(Math.min(30,metrics().h*.32)):76}
 function cardDisplayLiftPx(item){return settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved?celticCrossShift():0}
 function cardDisplayRotation(item){return TabulaUiFormat.cardDisplayRotation(item,settings.spread)}
+// Grid position labels show column–row; preserve full names in slot data.
+function compactGridPositionName(name){
+ const match=/^(\d+)行(\d+)列$/.exec(String(name||''));
+ return match?match[2]+'–'+match[1]:name;
+}
+function gridPositionTitle(name){
+ const compact=compactGridPositionName(name);
+ return compact!==name?'列–行：'+compact:name;
+}
 function createPlacedSlotLabel(item,slot,slotIndex,m){
   // Position numbers belong to the spread, not to the physical card.
   // Keep them at their original slot even if the card is reversed or dragged.
   const t=document.createElement('span');t.className='zone-label';
-  t.textContent=window.innerWidth<=780?String(slotIndex+1):`${slotIndex+1} ${slot.name}`;
-  t.title=`${slotIndex+1} ${slot.name}`;
+  t.textContent=window.innerWidth<=780?String(slotIndex+1):`${slotIndex+1} ${compactGridPositionName(slot.name)}`;
+  t.title=`${slotIndex+1} ${gridPositionTitle(slot.name)}`;
   if(window.innerWidth<=780)t.classList.add('mobile-num-label');
   const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;
   const angle=Number(slot.angle)||0, rad=angle*Math.PI/180;
@@ -2006,7 +2015,7 @@ function render(){
   settings.deckPosition=null;
  }
  lastRenderedSpread=settings.spread;
- syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');$('surface').classList.toggle('four-seasons-spread',settings.spread==='fourSeasons');updateLiveResults();const m=metrics(),zone=$('zone');$('deck')?.style.setProperty('--deck-tool-size',Math.max(16,Math.min(30,Math.round(m.w*0.18)))+'px');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set([...occupiedSpreadSlots(),...(state.tablePiles||[]).map(pile=>pile.slot).filter(Number.isInteger)]);getSlots().forEach((p,i)=>{const registeredPile=(state.tablePiles||[]).some(pile=>pile.slot===i);if(assigned.has(i)&&!registeredPile&&settings.spread!=='monteCarlo')return;const n=document.createElement('div');n.className='slot';n.dataset.slotIndex=String(i);if(registeredPile)n.classList.add('registered-pile-frame');n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;if(registeredPile){n.style.pointerEvents='none'}else n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i,m);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${p.name}`;t.title=`${i+1} ${p.name}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}renderTablePiles(zone,m);updateCardSelection();const deck=$('deck');const renderedDeckSource=dualSession?.mixed?state.deck[0]?.sourceDeck:(isIndependentTables()?dualSession.activePile:'A');applyPlayingBack(deck,renderedDeckSource);deck.dataset.appearance=appearanceForPile(renderedDeckSource);if(deck.dataset.appearance==='worn')deck.dataset.wearVariant=wearVariant(dualSession?.mixed?state.deck[0]:(isIndependentTables()?state.deck[0]:(dualSession?.piles.A[0]||state.deck[0])));else delete deck.dataset.wearVariant;if(dualSession){deck.dataset.backTone=dualSession.mixed?dualBackTone(state.deck[0]?.sourceDeck):dualBackTone(isIndependentTables()?dualSession.activePile:'A')}else delete deck.dataset.backTone;deck.classList.toggle('empty',dualSession&&!dualSession.mixed&&!isIndependentTables()?dualSession.piles.A.length===0:state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyPhysicalCardDimensions(deck,m,deck.dataset.appearance);applyDeckPosition();positionSecondDeck(m);$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / 配札 ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 束 ${(state.tablePiles||[]).reduce((n,p)=>n+(p.cards?.length||0),0)}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');applyPlayingBack(removedPile.querySelector('.removed-pile-card'),state.removed?.at(-1)?.sourceDeck);removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');applyPhysicalCardDimensions(removedPile,m,appearanceForCard(state.removed?.at(-1)));removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=workingCard(p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
+ syncFreeSnapButton();updateNaturalTiltButton();syncTabulaBack();$('surface').classList.toggle('celtic-spread',settings.spread==='celtic');$('surface').classList.toggle('four-seasons-spread',settings.spread==='fourSeasons');updateLiveResults();const m=metrics(),zone=$('zone');$('deck')?.style.setProperty('--deck-tool-size',Math.max(16,Math.min(30,Math.round(m.w*0.18)))+'px');zone.innerHTML='';zone.style.setProperty('--cw',m.w+'px');zone.style.setProperty('--ch',m.h+'px');const assigned=new Set([...occupiedSpreadSlots(),...(state.tablePiles||[]).map(pile=>pile.slot).filter(Number.isInteger)]);getSlots().forEach((p,i)=>{const registeredPile=(state.tablePiles||[]).some(pile=>pile.slot===i);if(assigned.has(i)&&!registeredPile&&settings.spread!=='monteCarlo')return;const n=document.createElement('div');n.className='slot';n.dataset.slotIndex=String(i);if(registeredPile)n.classList.add('registered-pile-frame');n.style.left=p.x+'%';n.style.top=p.y+'%';n.style.setProperty('--angle',p.angle+'deg');n.innerHTML=`<span class="slot-num">${i+1}</span>`;if(registeredPile){n.style.pointerEvents='none'}else n.addEventListener('click',()=>drawAt(i));zone.append(n)});state.placed.forEach((p,i)=>{const card=cardHTML(p,i,m);if(spreadWorkbench&&spreadWorkbench.chosen.includes(i))card.classList.add('spread-numbered');zone.append(card)});if(spreadWorkbench){state.placed.forEach((p,i)=>{const b=document.createElement('span');b.className='spread-edit-badge'+(spreadWorkbench.chosen.includes(i)?'':' unassigned');const k=spreadWorkbench.chosen.indexOf(i);b.textContent=k<0?'?':String(k+1);b.style.left=`calc(${p.x}% + ${m.w*.48}px)`;b.style.top=`calc(${p.y}% - ${m.h*.48}px)`;zone.append(b)})}if(settings.labels&&!spreadWorkbench){state.placed.forEach(item=>{if(item.slot==null)return;const slot=getSlots()[item.slot];if(!slot)return;zone.append(createPlacedSlotLabel(item,slot,item.slot,m))});getSlots().forEach((p,i)=>{if(assigned.has(i))return;const t=document.createElement('span');t.className='zone-label';t.textContent=window.innerWidth<=780?String(i+1):`${i+1} ${compactGridPositionName(p.name)}`;t.title=`${i+1} ${gridPositionTitle(p.name)}`;if(window.innerWidth<=780)t.classList.add('mobile-num-label');const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;const rad=p.angle*Math.PI/180;t.style.left=`calc(${p.x}% + ${(Math.sin(rad)*dist).toFixed(1)}px)`;t.style.top=`calc(${p.y}% - ${(Math.cos(rad)*dist).toFixed(1)}px)`;t.style.transform=`translate(-50%,-50%) rotate(${p.angle}deg)`;t.style.zIndex=(settings.crossLabelLayer==='front'?'310':'2');zone.append(t)})}renderTablePiles(zone,m);updateCardSelection();const deck=$('deck');const renderedDeckSource=dualSession?.mixed?state.deck[0]?.sourceDeck:(isIndependentTables()?dualSession.activePile:'A');applyPlayingBack(deck,renderedDeckSource);deck.dataset.appearance=appearanceForPile(renderedDeckSource);if(deck.dataset.appearance==='worn')deck.dataset.wearVariant=wearVariant(dualSession?.mixed?state.deck[0]:(isIndependentTables()?state.deck[0]:(dualSession?.piles.A[0]||state.deck[0])));else delete deck.dataset.wearVariant;if(dualSession){deck.dataset.backTone=dualSession.mixed?dualBackTone(state.deck[0]?.sourceDeck):dualBackTone(isIndependentTables()?dualSession.activePile:'A')}else delete deck.dataset.backTone;deck.classList.toggle('empty',dualSession&&!dualSession.mixed&&!isIndependentTables()?dualSession.piles.A.length===0:state.deck.length===0);deck.style.setProperty('--cw',m.w+'px');deck.style.setProperty('--ch',m.h+'px');applyPhysicalCardDimensions(deck,m,deck.dataset.appearance);applyDeckPosition();positionSecondDeck(m);$('surface').classList.toggle('compact-spread',settings.spread!=='celtic');$('spreadNotebook').hidden=!!spreadWorkbench;$('deckCount').textContent=`山札 ${state.deck.length}枚 / 配札 ${state.placed.filter(c=>!c.auxiliaryPile).length}枚 / 別札 ${state.placed.filter(c=>c.auxiliaryPile).length}枚 / 束 ${(state.tablePiles||[]).reduce((n,p)=>n+(p.cards?.length||0),0)}枚 / 除外 ${(state.removed||[]).length}枚`;const removedSize=(state.removed||[]).length;const removedPile=$('removedPile');applyPlayingBack(removedPile.querySelector('.removed-pile-card'),state.removed?.at(-1)?.sourceDeck);removedPile.style.setProperty('--cw',m.w+'px');removedPile.style.setProperty('--ch',m.h+'px');applyPhysicalCardDimensions(removedPile,m,appearanceForCard(state.removed?.at(-1)));removedPile.classList.toggle('visible',removedSize>0);$('removedPileCount').textContent=removedSize+'枚';$('removedPileCount').hidden=!settings.labels;const s=state.selected;if(s!=null&&state.placed[s]){const p=state.placed[s],c=workingCard(p.id),pos=p.slot!=null?getSlots()[p.slot]:null;$('infoText').textContent=`${c.name}（${p.reversed?'逆位置':'正位置'}）${pos?` — ${p.slot+1}. ${pos.name}：${pos.detail}`:' — 自由配置'}`}else if(inspectionEnabled()){$('infoText').textContent='表向きのカードをクリックすると、完成形と説明が開きます。'}else{$('infoText').textContent='カードをクリックすると表裏が切り替わります。ドラッグで移動できます。基本の配札後も、山札から補助カードを自由に追加できます。右クリックで90°回転（PC）。'}$('altar').classList.toggle('hidden',!settings.altar);$('altar').hidden=!settings.altar;$('altar').style.display=settings.altar?'':'none';$('cloth').style.setProperty('--cloth',colors[settings.color][1]);$('clothName').textContent=colors[settings.color][0];$('swatches').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===settings.color));updateCompletionAura();}function parseDealSchedule(value){
  const plan=new Map(),raw=String(value||'').trim();if(!raw)return plan;
  for(const token of raw.split(/[,，、;；\n]+/)){
   const t=token.trim();if(!t)continue;
@@ -3370,8 +3379,54 @@ $('reversals').onchange=e=>{
   render();dualSave();
   setStatus(settings.reversals?'このデッキで正逆位置を使用します。':'このデッキの未配札カードを正位置に揃えました。配置済みのカードは維持します。');
  }else initialize();
-};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
-function openSequentially(){if(openingBusy)return;const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...(!dualSession?TabulaTablePiles.closedTopCards(state):[])];if(!closed.length){setStatus('開ける伏せ札がありません。');return}openingBusy=true;$('quickOpen').disabled=true;$('quickRevealAll').disabled=true;const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;const pace=settings.openMode==='quick'?Math.max(110,Math.round(basePace/2)):basePace;let index=0;function step(){if(index>=closed.length){openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;render();maybeTriggerCompletionEffect();saveLocal();setStatus(closed.length+'枚を'+(settings.openMode==='quick'?'一度に':'順番に')+'開きました。');return}closed[index].faceUp=true;index++;play('flip');render();saveLocal();setStatus(`カードを開いています：${index}/${closed.length}枚`);setTimeout(step,pace)}step()}
+};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false,openingStopRequested=false;
+function syncOpeningControls(){
+ const button=$('quickOpen');
+ if(!button)return;
+ button.disabled=false;
+ button.title=openingBusy?'オープンを中断（すでに開いた札は維持）':'配札した伏せ札を順番に開く';
+ const spans=button.querySelectorAll('span');
+ if(spans[0])spans[0].textContent=openingBusy?'■':'◉';
+ if(spans[1])spans[1].textContent=openingBusy?'中断':'オープン';
+}
+function startOpening(){
+ openingBusy=true;openingStopRequested=false;syncOpeningControls();
+ $('quickRevealAll').disabled=true;
+}
+function finishOpening(){
+ openingBusy=false;openingStopRequested=false;syncOpeningControls();
+ $('quickRevealAll').disabled=false;
+}
+function stopOpening(){
+ if(!openingBusy)return;
+ openingStopRequested=true;
+ setStatus('オープンの中断を受け付けました。');
+}
+function openSequentially(){
+ if(openingBusy)return;
+ const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...(!dualSession?TabulaTablePiles.closedTopCards(state):[])];
+ if(!closed.length){setStatus('開ける伏せ札がありません。');return}
+ startOpening();
+ const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;
+ const pace=settings.openMode==='quick'?Math.max(110,Math.round(basePace/2)):basePace;
+ let index=0;
+ function step(){
+  if(openingStopRequested){
+   finishOpening();render();saveLocal();
+   setStatus('オープンを中断しました（'+index+'/'+closed.length+'枚）。もう一度押すと残りを開きます。');
+   return;
+  }
+  if(index>=closed.length){
+   finishOpening();render();maybeTriggerCompletionEffect();saveLocal();
+   setStatus(closed.length+'枚を開きました。');
+   return;
+  }
+  closed[index].faceUp=true;index++;play('flip');render();saveLocal();
+  setStatus('カードを開いています：'+index+'/'+closed.length+'枚');
+  setTimeout(step,pace);
+ }
+ step();
+}
 /* All spread selectors must use the same collect-or-cancel transaction.
    Never discard pile frames containing physical cards. */
 function changeActiveSpread(nextSpread){
@@ -3442,9 +3497,8 @@ async function revealAllFloating(){
  const piles=!dualSession?TabulaTablePiles.closedTopCards(state):[];
  const total=targets.length+piles.length;
  if(!total){setStatus('開ける伏せ札がありません。');return}
- openingBusy=true;
+ startOpening();
  prepareOpeningSound();
- $('quickOpen').disabled=true;$('quickRevealAll').disabled=true;
  try{
   // Commit face-up DOM first. Both faces now exist, so CSS can animate a
   // real back-to-front 3-D flip rather than rotating a back-only card.
@@ -3466,10 +3520,10 @@ async function revealAllFloating(){
   }
   for(const node of animated)if(node.isConnected)node.classList.remove('simultaneous-opening');
   play('flip'); // One shared landing sound, regardless of card count.
-  setStatus(total+'枚を一斉に開きました。');
-  maybeTriggerCompletionEffect();
+  if(openingStopRequested)setStatus('オープンの演出を中断しました。開いた札は維持されます。');
+  else{setStatus(total+'枚を一斉に開きました。');maybeTriggerCompletionEffect();}
  }finally{
-  openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;
+  finishOpening();
  }
 }
 
@@ -3509,9 +3563,8 @@ async function openCeremonially(mode){
    node.classList.add('bloom-opening');
   }
  };
- openingBusy=true;
+ startOpening();
  prepareOpeningSound();
- $('quickOpen').disabled=true;$('quickRevealAll').disabled=true;
  $('zone').classList.add('ceremonial-opening-active');
  try{
   if(mode==='bloom'){
@@ -3528,6 +3581,7 @@ async function openCeremonially(mode){
     wave.forEach((entry,i)=>animateEntry(entry,i*interval));
     setStatus('BLOOM — 札がランダムな順番で開いています。');
     await new Promise(resolve=>setTimeout(resolve,duration+(entries.length-1)*interval+70));
+    if(openingStopRequested){setStatus('BLOOMの演出を中断しました。開いた札は維持されます。');return;}
    }
   }else{
    for(let i=0;i<entries.length;i++){
@@ -3539,19 +3593,20 @@ async function openCeremonially(mode){
      setStatus('FLOAT — 浮遊反転：'+(i+1)+' / '+total+'枚');
      await new Promise(resolve=>setTimeout(resolve,duration+30));
     }
+    if(openingStopRequested)break;
    }
   }
+  if(openingStopRequested){render();saveLocal();setStatus('FLOATのオープンを中断しました。残りの伏せ札から再開できます。');return;}
   setStatus(total+'枚を'+(mode==='bloom'?'BLOOM（開花）':'FLOAT（浮遊反転）')+'で開きました。');
   render();saveLocal();maybeTriggerCompletionEffect();
  }finally{
   $('zone').classList.remove('ceremonial-opening-active');
-  openingBusy=false;
-  $('quickOpen').disabled=false;$('quickRevealAll').disabled=false;
+  finishOpening();
  }
 }
 function openWithSelectedMode(){
  if(document.getElementById('physicalCutOverlay')){setStatus('カット中はカードを開けません。');return;}
- if(openingBusy)return;
+ if(openingBusy){stopOpening();return;}
  if(settings.openMode==='all')return revealAllFloating();
  if(settings.openMode==='float'||settings.openMode==='bloom')return openCeremonially(settings.openMode);
  return openSequentially();
@@ -4361,13 +4416,13 @@ function refreshTableLabels(){
   const positionLabel=labelMode==='position'||labelMode==='positionPlain';
   const num=labelMode==='card'||(labelMode==='positionPlain'&&slot)?'':item?.slot==null&&item?(settings.spread==='free'?'':'＋'):String(i+1);
   let text=num;
-  if(positionLabel&&slot)text+=(text?' · ':'')+slot.name;
+  if(positionLabel&&slot)text+=(text?' · ':'')+compactGridPositionName(slot.name);
   if(labelMode==='card'&&item?.faceUp){
    const c=workingCard(item.id);
    text+=(text?' · ':'')+(c?tableCardName(c):'カード')+(item.reversed?'〈逆〉':'');
   }
   if(!text)return;
-  t.textContent=text;t.title=text;
+  t.textContent=text;t.title=positionLabel&&slot?text+'（'+gridPositionTitle(slot.name)+'）':text;
   if(positionLabel&&slot){t.dataset.positionName=slot.name;t.dataset.positionNumber=String(i+1);}
   // Card names follow the card; position names remain anchored to the spread.
   const follow=labelMode==='card'&&item;
@@ -4395,7 +4450,7 @@ function refreshTableLabels(){
   const number=slot?String(pile.slot+1):pile.id.replace('pile-','');
   let label='';
   if(labelMode==='number')label=number;
-  else if(labelMode==='position'||labelMode==='positionPlain')label=slot?(labelMode==='position'?number+' · ':'')+slot.name:labelMode==='position'?role+' '+number:role;
+  else if(labelMode==='position'||labelMode==='positionPlain')label=slot?(labelMode==='position'?number+' · ':'')+compactGridPositionName(slot.name):labelMode==='position'?role+' '+number:role;
   else if(labelMode==='card'&&first?.faceUp)label=(definition?tableCardName(definition):'カード')+(first.reversed?'〈逆〉':'');
   if(!label)continue;
   const t=document.createElement('span');t.className='zone-label unified-label pile-label';
