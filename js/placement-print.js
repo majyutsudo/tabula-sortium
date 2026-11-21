@@ -79,6 +79,40 @@ function download(svg){
  setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 function print(svg){
+ const standalone=window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+ if(standalone){
+  // iOS home-screen apps can open an unclosable blank window. Keep the preview in-app.
+  const previous=document.getElementById('tabulaStandalonePrintPreview');
+  if(previous)previous.remove();
+  const overlay=document.createElement('section');
+  overlay.id='tabulaStandalonePrintPreview';
+  overlay.setAttribute('role','dialog');
+  overlay.setAttribute('aria-modal','true');
+  overlay.setAttribute('aria-label','配置図の印刷プレビュー');
+  overlay.innerHTML='<style>'+
+   '#tabulaStandalonePrintPreview{position:fixed;inset:0;z-index:2147483647;background:#e2e2e2;color:#222;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 0 env(safe-area-inset-bottom,0px)}'+
+   '#tabulaStandalonePrintPreview .tp-print-controls{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:#222;color:white}'+
+   '#tabulaStandalonePrintPreview button{font:inherit;padding:9px 13px;border:1px solid #999;border-radius:6px;background:white;color:#222;cursor:pointer}'+
+   '#tabulaStandalonePrintPreview .tp-print-paper{width:min(100%,210mm);margin:12px auto;background:white;box-shadow:0 2px 12px #999}'+
+   '#tabulaStandalonePrintPreview .tp-print-paper svg{width:100%;height:auto;display:block}'+
+   '#tabulaStandalonePrintPreview .tp-print-note{padding:0 12px 16px;font-size:13px;line-height:1.6}'+
+   '@media print{@page{size:A4 portrait;margin:0}body>*:not(#tabulaStandalonePrintPreview){display:none!important}'+
+   '#tabulaStandalonePrintPreview{position:static!important;inset:auto!important;overflow:visible!important;background:white!important;padding:0!important}'+
+   '#tabulaStandalonePrintPreview .tp-print-controls,#tabulaStandalonePrintPreview .tp-print-note{display:none!important}'+
+   '#tabulaStandalonePrintPreview .tp-print-paper{width:210mm!important;margin:0!important;box-shadow:none!important}'+
+   '#tabulaStandalonePrintPreview .tp-print-paper svg{width:210mm!important;height:297mm!important}}'+
+   '</style><div class="tp-print-controls"><button type="button" data-action="close">← 配置図に戻る</button><button type="button" data-action="save">SVG保存</button><button type="button" data-action="print">印刷 / PDF</button></div><div class="tp-print-paper"></div><p class="tp-print-note">ホーム画面アプリでは印刷画面が開かない場合があります。その場合はSVG保存を利用するか、SafariでTABULAを開いて印刷してください。</p>';
+  overlay.querySelector('.tp-print-paper').append(svg.cloneNode(true));
+  const dismiss=()=>{overlay.remove();document.removeEventListener('keydown',onKey);};
+  const onKey=e=>{if(e.key==='Escape')dismiss();};
+  overlay.querySelector('[data-action="close"]').addEventListener('click',dismiss);
+  overlay.querySelector('[data-action="save"]').addEventListener('click',()=>download(svg));
+  overlay.querySelector('[data-action="print"]').addEventListener('click',()=>window.print());
+  document.addEventListener('keydown',onKey);
+  document.body.append(overlay);
+  overlay.querySelector('[data-action="close"]').focus();
+  return;
+ }
  const xml=new XMLSerializer().serializeToString(svg);
  const win=window.open('','_blank');
  if(!win){download(svg);alert('ポップアップが制限されたためSVGを保存しました。SVGを開いて印刷してください。');return;}
