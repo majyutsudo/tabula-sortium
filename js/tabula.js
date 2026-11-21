@@ -3379,8 +3379,54 @@ $('reversals').onchange=e=>{
   render();dualSave();
   setStatus(settings.reversals?'このデッキで正逆位置を使用します。':'このデッキの未配札カードを正位置に揃えました。配置済みのカードは維持します。');
  }else initialize();
-};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false;
-function openSequentially(){if(openingBusy)return;const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...(!dualSession?TabulaTablePiles.closedTopCards(state):[])];if(!closed.length){setStatus('開ける伏せ札がありません。');return}openingBusy=true;$('quickOpen').disabled=true;$('quickRevealAll').disabled=true;const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;const pace=settings.openMode==='quick'?Math.max(110,Math.round(basePace/2)):basePace;let index=0;function step(){if(index>=closed.length){openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;render();maybeTriggerCompletionEffect();saveLocal();setStatus(closed.length+'枚を'+(settings.openMode==='quick'?'一度に':'順番に')+'開きました。');return}closed[index].faceUp=true;index++;play('flip');render();saveLocal();setStatus(`カードを開いています：${index}/${closed.length}枚`);setTimeout(step,pace)}step()}
+};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false,openingStopRequested=false;
+function syncOpeningControls(){
+ const button=$('quickOpen');
+ if(!button)return;
+ button.disabled=false;
+ button.title=openingBusy?'オープンを中断（すでに開いた札は維持）':'配札した伏せ札を順番に開く';
+ const spans=button.querySelectorAll('span');
+ if(spans[0])spans[0].textContent=openingBusy?'■':'◉';
+ if(spans[1])spans[1].textContent=openingBusy?'中断':'オープン';
+}
+function startOpening(){
+ openingBusy=true;openingStopRequested=false;syncOpeningControls();
+ $('quickRevealAll').disabled=true;
+}
+function finishOpening(){
+ openingBusy=false;openingStopRequested=false;syncOpeningControls();
+ $('quickRevealAll').disabled=false;
+}
+function stopOpening(){
+ if(!openingBusy)return;
+ openingStopRequested=true;
+ setStatus('オープンの中断を受け付けました。');
+}
+function openSequentially(){
+ if(openingBusy)return;
+ const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...(!dualSession?TabulaTablePiles.closedTopCards(state):[])];
+ if(!closed.length){setStatus('開ける伏せ札がありません。');return}
+ startOpening();
+ const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;
+ const pace=settings.openMode==='quick'?Math.max(110,Math.round(basePace/2)):basePace;
+ let index=0;
+ function step(){
+  if(openingStopRequested){
+   finishOpening();render();saveLocal();
+   setStatus('オープンを中断しました（'+index+'/'+closed.length+'枚）。もう一度押すと残りを開きます。');
+   return;
+  }
+  if(index>=closed.length){
+   finishOpening();render();maybeTriggerCompletionEffect();saveLocal();
+   setStatus(closed.length+'枚を開きました。');
+   return;
+  }
+  closed[index].faceUp=true;index++;play('flip');render();saveLocal();
+  setStatus('カードを開いています：'+index+'/'+closed.length+'枚');
+  setTimeout(step,pace);
+ }
+ step();
+}
 /* All spread selectors must use the same collect-or-cancel transaction.
    Never discard pile frames containing physical cards. */
 function changeActiveSpread(nextSpread){
@@ -3451,9 +3497,8 @@ async function revealAllFloating(){
  const piles=!dualSession?TabulaTablePiles.closedTopCards(state):[];
  const total=targets.length+piles.length;
  if(!total){setStatus('開ける伏せ札がありません。');return}
- openingBusy=true;
+ startOpening();
  prepareOpeningSound();
- $('quickOpen').disabled=true;$('quickRevealAll').disabled=true;
  try{
   // Commit face-up DOM first. Both faces now exist, so CSS can animate a
   // real back-to-front 3-D flip rather than rotating a back-only card.
@@ -3475,10 +3520,10 @@ async function revealAllFloating(){
   }
   for(const node of animated)if(node.isConnected)node.classList.remove('simultaneous-opening');
   play('flip'); // One shared landing sound, regardless of card count.
-  setStatus(total+'枚を一斉に開きました。');
-  maybeTriggerCompletionEffect();
+  if(openingStopRequested)setStatus('オープンの演出を中断しました。開いた札は維持されます。');
+  else{setStatus(total+'枚を一斉に開きました。');maybeTriggerCompletionEffect();}
  }finally{
-  openingBusy=false;$('quickOpen').disabled=false;$('quickRevealAll').disabled=false;
+  finishOpening();
  }
 }
 
@@ -3518,9 +3563,8 @@ async function openCeremonially(mode){
    node.classList.add('bloom-opening');
   }
  };
- openingBusy=true;
+ startOpening();
  prepareOpeningSound();
- $('quickOpen').disabled=true;$('quickRevealAll').disabled=true;
  $('zone').classList.add('ceremonial-opening-active');
  try{
   if(mode==='bloom'){
@@ -3537,6 +3581,7 @@ async function openCeremonially(mode){
     wave.forEach((entry,i)=>animateEntry(entry,i*interval));
     setStatus('BLOOM — 札がランダムな順番で開いています。');
     await new Promise(resolve=>setTimeout(resolve,duration+(entries.length-1)*interval+70));
+    if(openingStopRequested){setStatus('BLOOMの演出を中断しました。開いた札は維持されます。');return;}
    }
   }else{
    for(let i=0;i<entries.length;i++){
@@ -3548,19 +3593,20 @@ async function openCeremonially(mode){
      setStatus('FLOAT — 浮遊反転：'+(i+1)+' / '+total+'枚');
      await new Promise(resolve=>setTimeout(resolve,duration+30));
     }
+    if(openingStopRequested)break;
    }
   }
-  setStatus(total+'枚を'+(mode==='bloom'?'BLOOM（開花）':'FLOAT（浮遊反転）')+'で開きました。');
+  if(openingStopRequested){render();saveLocal();setStatus('FLOATのオープンを中断しました。残りの伏せ札から再開できます。');return;}
+  setStatus(total+'枚を+(mode==='bloom'?'BLOOM（開花）':'FLOAT（浮遊反転）')+'で開きました。');
   render();saveLocal();maybeTriggerCompletionEffect();
  }finally{
   $('zone').classList.remove('ceremonial-opening-active');
-  openingBusy=false;
-  $('quickOpen').disabled=false;$('quickRevealAll').disabled=false;
+  finishOpening();
  }
 }
 function openWithSelectedMode(){
  if(document.getElementById('physicalCutOverlay')){setStatus('カット中はカードを開けません。');return;}
- if(openingBusy)return;
+ if(openingBusy){stopOpening();return;}
  if(settings.openMode==='all')return revealAllFloating();
  if(settings.openMode==='float'||settings.openMode==='bloom')return openCeremonially(settings.openMode);
  return openSequentially();
