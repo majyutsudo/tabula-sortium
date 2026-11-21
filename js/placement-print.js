@@ -132,12 +132,12 @@ function print(svg){
    '#tabulaStandalonePrintPreview .tp-print-paper svg{width:100%;height:auto;display:block}'+
    '#tabulaStandalonePrintPreview .tp-print-note{padding:0 12px 16px;font-size:13px;line-height:1.6}'+
    '@media print{@page{size:A4 portrait;margin:0}'+
-   'html,body{margin:0!important;padding:0!important;width:210mm!important;height:297mm!important;min-height:0!important;overflow:hidden!important}'+
+   ':root,html,body{background:#fff!important;background-image:none!important;color:#111!important;margin:0!important;padding:0!important;min-height:0!important;height:auto!important;overflow:visible!important}'+
    'body>*:not(#tabulaStandalonePrintPreview){display:none!important}'+
-   '#tabulaStandalonePrintPreview{position:static!important;inset:auto!important;display:block!important;width:209mm!important;height:296mm!important;max-height:296mm!important;min-height:0!important;overflow:hidden!important;background:white!important;margin:0!important;padding:0!important;break-after:avoid!important;page-break-after:avoid!important}'+
+   '#tabulaStandalonePrintPreview{position:static!important;inset:auto!important;display:block!important;width:205mm!important;height:285mm!important;max-width:205mm!important;max-height:285mm!important;min-height:0!important;overflow:hidden!important;background:#fff!important;margin:0!important;padding:0!important;box-shadow:none!important;break-after:avoid!important;page-break-after:avoid!important}'+
    '#tabulaStandalonePrintPreview .tp-print-controls,#tabulaStandalonePrintPreview .tp-print-note{display:none!important}'+
-   '#tabulaStandalonePrintPreview .tp-print-paper{display:block!important;width:209mm!important;height:296mm!important;max-height:296mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;break-inside:avoid!important;page-break-inside:avoid!important}'+
-   '#tabulaStandalonePrintPreview .tp-print-paper svg{display:block!important;width:209mm!important;height:296mm!important;max-height:296mm!important}}'+
+   '#tabulaStandalonePrintPreview .tp-print-paper{display:block!important;width:205mm!important;height:285mm!important;max-height:285mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;break-inside:avoid!important;page-break-inside:avoid!important}'+
+   '#tabulaStandalonePrintPreview .tp-print-paper svg{display:block!important;width:205mm!important;height:285mm!important;max-height:285mm!important}}'+
    '</style><div class="tp-print-controls"><button type="button" data-action="close">← 配置図に戻る</button><button type="button" data-action="save">SVG保存</button><button type="button" data-action="print">印刷 / PDF</button><button type="button" data-action="create-pdf">PDFを作成</button><a class="tp-pdf-download" data-action="download-pdf" download="TABULA-配置図.pdf" hidden>PDFを保存</a><button type="button" data-action="share-pdf" hidden>PDFを共有・保存</button></div><div class="tp-print-paper"></div><p class="tp-print-note">印刷機能が使えない場合は「PDFを作成」を押してください。作成後は環境に適した保存方法が表示されます。PDFはA4・1ページです。</p>';
   overlay.querySelector('.tp-print-paper').append(svg.cloneNode(true));
   const dismiss=()=>{overlay.remove();document.removeEventListener('keydown',onKey);if(pdfUrl)URL.revokeObjectURL(pdfUrl);};
