@@ -36,7 +36,8 @@ function normalize(plan,count){
   }
   if(step.type==='cut'){
    if(remaining||!Number.isInteger(step.count)||step.count<2||step.count>8)throw Error('カットは2〜8分割で指定してください。');
-   return {type:'cut',count:step.count};
+   if(step.repetitions!==undefined&&(!Number.isInteger(step.repetitions)||step.repetitions<1||step.repetitions>5))throw Error('カットの反復は1〜5回で指定してください。');
+   return {type:'cut',count:step.count,repetitions:step.repetitions||1};
   }
   if(step.type==='deal-remaining'){
    if(remaining||i!==plan.steps.length-1||step.order!=='slot-order'||step.excludeOccupied!==true)throw Error('残りの配札工程が不正です。');
