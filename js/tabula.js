@@ -1,5 +1,5 @@
 
-(()=>{'use strict';let inspectMode=false,tableDetailFocus=null;const $=id=>document.getElementById(id);const {majors,suitDefs,ranks,cards}=TabulaCatalog;const SPREAD_LIBRARY_KEY='tabula_sortium_spread_library_v1';let spreadLibrary=[];
+(()=>{'use strict';let inspectMode=false,tableDetailFocus=null,inspectSelectionMode='single',inspectSelection=[];const $=id=>document.getElementById(id);const {majors,suitDefs,ranks,cards}=TabulaCatalog;const SPREAD_LIBRARY_KEY='tabula_sortium_spread_library_v1';let spreadLibrary=[];
 function loadSpreadLibrary(){spreadLibrary=TabulaSpreadStore.read(localStorage,SPREAD_LIBRARY_KEY);refreshCustomPresets()}
 function syncSpreadShortcut(){
  const shortcut=$('spreadQuickSelect'),source=$('spread');if(!shortcut||!source)return;
@@ -1509,7 +1509,12 @@ function vacantDropSlot(item,index){
 function cardHTML(item,index,m){const c=workingCard(item.id)||workingCards()[0];const node=document.createElement('div');node.className='card'+(item.faceUp?' faceup':'')+(item.reversed?' no-reversal-spin':'');node.dataset.index=index;node.dataset.appearance=appearanceForCard(item);applyPhysicalCardDimensions(node,m,node.dataset.appearance);if(node.dataset.appearance==='worn'){node.dataset.wearVariant=wearVariant(item);if(wornMaterialAvailable(item.id))node.dataset.wornAsset='true'}if(item.sourceDeck){node.dataset.sourceDeck=item.sourceDeck;node.dataset.backTone=dualBackTone(item.sourceDeck)}if(item.significator){node.dataset.significator='true';node.title='シグニフィケイター';}const crossOpen=settings.spread==='celtic'&&item.slot===1&&item.faceUp&&!item.manualMoved;
  const move=crossOpen?celticCrossShift():0;
  node.style.left=item.x+'%';node.style.top=`calc(${item.y}% + ${move}px)`;
- node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;applyPlayingBack(node.querySelector('.face.back'),item.sourceDeck);node.addEventListener('pointerdown',e=>{if(pilePlacementArmed||e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;drag.longPress=armCardLongPress(e,()=>selectCard(index));node.setPointerCapture(e.pointerId);
+ node.style.setProperty('--rotation',((settings.spread==='celtic'&&item.slot===1&&item.faceUp?80:item.angle)+(item.reversed&&item.faceUp?180:0))+'deg');node.style.setProperty('--z',String(item.dragOrder?1000+item.dragOrder:index+5));
+if(inspectMode&&inspectSelectionMode==='multi'){
+ const selectedNumber=inspectSelection.indexOf(index);
+ if(selectedNumber>=0){node.classList.add('inspection-picked');node.setAttribute('data-inspection-order',String(selectedNumber+1));}
+}
+node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;applyPlayingBack(node.querySelector('.face.back'),item.sourceDeck);node.addEventListener('pointerdown',e=>{if(pilePlacementArmed||e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;drag.longPress=armCardLongPress(e,()=>selectCard(index));node.setPointerCapture(e.pointerId);
 // Each grab raises the selected card to the highest persistent stack layer.
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
@@ -1574,7 +1579,7 @@ node.style.top=`calc(${item.y}% + ${moveCross}px)`;
 node.classList.toggle('no-reversal-spin',!!item.reversed);node.style.setProperty('--rotation',cardDisplayRotation(item)+'deg');refreshDraggedSlotLabel(item);
 const cardData=workingCard(item.id),position=item.slot!=null?getSlots()[item.slot]:null;
 $('infoText').textContent=`${cardData.name}（${item.reversed?'逆位置':'正位置'}）${position?` — ${item.slot+1}. ${position.name}：${position.detail}`:' — 自由配置'}`;
-if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position.name:'');updateLiveResults();maybeTriggerCompletionEffect();saveLocal();if(dragMoved&&!snappedToPreset)startHandGlide(item,node,releasedDrag)});node.addEventListener('pointercancel',()=>{cancelCardLongPress();clearPileDropTarget();clearStackIntent(drag);node.classList.remove('dragging');drag=null});node.addEventListener('contextmenu',e=>{e.preventDefault();if(inspectionEnabled()||e.pointerType==='touch')return;item.angle=(item.angle+90)%360;render();saveLocal()});if(inspectionEnabled()){node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',item.faceUp?c.name+'を拡大する':'伏せ札');}node.addEventListener('click',()=>{if(inspectionEnabled())inspectTableCard(index,node)});node.addEventListener('keydown',e=>{if(inspectionEnabled()&&(e.key==='Enter'||e.key===' ')){e.preventDefault();inspectTableCard(index,node)}});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
+if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position.name:'');updateLiveResults();maybeTriggerCompletionEffect();saveLocal();if(dragMoved&&!snappedToPreset)startHandGlide(item,node,releasedDrag)});node.addEventListener('pointercancel',()=>{cancelCardLongPress();clearPileDropTarget();clearStackIntent(drag);node.classList.remove('dragging');drag=null});node.addEventListener('contextmenu',e=>{e.preventDefault();if(inspectionEnabled()||e.pointerType==='touch')return;item.angle=(item.angle+90)%360;render();saveLocal()});if(inspectionEnabled()){node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',item.faceUp?c.name+(inspectSelectionMode==='multi'?'を比較選択':'を拡大する'):'伏せ札');}node.addEventListener('click',()=>{if(inspectionEnabled())inspectTableCard(index,node)});node.addEventListener('keydown',e=>{if(inspectionEnabled()&&(e.key==='Enter'||e.key===' ')){e.preventDefault();inspectTableCard(index,node)}});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
 function syncResultsVisibility(){const panel=$('liveResults'),button=$('toggleResults');if(!panel||!button)return;panel.hidden=!resultsVisible;button.textContent=resultsVisible?'結果を閉じる ▴':'結果を表示 ▾';button.setAttribute('aria-expanded',String(resultsVisible))}
 function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)||(state.tablePiles||[]).find(p=>p.slot===i)?.cards[0]}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:item.significator?'シグニフィケイター':`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(workingCard(item.id)||workingCards()[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${entries.filter(e=>e.item?.faceUp&&!e.item.significator).length} / ${entries.filter(e=>e.item&&!e.item.significator).length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
 $('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
@@ -4588,12 +4593,76 @@ inspectionButton.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill
 inspectionButton.setAttribute('aria-pressed','false');
 inspectionButton.title='閲覧モードを切り替えます。表向きのカードをクリックすると完成形と説明を表示します。';
 document.querySelector('.table-utility-actions').prepend(inspectionButton);
+
+/* Comparison selection belongs to inspection mode; never alters the physical table. */
+const inspectionTray=document.createElement('div');
+inspectionTray.id='inspectionTray';inspectionTray.className='inspection-tray';inspectionTray.hidden=true;
+inspectionTray.setAttribute('role','group');inspectionTray.setAttribute('aria-label','閲覧モードの操作');
+const inspectSingle=document.createElement('button'),inspectMulti=document.createElement('button');
+inspectSingle.type=inspectMulti.type='button';
+inspectSingle.textContent='一枚を見る';inspectMulti.textContent='複数選択';
+const inspectCount=document.createElement('span');inspectCount.className='inspection-count';inspectCount.setAttribute('aria-live','polite');
+const inspectCompare=document.createElement('button');inspectCompare.type='button';inspectCompare.textContent='比較表示';
+const inspectClear=document.createElement('button');inspectClear.type='button';inspectClear.textContent='選択解除';
+inspectionTray.append(inspectSingle,inspectMulti,inspectCount,inspectCompare,inspectClear);
+document.body.append(inspectionTray);
+function refreshInspectionTray(){
+ inspectionTray.hidden=!inspectMode;
+ inspectSingle.setAttribute('aria-pressed',String(inspectSelectionMode==='single'));
+ inspectMulti.setAttribute('aria-pressed',String(inspectSelectionMode==='multi'));
+ const multi=inspectSelectionMode==='multi';
+ inspectCount.hidden=!multi;
+ inspectCompare.hidden=!multi;
+ inspectClear.hidden=!multi;
+ inspectCount.textContent=inspectSelection.length+'枚選択';
+ inspectCompare.disabled=inspectSelection.length<2;
+ inspectClear.disabled=!inspectSelection.length;
+}
+function chooseInspectionSelectionMode(mode){
+ inspectSelectionMode=mode==='multi'?'multi':'single';
+ inspectSelection=[];
+ refreshInspectionTray();render();
+ setStatus(inspectSelectionMode==='multi'?'比較する表向きのカードを順に選んでください（もう一度タップすると解除）。':'一枚閲覧：表向きのカードをクリックしてください。');
+}
+inspectSingle.onclick=()=>chooseInspectionSelectionMode('single');
+inspectMulti.onclick=()=>chooseInspectionSelectionMode('multi');
+inspectClear.onclick=()=>{inspectSelection=[];refreshInspectionTray();render()};
+function openInspectionComparison(){
+ const entries=inspectSelection.map(i=>({index:i,card:state.placed[i]})).filter(x=>x.card?.faceUp&&workingCard(x.card.id));
+ if(entries.length<2){setStatus('比較する表向きのカードを2枚以上選んでください。');return}
+ const originalFocus=document.activeElement;
+ modal('<div class="inspection-comparison"><h2>カード比較</h2><p class="inspection-comparison-lead">選択順に表示しています。カードを押すと一枚の詳細を確認できます。</p><div id="inspectionComparisonGrid" class="inspection-comparison-grid"></div></div>');
+ $('modalBg').classList.add('card-viewer-active');
+ const grid=$('inspectionComparisonGrid');
+ entries.forEach(({card:p,index},n)=>{
+  const c=workingCard(p.id);const position=Number.isInteger(p.slot)?getSlots()[p.slot]:null;
+  const box=document.createElement('button');box.type='button';box.className='inspection-comparison-item';
+  const title=document.createElement('div');title.className='inspection-comparison-label';
+  const number=document.createElement('strong');number.textContent=String(n+1);
+  const label=document.createElement('span');label.textContent=position?(p.slot+1)+'. '+position.name:'自由配置 '+(index+1);
+  title.append(number,label);
+  const art=document.createElement('div');art.className='inspection-comparison-art';
+  const visual=document.createElement('div');visual.className='inspection-comparison-face';
+  visual.innerHTML=cardMark(c,appearanceForCard(p));
+  if(p.reversed)visual.style.transform='rotate(180deg)';
+  art.append(visual);
+  const name=document.createElement('div');name.className='inspection-comparison-name';
+  name.textContent=displayCard(c).name+(p.reversed?'〈逆〉':'');
+  box.append(title,art,name);
+  box.onclick=()=>{tableDetailFocus=originalFocus&&originalFocus.isConnected?originalFocus:inspectionButton;detailTextVisible=true;openTableCard(index);const footer=$('tableCardNext')?.parentElement;if(footer){const back=document.createElement('button');back.type='button';back.textContent='比較に戻る';back.onclick=openInspectionComparison;footer.after(back)}};
+  grid.append(box);
+ });
+ $('modalClose').focus();
+}
+inspectCompare.onclick=openInspectionComparison;
 function inspectionEnabled(){return inspectMode&&!spreadWorkbench;}
 function setInspectionMode(enabled){
  if(enabled&&spreadWorkbench){setStatus('スプレッド編集を終了してください。');return;}
  cancelCardLongPress();
  if(enabled){cameraPanMode=false;$('stage').classList.remove('camera-pan-mode','camera-moving');const pan=$('tablePanToggle');if(pan)pan.setAttribute('aria-pressed','false');drag=null;clearDeckPreview();}
  inspectMode=!!enabled;
+ if(!inspectMode){inspectSelectionMode='single';inspectSelection=[];}
+ refreshInspectionTray();
  inspectionButton.setAttribute('aria-pressed',String(inspectMode));
  inspectionButton.querySelector('span').textContent=inspectMode?'カードを見る：ON':'カードを見る';
  $('surface').classList.toggle('card-inspection-mode',inspectMode);
@@ -4605,6 +4674,13 @@ function inspectTableCard(index,origin){
  if(!inspectionEnabled())return;
  const item=state.placed[index];if(!item)return;
  if(!item.faceUp){setStatus('伏せ札です。閲覧モードを終了して開いてください。');return;}
+ if(inspectSelectionMode==='multi'){
+  const at=inspectSelection.indexOf(index);
+  if(at>=0)inspectSelection.splice(at,1);else inspectSelection.push(index);
+  refreshInspectionTray();render();
+  setStatus(inspectSelection.length+'枚選択中。2枚以上で「比較表示」ができます。');
+  return;
+ }
  tableDetailFocus=origin||inspectionButton;
  // Every new inspection starts with the finished card and its available text.
  // Navigation within that reading keeps any subsequent display choices.
