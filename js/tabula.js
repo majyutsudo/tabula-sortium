@@ -4953,7 +4953,16 @@ inspectMulti.onclick=()=>chooseInspectionSelectionMode('multi');
 inspectClear.onclick=()=>{inspectSelection=[];refreshInspectionTray();render()};
  inspectAll.onclick=()=>{
   // Select only visible, inspectable cards without revealing or moving them.
-  inspectSelection=state.placed.map((card,index)=>card.faceUp&&workingCard(card.id)?index:-1).filter(index=>index>=0);
+  inspectSelection=state.placed.map((card,index)=>({card,index}))
+   .filter(({card})=>card.faceUp&&workingCard(card.id))
+   // Bulk selection follows the spread's reading positions, not the order
+   // in which cards were physically dealt (Significators may be placed first).
+   // Free-position cards follow numbered positions in their existing order.
+   .sort((a,b)=>{
+    const as=Number.isInteger(a.card.slot)?a.card.slot:Infinity;
+    const bs=Number.isInteger(b.card.slot)?b.card.slot:Infinity;
+    return as-bs||a.index-b.index;
+   }).map(({index})=>index);
   refreshInspectionTray();render();
   setStatus(inspectSelection.length+'枚の表向きカードを選択しました。「比較表示」で一覧を確認できます。');
  };
