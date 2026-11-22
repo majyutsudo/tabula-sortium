@@ -226,7 +226,26 @@ function spreadRemovePosition(index){
  refreshWorkbench();render();
  setStatus('位置を1つ削除しました。');
 }
-function spreadChoose(index){if(!spreadWorkbench)return;const w=spreadWorkbench;if(!w.chosen.includes(index))w.chosen.push(index);refreshWorkbench();render()}
+function spreadChoose(index){if(!spreadWorkbench)return;const w=spreadWorkbench;state.selected=index;if(!w.chosen.includes(index))w.chosen.push(index);refreshWorkbench();render()}
+function nudgeWorkbenchSelection(event){
+ if(!spreadWorkbench||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
+ if(event.altKey||event.ctrlKey||event.metaKey||event.isComposing)return;
+ if(event.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+ const index=state.selected,card=Number.isInteger(index)?state.placed[index]:null;
+ if(!card)return;
+ const rect=$('zone').getBoundingClientRect();if(!(rect.width>0&&rect.height>0))return;
+ event.preventDefault();
+ const step=event.shiftKey?10:1;
+ const dx=event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0;
+ const dy=event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0;
+ const x=Math.max(0,Math.min(100,card.x+dx/rect.width*100));
+ const y=Math.max(0,Math.min(100,card.y+dy/rect.height*100));
+ if(x===card.x&&y===card.y)return;
+ card.x=x;card.y=y;card.manualMoved=true;
+ if(spreadWorkbench.circle)spreadWorkbench.circle.active=false;
+ render();
+}
+document.addEventListener('keydown',nudgeWorkbenchSelection);
 const normalizeAngle=TabulaSpreadGeometry.normalizeAngle;
 function workbenchTargets(){const w=spreadWorkbench,arr=state.placed;if(!w||!Array.isArray(arr))return[];return w.chosen.length===arr.length?w.chosen:[...arr.keys()]}
 function getWorkbenchCircleBounds(count){const rect=$('zone').getBoundingClientRect(),m=metrics();const margin=18;const max=Math.max(48,Math.min(rect.width/2-m.w*.62-margin,rect.height/2-m.h*.62-margin));const cardStep=Math.max(m.w,m.h)*.72+10;const min=Math.max(48,Math.max(m.w*.78,count>1?(cardStep*count)/(2*Math.PI):0));const clampedMin=Math.min(min,Math.max(48,max));const initial=Math.min(max,Math.max(clampedMin,Math.min(max*.82,clampedMin+Math.max(18,m.w*.35))));return{min:clampedMin,max:Math.max(clampedMin,max),initial}}
@@ -1525,7 +1544,7 @@ if(inspectMode&&inspectSelectionMode==='multi'){
  const selectedNumber=inspectSelection.indexOf(index);
  if(selectedNumber>=0){node.classList.add('inspection-picked');node.setAttribute('data-inspection-order',String(selectedNumber+1));}
 }
-node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;applyPlayingBack(node.querySelector('.face.back'),item.sourceDeck);node.addEventListener('pointerdown',e=>{if(pilePlacementArmed||e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();drag={beforeUndo:captureTableUndo(),type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;drag.longPress=armCardLongPress(e,()=>selectCard(index));node.setPointerCapture(e.pointerId);
+node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class="face front">${cardMark(c,node.dataset.appearance)}</div></div>`;applyPlayingBack(node.querySelector('.face.back'),item.sourceDeck);node.addEventListener('pointerdown',e=>{if(pilePlacementArmed||e.button!==0||inspectionEnabled())return;stopFreeSlide();const rect=$('zone').getBoundingClientRect();if(spreadWorkbench)selectCard(index);drag={beforeUndo:captureTableUndo(),type:'placed',idx:index,startX:e.clientX,startY:e.clientY,origX:item.x,origY:item.y+(crossOpen?celticCrossShift()*tableCamera.scale/rect.height*100:0),rect};recordTiltSample(drag,e);dragMoved=false;drag.longPress=armCardLongPress(e,()=>selectCard(index));node.setPointerCapture(e.pointerId);
 // Each grab raises the selected card to the highest persistent stack layer.
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
