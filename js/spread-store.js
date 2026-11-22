@@ -1,9 +1,11 @@
 /* TABULA SORTIUM — custom spread storage rules. */
 (function(root){'use strict';
 const MAX_SPREAD_SLOTS=100;
+function validDeckPosition(p){return p&&typeof p==='object'&&!Array.isArray(p)&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100}
+function copyDeckPosition(p){return {x:p.x,y:p.y}}
 function validSpread(v){
   return !!(v&&typeof v.id==='string'&&Array.isArray(v.slots)
-    &&v.slots.length<=MAX_SPREAD_SLOTS&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
+    &&v.slots.length<=MAX_SPREAD_SLOTS&&(v.deckPosition===undefined||validDeckPosition(v.deckPosition))&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
 }
 function fromReading(reading,id,name){
  if(!reading||!Array.isArray(reading.placed))throw Error('占例の配置を読み取れません。');
@@ -21,7 +23,7 @@ function fromReading(reading,id,name){
   return slot;
  });
  const size=reading.settings?.cardSize;
- const result={id,name,slots,...(typeof size==='number'&&Number.isFinite(size)&&size>=.8&&size<=2.3?{cardSize:size}:{})};
+ const result={id,name,slots,...(typeof size==='number'&&Number.isFinite(size)&&size>=.8&&size<=2.3?{cardSize:size}:{}),...(validDeckPosition(reading.settings?.deckPosition)?{deckPosition:copyDeckPosition(reading.settings.deckPosition)}:{})};
  if(!validSpread(result)||!slots.length||slots.some(s=>typeof s.name!=='string'||s.name.length>200))throw Error('占例の位置情報が不正です。');
  return result;
 }
@@ -56,7 +58,8 @@ function portableSpread(v){
  }
  if(v.cardSize!==undefined&&(!Number.isFinite(v.cardSize)||v.cardSize<.8||v.cardSize>2.3))
   throw Error('カードサイズが不正です。');
- return {name,slots,...meta,...(v.cardSize===undefined?{}:{cardSize:v.cardSize})};
+ if(v.deckPosition!==undefined&&!validDeckPosition(v.deckPosition))throw Error('山札の位置が不正です。');
+ return {name,slots,...meta,...(v.cardSize===undefined?{}:{cardSize:v.cardSize}),...(v.deckPosition===undefined?{}:{deckPosition:copyDeckPosition(v.deckPosition)})};
 }
 function exportPortable(v){
  return {format:PORTABLE_FORMAT,kind:'spread',version:1,spread:portableSpread(v)};
