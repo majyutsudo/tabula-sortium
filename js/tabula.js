@@ -442,7 +442,7 @@ function draw(){const root=$('recipeSteps');root.innerHTML=steps.map((st,i)=>{co
 $('addRecipeStep').onclick=()=>{readSteps();steps.push(shuffleStepDefaults('overhand'));draw()};
 function storeRecipe(asNew){readSteps();steps=steps.map(normStep);if(steps.reduce((n,x)=>n+x.reps,0)>100){alert('合計100巡以下にしてください。');return}const name=$('recipeName').value.trim();if(!name){alert('手順の名前を入力してください。');return}const existing=recipes.find(r=>r.name===name&&r.id!==(asNew?'':recipe.id));if(existing){alert(asNew?'別名で保存するには、現在の手順とは異なる新しい名前を入力してください。':'同じ名前の登録手順がすでにあります。別の名前にしてください。');$('recipeName').focus();$('recipeName').select();return}if(editing&&!asNew){recipe.name=name;recipe.steps=steps;recipeId=recipe.id;}else{let id='recipe_'+Date.now();while(recipes.some(r=>r.id===id))id+='_1';recipes.push({id,name,steps});recipeId=id;}syncRecipes();saveLocal();closeModal();setStatus('シャッフル手順「'+name+'」を'+(editing&&!asNew?'更新':'登録')+'しました。')}
 $('saveRecipe').onclick=()=>storeRecipe(false);if(editing){$('saveRecipeAs').onclick=()=>storeRecipe(true);$('deleteRecipeInEditor').onclick=()=>{if(!confirm('登録済みシャッフル手順「'+recipe.name+'」を削除しますか？ この操作は取り消せません。'))return;recipes=recipes.filter(r=>r.id!==recipe.id);recipeId='single';syncRecipes();saveLocal();closeModal();setStatus('シャッフル手順「'+recipe.name+'」を削除しました。')}}draw()}
-function escapeHTML(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}function runRecipe(manual=false,workflowOptions=null){if(document.getElementById('physicalCutOverlay')){setStatus('カット中はウォッシュ・シャッフルできません。');return;}if(shuffleBusy)return;if(state.deck.length<2){setStatus('シャッフルには2枚以上必要です。');return}const recipe=workflowOptions?.recipeId?recipes.find(r=>r.id===workflowOptions.recipeId):selectedRecipe();if(!recipe){setStatus('指定されたシャッフル手順が見つかりません。');workflowOptions?.onComplete?.(false);return false}shuffleBusy=true;$('shuffle').disabled=true;$('manualShuffle').disabled=true;let i=0;const next=()=>{if(i>=recipe.steps.length){shuffleBusy=false;$('shuffle').disabled=false;$('manualShuffle').disabled=false;render();saveLocal();play('shuffle');setStatus('「'+recipe.name+'」の手順を完了しました。');workflowOptions?.onComplete?.(true);return}const st=normStep(recipe.steps[i++]),reps=st.reps;let round=0;const perform=()=>{if(round>=reps){next();return}const current=round++;const direction=st.washDirection==='alternate'?(current%2===0?'cw':'ccw'):st.washDirection;setStatus('工程 '+i+'/'+recipe.steps.length+'：'+methods[st.method]+' '+round+'/'+reps+(st.method==='wash'?'巡 · '+({random:'ランダム',cw:'右回転',ccw:'左回転',alternate:'交互回転'})[direction]:st.method==='pile'?'回 · '+st.groups+'分割':st.method==='hindu'||st.method==='overhand'?'巡 · '+st.groups+'回取り分け':'回'));animateShuffle(st.method,()=>{state.deck=applyShuffleMethod(state.deck.slice(),st,manual,current);if(settings.reversals&&st.method==='wash')state.deck.forEach(c=>{if(Math.random()<.45)c.reversed=Math.random()<.5});perform()},manual,{direction,piles:st.groups})};perform()};next()}
+function escapeHTML(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}function runRecipe(manual=false,workflowOptions=null){if(document.getElementById('physicalCutOverlay')){setStatus('カット中はウォッシュ・シャッフルできません。');workflowOptions?.onComplete?.(false);return;}if(shuffleBusy){workflowOptions?.onComplete?.(false);return}if(state.deck.length<2){setStatus('シャッフルには2枚以上必要です。');workflowOptions?.onComplete?.(false);return}const recipe=workflowOptions?.recipeId?recipes.find(r=>r.id===workflowOptions.recipeId):selectedRecipe();if(!recipe){setStatus('指定されたシャッフル手順が見つかりません。');workflowOptions?.onComplete?.(false);return false}shuffleBusy=true;$('shuffle').disabled=true;$('manualShuffle').disabled=true;let i=0;const next=()=>{if(i>=recipe.steps.length){shuffleBusy=false;$('shuffle').disabled=false;$('manualShuffle').disabled=false;render();saveLocal();play('shuffle');setStatus('「'+recipe.name+'」の手順を完了しました。');workflowOptions?.onComplete?.(true);return}const st=normStep(recipe.steps[i++]),reps=st.reps;let round=0;const perform=()=>{if(round>=reps){next();return}const current=round++;const direction=st.washDirection==='alternate'?(current%2===0?'cw':'ccw'):st.washDirection;setStatus('工程 '+i+'/'+recipe.steps.length+'：'+methods[st.method]+' '+round+'/'+reps+(st.method==='wash'?'巡 · '+({random:'ランダム',cw:'右回転',ccw:'左回転',alternate:'交互回転'})[direction]:st.method==='pile'?'回 · '+st.groups+'分割':st.method==='hindu'||st.method==='overhand'?'巡 · '+st.groups+'回取り分け':'回'));animateShuffle(st.method,()=>{state.deck=applyShuffleMethod(state.deck.slice(),st,manual,current);if(settings.reversals&&st.method==='wash')state.deck.forEach(c=>{if(Math.random()<.45)c.reversed=Math.random()<.5});perform()},manual,{direction,piles:st.groups})};perform()};next()}
 // View state is independent of a reading, card sizes, and future deck instances.
 const TABLE_CAMERA_KEY='tabula_table_camera_v1';
 let tableCamera={scale:1,x:0,y:0},cameraPanMode=false;
@@ -3077,9 +3077,10 @@ function compareModal(){
 function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定を初期化しました。配札と記録は残ります。')}
 function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false,workflowOptions=null){
+ if(!workflowOptions&&spreadDealPreparing){setStatus('ディール手順の実行中はカット操作を変更できません。');return}
  if(!workflowOptions&&Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
- if(state.deck.length<2){setStatus('カットには2枚以上必要です。');return}
- if(document.getElementById('physicalCutOverlay'))return;
+ if(state.deck.length<2){setStatus('カットには2枚以上必要です。');workflowOptions?.onComplete?.(false);return}
+ if(document.getElementById('physicalCutOverlay')){workflowOptions?.onComplete?.(false);return}
  const count=Math.max(2,Math.min(Number(workflowOptions?.count??settings.cutCount)||3,8,state.deck.length));
  const lengths=TabulaShuffle.cutLengths(state.deck.length,count),sequence=[];
  const surface=$('surface'),overlay=document.createElement('div');
@@ -3293,6 +3294,7 @@ function commitTableChange(){
 }
 
 function activateDeck(id,ask=true){
+ if(spreadDealPreparing){setStatus('ディール手順の実行中はデッキを変更できません。');refreshDeckPicker();return false}
  if(dualSession){setStatus('デッキの定義は一組モードで変更してください。');refreshDeckPicker();return false}
  const deck=deckLibrary.find(d=>d.id===id)||null;
  const blueprint=blueprintFor(id);
@@ -3728,6 +3730,7 @@ function openSequentially(){
 /* All spread selectors must use the same collect-or-cancel transaction.
    Never discard pile frames containing physical cards. */
 function changeActiveSpread(nextSpread){
+ if(spreadDealPreparing){setStatus('ディール手順の実行中はスプレッドを変更できません。');return false}
  if(nextSpread===settings.spread){if(nextSpread==='grandStar'){applySpreadCardSize(nextSpread);render();saveLocal()}syncSpreadShortcut();return true}
  if(dualBusy())return false;
  const occupied=state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length);
@@ -3740,6 +3743,7 @@ function changeActiveSpread(nextSpread){
  // Do not discard cards if a future pile type cannot be recovered.
  if((state.tablePiles||[]).some(p=>p.cards.length)){setStatus('束にカードが残っています。展開法を変更できません。');return false}
  settings.spread=nextSpread;
+ delete state.waiteFacing;delete state.spreadDealProgress;
  resetFramesForSpread(nextSpread);
  state.tablePiles=[];
  initializePresetFrames(state,nextSpread);
