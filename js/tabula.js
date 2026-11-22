@@ -2601,6 +2601,9 @@ function showSpreadDealShortageDialog(required,available){
 async function runSpreadDealPrerequisites(){
  const plan=spreadDealPlan();if(!plan||spreadWorkbench)return true;
  const previous=state.spreadDealProgress?.spread===settings.spread?state.spreadDealProgress:null;
+ if(previous?.pile&&dualSession&&previous.pile!==dualSession.activePile){
+  setStatus('このディールは山札'+previous.pile+'で進行中です。元の山札に切り替えてから再開してください。');return false;
+ }
  if(!previous&&(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length)))return true;
  const required=getSlots().length;
  if(!state.deck.length&&!previous&&!dualSession)initialize();
@@ -2624,7 +2627,7 @@ async function runSpreadDealPrerequisites(){
  // shuffles or cuts stay completed, like physical handling of a real deck.
  for(let stepIndex=previous?.stepIndex||0;stepIndex<plan.steps.length;stepIndex++){
   const step=plan.steps[stepIndex];
-  state.spreadDealProgress={spread:startingSpread,stepIndex,repeat:stepIndex===(previous?.stepIndex??-1)?(previous.repeat||0):0};
+  state.spreadDealProgress={spread:startingSpread,pile:startingPile||null,stepIndex,repeat:stepIndex===(previous?.stepIndex??-1)?(previous.repeat||0):0};
   saveLocal();
   if(!sameDealContext()||spreadWorkbench){
    setStatus('ディール中に卓が変更されたため、手順を中断しました。');return false;
@@ -2664,7 +2667,7 @@ async function runSpreadDealPrerequisites(){
     state.spreadDealProgress.repeat=repeat+1;saveLocal();
    }
   }
-  state.spreadDealProgress={spread:startingSpread,stepIndex:stepIndex+1,repeat:0};saveLocal();
+  state.spreadDealProgress={spread:startingSpread,pile:startingPile||null,stepIndex:stepIndex+1,repeat:0};saveLocal();
  }
  delete state.spreadDealProgress;saveLocal();
  return true;
@@ -5623,8 +5626,6 @@ function dualFresh(){
  if(usesPlayingBack())w.backColors.A=playingBackPreference();
  w.appearances={A:'standard',B:'standard'};
  w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
- w.tables.table1.spreadDealProgress=dualClone(state.spreadDealProgress||null);
- w.tables.table1.waiteFacing=state.waiteFacing||null;
  initializePresetFrames(w.tables.table1,settings.spread);
  w.tables.table2.spread='free';w.tables.table2.cardSize=spreadCardSize('free');
  // Give each physical table its own persistent visual identity.
