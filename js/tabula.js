@@ -169,7 +169,7 @@ function spreadCapture(){
  closeSpreadArchive();
  const piles=state.tablePiles||[],count=state.placed.length+piles.length;
  if(!count){alert('フリースプレッドでカードまたは空の束を配置してから実行してください。');return}
- if(count>52){alert('スプレッドに登録できる配置は52位置までです。');return}
+ if(count>TabulaSpreadStore.MAX_SPREAD_SLOTS){alert('スプレッドに登録できる配置は'+TabulaSpreadStore.MAX_SPREAD_SLOTS+'位置までです。');return}
  if(spreadWorkbench)return;
  // Editing uses temporary visual cards for physical pile frames. Restore the
  // complete original session on both save and cancel, including pile contents.
