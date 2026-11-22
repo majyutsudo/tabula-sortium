@@ -1234,7 +1234,8 @@ function compactShortcutShown(){
 }
 function refillShortcutShown(){
  const overrides=settings.refillShortcutVisibility;
- return !!(overrides&&typeof overrides==='object'&&overrides[settings.spread]===true);
+ if(overrides&&typeof overrides==='object'&&Object.hasOwn(overrides,settings.spread))return overrides[settings.spread]===true;
+ return settings.spread==='monteCarlo';
 }
 function syncCompactShortcut(){
  const surface=$('surface');if(!surface)return;
@@ -3836,10 +3837,10 @@ const HELP_CONTENT="\n<p>TABULA SORTIUMは、タロット、プレイングカ�
 
 $('openHelp').addEventListener('click',()=>{modal('<div class="help-popup-content"><h2>操作説明・仕様</h2>'+HELP_CONTENT+'</div>')});
 
-const ABOUT_MARKUP='<div class="about-panel"><img class="about-icon" src="images/ui/icon-00.png" alt="TABULA SORTIUM アイコン"><h2>TABULA SORTIUM</h2><p class="about-subtitle">THE VIRTUAL DIVINATION TABLE</p><hr class="about-divider"><p class="about-credits">Created by <a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><p class="about-meta">Version 0.363</p><p class="about-meta">© 2026 Majyutsudo</p><button type="button" id="aboutLegal" class="about-license">License &amp; Disclaimer</button></div>';
+const ABOUT_MARKUP='<div class="about-panel"><img class="about-icon" src="images/ui/icon-00.png" alt="TABULA SORTIUM アイコン"><h2>TABULA SORTIUM</h2><p class="about-subtitle">THE VIRTUAL DIVINATION TABLE</p><hr class="about-divider"><p class="about-credits">Created by <a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><p class="about-meta">Version 0.363</p><p class="about-meta">© 2026 Majyutsudo</p><button type="button" id="aboutLegal" class="about-license">Copyright &amp; Disclaimer</button></div>';
 function openAbout(){const publishedVersion=document.title.match(/TABULA SORTIUM v([0-9.]+)/)?.[1]||'unknown';modal(ABOUT_MARKUP.replace('Version 0.363','Version '+publishedVersion));$('aboutLegal').onclick=showAboutLegal}
 function showAboutLegal(){
- modal('<div class="about-legal"><h2>License &amp; Disclaimer</h2><p>© 2026 Majyutsudo. TABULA SORTIUM の名称、独自のプログラムおよび図像の権利については、それぞれの権利者に帰属します。この表示自体は、プログラムやカード画像の複製・改変・再配布を許可するライセンスではありません。</p><p>本アプリは占術の実践・研究・創作のための道具です。カードの解釈や占断の結果は、使用する方の判断によるものです。</p><p>お問い合わせ先：<a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><button type="button" id="aboutBack" class="about-back">Aboutに戻る</button></div>');
+ modal('<div class="about-legal"><h2>Copyright &amp; Disclaimer</h2><p>© 2026 Majyutsudo. All rights reserved.</p><p>TABULA SORTIUM の名称、プログラム、カード画像およびその他の図像に関する権利は、Majyutsudo またはそれぞれの権利者に帰属します。権利者の許可なく、これらを複製・改変・再配布することを禁じます。</p><p>本アプリは占術の実践・研究・創作のための道具です。カードの解釈および占断の結果については、利用者ご自身の判断に委ねられます。</p><p>お問い合わせ先：<a href="https://majyutsudo.wpcomstaging.com/" target="_blank" rel="noopener noreferrer">Majyutsudo</a></p><button type="button" id="aboutBack" class="about-back">Aboutに戻る</button></div>');
  $('aboutBack').onclick=openAbout;
 }
 $('openAbout').addEventListener('click',openAbout);
