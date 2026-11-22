@@ -1021,6 +1021,11 @@ function getSlots(){
    }
   }
  }
+ if(settings.spread==='waiteCeltic'&&state.waiteFacing==='left'&&slots[4]&&slots[5]){
+  const former={x:slots[4].x,y:slots[4].y};
+  slots[4].x=slots[5].x;slots[4].y=slots[5].y;
+  slots[5].x=former.x;slots[5].y=former.y;
+ }
  return slots;
 }function metrics(){const rect=$('zone').getBoundingClientRect();const z={width:$('zone').offsetWidth,height:$('zone').offsetHeight};const scale=zoom;const pc=window.innerWidth>780;const w=Math.min(z.width*(pc?.129:.12),z.height*(pc?.268:.25),pc?92:85)*scale;return{w,h:w*1.52,z:rect}}function shortName(c){c=displayCard(c);if(activeDeck()&&activeDeck().names[c.id])return c.name;if(c.group==='major')return c.name;const nm={wands:'ワンド',cups:'カップ',swords:'ソード',pentacles:'ペンタクル'}[c.suit]||'';const rank=c.number<=10?(c.number===1?'A':String(c.number)):['ペイジ','ナイト','クイーン','キング'][c.number-11];return nm+(c.number<=10?rank:'の'+rank)}const TABULA_TAROT_IMAGES={"major_00":"images/decks/tabula-tarot/base/major_00.webp","major_01":"images/decks/tabula-tarot/base/major_01.webp","major_02":"images/decks/tabula-tarot/base/major_02.webp","major_03":"images/decks/tabula-tarot/base/major_03.webp","major_04":"images/decks/tabula-tarot/base/major_04.webp","major_05":"images/decks/tabula-tarot/base/major_05.webp","major_06":"images/decks/tabula-tarot/base/major_06.webp","major_07":"images/decks/tabula-tarot/base/major_07.webp","major_08":"images/decks/tabula-tarot/base/major_08.webp","major_09":"images/decks/tabula-tarot/base/major_09.webp","major_10":"images/decks/tabula-tarot/base/major_10.webp","major_11":"images/decks/tabula-tarot/base/major_11.webp","major_12":"images/decks/tabula-tarot/base/major_12.webp","major_13":"images/decks/tabula-tarot/base/major_13.webp","major_14":"images/decks/tabula-tarot/base/major_14.webp","major_15":"images/decks/tabula-tarot/base/major_15.webp","major_16":"images/decks/tabula-tarot/base/major_16.webp","major_17":"images/decks/tabula-tarot/base/major_17.webp","major_18":"images/decks/tabula-tarot/base/major_18.webp","major_19":"images/decks/tabula-tarot/base/major_19.webp","major_20":"images/decks/tabula-tarot/base/major_20.webp","major_21":"images/decks/tabula-tarot/base/major_21.webp","wands_14":"images/decks/tabula-tarot/base/wands_14.webp","wands_13":"images/decks/tabula-tarot/base/wands_13.webp","wands_12":"images/decks/tabula-tarot/base/wands_12.webp","wands_11":"images/decks/tabula-tarot/base/wands_11.webp","cups_14":"images/decks/tabula-tarot/base/cups_14.webp","cups_13":"images/decks/tabula-tarot/base/cups_13.webp","cups_12":"images/decks/tabula-tarot/base/cups_12.webp","cups_11":"images/decks/tabula-tarot/base/cups_11.webp","swords_14":"images/decks/tabula-tarot/base/swords_14.webp","swords_13":"images/decks/tabula-tarot/base/swords_13.webp","swords_12":"images/decks/tabula-tarot/base/swords_12.webp","swords_11":"images/decks/tabula-tarot/base/swords_11.webp","pentacles_14":"images/decks/tabula-tarot/base/pentacles_14.webp","pentacles_13":"images/decks/tabula-tarot/base/pentacles_13.webp","pentacles_12":"images/decks/tabula-tarot/base/pentacles_12.webp","pentacles_11":"images/decks/tabula-tarot/base/pentacles_11.webp","wands_01":"images/decks/tabula-tarot/base/wands_01.webp","wands_02":"images/decks/tabula-tarot/base/wands_02.webp","wands_03":"images/decks/tabula-tarot/base/wands_03.webp","wands_04":"images/decks/tabula-tarot/base/wands_04.webp","wands_05":"images/decks/tabula-tarot/base/wands_05.webp","wands_06":"images/decks/tabula-tarot/base/wands_06.webp","wands_07":"images/decks/tabula-tarot/base/wands_07.webp","wands_08":"images/decks/tabula-tarot/base/wands_08.webp","wands_09":"images/decks/tabula-tarot/base/wands_09.webp","wands_10":"images/decks/tabula-tarot/base/wands_10.webp","cups_01":"images/decks/tabula-tarot/base/cups_01.webp","cups_02":"images/decks/tabula-tarot/base/cups_02.webp","cups_03":"images/decks/tabula-tarot/base/cups_03.webp","cups_04":"images/decks/tabula-tarot/base/cups_04.webp","cups_05":"images/decks/tabula-tarot/base/cups_05.webp","cups_06":"images/decks/tabula-tarot/base/cups_06.webp","cups_07":"images/decks/tabula-tarot/base/cups_07.webp","cups_08":"images/decks/tabula-tarot/base/cups_08.webp","cups_09":"images/decks/tabula-tarot/base/cups_09.webp","cups_10":"images/decks/tabula-tarot/base/cups_10.webp","swords_01":"images/decks/tabula-tarot/base/swords_01.webp","swords_02":"images/decks/tabula-tarot/base/swords_02.webp","swords_03":"images/decks/tabula-tarot/base/swords_03.webp","swords_04":"images/decks/tabula-tarot/base/swords_04.webp","swords_05":"images/decks/tabula-tarot/base/swords_05.webp","swords_06":"images/decks/tabula-tarot/base/swords_06.webp","swords_07":"images/decks/tabula-tarot/base/swords_07.webp","swords_08":"images/decks/tabula-tarot/base/swords_08.webp","swords_09":"images/decks/tabula-tarot/base/swords_09.webp","swords_10":"images/decks/tabula-tarot/base/swords_10.webp","pentacles_01":"images/decks/tabula-tarot/base/pentacles_01.webp","pentacles_02":"images/decks/tabula-tarot/base/pentacles_02.webp","pentacles_03":"images/decks/tabula-tarot/base/pentacles_03.webp","pentacles_04":"images/decks/tabula-tarot/base/pentacles_04.webp","pentacles_05":"images/decks/tabula-tarot/base/pentacles_05.webp","pentacles_06":"images/decks/tabula-tarot/base/pentacles_06.webp","pentacles_07":"images/decks/tabula-tarot/base/pentacles_07.webp","pentacles_08":"images/decks/tabula-tarot/base/pentacles_08.webp","pentacles_09":"images/decks/tabula-tarot/base/pentacles_09.webp","pentacles_10":"images/decks/tabula-tarot/base/pentacles_10.webp"};
 function cardMark(c,appearance='standard'){c=displayCard(c);if(activeBlueprint())return blueprintCardMarkup(c);
@@ -2425,7 +2430,8 @@ function installPhysicalCardPicker(){
  },true);
 }
 function nextPlacedStackOrder(){return Math.max(0,...state.placed.map(c=>Number(c.dragOrder)||0))+1}
-function drawAt(slot=null,x=null,y=null,animateArrival=true){if(document.getElementById('physicalCutOverlay')){setStatus('カット中は配札できません。');return;}if(settings.spread==='fourSeasons'&&fourSeasonsHandGuard())return;if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();if(settings.spread==='fourSeasons'&&slot!==null&&slot>=6){setStatus('フォー・シーズンズの自動配札先は①〜⑥のみです。');return}if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('基本の配札は完了しました。山札をドラッグして補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
+function drawAt(slot=null,x=null,y=null,animateArrival=true){if(document.getElementById('physicalCutOverlay')){setStatus('カット中は配札できません。');return;}if(settings.spread==='fourSeasons'&&fourSeasonsHandGuard())return;if(!state.deck.length){setStatus('山札にカードがありません。');return}const slots=getSlots();const presetFacing=spreadDealPlan()?.steps.find(step=>step.type==='deal-remaining')?.faceUp;
+ const dealFaceUp=typeof presetFacing==='boolean'?presetFacing:settings.dealFaceUp===true;if(settings.spread==='fourSeasons'&&slot!==null&&slot>=6){setStatus('フォー・シーズンズの自動配札先は①〜⑥のみです。');return}if(settings.spread!=='free'&&slot===null&&x===null&&y===null){slot=nextDealSlot();if(slot<0){setStatus('基本の配札は完了しました。山札をドラッグして補助カードを追加できます。');return}}if(slot!==null&&hasOccupiedSpreadSlot(slot)){setStatus('その位置にはすでにカードがあります。');return}const refillPile=slot!==null?anchoredPileAtSlot(slot):null;const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)];
  const seen=new Set(),duplicate=physical.find(c=>{const key=c.instanceId||c.id;if(seen.has(key))return true;seen.add(key);return false});
  if(duplicate){setStatus('カードが重複しています（'+duplicate.id+'）。バックアップを確認してください。');return}
  if(!applyDealRemoval())return;
@@ -2433,7 +2439,7 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(document.getElem
  if(refillPile){
   // Refill the original registered location without creating a second card
   // location. Keep its ID, role and fan properties intact.
-  const opening=TabulaTablePiles.roleOf(refillPile)==='waste'||settings.dealFaceUp===true;
+  const opening=TabulaTablePiles.roleOf(refillPile)==='waste'||dealFaceUp;
   const sourceRect=$('deck').getBoundingClientRect();
   TabulaTablePiles.drawFromDeck(state,refillPile.id,opening);
   play('deal');render();saveLocal();
@@ -2457,9 +2463,9 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(document.getElem
   }
   return Promise.resolve();
  }
- const sourceRect=$(dualSession&&dualSession.activePile==='B'&&!isIndependentTables()?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:settings.dealFaceUp===true,dragOrder:nextPlacedStackOrder()});play('deal');render();
+ const sourceRect=$(dualSession&&dualSession.activePile==='B'&&!isIndependentTables()?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:dealFaceUp,dragOrder:nextPlacedStackOrder()});play('deal');render();
  const arrival=animateArrival?animateCardFromDeck(state.placed.length-1,sourceRect):Promise.resolve();
- setStatus(`配札しました（${state.placed.length}枚・${settings.dealFaceUp?'表':'裏'}向き）。${settings.dealFaceUp?'':'カードをクリックして開いてください。'}`);
+ setStatus(`配札しました（${state.placed.length}枚・${dealFaceUp?'表':'裏'}向き）。${dealFaceUp?'':'カードをクリックして開いてください。'}`);
  saveLocal();return arrival;
 }
 // Previous fixed setTimeout(i*340) starts could pile up after a slow render,
@@ -2514,6 +2520,10 @@ function chooseSpreadDealCard(step){
   const hint=document.createElement('p');hint.textContent='選択したカードを'+step.target+'番「'+(getSlots()[step.target-1]?.name||'代表カード')+'」に配置し、残りのカードを配ります。';hint.style.cssText='font-size:13px;line-height:1.65;';
   const recommendationNote=document.createElement('p');recommendationNote.textContent=step.recommendedNote||((step.recommendations||[]).length?'推奨カードは★印で先頭に表示します。推奨以外のカードも選択できます。':'');
   recommendationNote.style.cssText='font-size:12px;line-height:1.65;color:#d6c39a;margin:8px 0 12px;';
+  const facingRow=document.createElement('label');facingRow.style.cssText='display:block;margin:12px 0;font-size:13px;';
+  const facing=document.createElement('select');facing.setAttribute('aria-label','相談者カードの向き');
+  for(const [value,name] of [['left','左向き（第6札が左・第5札が右）'],['right','右向き（第5札が左・第6札が右）']])facing.add(new Option(name,value));
+  facing.value='left';facingRow.append(document.createTextNode('相談者カードの向き： '),facing);facingRow.hidden=step.askFacing!==true;
   const search=document.createElement('input');search.type='search';search.placeholder='カード名を検索';search.setAttribute('aria-label','カード名を検索');search.style.cssText='width:100%;box-sizing:border-box;padding:8px;background:#101a16;color:#eee;border:1px solid #7e7053;border-radius:4px;';
   const label=document.createElement('label');label.textContent='正逆位置： ';label.style.cssText='display:block;margin:14px 0;font-size:13px;';
   const orientation=document.createElement('select');orientation.setAttribute('aria-label','選んだカードの正逆位置');
@@ -2522,7 +2532,7 @@ function chooseSpreadDealCard(step){
   const entries=document.createElement('div');entries.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;margin:12px 0;';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';cancel.style.cssText='padding:8px 14px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;';
   const footer=document.createElement('div');footer.style.cssText='display:flex;justify-content:flex-end;';
-  footer.append(cancel);panel.append(heading,hint,recommendationNote,search,label,entries,footer);overlay.append(panel);
+  footer.append(cancel);panel.append(heading,hint,recommendationNote,facingRow,search,label,entries,footer);overlay.append(panel);
   let finished=false;const finish=value=>{if(finished)return;finished=true;document.removeEventListener('keydown',escape);overlay.remove();resolve(value)};
   const escape=event=>{if(event.key==='Escape'){event.preventDefault();finish(null)}};
   cancel.onclick=()=>finish(null);overlay.addEventListener('pointerdown',event=>{if(event.target===overlay)finish(null)});
@@ -2536,7 +2546,7 @@ function chooseSpreadDealCard(step){
     if(q&&!name.toLocaleLowerCase().includes(q)&&!card.id.toLocaleLowerCase().includes(q))continue;
     const button=document.createElement('button');button.type='button';button.textContent=name+(recommended.includes(card.id)?' ★':'');
     button.style.cssText='padding:9px 7px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;cursor:pointer;text-align:left;font-size:12px;';
-    button.onclick=()=>finish({identity:card.instanceId||card.id,orientation:orientation.value});
+    button.onclick=()=>finish({identity:card.instanceId||card.id,orientation:orientation.value,...(step.askFacing?{facing:facing.value}:{})});
     entries.append(button);
    }
    if(!entries.childElementCount){const empty=document.createElement('p');empty.textContent='該当するカードがありません。';entries.append(empty)}
@@ -2584,7 +2594,7 @@ async function runSpreadDealPrerequisites(){
    setStatus('選択可能なカードが山札にありません。ディール設定またはデッキを確認してください。');return false;
   }
  }
- const startingSpread=settings.spread,startingDeck=state.deck;
+ const startingSpread=settings.spread;
  // Every operation is performed in the order registered by the spread.
  // A cancelled selection leaves its own step untouched; already completed
  // shuffles or cuts stay completed, like physical handling of a real deck.
@@ -2594,14 +2604,16 @@ async function runSpreadDealPrerequisites(){
   }
   if(step.type==='select-card'){
    if(hasOccupiedSpreadSlot(step.target-1))continue;
+   const selectionDeck=state.deck;
    const selected=await chooseSpreadDealCard(step);
    if(!selected){setStatus('相談者カードの選択を中止しました。');return false}
-   if(settings.spread!==startingSpread||dualSession||spreadWorkbench||state.deck!==startingDeck){
+   if(settings.spread!==startingSpread||dualSession||spreadWorkbench||state.deck!==selectionDeck){
     setStatus('選択中に卓が変わったため、ディールを中止しました。');return false;
    }
    const index=state.deck.findIndex(c=>(c.instanceId||c.id)===selected.identity);
    if(index<0||hasOccupiedSpreadSlot(step.target-1)){setStatus('選択カードを配置できませんでした。');return false}
    const original=state.deck.map(c=>({...c}));
+   if(step.askFacing&&['left','right'].includes(selected.facing))state.waiteFacing=selected.facing;
    const [card]=state.deck.splice(index,1),slot=step.target-1,pos=getSlots()[slot];
    if(selected.orientation==='upright')card.reversed=false;
    else if(selected.orientation==='reversed')card.reversed=true;
