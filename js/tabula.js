@@ -17,7 +17,7 @@ function refreshCustomPresets(){Object.keys(presets).filter(k=>k.startsWith('cus
 function storeSpreadLibrary(){TabulaSpreadStore.write(localStorage,SPREAD_LIBRARY_KEY,spreadLibrary);refreshCustomPresets();if($('spreadArchive')&&!$('spreadArchive').hidden)renderSpreadArchive()}
 let spreadWorkbench=null;let spreadSnap=true;
 function validStoredDeckPosition(p){return !!p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100}
-function spreadDeckPosition(id=settings.spread){const p=spreadLibrary.find(v=>v.id===id)?.deckPosition;return validStoredDeckPosition(p)?{x:p.x,y:p.y}:null}
+function spreadDeckPosition(id=settings.spread){const p=spreadLibrary.find(v=>v.id===id)?.deckPosition||TabulaCatalog.builtinSpreadDeckPositions?.[id];return validStoredDeckPosition(p)?{x:p.x,y:p.y}:null}
 function syncSpreadDeckPositionButton(){const b=$('saveSpreadDeckPosition');if(b)b.hidden=!!dualSession||!!spreadWorkbench||!spreadLibrary.some(v=>v.id===settings.spread)}
 function saveDeckPositionForSpread(){const spread=spreadLibrary.find(v=>v.id===settings.spread);if(!spread||dualSession||spreadWorkbench)return;const p=settings.deckPosition;if(!validStoredDeckPosition(p)){setStatus('山札を移動してから、この位置を保存してください。');return}const before=spread.deckPosition;spread.deckPosition={x:p.x,y:p.y};try{storeSpreadLibrary();setStatus('「'+spread.name+'」に山札の位置を保存しました。')}catch(e){if(before===undefined)delete spread.deckPosition;else spread.deckPosition=before;setStatus('山札の位置を保存できませんでした。')}}
 function closeSpreadArchive(){$('spreadArchive').hidden=true;document.body.classList.remove('spread-archive-open');setNotebookButtonState(false);applyDesktopTableView();applyTableCamera();render()}
