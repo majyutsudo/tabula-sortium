@@ -1,8 +1,9 @@
 /* TABULA SORTIUM — custom spread storage rules. */
 (function(root){'use strict';
+const MAX_SPREAD_SLOTS=100;
 function validSpread(v){
   return !!(v&&typeof v.id==='string'&&Array.isArray(v.slots)
-    &&v.slots.length<=52&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
+    &&v.slots.length<=MAX_SPREAD_SLOTS&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
 }
 function fromReading(reading,id,name){
  if(!reading||!Array.isArray(reading.placed))throw Error('占例の配置を読み取れません。');
@@ -12,7 +13,7 @@ function fromReading(reading,id,name){
   ...(reading.tablePiles||[]).map((p,i)=>({...p,_order:reading.placed.length+i,frameRole:p.role||'pile'}))
  ].sort((a,b)=>(Number.isInteger(a.slot)?a.slot:1e5)-(Number.isInteger(b.slot)?b.slot:1e5)||a._order-b._order);
  const source=recorded||fallback;
- if(!source?.length||source.length>52)throw Error('登録できる配置位置がありません（上限52位置）。');
+ if(!source?.length||source.length>MAX_SPREAD_SLOTS)throw Error('登録できる配置位置がありません（上限'+MAX_SPREAD_SLOTS+'位置）。');
  const slots=source.map((p,i)=>{
   const slot={x:p.x,y:p.y,angle:p.angle??0,name:typeof p.name==='string'&&p.name.trim()?p.name:'位置'+(i+1)};
   if(typeof p.detail==='string')slot.detail=p.detail;
@@ -31,7 +32,7 @@ function portableSpread(v){
  if(!v||typeof v!=='object'||Array.isArray(v))throw Error('スプレッド情報がありません。');
  const name=typeof v.name==='string'?v.name.trim():'';
  if(!name||name.length>100)throw Error('スプレッド名が不正です。');
- if(!Array.isArray(v.slots)||v.slots.length<1||v.slots.length>52)throw Error('配置数は1〜52にしてください。');
+ if(!Array.isArray(v.slots)||v.slots.length<1||v.slots.length>MAX_SPREAD_SLOTS)throw Error('配置数は1〜'+MAX_SPREAD_SLOTS+'にしてください。');
  const slots=v.slots.map((q,i)=>{
   if(!q||typeof q!=='object'||Array.isArray(q)||![q.x,q.y,q.angle].every(Number.isFinite)
     ||q.x<0||q.x>100||q.y<0||q.y>100||Math.abs(q.angle)>3600)
@@ -75,5 +76,5 @@ function read(storage,key){
 function write(storage,key,items){
   storage.setItem(key,JSON.stringify(items));
 }
-root.TabulaSpreadStore=Object.freeze({validSpread,fromReading,read,write,portableSpread,exportPortable,importPortable});
+root.TabulaSpreadStore=Object.freeze({MAX_SPREAD_SLOTS,validSpread,fromReading,read,write,portableSpread,exportPortable,importPortable});
 })(globalThis);
