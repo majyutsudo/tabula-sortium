@@ -8,7 +8,7 @@ const BUILTIN=Object.freeze({
   {type:'deal-remaining',order:'slot-order',excludeOccupied:true}
  ]},
  grandStar:{version:1,steps:[
-  {type:'select-card',target:1,role:'significator',orientation:'keep',allowed:'playing-court',recommendations:[]},
+  {type:'select-card',target:1,role:'significator',orientation:'keep',allowed:'any',recommendations:["c_clubs_r11","c_clubs_r12","c_clubs_r13","c_hearts_r11","c_hearts_r12","c_hearts_r13","c_spades_r11","c_spades_r12","c_spades_r13","c_diamonds_r11","c_diamonds_r12","c_diamonds_r13"],recommendedNote:'伝統的には32枚のプレイングカードを用い、人物札（J・Q・K）から相談者カードを選びます。現在の山札からは任意のカードを選択できます。'},
   {type:'deal-remaining',order:'slot-order',excludeOccupied:true}
  ]}
 });
@@ -24,8 +24,9 @@ function normalize(plan,count){
    if(step.allowed!==undefined&&!['any','playing-court'].includes(step.allowed))throw Error('選択可能なカードの範囲が不正です。');
    if(step.role!==undefined&&step.role!=='significator'&&step.role!=='ordinary')throw Error('カードの役割が不正です。');
    if(step.orientation!==undefined&&!['keep','upright','reversed','random'].includes(step.orientation))throw Error('正逆位置の指定が不正です。');
+   if(step.recommendedNote!==undefined&&(typeof step.recommendedNote!=='string'||step.recommendedNote.length>500))throw Error('推奨カードの説明が不正です。');
    if(step.recommendations!==undefined&&(!Array.isArray(step.recommendations)||step.recommendations.length>12||step.recommendations.some(v=>typeof v!=='string'||v.length>100)))throw Error('推奨カードの指定が不正です。');
-   return {type:'select-card',target:step.target,role:step.role||'ordinary',orientation:step.orientation||'keep',allowed:step.allowed||'any',recommendations:[...new Set(step.recommendations||[])]};
+   return {type:'select-card',target:step.target,role:step.role||'ordinary',orientation:step.orientation||'keep',allowed:step.allowed||'any',recommendations:[...new Set(step.recommendations||[])],recommendedNote:step.recommendedNote||''};
   }
   if(step.type==='deal-remaining'){
    if(remaining||i!==plan.steps.length-1||step.order!=='slot-order'||step.excludeOccupied!==true)throw Error('残りの配札工程が不正です。');
