@@ -4923,9 +4923,10 @@ const inspectSingle=document.createElement('button'),inspectMulti=document.creat
 inspectSingle.type=inspectMulti.type='button';
 inspectSingle.textContent='一枚を見る';inspectMulti.textContent='複数選択';
 const inspectCount=document.createElement('span');inspectCount.className='inspection-count';inspectCount.setAttribute('aria-live','polite');
-const inspectCompare=document.createElement('button');inspectCompare.type='button';inspectCompare.textContent='比較表示';
+const inspectAll=document.createElement('button');inspectAll.type='button';inspectAll.textContent='全てを選択';
+ const inspectCompare=document.createElement('button');inspectCompare.type='button';inspectCompare.textContent='比較表示';
 const inspectClear=document.createElement('button');inspectClear.type='button';inspectClear.textContent='選択解除';
-inspectionTray.append(inspectSingle,inspectMulti,inspectCount,inspectCompare,inspectClear);
+inspectionTray.append(inspectSingle,inspectMulti,inspectCount,inspectAll,inspectCompare,inspectClear);
 document.body.append(inspectionTray);
 function refreshInspectionTray(){
  inspectionTray.hidden=!inspectMode;
@@ -4933,9 +4934,11 @@ function refreshInspectionTray(){
  inspectMulti.setAttribute('aria-pressed',String(inspectSelectionMode==='multi'));
  const multi=inspectSelectionMode==='multi';
  inspectCount.hidden=!multi;
+ inspectAll.hidden=!multi;
  inspectCompare.hidden=!multi;
  inspectClear.hidden=!multi;
  inspectCount.textContent=inspectSelection.length+'枚選択';
+ inspectAll.disabled=!state.placed.some(p=>p.faceUp&&workingCard(p.id));
  inspectCompare.disabled=inspectSelection.length<2;
  inspectClear.disabled=!inspectSelection.length;
 }
@@ -4948,6 +4951,12 @@ function chooseInspectionSelectionMode(mode){
 inspectSingle.onclick=()=>chooseInspectionSelectionMode('single');
 inspectMulti.onclick=()=>chooseInspectionSelectionMode('multi');
 inspectClear.onclick=()=>{inspectSelection=[];refreshInspectionTray();render()};
+ inspectAll.onclick=()=>{
+  // Select only visible, inspectable cards without revealing or moving them.
+  inspectSelection=state.placed.map((card,index)=>card.faceUp&&workingCard(card.id)?index:-1).filter(index=>index>=0);
+  refreshInspectionTray();render();
+  setStatus(inspectSelection.length+'枚の表向きカードを選択しました。「比較表示」で一覧を確認できます。');
+ };
 function openInspectionComparison(){
  const entries=inspectSelection.map(i=>({index:i,card:state.placed[i]})).filter(x=>x.card?.faceUp&&workingCard(x.card.id));
  if(entries.length<2){setStatus('比較する表向きのカードを2枚以上選んでください。');return}
