@@ -23,7 +23,41 @@ function saveDeckPositionForSpread(){const spread=spreadLibrary.find(v=>v.id===s
 function closeSpreadArchive(){$('spreadArchive').hidden=true;document.body.classList.remove('spread-archive-open');setNotebookButtonState(false);applyDesktopTableView();applyTableCamera();render()}
 function openSpreadArchive(){renderSpreadArchive();$('archiveCapture').hidden=settings.spread!=='free';$('spreadArchive').hidden=false;document.body.classList.add('spread-archive-open');setNotebookButtonState(true);$('spreadArchive').scrollIntoView({block:'nearest',behavior:'smooth'})}
 const spreadThumb=TabulaUiFormat.spreadThumb;
-function renderSpreadArchive(){const root=$('archiveItems');root.replaceChildren();$('archiveCount').textContent=spreadLibrary.length+'篇';if(!spreadLibrary.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}spreadLibrary.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚';info.append(name,count);const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('書き出し',()=>exportSingleSpread(v));action('複製',()=>{const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id='custom_'+Date.now()+'_'+Math.floor(Math.random()*10000);copy.name=name;spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});row.append(thumb,info,actions);root.append(row)})}
+
+function editStoredSpreadDeal(spread){
+ const current=spread.deal?.steps?.find(x=>x.type==='select-card');
+ if(spread.deal&&spread.deal.steps.filter(x=>x.type==='select-card').length!==1){alert('複雑なディール手順はスプレッドJSONから編集してください。');return}
+ const overlay=document.createElement('div');
+ overlay.style.cssText='position:fixed;inset:0;z-index:14000;display:flex;align-items:center;justify-content:center;padding:16px;background:#07110eea';
+ const panel=document.createElement('section');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
+ panel.style.cssText='width:min(500px,95vw);padding:20px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;max-height:85vh;overflow:auto';
+ const heading=document.createElement('h3');heading.textContent=spread.name+' — ディール設定';
+ const mode=document.createElement('select');mode.add(new Option('通常ディール','off'));mode.add(new Option('最初にカードを選ぶ','on'));mode.value=current?'on':'off';
+ const target=document.createElement('select');spread.slots.forEach((slot,i)=>target.add(new Option((i+1)+'番 '+(slot.name||''),String(i+1))));target.value=String(current?.target||1);
+ const orientation=document.createElement('select');for(const [id,label] of [['keep','山札の正逆位置を維持'],['upright','正位置'],['reversed','逆位置'],['random','ランダム']])orientation.add(new Option(label,id));orientation.value=current?.orientation||'keep';
+ const role=document.createElement('input');role.type='checkbox';role.checked=current?.role==='significator';
+ const recommend=document.createElement('input');recommend.type='checkbox';recommend.checked=(current?.recommendations||[]).includes('major_01');
+ const row=(caption,control)=>{const el=document.createElement('label');el.style.cssText='display:flex;align-items:center;gap:10px;margin:12px 0';el.append(document.createTextNode(caption),control);return el};
+ const controlRows=[row('配置先',target),row('正逆位置',orientation),row('相談者カード',role),row('魔術師・女教皇を推奨',recommend)];
+ const update=()=>{controlRows.forEach(x=>x.hidden=mode.value==='off')};mode.onchange=update;update();
+ const save=document.createElement('button');save.type='button';save.textContent='保存';
+ const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';
+ function close(){overlay.remove();document.removeEventListener('keydown',escape)}
+ const escape=e=>{if(e.key==='Escape'){e.preventDefault();close()}};
+ cancel.onclick=close;overlay.onpointerdown=e=>{if(e.target===overlay)close()};
+ save.onclick=()=>{
+  let candidate=null;
+  if(mode.value==='on')candidate={version:1,steps:[{type:'select-card',target:Number(target.value),role:role.checked?'significator':'ordinary',orientation:orientation.value,recommendations:recommend.checked?['major_01','major_02']:[]},{type:'deal-remaining',order:'slot-order',excludeOccupied:true}]};
+  try{if(candidate)candidate=TabulaSpreadDeal.normalize(candidate,spread.slots.length)}catch(e){alert(e.message);return}
+  const previous=spread.deal;
+  if(candidate)spread.deal=candidate;else delete spread.deal;
+  try{storeSpreadLibrary()}catch(e){if(previous)spread.deal=previous;else delete spread.deal;alert('保存できませんでした。');return}
+  close();setStatus('ディール設定を保存しました。');
+ };
+ panel.append(heading,row('配札方式',mode),...controlRows,cancel,save);
+ overlay.append(panel);document.body.append(overlay);document.addEventListener('keydown',escape);
+}
+function renderSpreadArchive(){const root=$('archiveItems');root.replaceChildren();$('archiveCount').textContent=spreadLibrary.length+'篇';if(!spreadLibrary.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}spreadLibrary.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚';info.append(name,count);const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('ディール設定',()=>editStoredSpreadDeal(v));action('書き出し',()=>exportSingleSpread(v));action('複製',()=>{const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id='custom_'+Date.now()+'_'+Math.floor(Math.random()*10000);copy.name=name;spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});row.append(thumb,info,actions);root.append(row)})}
 function exportSingleSpread(spread){
  try{
   const data=TabulaSpreadStore.exportPortable(spread);
