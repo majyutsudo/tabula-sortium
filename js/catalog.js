@@ -36,6 +36,14 @@ if(typeof window!=='undefined'){
   });
  }
 }
-const builtinSpreadCardSizes={free:{desktop:1,mobile:1},one:{desktop:1.3,mobile:1.5},three:{desktop:1.3,mobile:1.5},fiveCross:{desktop:1.3,mobile:1.5},pentagram:{desktop:1.3,mobile:1.5},horseshoe:{desktop:1.3,mobile:1.5},celtic:{desktop:1,mobile:1.3},treeOfLife:{desktop:0.9,mobile:0.9},horoscope:{desktop:0.9,mobile:0.9},grandStar:{desktop:0.8,mobile:0.8},grandTableau8:{desktop:0.8,mobile:0.8},grandTableau9:{desktop:0.8,mobile:0.8},monteCarlo:{desktop:0.8,mobile:1},fourSeasons:{desktop:1.3,mobile:1.3},foliGrandFigure:{desktop:0.8,mobile:0.8}};
+// Waite's original Celtic method has ten drawn cards PLUS a separate,
+ // previously chosen Significator beneath the two central cards.
+presets.waiteCeltic=[
+ ...presets.celtic.map((slot,i)=>({...slot,
+  name:['覆う札・現在の影響','交差する札・障害','上方・目標','下方・基盤','背後・過ぎ去るもの','前方・近い未来','相談者自身','周囲・環境','希望と恐れ','最終結果'][i],
+  detail:['相談者を覆う全般的な影響。','相談者を横切る抵抗・障害。','目標、理想、最善の可能性。','すでに現実化した基盤。','過ぎ去ろうとする影響。','これから働く近い未来の影響。','現在の本人や問題の位置・態度。','家・環境・周囲の影響。','希望、あるいは恐れ。','最終的に生じること。'][i]})),
+ {...presets.celtic[0],name:'相談者カード（Significator）',detail:'先に選ぶ代表カード。第1札・第2札の下に置く。'}
+];
+const builtinSpreadCardSizes={free:{desktop:1,mobile:1},one:{desktop:1.3,mobile:1.5},three:{desktop:1.3,mobile:1.5},fiveCross:{desktop:1.3,mobile:1.5},pentagram:{desktop:1.3,mobile:1.5},horseshoe:{desktop:1.3,mobile:1.5},celtic:{desktop:1,mobile:1.3},waiteCeltic:{desktop:1,mobile:1.3},treeOfLife:{desktop:0.9,mobile:0.9},horoscope:{desktop:0.9,mobile:0.9},grandStar:{desktop:0.8,mobile:0.8},grandTableau8:{desktop:0.8,mobile:0.8},grandTableau9:{desktop:0.8,mobile:0.8},monteCarlo:{desktop:0.8,mobile:1},fourSeasons:{desktop:1.3,mobile:1.3},foliGrandFigure:{desktop:0.8,mobile:0.8}};
 root.TabulaCatalog=Object.freeze({majors,suitDefs,ranks,cards,presets,colors,builtinSpreadCardSizes,builtinSpreadDeckPositions});
 })(globalThis);
