@@ -36,6 +36,12 @@ function normalize(plan,count){
  if(!remaining)throw Error('最後に残りの配札工程が必要です。');
  return {version:1,steps};
 }
+function eligible(card,rule='any'){
+ if(rule==='any')return true;
+ if(rule==='playing-court')return !!card&&['clubs','hearts','spades','diamonds'].includes(card.suitId)
+  &&['r11','r12','r13'].includes(card.rankId);
+ return false;
+}
 function resolve(spreadId,library){
  const custom=(library||[]).find(p=>p.id===spreadId);
  const definition=custom?custom.deal:BUILTIN[spreadId];
@@ -43,5 +49,5 @@ function resolve(spreadId,library){
  const count=custom?.slots?.length|| ({foliGrandFigure:78,grandStar:22}[spreadId]||0);
  return normalize(definition,count);
 }
-root.TabulaSpreadDeal=Object.freeze({BUILTIN,normalize,resolve});
+root.TabulaSpreadDeal=Object.freeze({BUILTIN,normalize,resolve,eligible});
 })(globalThis);
