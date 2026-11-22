@@ -2408,11 +2408,89 @@ async function revealFourSeasonsStock(){
  await animateCardFromDeck(state.placed.length-1,source);
  setStatus('山札から1枚開きました。タロンまたは場札へドラッグしてください。');
 }
+// Per-spread interactive prerequisites are resolved before the existing
+// automatic deal. The modal never mutates the physical deck on cancellation.
+let spreadDealPreparing=false;
+function spreadDealPlan(){return globalThis.TabulaSpreadDeal?.resolve(settings.spread,spreadLibrary)||null}
+function chooseSpreadDealCard(step){
+ return new Promise(resolve=>{
+  const overlay=document.createElement('div');overlay.className='spread-deal-selection';
+  overlay.style.cssText='position:fixed;inset:0;z-index:13000;display:flex;align-items:center;justify-content:center;padding:16px;background:#07110eea;';
+  const panel=document.createElement('section');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','相談者カードを選択');
+  panel.style.cssText='width:min(600px,95vw);max-height:85vh;overflow:auto;padding:20px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;box-shadow:0 14px 48px #000a;';
+  const heading=document.createElement('h2');heading.textContent='相談者カードを選択';heading.style.cssText='font-size:19px;margin:0 0 12px;';
+  const hint=document.createElement('p');hint.textContent='選択したカードを'+step.target+'番「'+(getSlots()[step.target-1]?.name||'代表カード')+'」に配置し、残りのカードを配ります。';hint.style.cssText='font-size:13px;line-height:1.65;';
+  const search=document.createElement('input');search.type='search';search.placeholder='カード名を検索';search.setAttribute('aria-label','カード名を検索');search.style.cssText='width:100%;box-sizing:border-box;padding:8px;background:#101a16;color:#eee;border:1px solid #7e7053;border-radius:4px;';
+  const label=document.createElement('label');label.textContent='正逆位置： ';label.style.cssText='display:block;margin:14px 0;font-size:13px;';
+  const orientation=document.createElement('select');orientation.setAttribute('aria-label','選んだカードの正逆位置');
+  for(const [value,name] of [['keep','現在の山札の設定に従う'],['upright','正位置'],['reversed','逆位置'],['random','ランダム']])orientation.add(new Option(name,value));
+  orientation.value=step.orientation||'keep';orientation.style.cssText='max-width:100%;padding:6px;background:#101a16;color:#eee;border:1px solid #7e7053;';label.append(orientation);
+  const entries=document.createElement('div');entries.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;margin:12px 0;';
+  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';cancel.style.cssText='padding:8px 14px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;';
+  const footer=document.createElement('div');footer.style.cssText='display:flex;justify-content:flex-end;';
+  footer.append(cancel);panel.append(heading,hint,search,label,entries,footer);overlay.append(panel);
+  let finished=false;const finish=value=>{if(finished)return;finished=true;document.removeEventListener('keydown',escape);overlay.remove();resolve(value)};
+  const escape=event=>{if(event.key==='Escape'){event.preventDefault();finish(null)}};
+  cancel.onclick=()=>finish(null);overlay.addEventListener('pointerdown',event=>{if(event.target===overlay)finish(null)});
+  function populate(){
+   entries.replaceChildren();const q=search.value.trim().toLocaleLowerCase();
+   const recommended=step.recommendations||[];
+   const available=state.deck.map((card,index)=>({card,index,name:displayCard(workingCard(card.id)||{id:card.id,name:card.id}).name||card.id}));
+   available.sort((a,b)=>{const ar=recommended.indexOf(a.card.id),br=recommended.indexOf(b.card.id);return (ar<0?999:ar)-(br<0?999:br)||a.index-b.index});
+   for(const {card,name} of available){
+    if(q&&!name.toLocaleLowerCase().includes(q)&&!card.id.toLocaleLowerCase().includes(q))continue;
+    const button=document.createElement('button');button.type='button';button.textContent=name+(recommended.includes(card.id)?' ★':'');
+    button.style.cssText='padding:9px 7px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;cursor:pointer;text-align:left;font-size:12px;';
+    button.onclick=()=>finish({identity:card.instanceId||card.id,orientation:orientation.value});
+    entries.append(button);
+   }
+   if(!entries.childElementCount){const empty=document.createElement('p');empty.textContent='該当するカードがありません。';entries.append(empty)}
+  }
+  search.addEventListener('input',populate);populate();document.body.append(overlay);document.addEventListener('keydown',escape);search.focus();
+ });
+}
+async function runSpreadDealPrerequisites(){
+ const plan=spreadDealPlan();if(!plan||dualSession||spreadWorkbench)return true;
+ if(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length))return true;
+ const required=getSlots().length;
+ if(state.deck.length<required){setStatus('このスプレッドには'+required+'枚が必要です。使用するカードの設定を確認してください。');return false}
+ const beforeSpread=settings.spread,startingDeck=state.deck;
+ // Only commit once every user choice has been made, so cancellation is atomic.
+ const choices=[];
+ for(const step of plan.steps){
+  if(step.type!=='select-card')continue;
+  const selection=await chooseSpreadDealCard(step);
+  if(!selection)return false;
+  if(settings.spread!==beforeSpread||state.deck!==startingDeck||state.placed.length){setStatus('選択中に卓の状態が変わったため、ディールを中止しました。');return false}
+  if(choices.some(x=>x.identity===selection.identity)){setStatus('同じカードを二度選択できません。');return false}
+  choices.push({...selection,step});
+ }
+ const snapshot=state.deck.map(c=>({...c}));
+ for(const chosen of choices){
+  const index=state.deck.findIndex(c=>(c.instanceId||c.id)===chosen.identity);
+  if(index<0||hasOccupiedSpreadSlot(chosen.step.target-1)){setStatus('選択カードを配置できませんでした。');return false}
+  const [card]=state.deck.splice(index,1),slot=chosen.step.target-1,pos=getSlots()[slot];
+  if(chosen.orientation==='upright')card.reversed=false;
+  else if(chosen.orientation==='reversed')card.reversed=true;
+  else if(chosen.orientation==='random')card.reversed=settings.reversals===true&&Math.random()<.5;
+  state.placed.push({...card,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{...pos},faceUp:true,
+   dragOrder:nextPlacedStackOrder(),physicalSelection:true,significator:chosen.step.role==='significator'});
+ }
+ if(choices.length){state.dealCheckpoint=snapshot;play('deal');render();saveLocal()}
+ return true;
+}
 let dealCancelRequested=false;
 function syncDealButton(){const button=$('quickDeal');if(!button)return;const active=autoDealBusy;button.title=active?'進行中のディールを中断（配ったカードは残します）':'スプレッドへディール';const parts=button.querySelectorAll('span');if(parts[0])parts[0].textContent=active?'■':'▧';if(parts[1])parts[1].textContent=active?'中断':'ディール';}
 async function dealAuto(){
  if(document.getElementById('physicalCutOverlay')){setStatus('カット中はディールできません。');return;}
  if(autoDealBusy){dealCancelRequested=true;setStatus('配札を中断しています。');return;}
+ if(spreadDealPreparing)return;
+ if(spreadDealPlan()&&!dualSession&&!state.placed.length){
+  spreadDealPreparing=true;
+  try{if(!await runSpreadDealPrerequisites())return}
+  catch(e){setStatus('スプレッドのディール設定を実行できません：'+e.message);return}
+  finally{spreadDealPreparing=false}
+ }
  // The Four Seasons preset always uses its six registered deal targets,
  // regardless of any user-configured dealing workbench.
  if(settings.spread==='fourSeasons'&&!dualSession){
@@ -2432,7 +2510,7 @@ async function dealAuto(){
   return;
  }
  if(!dualSession&&state.deck.length&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))){hideFramesForDeal();saveLocal()}
- if(!dualSession&&dealWorkbenchController?.executeSelected())return;
+ if(!dualSession&&!spreadDealPlan()&&dealWorkbenchController?.executeSelected())return;
  if(!state.deck.length){
   // A truly empty, undealt workspace may be initialized by the deal action.
   // Never reset an existing completed or partially dealt reading.
