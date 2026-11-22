@@ -48,7 +48,7 @@ function printable(){
   const w=node.offsetWidth*scale,h=node.offsetHeight*scale;
   // The pile's physical angle determines its outline; reversal only
   // rotates the image within that outline.
-  const pileRotation=pileNode?.style.transform.match(/rotate\\(([-+\\d.]+)deg\\)/);
+  const pileRotation=pileNode?.style.transform.match(/rotate\(([-+\d.]+)deg\)/);
   const angle=pileNode?Number(pileRotation?.[1])||0:parseFloat(node.style.getPropertyValue('--rotation'))||0;
   const g=element('g',{transform:`translate(${x} ${y}) rotate(${angle})`});
   g.append(element('rect',{x:-w/2,y:-h/2,width:w,height:h,rx:0.6,fill:'#fff',stroke:'#111','stroke-width':0.22}));
