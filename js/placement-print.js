@@ -13,7 +13,12 @@ function printable(){
  const zone=$('zone');if(!zone)throw Error('卓が見つかりません。');
  const zr=zone.getBoundingClientRect();
  if(!zr.width||!zr.height)throw Error('卓の寸法を取得できません。');
- const nodes=[...zone.querySelectorAll(':scope > .card')];
+ // Include visible cards in physical piles. A collapsed pile exposes only
+ // its top; a fanned pile exposes all currently rendered faces.
+ const nodes=[
+  ...zone.querySelectorAll(':scope > .card'),
+  ...zone.querySelectorAll(':scope > .table-pile.pile-is-occupied > .table-pile-top')
+ ];
  if(!nodes.length)throw Error('卓上にカードがありません。');
  const live=globalThis.TabulaPlacementPrintData?.();
  if(!live||!Array.isArray(live.cards))throw Error('卓情報を取得できません。ページを再読み込みしてください。');
@@ -33,12 +38,18 @@ function printable(){
  svg.setAttribute('data-label-layer',labelLayer);
  const cardAnchors=[];
  for(const node of nodes){
-  const idx=Number(node.dataset.index),item=live.cards[idx];
-  if(!item)continue;
+  const pileNode=node.closest('.table-pile');
+  if(!pileNode){
+   const idx=Number(node.dataset.index);
+   if(!Number.isInteger(idx)||!live.cards[idx])continue;
+  }
   const rect=node.getBoundingClientRect();
   const x=toX(rect.left+rect.width/2),y=toY(rect.top+rect.height/2);
   const w=node.offsetWidth*scale,h=node.offsetHeight*scale;
-  const angle=parseFloat(node.style.getPropertyValue('--rotation'))||0;
+  // The pile's physical angle determines its outline; reversal only
+  // rotates the image within that outline.
+  const pileRotation=pileNode?.style.transform.match(/rotate\\(([-+\\d.]+)deg\\)/);
+  const angle=pileNode?Number(pileRotation?.[1])||0:parseFloat(node.style.getPropertyValue('--rotation'))||0;
   const g=element('g',{transform:`translate(${x} ${y}) rotate(${angle})`});
   g.append(element('rect',{x:-w/2,y:-h/2,width:w,height:h,rx:0.6,fill:'#fff',stroke:'#111','stroke-width':0.22}));
   svg.append(g);
