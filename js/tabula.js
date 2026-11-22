@@ -2580,17 +2580,19 @@ function showSpreadDealShortageDialog(required,available){
 }
 async function runSpreadDealPrerequisites(){
  const plan=spreadDealPlan();if(!plan||dualSession||spreadWorkbench)return true;
- if(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length))return true;
+ const previous=state.spreadDealProgress?.spread===settings.spread?state.spreadDealProgress:null;
+ if(!previous&&(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length)))return true;
  const required=getSlots().length;
  if(!state.deck.length)initialize();
  // Respect the selected deck. Historical recommendations are advisory only.
- if(state.deck.length<required){
+ const needed=previous?getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i)).length:required;
+ if(state.deck.length<needed){
   if(settings.spread==='foliGrandFigure')showSpreadDealShortageDialog(required,state.deck.length);
   else setStatus('このスプレッドには'+required+'枚必要です。現在の山札は'+state.deck.length+'枚です。デッキは変更していません。');
   return false;
  }
  for(const step of plan.steps){
-  if(step.type==='select-card'&&!state.deck.some(c=>TabulaSpreadDeal.eligible(workingCard(c.id),step.allowed))){
+  if(step.type==='select-card'&&!hasOccupiedSpreadSlot(step.target-1)&&!state.deck.some(c=>TabulaSpreadDeal.eligible(workingCard(c.id),step.allowed))){
    setStatus('選択可能なカードが山札にありません。ディール設定またはデッキを確認してください。');return false;
   }
  }
@@ -2598,7 +2600,10 @@ async function runSpreadDealPrerequisites(){
  // Every operation is performed in the order registered by the spread.
  // A cancelled selection leaves its own step untouched; already completed
  // shuffles or cuts stay completed, like physical handling of a real deck.
- for(const step of plan.steps){
+ for(let stepIndex=previous?.stepIndex||0;stepIndex<plan.steps.length;stepIndex++){
+  const step=plan.steps[stepIndex];
+  state.spreadDealProgress={spread:startingSpread,stepIndex,repeat:stepIndex===(previous?.stepIndex??-1)?(previous.repeat||0):0};
+  saveLocal();
   if(settings.spread!==startingSpread||dualSession||spreadWorkbench){
    setStatus('ディール中に卓が変更されたため、手順を中断しました。');return false;
   }
@@ -2630,13 +2635,16 @@ async function runSpreadDealPrerequisites(){
    if(!success)return false;
   }else if(step.type==='cut'){
    if(state.deck.length<step.count){setStatus('指定された分割数に対して山札が不足しています。');return false}
-   for(let repeat=0;repeat<(step.repetitions||1);repeat++){
+   for(let repeat=state.spreadDealProgress.repeat;repeat<(step.repetitions||1);repeat++){
     setStatus('カット '+(repeat+1)+' / '+(step.repetitions||1)+' 回：束を積み直してください。');
     const success=await new Promise(resolve=>cutModal(true,{count:step.count,onComplete:resolve}));
     if(!success)return false;
+    state.spreadDealProgress.repeat=repeat+1;saveLocal();
    }
   }
+  state.spreadDealProgress={spread:startingSpread,stepIndex:stepIndex+1,repeat:0};saveLocal();
  }
+ delete state.spreadDealProgress;saveLocal();
  return true;
 }
 let dealCancelRequested=false;
