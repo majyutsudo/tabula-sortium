@@ -2555,29 +2555,44 @@ async function runSpreadDealPrerequisites(){
    setStatus('選択可能なカードが山札にありません。ディール設定またはデッキを確認してください。');return false;
   }
  }
- const beforeSpread=settings.spread,startingDeck=state.deck;
- // Only commit once every user choice has been made, so cancellation is atomic.
- const choices=[];
+ const startingSpread=settings.spread,startingDeck=state.deck;
+ // Every operation is performed in the order registered by the spread.
+ // A cancelled selection leaves its own step untouched; already completed
+ // shuffles or cuts stay completed, like physical handling of a real deck.
  for(const step of plan.steps){
-  if(step.type!=='select-card')continue;
-  const selection=await chooseSpreadDealCard(step);
-  if(!selection)return false;
-  if(settings.spread!==beforeSpread||state.deck!==startingDeck||state.placed.length){setStatus('選択中に卓の状態が変わったため、ディールを中止しました。');return false}
-  if(choices.some(x=>x.identity===selection.identity)){setStatus('同じカードを二度選択できません。');return false}
-  choices.push({...selection,step});
+  if(settings.spread!==startingSpread||dualSession||spreadWorkbench){
+   setStatus('ディール中に卓が変更されたため、手順を中断しました。');return false;
+  }
+  if(step.type==='select-card'){
+   if(hasOccupiedSpreadSlot(step.target-1))continue;
+   const selected=await chooseSpreadDealCard(step);
+   if(!selected){setStatus('相談者カードの選択を中止しました。');return false}
+   if(settings.spread!==startingSpread||dualSession||spreadWorkbench||state.deck!==startingDeck){
+    setStatus('選択中に卓が変わったため、ディールを中止しました。');return false;
+   }
+   const index=state.deck.findIndex(c=>(c.instanceId||c.id)===selected.identity);
+   if(index<0||hasOccupiedSpreadSlot(step.target-1)){setStatus('選択カードを配置できませんでした。');return false}
+   const original=state.deck.map(c=>({...c}));
+   const [card]=state.deck.splice(index,1),slot=step.target-1,pos=getSlots()[slot];
+   if(selected.orientation==='upright')card.reversed=false;
+   else if(selected.orientation==='reversed')card.reversed=true;
+   else if(selected.orientation==='random')card.reversed=settings.reversals===true&&Math.random()<.5;
+   if(!Array.isArray(state.dealCheckpoint))state.dealCheckpoint=original;
+   state.placed.push({...card,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{...pos},faceUp:true,
+    dragOrder:nextPlacedStackOrder(),physicalSelection:true,significator:step.role==='significator'});
+   play('deal');render();saveLocal();
+  }else if(step.type==='shuffle'){
+   if(state.deck.length<2){setStatus('シャッフルするカードが足りません。');return false}
+   const recipe=step.source==='recipe'?recipes.find(x=>x.id===step.recipeId):selectedRecipe();
+   if(!recipe){setStatus('指定したシャッフル手順が見つかりません。');return false}
+   const success=await new Promise(resolve=>runRecipe(false,{recipeId:recipe.id,onComplete:resolve}));
+   if(!success)return false;
+  }else if(step.type==='cut'){
+   if(state.deck.length<step.count){setStatus('指定された分割数に対して山札が不足しています。');return false}
+   const success=await new Promise(resolve=>cutModal(true,{count:step.count,onComplete:resolve}));
+   if(!success)return false;
+  }
  }
- const snapshot=state.deck.map(c=>({...c}));
- for(const chosen of choices){
-  const index=state.deck.findIndex(c=>(c.instanceId||c.id)===chosen.identity);
-  if(index<0||hasOccupiedSpreadSlot(chosen.step.target-1)){setStatus('選択カードを配置できませんでした。');return false}
-  const [card]=state.deck.splice(index,1),slot=chosen.step.target-1,pos=getSlots()[slot];
-  if(chosen.orientation==='upright')card.reversed=false;
-  else if(chosen.orientation==='reversed')card.reversed=true;
-  else if(chosen.orientation==='random')card.reversed=settings.reversals===true&&Math.random()<.5;
-  state.placed.push({...card,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{...pos},faceUp:true,
-   dragOrder:nextPlacedStackOrder(),physicalSelection:true,significator:chosen.step.role==='significator'});
- }
- if(choices.length){state.dealCheckpoint=snapshot;play('deal');render();saveLocal()}
  return true;
 }
 let dealCancelRequested=false;
