@@ -3,9 +3,10 @@
 const MAX_SPREAD_SLOTS=100;
 function validDeckPosition(p){return p&&typeof p==='object'&&!Array.isArray(p)&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100}
 function copyDeckPosition(p){return {x:p.x,y:p.y}}
+function validDeal(plan,count){try{return !!root.TabulaSpreadDeal?.normalize(plan,count)}catch(e){return false}}
 function validSpread(v){
   return !!(v&&typeof v.id==='string'&&Array.isArray(v.slots)
-    &&v.slots.length<=MAX_SPREAD_SLOTS&&(v.deckPosition===undefined||validDeckPosition(v.deckPosition))&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
+    &&v.slots.length<=MAX_SPREAD_SLOTS&&(v.deckPosition===undefined||validDeckPosition(v.deckPosition))&&(v.deal===undefined||validDeal(v.deal,v.slots.length))&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
 }
 function fromReading(reading,id,name){
  if(!reading||!Array.isArray(reading.placed))throw Error('占例の配置を読み取れません。');
@@ -56,6 +57,7 @@ function portableSpread(v){
    meta[field]=v[field];
   }
  }
+ if(v.deal!==undefined)meta.deal=root.TabulaSpreadDeal.normalize(v.deal,slots.length);
  if(v.cardSize!==undefined&&(!Number.isFinite(v.cardSize)||v.cardSize<.8||v.cardSize>2.3))
   throw Error('カードサイズが不正です。');
  if(v.deckPosition!==undefined&&!validDeckPosition(v.deckPosition))throw Error('山札の位置が不正です。');
