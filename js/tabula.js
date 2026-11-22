@@ -2532,7 +2532,7 @@ function chooseSpreadDealCard(step){
   const overlay=document.createElement('div');overlay.className='spread-deal-selection';
   overlay.style.cssText='position:fixed;inset:0;z-index:13000;display:flex;align-items:center;justify-content:center;padding:16px;background:#07110eea;';
   const panel=document.createElement('section');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','相談者カードを選択');
-  panel.style.cssText='width:min(600px,95vw);max-height:85vh;overflow:auto;padding:20px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;box-shadow:0 14px 48px #000a;';
+  panel.style.cssText='box-sizing:border-box;width:min(600px,95vw);max-height:85vh;overflow:auto;padding:20px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;box-shadow:0 14px 48px #000a;';
   const heading=document.createElement('h2');heading.textContent='相談者カードを選択';heading.style.cssText='font-size:19px;margin:0 0 12px;';
   const hint=document.createElement('p');hint.textContent='選択したカードを'+step.target+'番「'+(getSlots()[step.target-1]?.name||'代表カード')+'」に配置し、残りのカードを配ります。';hint.style.cssText='font-size:13px;line-height:1.65;';
   const recommendationNote=document.createElement('p');recommendationNote.textContent=step.recommendedNote||((step.recommendations||[]).length?'推奨カードは★印で先頭に表示します。推奨以外のカードも選択できます。':'');
@@ -2541,11 +2541,11 @@ function chooseSpreadDealCard(step){
   const facing=document.createElement('select');facing.setAttribute('aria-label','相談者カードの向き');
   for(const [value,name] of [['left','左向き（第6札が左・第5札が右）'],['right','右向き（第5札が左・第6札が右）']])facing.add(new Option(name,value));
   facing.value='left';facingRow.append(document.createTextNode('相談者カードの向き： '),facing);facingRow.hidden=step.askFacing!==true;
-  const search=document.createElement('input');search.type='search';search.placeholder='カード名を検索';search.setAttribute('aria-label','カード名を検索');search.style.cssText='width:100%;box-sizing:border-box;padding:8px;background:#101a16;color:#eee;border:1px solid #7e7053;border-radius:4px;';
+  const search=document.createElement('input');search.type='search';search.placeholder='カード名を検索';search.setAttribute('aria-label','カード名を検索');search.style.cssText='width:100%;box-sizing:border-box;padding:8px;font-size:16px;background:#101a16;color:#eee;border:1px solid #7e7053;border-radius:4px;';
   const label=document.createElement('label');label.textContent='正逆位置： ';label.style.cssText='display:block;margin:14px 0;font-size:13px;';
   const orientation=document.createElement('select');orientation.setAttribute('aria-label','選んだカードの正逆位置');
   for(const [value,name] of [['keep','現在の山札の設定に従う'],['upright','正位置'],['reversed','逆位置'],['random','ランダム']])orientation.add(new Option(name,value));
-  orientation.value=step.orientation||'keep';orientation.style.cssText='max-width:100%;padding:6px;background:#101a16;color:#eee;border:1px solid #7e7053;';label.append(orientation);
+  orientation.value=step.orientation||'keep';orientation.style.cssText='max-width:100%;padding:6px;font-size:16px;background:#101a16;color:#eee;border:1px solid #7e7053;';label.append(orientation);
   const entries=document.createElement('div');entries.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;margin:12px 0;';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';cancel.style.cssText='padding:8px 14px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;';
   const footer=document.createElement('div');footer.style.cssText='display:flex;justify-content:flex-end;';
@@ -2568,7 +2568,10 @@ function chooseSpreadDealCard(step){
    }
    if(!entries.childElementCount){const empty=document.createElement('p');empty.textContent='該当するカードがありません。';entries.append(empty)}
   }
-  search.addEventListener('input',populate);populate();document.body.append(overlay);document.addEventListener('keydown',escape);search.focus();
+  search.addEventListener('input',populate);populate();document.body.append(overlay);document.addEventListener('keydown',escape);
+   // Mobile Safari may page-zoom when focus lands in a search field. Let the
+   // user explicitly open the keyboard; desktop retains convenient autofocus.
+   if(!mobileCameraEnabled())search.focus({preventScroll:true});
  });
 }
 function showSpreadDealShortageDialog(required,available){
