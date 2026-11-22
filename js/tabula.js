@@ -2515,6 +2515,17 @@ async function runSpreadDealPrerequisites(){
  if(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length))return true;
  const required=getSlots().length;
  if(!state.deck.length)initialize();
+ // Historical Grand Star uses the 32-card piquet pack. A Tarot stock cannot
+ // supply any French-suited J/Q/K. Offer an explicit, reversible deck change
+ // rather than silently aborting before the significator dialog appears.
+ if(settings.spread==='grandStar'&&!state.deck.some(c=>TabulaSpreadDeal.eligible(workingCard(c.id),'playing-court'))){
+  if(!confirm('グランドスターはプレイングカードの人物札（J・Q・K）を相談者カードに使います。現在の山札には対象の札がありません。TABULA PLAYING CARDS（32枚）に切り替えてディールを続行しますか？')){
+   setStatus('デッキの切り替えを取り消しました。');return false;
+  }
+  if(!activateDeck(BUILTIN_PLAYING.id,false))return false;
+  settings.pool='piquet32';
+  initialize();
+ }
  if(state.deck.length<required){setStatus('このスプレッドには'+required+'枚が必要です。使用するカードの設定を確認してください。');return false}
  for(const step of plan.steps){
   if(step.type==='select-card'&&!state.deck.some(c=>TabulaSpreadDeal.eligible(workingCard(c.id),step.allowed))){
