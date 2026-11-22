@@ -2469,7 +2469,8 @@ function chooseSpreadDealCard(step){
   function populate(){
    entries.replaceChildren();const q=search.value.trim().toLocaleLowerCase();
    const recommended=step.recommendations||[];
-   const available=state.deck.map((card,index)=>({card,index,name:displayCard(workingCard(card.id)||{id:card.id,name:card.id}).name||card.id}));
+   const available=state.deck.filter(card=>TabulaSpreadDeal.eligible(workingCard(card.id),step.allowed))
+    .map((card,index)=>({card,index,name:displayCard(workingCard(card.id)||{id:card.id,name:card.id}).name||card.id}));
    available.sort((a,b)=>{const ar=recommended.indexOf(a.card.id),br=recommended.indexOf(b.card.id);return (ar<0?999:ar)-(br<0?999:br)||a.index-b.index});
    for(const {card,name} of available){
     if(q&&!name.toLocaleLowerCase().includes(q)&&!card.id.toLocaleLowerCase().includes(q))continue;
@@ -2489,6 +2490,11 @@ async function runSpreadDealPrerequisites(){
  const required=getSlots().length;
  if(!state.deck.length)initialize();
  if(state.deck.length<required){setStatus('このスプレッドには'+required+'枚が必要です。使用するカードの設定を確認してください。');return false}
+ for(const step of plan.steps){
+  if(step.type==='select-card'&&!state.deck.some(c=>TabulaSpreadDeal.eligible(workingCard(c.id),step.allowed))){
+   setStatus('相談者カードの候補がありません。グランドスターには人物札（J・Q・K）を含むプレイングカードを使用してください。');return false;
+  }
+ }
  const beforeSpread=settings.spread,startingDeck=state.deck;
  // Only commit once every user choice has been made, so cancellation is atomic.
  const choices=[];
