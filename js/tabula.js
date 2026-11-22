@@ -1021,6 +1021,15 @@ function getSlots(){
    }
   }
  }
+ // Card-relative slot offsets allow intentional overlap with readable labels.
+ // Applied to spread data rather than hardcoding a specific spread.
+ if(slots.some(slot=>Number.isFinite(slot.offsetCardHeightsY)&&slot.offsetCardHeightsY!==0)){
+  const m=metrics(),height=m.z.height;
+  if(height>0)slots.forEach(slot=>{
+   if(Number.isFinite(slot.offsetCardHeightsY))
+    slot.y+=slot.offsetCardHeightsY*m.h/height*100;
+  });
+ }
  if(settings.spread==='waiteCeltic'&&state.waiteFacing==='left'&&slots[4]&&slots[5]){
   const former={x:slots[4].x,y:slots[4].y};
   slots[4].x=slots[5].x;slots[4].y=slots[5].y;
