@@ -35,7 +35,7 @@ function faceMarkup(card,numberStyle='arabic'){
  const expectedNumberWidth=Array.from(shownNumber).reduce((width,char)=>width+
   (char==='I'?0.36:['V','X','L','C','D','M'].includes(char)?0.73:0.64)*numberFontSize,0);
  const numberFit=expectedNumberWidth>33?' textLength="33" lengthAdjust="spacingAndGlyphs"':'';
- const art='images/decks/tabula-lenormand/artwork/L'+String(number).padStart(2,'0')+'.png'+(number===12?'?v=0591':number===29?'?v=0684':'');
+ const art='images/decks/tabula-lenormand/artwork/L'+String(number).padStart(2,'0')+'.png'+(number===12?'?v=0591':number===29?'?v=0685':'');
  const name=escapeXml(card.name||''),english=escapeXml(card.names?.en||'');
  const rank=escapeXml(card.playingRank||''),suit=escapeXml(card.playingSuit||'');
  const ink=suit==='♥'||suit==='♦'?'#a44432':'#343a3a';
