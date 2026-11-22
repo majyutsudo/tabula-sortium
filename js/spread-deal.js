@@ -4,7 +4,7 @@
 (function(root){'use strict';
 const BUILTIN=Object.freeze({
  foliGrandFigure:{version:1,steps:[
-  {type:'select-card',target:67,role:'significator',orientation:'keep',recommendations:['major-1','major-2']},
+  {type:'select-card',target:67,role:'significator',orientation:'keep',recommendations:['major_01','major_02']},
   {type:'deal-remaining',order:'slot-order',excludeOccupied:true}
  ]}
 });
