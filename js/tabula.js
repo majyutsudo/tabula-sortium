@@ -25,8 +25,14 @@ function openSpreadArchive(){renderSpreadArchive();$('archiveCapture').hidden=se
 const spreadThumb=TabulaUiFormat.spreadThumb;
 
 function editStoredSpreadDeal(spread){
- const current=spread.deal?.steps?.find(x=>x.type==='select-card');
- if(spread.deal&&spread.deal.steps.filter(x=>x.type==='select-card').length!==1){alert('複雑なディール手順はスプレッドJSONから編集してください。');return}
+ const steps=spread.deal?.steps||[];
+ const current=steps.find(x=>x.type==='select-card');
+ const currentShuffle=steps.find(x=>x.type==='shuffle');
+ const currentCut=steps.find(x=>x.type==='cut');
+ if(steps.filter(x=>x.type==='select-card').length>1||steps.filter(x=>x.type==='shuffle').length>1||steps.filter(x=>x.type==='cut').length>1
+  ||steps.some(x=>!['select-card','shuffle','cut','deal-remaining'].includes(x.type))){
+  alert('複数の特殊工程を持つ手順はJSONで編集してください。');return;
+ }
  const overlay=document.createElement('div');
  overlay.style.cssText='position:fixed;inset:0;z-index:14000;display:flex;align-items:center;justify-content:center;padding:16px;background:#07110eea';
  const panel=document.createElement('section');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','スプレッドのディール設定');
@@ -65,6 +71,22 @@ function editStoredSpreadDeal(spread){
  const recommendationSection=document.createElement('div');recommendationSection.append(recommendationTitle,recommendationHint,search,picks,recommendedNote);
  const update=()=>{for(const x of [...controlRows,recommendationSection])x.hidden=mode.value==='off'};
  mode.onchange=update;allowed.onchange=renderRecommendations;search.oninput=renderRecommendations;update();renderRecommendations();
+ const shuffleEnabled=document.createElement('input');shuffleEnabled.type='checkbox';shuffleEnabled.checked=!!currentShuffle;
+ const shuffleRecipe=document.createElement('select');shuffleRecipe.setAttribute('aria-label','シャッフルレシピを選択');
+ shuffleRecipe.add(new Option('そのとき選択されているレシピ','selected'));
+ recipes.forEach(item=>shuffleRecipe.add(new Option(item.name,item.id)));
+ shuffleRecipe.value=currentShuffle?.source==='recipe'?currentShuffle.recipeId:'selected';
+ if(![...shuffleRecipe.options].some(o=>o.value===shuffleRecipe.value))shuffleRecipe.value='selected';
+ const cutEnabled=document.createElement('input');cutEnabled.type='checkbox';cutEnabled.checked=!!currentCut;
+ const cutCount=document.createElement('select');cutCount.setAttribute('aria-label','カットする束の数');
+ for(let i=2;i<=8;i++)cutCount.add(new Option(i+'分割',String(i)));
+ cutCount.value=String(currentCut?.count||3);
+ const stepsHeading=document.createElement('strong');stepsHeading.textContent='続けて実行する工程';stepsHeading.style.cssText='display:block;margin:18px 0 7px';
+ const stepsHint=document.createElement('p');stepsHint.textContent='カード選択（設定時）→シャッフル→カット→残りの配札の順に実行します。カットは卓上で束を積み直す順番を選びます。';
+ stepsHint.style.cssText='font-size:12px;line-height:1.65;color:#cfbe9d';
+ const shuffleRow=row('シャッフルを実行',shuffleEnabled),recipeRow=row('使用する手順',shuffleRecipe),cutRow=row('カットを実行',cutEnabled),countRow=row('分割数',cutCount);
+ const toggleSteps=()=>{recipeRow.hidden=!shuffleEnabled.checked;countRow.hidden=!cutEnabled.checked};
+ shuffleEnabled.onchange=toggleSteps;cutEnabled.onchange=toggleSteps;toggleSteps();
  const save=document.createElement('button');save.type='button';save.textContent='保存';
  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';
  for(const b of [cancel,save])b.style.cssText='padding:8px 14px;background:#29392e;color:#e9dec9;border:1px solid #a68d60;border-radius:4px;margin-right:7px';
@@ -73,17 +95,23 @@ function editStoredSpreadDeal(spread){
  cancel.onclick=close;overlay.onpointerdown=e=>{if(e.target===overlay)close()};
  save.onclick=()=>{
   let candidate=null;
+  const procedure=[];
   if(mode.value==='on'){
    const validRecommendations=availableCards.filter(c=>selected.has(c.id)&&TabulaSpreadDeal.eligible(c,allowed.value)).map(c=>c.id);
-   candidate={version:1,steps:[{type:'select-card',target:Number(target.value),role:role.checked?'significator':'ordinary',orientation:orientation.value,allowed:allowed.value,recommendations:validRecommendations,recommendedNote:recommendedNote.value.trim()},{type:'deal-remaining',order:'slot-order',excludeOccupied:true}]};
+   procedure.push({type:'select-card',target:Number(target.value),role:role.checked?'significator':'ordinary',orientation:orientation.value,allowed:allowed.value,recommendations:validRecommendations,recommendedNote:recommendedNote.value.trim()});
   }
+  if(shuffleEnabled.checked){
+   procedure.push(shuffleRecipe.value==='selected'?{type:'shuffle',source:'selected'}:{type:'shuffle',source:'recipe',recipeId:shuffleRecipe.value});
+  }
+  if(cutEnabled.checked)procedure.push({type:'cut',count:Number(cutCount.value)});
+  if(procedure.length)candidate={version:1,steps:[...procedure,{type:'deal-remaining',order:'slot-order',excludeOccupied:true}]};
   try{if(candidate)candidate=TabulaSpreadDeal.normalize(candidate,spread.slots.length)}catch(e){alert(e.message);return}
   const previous=spread.deal;
   if(candidate)spread.deal=candidate;else delete spread.deal;
   try{storeSpreadLibrary()}catch(e){if(previous)spread.deal=previous;else delete spread.deal;alert('保存できませんでした。');return}
   close();setStatus('ディール設定を保存しました。');
  };
- panel.append(heading,row('配札方式',mode),...controlRows,recommendationSection,cancel,save);
+ panel.append(heading,row('カード選択',mode),...controlRows,recommendationSection,stepsHeading,stepsHint,shuffleRow,recipeRow,cutRow,countRow,cancel,save);
  overlay.append(panel);document.body.append(overlay);document.addEventListener('keydown',escape);
 }
 function renderSpreadArchive(){const root=$('archiveItems');root.replaceChildren();$('archiveCount').textContent=spreadLibrary.length+'篇';if(!spreadLibrary.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}spreadLibrary.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚';info.append(name,count);const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('ディール設定',()=>editStoredSpreadDeal(v));action('書き出し',()=>exportSingleSpread(v));action('複製',()=>{const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id='custom_'+Date.now()+'_'+Math.floor(Math.random()*10000);copy.name=name;spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});row.append(thumb,info,actions);root.append(row)})}
