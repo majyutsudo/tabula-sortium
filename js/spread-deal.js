@@ -10,6 +10,16 @@ const BUILTIN=Object.freeze({
  grandStar:{version:1,steps:[
   {type:'select-card',target:1,role:'significator',orientation:'keep',allowed:'any',recommendations:["c_clubs_r11","c_clubs_r12","c_clubs_r13","c_hearts_r11","c_hearts_r12","c_hearts_r13","c_spades_r11","c_spades_r12","c_spades_r13","c_diamonds_r11","c_diamonds_r12","c_diamonds_r13"],recommendedNote:'伝統的には32枚のプレイングカードを用い、人物札（J・Q・K）から相談者カードを選びます。現在の山札からは任意のカードを選択できます。'},
   {type:'deal-remaining',order:'slot-order',excludeOccupied:true}
+ ]},
+ waiteCeltic:{version:1,steps:[
+  {type:'select-card',target:11,role:'significator',orientation:'keep',allowed:'any',askFacing:true,recommendations:[],recommendedNote:'ウェイトの原式では相談者または質問の主題を表すカードを先に選びます。人物の向きが曖昧な場合は、占者が向きを決定します。'},
+  {type:'shuffle',source:'selected'},
+  {type:'cut',count:2},
+  {type:'shuffle',source:'selected'},
+  {type:'cut',count:2},
+  {type:'shuffle',source:'selected'},
+  {type:'cut',count:2},
+  {type:'deal-remaining',order:'slot-order',excludeOccupied:true,faceUp:true}
  ]}
 });
 function normalize(plan,count){
@@ -24,9 +34,10 @@ function normalize(plan,count){
    if(step.allowed!==undefined&&!['any','playing-court'].includes(step.allowed))throw Error('選択可能なカードの範囲が不正です。');
    if(step.role!==undefined&&step.role!=='significator'&&step.role!=='ordinary')throw Error('カードの役割が不正です。');
    if(step.orientation!==undefined&&!['keep','upright','reversed','random'].includes(step.orientation))throw Error('正逆位置の指定が不正です。');
+   if(step.askFacing!==undefined&&typeof step.askFacing!=='boolean')throw Error('向きの選択設定が不正です。');
    if(step.recommendedNote!==undefined&&(typeof step.recommendedNote!=='string'||step.recommendedNote.length>500))throw Error('推奨カードの説明が不正です。');
    if(step.recommendations!==undefined&&(!Array.isArray(step.recommendations)||step.recommendations.length>12||step.recommendations.some(v=>typeof v!=='string'||v.length>100)))throw Error('推奨カードの指定が不正です。');
-   return {type:'select-card',target:step.target,role:step.role||'ordinary',orientation:step.orientation||'keep',allowed:step.allowed||'any',recommendations:[...new Set(step.recommendations||[])],recommendedNote:step.recommendedNote||''};
+   return {type:'select-card',target:step.target,role:step.role||'ordinary',orientation:step.orientation||'keep',allowed:step.allowed||'any',recommendations:[...new Set(step.recommendations||[])],recommendedNote:step.recommendedNote||'',askFacing:step.askFacing===true};
   }
   if(step.type==='shuffle'){
    if(remaining||!['selected','recipe'].includes(step.source||'selected'))throw Error('シャッフル工程の指定が不正です。');
@@ -40,8 +51,9 @@ function normalize(plan,count){
    return {type:'cut',count:step.count,repetitions:step.repetitions||1};
   }
   if(step.type==='deal-remaining'){
+   if(step.faceUp!==undefined&&typeof step.faceUp!=='boolean')throw Error('配札の表裏設定が不正です。');
    if(remaining||i!==plan.steps.length-1||step.order!=='slot-order'||step.excludeOccupied!==true)throw Error('残りの配札工程が不正です。');
-   remaining=true;return {type:'deal-remaining',order:'slot-order',excludeOccupied:true};
+   remaining=true;return {type:'deal-remaining',order:'slot-order',excludeOccupied:true,...(typeof step.faceUp==='boolean'?{faceUp:step.faceUp}:{})};
   }
   throw Error('未対応のディール工程：'+String(step.type));
  });
@@ -58,7 +70,7 @@ function resolve(spreadId,library){
  const custom=(library||[]).find(p=>p.id===spreadId);
  const definition=custom?custom.deal:BUILTIN[spreadId];
  if(!definition)return null;
- const count=custom?.slots?.length|| ({foliGrandFigure:78,grandStar:22}[spreadId]||0);
+ const count=custom?.slots?.length|| ({foliGrandFigure:78,grandStar:22,waiteCeltic:11}[spreadId]||0);
  return normalize(definition,count);
 }
 root.TabulaSpreadDeal=Object.freeze({BUILTIN,normalize,resolve,eligible});
