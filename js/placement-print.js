@@ -538,11 +538,11 @@ function install(){
  button.addEventListener('click',()=>{
   if($('tabulaPrintEditor'))return;
   if(draft){
-   const choice=prompt('配置図を開く方法を選んでください。\n1：前回の編集を再開\n2：現在の卓から新規作成\n3：保存したJSONを読み込む','1');
+   const choice=prompt('配置図を開く方法を選んでください。\n1：現在の卓から新規作成\n2：前回の編集を再開\n3：保存したJSONを読み込む','1');
    if(choice===null)return;
-   if(choice.trim()==='1'){try{editor(svgFromDocument(draft),{document:draft});}catch(e){alert(e.message);}return;}
+   if(choice.trim()==='2'){try{editor(svgFromDocument(draft),{document:draft});}catch(e){alert(e.message);}return;}
    if(choice.trim()==='3'){chooseDiagramFile();return;}
-   if(choice.trim()!=='2')return;
+   if(choice.trim()!=='1')return;
    if(!confirm('現在の卓から新しい配置図を作ります。前回の一時編集状態は置き換わります。JSONに保存していない場合は失われます。よろしいですか？'))return;
   }else{
    const choice=prompt('配置図を開く方法を選んでください。\n1：現在の卓から新規作成\n2：保存したJSONを読み込む','1');
