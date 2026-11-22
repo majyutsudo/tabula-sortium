@@ -2524,7 +2524,7 @@ function showSpreadDealShortageDialog(required,available){
  panel.style.cssText='width:min(460px,95vw);padding:22px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;box-shadow:0 14px 48px #000a;';
  const heading=document.createElement('h2');heading.id='spreadDealShortageTitle';heading.textContent='カードが不足しています';
  heading.style.cssText='font-size:19px;margin:0 0 14px;color:#eed7ab;';
- const explanation=document.createElement('p');explanation.textContent='グランドフィギュア（大図形）は'+required+'枚すべてを使用するスプレッドです。';
+ const explanation=document.createElement('p');explanation.textContent='グランドフィギュア（大図形）は'+required+'枚を使用するスプレッドです。';
  explanation.style.cssText='font-size:14px;line-height:1.7;';
  const count=document.createElement('p');count.textContent='必要：'+required+'枚 ／ 現在の山札：'+available+'枚（不足：'+(required-available)+'枚）';
  count.style.cssText='font-size:14px;line-height:1.7;font-weight:bold;';
