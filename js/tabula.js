@@ -2599,13 +2599,13 @@ function showSpreadDealShortageDialog(required,available){
  document.body.append(overlay);document.addEventListener('keydown',onKey);ok.focus();
 }
 async function runSpreadDealPrerequisites(){
- const plan=spreadDealPlan();if(!plan||dualSession||spreadWorkbench)return true;
+ const plan=spreadDealPlan();if(!plan||spreadWorkbench)return true;
  const previous=state.spreadDealProgress?.spread===settings.spread?state.spreadDealProgress:null;
  if(!previous&&(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length)))return true;
  const required=getSlots().length;
- if(!state.deck.length&&!previous)initialize();
+ if(!state.deck.length&&!previous&&!dualSession)initialize();
  // Respect the selected deck. Historical recommendations are advisory only.
- const needed=previous?getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i)).length:required;
+ const needed=getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i)).length;
  if(state.deck.length<needed){
   if(settings.spread==='foliGrandFigure')showSpreadDealShortageDialog(required,state.deck.length);
   else setStatus('このスプレッドには'+required+'枚必要です。現在の山札は'+state.deck.length+'枚です。デッキは変更していません。');
@@ -2616,7 +2616,9 @@ async function runSpreadDealPrerequisites(){
    setStatus('選択可能なカードが山札にありません。ディール設定またはデッキを確認してください。');return false;
   }
  }
- const startingSpread=settings.spread;
+ const startingSpread=settings.spread,startingSession=dualSession,startingTable=dualSession?.activeTable,startingPile=dualSession?.activePile;
+ const sameDealContext=()=>settings.spread===startingSpread&&dualSession===startingSession
+  &&(!dualSession||(dualSession.activeTable===startingTable&&dualSession.activePile===startingPile));
  // Every operation is performed in the order registered by the spread.
  // A cancelled selection leaves its own step untouched; already completed
  // shuffles or cuts stay completed, like physical handling of a real deck.
@@ -2624,7 +2626,7 @@ async function runSpreadDealPrerequisites(){
   const step=plan.steps[stepIndex];
   state.spreadDealProgress={spread:startingSpread,stepIndex,repeat:stepIndex===(previous?.stepIndex??-1)?(previous.repeat||0):0};
   saveLocal();
-  if(settings.spread!==startingSpread||dualSession||spreadWorkbench){
+  if(!sameDealContext()||spreadWorkbench){
    setStatus('ディール中に卓が変更されたため、手順を中断しました。');return false;
   }
   if(step.type==='select-card'){
@@ -2632,7 +2634,7 @@ async function runSpreadDealPrerequisites(){
    const selectionDeck=state.deck;
    const selected=await chooseSpreadDealCard(step);
    if(!selected){setStatus('相談者カードの選択を中止しました。');return false}
-   if(settings.spread!==startingSpread||dualSession||spreadWorkbench||state.deck!==selectionDeck){
+   if(!sameDealContext()||spreadWorkbench||state.deck!==selectionDeck){
     setStatus('選択中に卓が変わったため、ディールを中止しました。');return false;
    }
    const index=state.deck.findIndex(c=>(c.instanceId||c.id)===selected.identity);
@@ -2673,7 +2675,7 @@ async function dealAuto(){
  if(document.getElementById('physicalCutOverlay')){setStatus('カット中はディールできません。');return;}
  if(autoDealBusy){dealCancelRequested=true;setStatus('配札を中断しています。');return;}
  if(spreadDealPreparing)return;
- if(spreadDealPlan()&&!dualSession&&!state.placed.length){
+ if(spreadDealPlan()&&(!state.placed.length||state.spreadDealProgress?.spread===settings.spread)){
   spreadDealPreparing=true;
   try{if(!await runSpreadDealPrerequisites())return}
   catch(e){setStatus('スプレッドのディール設定を実行できません：'+e.message);return}
@@ -2697,7 +2699,7 @@ async function dealAuto(){
   }finally{autoDealBusy=false;syncDealButton();if(dealCancelRequested)setStatus('配札を中断しました。')}
   return;
  }
- if(!dualSession&&state.deck.length&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))){hideFramesForDeal();saveLocal()}
+ if(state.deck.length&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))){hideFramesForDeal();saveLocal()}
  if(!dualSession&&!spreadDealPlan()&&dealWorkbenchController?.executeSelected())return;
  if(!state.deck.length){
   // A truly empty, undealt workspace may be initialized by the deal action.
@@ -2734,7 +2736,7 @@ async function dealAuto(){
  if(!dealCancelRequested&&settings.spread===startingSpread&&state.placed.length>alreadyDealt&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))&&!state.deck.length)
   setStatus('山札がなくなりました。残りの位置には配札できません。');
  // The final arrival animation is complete; check face-up spreads once.
- if(!startingSession&&settings.spread===startingSpread){maybeTriggerCompletionEffect();saveLocal();}
+ if(settings.spread===startingSpread&&dualSession===startingSession){maybeTriggerCompletionEffect();saveLocal();}
 }
 let shuffleBusy=false;
 const riffleSequence=TabulaShuffle.riffleSequence;
@@ -5584,6 +5586,8 @@ function sharedTableWorkspace(){
  w.tables.table1.removed=(state.removed||[]).map(own);
  w.tables.table1.tablePiles=(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)}));
  w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
+ w.tables.table1.spreadDealProgress=dualClone(state.spreadDealProgress||null);
+ w.tables.table1.waiteFacing=state.waiteFacing||null;
  w.tables.table1.color=settings.color;w.tables.table1.altar=!!settings.altar;
  w.tables.table1.candles=dualClone(altarCandles());
  w.tables.table2.name='追加卓Ⅰ';w.tables.table2.spread='free';
@@ -5619,6 +5623,8 @@ function dualFresh(){
  if(usesPlayingBack())w.backColors.A=playingBackPreference();
  w.appearances={A:'standard',B:'standard'};
  w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
+ w.tables.table1.spreadDealProgress=dualClone(state.spreadDealProgress||null);
+ w.tables.table1.waiteFacing=state.waiteFacing||null;
  initializePresetFrames(w.tables.table1,settings.spread);
  w.tables.table2.spread='free';w.tables.table2.cardSize=spreadCardSize('free');
  // Give each physical table its own persistent visual identity.
@@ -5639,6 +5645,8 @@ function dualCapture(){
  t.color=settings.color;t.altar=!!settings.altar;t.candles=dualClone(altarCandles());
  t.selected=state.selected;t.completionShown=state.completionShown;
  t.dealCheckpoint=dualClone(state.dealCheckpoint);
+ t.spreadDealProgress=dualClone(state.spreadDealProgress||null);
+ t.waiteFacing=state.waiteFacing||null;
  t.removed=dualClone(state.removed||[]);
  t.cutStage=dualClone(state.cutStage);
 }
@@ -5647,7 +5655,9 @@ function dualRestoreView(){
  const t=dualSession.tables[dualSession.activeTable];
  if(isIndependentTables()&&t.savedSettings)settings={...settings,...dualClone(t.savedSettings)};
  state={deck:dualClone(dualSession.piles[dualSession.activePile]),placed:dualClone(t.placed||[]),cutStage:dualClone(t.cutStage||null),
- selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),removed:dualClone(t.removed||[]),tablePiles:dualClone(t.tablePiles||[])};
+ selected:t.selected??null,completionShown:!!t.completionShown,dealCheckpoint:dualClone(t.dealCheckpoint||null),
+ spreadDealProgress:dualClone(t.spreadDealProgress||null),waiteFacing:t.waiteFacing||null,
+ removed:dualClone(t.removed||[]),tablePiles:dualClone(t.tablePiles||[])};
  settings.spread=t.spread||'free';
  if(isIndependentTables()){
   settings.deckId=t.deckId||'builtin';settings.pool=t.pool||'all';
@@ -5855,7 +5865,7 @@ function dualSave(){
  }catch(e){setStatus('ダブルデッキの保存に失敗しました：'+e.message)}
 }
 function dualBusy(){
- if(shuffleBusy||openingBusy||dualDealBusy||spreadWorkbench||state.cutStage){setStatus('操作完了後に卓・山札を切り替えてください。');return true}
+ if(shuffleBusy||openingBusy||dualDealBusy||spreadDealPreparing||autoDealBusy||spreadWorkbench||state.cutStage){setStatus('操作完了後に卓・山札を切り替えてください。');return true}
  return false;
 }
 function dualSwitchPile(id){
@@ -5896,7 +5906,7 @@ function dualCollect(){
   }
   candidate.piles[destination].unshift({instanceId:c.instanceId,id:c.id,sourceDeck:c.sourceDeck,reversed:!!c.reversed});
  }
- t.placed=[];t.removed=[];t.tablePiles=[];t.dealCheckpoint=null;t.selected=null;t.completionShown=false;
+ t.placed=[];t.removed=[];t.tablePiles=[];t.dealCheckpoint=null;t.spreadDealProgress=null;t.waiteFacing=null;t.selected=null;t.completionShown=false;
  try{TabulaMultiWorkspace.validate(candidate)}
  catch(e){setStatus('カードの整合性を確認できず、回収を中止しました：'+e.message);return false}
  dualSession=candidate;
@@ -5971,7 +5981,8 @@ $('dualClear').onclick=()=>{
    const strip=c=>{const {instanceId,sourceDeck,...rest}=c;return rest};
    state={deck:[...dualSession.piles.A,...(isSharedTables()?(extra?.placed||[]):[]),...(isSharedTables()?(extra?.removed||[]):[])].map(strip),
     placed:(main.placed||[]).map(strip),removed:(main.removed||[]).map(strip),
-    cutStage:null,selected:main.selected??null,completionShown:!!main.completionShown,dealCheckpoint:null};
+    cutStage:null,selected:main.selected??null,completionShown:!!main.completionShown,dealCheckpoint:null,
+ spreadDealProgress:dualClone(main.spreadDealProgress||null),waiteFacing:main.waiteFacing||null};
    settings.spread=main.spread||settings.spread;
    if(isIndependentTables()){settings.deckId=main.deckId||'builtin';settings.pool=main.pool||'all';}
    if(settings.deckId===BUILTIN_PLAYING.id)settings.playingBackColor=dualBackTone('A');
