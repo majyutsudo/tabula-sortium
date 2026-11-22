@@ -1209,15 +1209,15 @@ function updateNaturalTiltButton(){
   }
   // All frame controls belong to the tabletop placement menu.
   // Move the existing switch rather than creating competing state handlers.
+  const frameContainer=$('quickFrames')?.closest('.table-display-frame-control');
   for(const id of ['quickFrames','presetSnapToggle']){
    const frameButton=$(id);
    if(!frameButton)continue;
-   const oldContainer=frameButton.closest('.table-display-frame-control');
    frameButton.removeAttribute('hidden');
    frameButton.classList.add('placement-tools-button');
    placement.append(frameButton);
-   if(oldContainer)oldContainer.remove();
   }
+  if(frameContainer)frameContainer.remove();
   const hand=document.getElementById('naturalTiltButton');
   if(hand){hand.removeAttribute('style');hand.classList.add('placement-tools-button');behavior.append(hand)}
   layout.append(behavior);
