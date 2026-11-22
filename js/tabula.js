@@ -38,6 +38,9 @@ function editStoredSpreadDeal(spread){
  const role=document.createElement('input');role.type='checkbox';role.checked=current?.role==='significator';
  const allowed=document.createElement('select');allowed.add(new Option('全カードから選択','any'));allowed.add(new Option('プレイングカードの人物札（J・Q・K）のみ','playing-court'));allowed.value=current?.allowed||'any';
  const row=(caption,control)=>{const el=document.createElement('label');el.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0;font-size:13px';el.append(document.createTextNode(caption),control);return el};
+ const recommendedNote=document.createElement('textarea');recommendedNote.rows=2;recommendedNote.maxLength=500;recommendedNote.value=current?.recommendedNote||'';
+ recommendedNote.placeholder='推奨カードについての説明（任意）';recommendedNote.setAttribute('aria-label','推奨カードの説明');
+ recommendedNote.style.cssText='display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:8px;background:#101a16;color:#eee;border:1px solid #7e7053;';
  const recommendationTitle=document.createElement('strong');recommendationTitle.textContent='推奨カード（最大12枚）';recommendationTitle.style.cssText='display:block;margin:16px 0 7px;font-size:13px';
  const recommendationHint=document.createElement('p');recommendationHint.textContent='選択したカードはディール時の一覧で先頭に表示されます。推奨以外のカードも、選択範囲内なら選べます。';recommendationHint.style.cssText='font-size:12px;line-height:1.55;margin:4px 0 10px;opacity:.85';
  const search=document.createElement('input');search.type='search';search.placeholder='推奨するカードを検索';search.setAttribute('aria-label','推奨するカードを検索');search.style.cssText='width:100%;box-sizing:border-box;padding:8px;background:#101a16;color:#eee;border:1px solid #7e7053';
@@ -59,7 +62,7 @@ function editStoredSpreadDeal(spread){
   if(!picks.childElementCount){const message=document.createElement('span');message.textContent='該当するカードがありません。';picks.append(message)}
  };
  const controlRows=[row('配置先',target),row('正逆位置',orientation),row('相談者カードとして配置',role),row('選択可能なカード',allowed)];
- const recommendationSection=document.createElement('div');recommendationSection.append(recommendationTitle,recommendationHint,search,picks);
+ const recommendationSection=document.createElement('div');recommendationSection.append(recommendationTitle,recommendationHint,search,picks,recommendedNote);
  const update=()=>{for(const x of [...controlRows,recommendationSection])x.hidden=mode.value==='off'};
  mode.onchange=update;allowed.onchange=renderRecommendations;search.oninput=renderRecommendations;update();renderRecommendations();
  const save=document.createElement('button');save.type='button';save.textContent='保存';
@@ -72,7 +75,7 @@ function editStoredSpreadDeal(spread){
   let candidate=null;
   if(mode.value==='on'){
    const validRecommendations=availableCards.filter(c=>selected.has(c.id)&&TabulaSpreadDeal.eligible(c,allowed.value)).map(c=>c.id);
-   candidate={version:1,steps:[{type:'select-card',target:Number(target.value),role:role.checked?'significator':'ordinary',orientation:orientation.value,allowed:allowed.value,recommendations:validRecommendations},{type:'deal-remaining',order:'slot-order',excludeOccupied:true}]};
+   candidate={version:1,steps:[{type:'select-card',target:Number(target.value),role:role.checked?'significator':'ordinary',orientation:orientation.value,allowed:allowed.value,recommendations:validRecommendations,recommendedNote:recommendedNote.value.trim()},{type:'deal-remaining',order:'slot-order',excludeOccupied:true}]};
   }
   try{if(candidate)candidate=TabulaSpreadDeal.normalize(candidate,spread.slots.length)}catch(e){alert(e.message);return}
   const previous=spread.deal;
