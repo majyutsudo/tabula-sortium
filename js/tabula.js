@@ -2480,6 +2480,8 @@ function chooseSpreadDealCard(step){
   panel.style.cssText='width:min(600px,95vw);max-height:85vh;overflow:auto;padding:20px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;box-shadow:0 14px 48px #000a;';
   const heading=document.createElement('h2');heading.textContent='相談者カードを選択';heading.style.cssText='font-size:19px;margin:0 0 12px;';
   const hint=document.createElement('p');hint.textContent='選択したカードを'+step.target+'番「'+(getSlots()[step.target-1]?.name||'代表カード')+'」に配置し、残りのカードを配ります。';hint.style.cssText='font-size:13px;line-height:1.65;';
+  const recommendationNote=document.createElement('p');recommendationNote.textContent=step.recommendedNote||((step.recommendations||[]).length?'推奨カードは★印で先頭に表示します。推奨以外のカードも選択できます。':'');
+  recommendationNote.style.cssText='font-size:12px;line-height:1.65;color:#d6c39a;margin:8px 0 12px;';
   const search=document.createElement('input');search.type='search';search.placeholder='カード名を検索';search.setAttribute('aria-label','カード名を検索');search.style.cssText='width:100%;box-sizing:border-box;padding:8px;background:#101a16;color:#eee;border:1px solid #7e7053;border-radius:4px;';
   const label=document.createElement('label');label.textContent='正逆位置： ';label.style.cssText='display:block;margin:14px 0;font-size:13px;';
   const orientation=document.createElement('select');orientation.setAttribute('aria-label','選んだカードの正逆位置');
@@ -2488,7 +2490,7 @@ function chooseSpreadDealCard(step){
   const entries=document.createElement('div');entries.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;margin:12px 0;';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';cancel.style.cssText='padding:8px 14px;background:#29392e;color:#e9dec9;border:1px solid #7b6b4e;border-radius:4px;';
   const footer=document.createElement('div');footer.style.cssText='display:flex;justify-content:flex-end;';
-  footer.append(cancel);panel.append(heading,hint,search,label,entries,footer);overlay.append(panel);
+  footer.append(cancel);panel.append(heading,hint,recommendationNote,search,label,entries,footer);overlay.append(panel);
   let finished=false;const finish=value=>{if(finished)return;finished=true;document.removeEventListener('keydown',escape);overlay.remove();resolve(value)};
   const escape=event=>{if(event.key==='Escape'){event.preventDefault();finish(null)}};
   cancel.onclick=()=>finish(null);overlay.addEventListener('pointerdown',event=>{if(event.target===overlay)finish(null)});
@@ -2515,21 +2517,16 @@ async function runSpreadDealPrerequisites(){
  if(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length))return true;
  const required=getSlots().length;
  if(!state.deck.length)initialize();
- // Historical Grand Star uses the 32-card piquet pack. A Tarot stock cannot
- // supply any French-suited J/Q/K. Offer an explicit, reversible deck change
- // rather than silently aborting before the significator dialog appears.
- if(settings.spread==='grandStar'&&!state.deck.some(c=>TabulaSpreadDeal.eligible(workingCard(c.id),'playing-court'))){
-  if(!confirm('グランドスターはプレイングカードの人物札（J・Q・K）を相談者カードに使います。現在の山札には対象の札がありません。TABULA PLAYING CARDS（32枚）に切り替えてディールを続行しますか？')){
-   setStatus('デッキの切り替えを取り消しました。');return false;
-  }
-  if(!activateDeck(BUILTIN_PLAYING.id,false))return false;
-  settings.pool='piquet32';
-  initialize();
+ // Respect the selected deck. Historical recommendations are advisory only.
+ if(state.deck.length<required){
+  setStatus(settings.spread==='foliGrandFigure'
+   ?'グランドフィギュアには78枚必要です。現在の山札は'+state.deck.length+'枚のため配札できません。78枚を含むデッキを選んでください（山札は変更していません）。'
+   :'このスプレッドには'+required+'枚必要です。現在の山札は'+state.deck.length+'枚です。デッキは変更していません。');
+  return false;
  }
- if(state.deck.length<required){setStatus('このスプレッドには'+required+'枚が必要です。使用するカードの設定を確認してください。');return false}
  for(const step of plan.steps){
   if(step.type==='select-card'&&!state.deck.some(c=>TabulaSpreadDeal.eligible(workingCard(c.id),step.allowed))){
-   setStatus('相談者カードの候補がありません。グランドスターには人物札（J・Q・K）を含むプレイングカードを使用してください。');return false;
+   setStatus('選択可能なカードが山札にありません。ディール設定またはデッキを確認してください。');return false;
   }
  }
  const beforeSpread=settings.spread,startingDeck=state.deck;
