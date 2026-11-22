@@ -2515,6 +2515,30 @@ function chooseSpreadDealCard(step){
   search.addEventListener('input',populate);populate();document.body.append(overlay);document.addEventListener('keydown',escape);search.focus();
  });
 }
+function showSpreadDealShortageDialog(required,available){
+ const existing=document.getElementById('spreadDealShortageDialog');
+ if(existing){existing.querySelector('button')?.focus();return}
+ const overlay=document.createElement('div');overlay.id='spreadDealShortageDialog';
+ overlay.style.cssText='position:fixed;inset:0;z-index:13000;display:flex;align-items:center;justify-content:center;padding:16px;background:#07110eea;';
+ const panel=document.createElement('section');panel.setAttribute('role','alertdialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','spreadDealShortageTitle');
+ panel.style.cssText='width:min(460px,95vw);padding:22px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;box-shadow:0 14px 48px #000a;';
+ const heading=document.createElement('h2');heading.id='spreadDealShortageTitle';heading.textContent='カードが不足しています';
+ heading.style.cssText='font-size:19px;margin:0 0 14px;color:#eed7ab;';
+ const explanation=document.createElement('p');explanation.textContent='グランドフィギュア（大図形）は'+required+'枚すべてを使用するスプレッドです。';
+ explanation.style.cssText='font-size:14px;line-height:1.7;';
+ const count=document.createElement('p');count.textContent='必要：'+required+'枚 ／ 現在の山札：'+available+'枚（不足：'+(required-available)+'枚）';
+ count.style.cssText='font-size:14px;line-height:1.7;font-weight:bold;';
+ const note=document.createElement('p');note.textContent='78枚のカードを含むデッキを選んでから、再度ディールしてください。山札や配置は変更していません。';
+ note.style.cssText='font-size:13px;line-height:1.7;color:#cfbe9d;';
+ const footer=document.createElement('div');footer.style.cssText='display:flex;justify-content:flex-end;margin-top:18px;';
+ const ok=document.createElement('button');ok.type='button';ok.textContent='閉じる';
+ ok.style.cssText='padding:9px 20px;border:1px solid #a68d60;border-radius:4px;background:#354737;color:#f2e4c6;cursor:pointer;';
+ function close(){document.removeEventListener('keydown',onKey);overlay.remove()}
+ const onKey=e=>{if(e.key==='Escape'){e.preventDefault();close()}};
+ ok.onclick=close;overlay.addEventListener('pointerdown',e=>{if(e.target===overlay)close()});
+ footer.append(ok);panel.append(heading,explanation,count,note,footer);overlay.append(panel);
+ document.body.append(overlay);document.addEventListener('keydown',onKey);ok.focus();
+}
 async function runSpreadDealPrerequisites(){
  const plan=spreadDealPlan();if(!plan||dualSession||spreadWorkbench)return true;
  if(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length))return true;
@@ -2522,9 +2546,8 @@ async function runSpreadDealPrerequisites(){
  if(!state.deck.length)initialize();
  // Respect the selected deck. Historical recommendations are advisory only.
  if(state.deck.length<required){
-  setStatus(settings.spread==='foliGrandFigure'
-   ?'グランドフィギュアには78枚必要です。現在の山札は'+state.deck.length+'枚のため配札できません。78枚を含むデッキを選んでください（山札は変更していません）。'
-   :'このスプレッドには'+required+'枚必要です。現在の山札は'+state.deck.length+'枚です。デッキは変更していません。');
+  if(settings.spread==='foliGrandFigure')showSpreadDealShortageDialog(required,state.deck.length);
+  else setStatus('このスプレッドには'+required+'枚必要です。現在の山札は'+state.deck.length+'枚です。デッキは変更していません。');
   return false;
  }
  for(const step of plan.steps){
