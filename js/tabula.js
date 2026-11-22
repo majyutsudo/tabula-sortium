@@ -5073,7 +5073,14 @@ function installTableToolLayout(){
  const message=$('status');message.classList.add('table-status');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
  document.querySelector('.stage-shell').append(message);
  updateCardSizeQuickValue();
- const onResize=()=>{fit.hidden=!mobileCameraEnabled();};window.addEventListener('resize',onResize);onResize();
+ const onResize=()=>{
+   fit.hidden=!mobileCameraEnabled();
+   const undo=$('tableUndo');
+   // Keep undo in the mobile action grid without changing its desktop home.
+   // Moving the existing button preserves its click handler and disabled state.
+   if(window.innerWidth<=780)mobileActions.insertBefore(undo,$('newSessionStandalone'));
+   else toolbar.insertBefore(undo,$('zoomOut'));
+  };window.addEventListener('resize',onResize);onResize();
  applyTableCamera();
 }
 
