@@ -2595,3 +2595,39 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManage
 #modalBg :is(.about-license,.about-back,.tarot-editor-nav button){
  background:transparent;
 }
+
+
+/* v0.682 — inspection comparison is available only while the loupe is active. */
+.inspection-tray[hidden]{display:none!important}
+.inspection-tray{
+ position:fixed;z-index:900;left:50%;bottom:max(14px,env(safe-area-inset-bottom));
+ transform:translateX(-50%);display:flex;gap:7px;align-items:center;justify-content:center;flex-wrap:wrap;
+ width:max-content;max-width:calc(100vw - 22px);padding:9px 11px;
+ background:#1b201deF;color:#f0e1c5;border:1px solid #9b855d;border-radius:12px;
+ box-shadow:0 6px 26px #000b;
+}
+.inspection-tray button{font:inherit;font-size:12px;padding:7px 10px;border:1px solid #74654a;border-radius:6px;background:#30362d;color:#eee1c9;cursor:pointer}
+.inspection-tray button[aria-pressed="true"]{background:#826a42;color:#fff6e6;border-color:#d5b979}
+.inspection-tray button:disabled{opacity:.45;cursor:default}
+.inspection-count{font-size:12px;white-space:nowrap;padding:0 4px}
+.card.inspection-picked{outline:3px solid #e1c27a;outline-offset:2px}
+.card.inspection-picked::after{content:attr(data-inspection-order);position:absolute;z-index:90;top:-9px;right:-8px;min-width:24px;height:24px;padding:0 4px;box-sizing:border-box;border-radius:13px;background:#2b231a;border:1px solid #ebc879;color:#ffe6a9;text-align:center;font:bold 13px/23px sans-serif;pointer-events:none}
+.inspection-comparison h2{margin-bottom:8px}
+.inspection-comparison-lead{font-size:13px;color:#d1bfa1;margin-bottom:15px}
+.inspection-comparison-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(145px,100%),1fr));gap:15px;align-items:start;max-height:65vh;overflow-y:auto;padding:7px}
+.inspection-comparison-item{min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;border-radius:9px;border:1px solid #766548;background:#292a25;color:#f3e4c8;cursor:pointer}
+.inspection-comparison-item:hover,.inspection-comparison-item:focus-visible{border-color:#e1be7b}
+.inspection-comparison-label{display:flex;align-items:center;gap:7px;min-width:0;font-size:12px;max-width:100%}
+.inspection-comparison-label strong{width:22px;min-width:22px;height:22px;line-height:21px;border-radius:12px;border:1px solid #c4a66b;color:#eacb91}
+.inspection-comparison-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inspection-comparison-art{width:min(100%,150px);aspect-ratio:2 / 3;display:flex;align-items:stretch;justify-content:center;background:#ead8b4;border:3px solid #b09a6b;border-radius:4px;overflow:hidden;box-shadow:0 5px 18px #0007}
+.inspection-comparison-face{width:100%;height:100%;display:flex;align-items:stretch;justify-content:center;overflow:hidden}
+.inspection-comparison-face :is(img,svg){display:block;max-width:100%;max-height:100%}
+.inspection-comparison-face .card-art{width:100%;height:100%;object-fit:cover}
+.inspection-comparison-name{font-size:12px;text-align:center;line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:780px){
+ .inspection-tray{bottom:max(8px,env(safe-area-inset-bottom));gap:4px;padding:7px}
+ .inspection-tray button{padding:7px 8px;font-size:11px}
+ .inspection-comparison-grid{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;max-height:64vh}
+ .inspection-comparison-art{width:min(100%,125px)}
+}
