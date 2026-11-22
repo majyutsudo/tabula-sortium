@@ -29,32 +29,58 @@ function editStoredSpreadDeal(spread){
  if(spread.deal&&spread.deal.steps.filter(x=>x.type==='select-card').length!==1){alert('複雑なディール手順はスプレッドJSONから編集してください。');return}
  const overlay=document.createElement('div');
  overlay.style.cssText='position:fixed;inset:0;z-index:14000;display:flex;align-items:center;justify-content:center;padding:16px;background:#07110eea';
- const panel=document.createElement('section');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
- panel.style.cssText='width:min(500px,95vw);padding:20px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;max-height:85vh;overflow:auto';
+ const panel=document.createElement('section');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','スプレッドのディール設定');
+ panel.style.cssText='width:min(550px,95vw);padding:20px;background:#192620;color:#e5d9bf;border:1px solid #a68d60;border-radius:9px;max-height:85vh;overflow:auto';
  const heading=document.createElement('h3');heading.textContent=spread.name+' — ディール設定';
  const mode=document.createElement('select');mode.add(new Option('通常ディール','off'));mode.add(new Option('最初にカードを選ぶ','on'));mode.value=current?'on':'off';
  const target=document.createElement('select');spread.slots.forEach((slot,i)=>target.add(new Option((i+1)+'番 '+(slot.name||''),String(i+1))));target.value=String(current?.target||1);
  const orientation=document.createElement('select');for(const [id,label] of [['keep','山札の正逆位置を維持'],['upright','正位置'],['reversed','逆位置'],['random','ランダム']])orientation.add(new Option(label,id));orientation.value=current?.orientation||'keep';
  const role=document.createElement('input');role.type='checkbox';role.checked=current?.role==='significator';
- const recommend=document.createElement('input');recommend.type='checkbox';recommend.checked=(current?.recommendations||[]).includes('major_01');
- const row=(caption,control)=>{const el=document.createElement('label');el.style.cssText='display:flex;align-items:center;gap:10px;margin:12px 0';el.append(document.createTextNode(caption),control);return el};
- const controlRows=[row('配置先',target),row('正逆位置',orientation),row('相談者カード',role),row('魔術師・女教皇を推奨',recommend)];
- const update=()=>{controlRows.forEach(x=>x.hidden=mode.value==='off')};mode.onchange=update;update();
+ const allowed=document.createElement('select');allowed.add(new Option('全カードから選択','any'));allowed.add(new Option('プレイングカードの人物札（J・Q・K）のみ','playing-court'));allowed.value=current?.allowed||'any';
+ const row=(caption,control)=>{const el=document.createElement('label');el.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0;font-size:13px';el.append(document.createTextNode(caption),control);return el};
+ const recommendationTitle=document.createElement('strong');recommendationTitle.textContent='推奨カード（最大12枚）';recommendationTitle.style.cssText='display:block;margin:16px 0 7px;font-size:13px';
+ const recommendationHint=document.createElement('p');recommendationHint.textContent='選択したカードはディール時の一覧で先頭に表示されます。推奨以外のカードも、選択範囲内なら選べます。';recommendationHint.style.cssText='font-size:12px;line-height:1.55;margin:4px 0 10px;opacity:.85';
+ const search=document.createElement('input');search.type='search';search.placeholder='推奨するカードを検索';search.setAttribute('aria-label','推奨するカードを検索');search.style.cssText='width:100%;box-sizing:border-box;padding:8px;background:#101a16;color:#eee;border:1px solid #7e7053';
+ const picks=document.createElement('div');picks.style.cssText='margin-top:9px;max-height:175px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:5px';
+ const selected=new Set(current?.recommendations||[]);
+ const availableCards=workingCards();
+ const renderRecommendations=()=>{
+  picks.replaceChildren();const q=search.value.trim().toLocaleLowerCase();
+  const options=availableCards.filter(c=>TabulaSpreadDeal.eligible(c,allowed.value))
+   .sort((a,b)=>Number(selected.has(b.id))-Number(selected.has(a.id)));
+  for(const card of options){
+   const label=displayCard(card).name;
+   if(q&&!label.toLocaleLowerCase().includes(q)&&!card.id.toLocaleLowerCase().includes(q))continue;
+   const holder=document.createElement('label');holder.style.cssText='display:flex;align-items:center;gap:7px;padding:5px 7px;background:#29392e;border-radius:4px;font-size:12px;cursor:pointer';
+   const box=document.createElement('input');box.type='checkbox';box.checked=selected.has(card.id);box.disabled=!box.checked&&selected.size>=12;
+   box.onchange=()=>{if(box.checked)selected.add(card.id);else selected.delete(card.id);renderRecommendations()};
+   holder.append(box,document.createTextNode(label));picks.append(holder);
+  }
+  if(!picks.childElementCount){const message=document.createElement('span');message.textContent='該当するカードがありません。';picks.append(message)}
+ };
+ const controlRows=[row('配置先',target),row('正逆位置',orientation),row('相談者カードとして配置',role),row('選択可能なカード',allowed)];
+ const recommendationSection=document.createElement('div');recommendationSection.append(recommendationTitle,recommendationHint,search,picks);
+ const update=()=>{for(const x of [...controlRows,recommendationSection])x.hidden=mode.value==='off'};
+ mode.onchange=update;allowed.onchange=renderRecommendations;search.oninput=renderRecommendations;update();renderRecommendations();
  const save=document.createElement('button');save.type='button';save.textContent='保存';
  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';
+ for(const b of [cancel,save])b.style.cssText='padding:8px 14px;background:#29392e;color:#e9dec9;border:1px solid #a68d60;border-radius:4px;margin-right:7px';
  function close(){overlay.remove();document.removeEventListener('keydown',escape)}
  const escape=e=>{if(e.key==='Escape'){e.preventDefault();close()}};
  cancel.onclick=close;overlay.onpointerdown=e=>{if(e.target===overlay)close()};
  save.onclick=()=>{
   let candidate=null;
-  if(mode.value==='on')candidate={version:1,steps:[{type:'select-card',target:Number(target.value),role:role.checked?'significator':'ordinary',orientation:orientation.value,recommendations:recommend.checked?['major_01','major_02']:[]},{type:'deal-remaining',order:'slot-order',excludeOccupied:true}]};
+  if(mode.value==='on'){
+   const validRecommendations=availableCards.filter(c=>selected.has(c.id)&&TabulaSpreadDeal.eligible(c,allowed.value)).map(c=>c.id);
+   candidate={version:1,steps:[{type:'select-card',target:Number(target.value),role:role.checked?'significator':'ordinary',orientation:orientation.value,allowed:allowed.value,recommendations:validRecommendations},{type:'deal-remaining',order:'slot-order',excludeOccupied:true}]};
+  }
   try{if(candidate)candidate=TabulaSpreadDeal.normalize(candidate,spread.slots.length)}catch(e){alert(e.message);return}
   const previous=spread.deal;
   if(candidate)spread.deal=candidate;else delete spread.deal;
   try{storeSpreadLibrary()}catch(e){if(previous)spread.deal=previous;else delete spread.deal;alert('保存できませんでした。');return}
   close();setStatus('ディール設定を保存しました。');
  };
- panel.append(heading,row('配札方式',mode),...controlRows,cancel,save);
+ panel.append(heading,row('配札方式',mode),...controlRows,recommendationSection,cancel,save);
  overlay.append(panel);document.body.append(overlay);document.addEventListener('keydown',escape);
 }
 function renderSpreadArchive(){const root=$('archiveItems');root.replaceChildren();$('archiveCount').textContent=spreadLibrary.length+'篇';if(!spreadLibrary.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}spreadLibrary.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚';info.append(name,count);const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('ディール設定',()=>editStoredSpreadDeal(v));action('書き出し',()=>exportSingleSpread(v));action('複製',()=>{const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id='custom_'+Date.now()+'_'+Math.floor(Math.random()*10000);copy.name=name;spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});row.append(thumb,info,actions);root.append(row)})}
