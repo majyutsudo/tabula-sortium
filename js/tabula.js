@@ -2583,7 +2583,7 @@ async function runSpreadDealPrerequisites(){
  const previous=state.spreadDealProgress?.spread===settings.spread?state.spreadDealProgress:null;
  if(!previous&&(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards.length)))return true;
  const required=getSlots().length;
- if(!state.deck.length)initialize();
+ if(!state.deck.length&&!previous)initialize();
  // Respect the selected deck. Historical recommendations are advisory only.
  const needed=previous?getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i)).length:required;
  if(state.deck.length<needed){
