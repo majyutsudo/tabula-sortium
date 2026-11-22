@@ -2631,3 +2631,17 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManage
  .inspection-comparison-grid{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;max-height:64vh}
  .inspection-comparison-art{width:min(100%,125px)}
 }
+
+/* Mobile undo shares the second action row rather than creating an orphan row. */
+@media(max-width:780px){
+ .toolbar .mobile-cockpit-actions>#tableUndo{
+  grid-column:3;grid-row:2;width:100%;min-width:0;min-height:42px;
+  font-size:0!important;padding:6px 2px!important;
+ }
+ .toolbar .mobile-cockpit-actions>#tableUndo::before{
+  content:"↶";font:24px/1 var(--tabula-ui-font,Arial,sans-serif);
+ }
+ .toolbar .mobile-cockpit-actions>#newSessionStandalone{
+  grid-column:4 / 8;
+ }
+}
