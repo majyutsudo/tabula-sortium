@@ -2600,7 +2600,7 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManage
 /* v0.682 — inspection comparison is available only while the loupe is active. */
 .inspection-tray[hidden]{display:none!important}
 .inspection-tray{
- position:fixed;z-index:900;left:50%;bottom:max(14px,env(safe-area-inset-bottom));
+ position:fixed;z-index:900;left:calc(50% + 150px);bottom:max(14px,env(safe-area-inset-bottom));
  transform:translateX(-50%);display:flex;gap:7px;align-items:center;justify-content:center;flex-wrap:wrap;
  width:max-content;max-width:calc(100vw - 22px);padding:9px 11px;
  background:#1b201deF;color:#f0e1c5;border:1px solid #9b855d;border-radius:12px;
@@ -2626,7 +2626,7 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManage
 .inspection-comparison-face .card-art{width:100%;height:100%;object-fit:cover}
 .inspection-comparison-name{font-size:12px;text-align:center;line-height:1.5;overflow-wrap:anywhere}
 @media(max-width:780px){
- .inspection-tray{bottom:max(8px,env(safe-area-inset-bottom));gap:4px;padding:7px}
+ .inspection-tray{left:50%;bottom:max(8px,env(safe-area-inset-bottom));gap:4px;padding:7px}
  .inspection-tray button{padding:7px 8px;font-size:11px}
  .inspection-comparison-grid{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;max-height:64vh}
  .inspection-comparison-art{width:min(100%,125px)}
