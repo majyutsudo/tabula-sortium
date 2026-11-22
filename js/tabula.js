@@ -78,14 +78,15 @@ function editStoredSpreadDeal(spread){
  shuffleRecipe.value=currentShuffle?.source==='recipe'?currentShuffle.recipeId:'selected';
  if(![...shuffleRecipe.options].some(o=>o.value===shuffleRecipe.value))shuffleRecipe.value='selected';
  const cutEnabled=document.createElement('input');cutEnabled.type='checkbox';cutEnabled.checked=!!currentCut;
+ const cutRepeat=document.createElement('select');cutRepeat.setAttribute('aria-label','カットの反復回数');for(let i=1;i<=5;i++)cutRepeat.add(new Option(i+'回',String(i)));cutRepeat.value=String(currentCut?.repetitions||1);
  const cutCount=document.createElement('select');cutCount.setAttribute('aria-label','カットする束の数');
  for(let i=2;i<=8;i++)cutCount.add(new Option(i+'分割',String(i)));
  cutCount.value=String(currentCut?.count||3);
  const stepsHeading=document.createElement('strong');stepsHeading.textContent='続けて実行する工程';stepsHeading.style.cssText='display:block;margin:18px 0 7px';
  const stepsHint=document.createElement('p');stepsHint.textContent='カード選択（設定時）→シャッフル→カット→残りの配札の順に実行します。カットは卓上で束を積み直す順番を選びます。';
  stepsHint.style.cssText='font-size:12px;line-height:1.65;color:#cfbe9d';
- const shuffleRow=row('シャッフルを実行',shuffleEnabled),recipeRow=row('使用する手順',shuffleRecipe),cutRow=row('カットを実行',cutEnabled),countRow=row('分割数',cutCount);
- const toggleSteps=()=>{recipeRow.hidden=!shuffleEnabled.checked;countRow.hidden=!cutEnabled.checked};
+ const shuffleRow=row('シャッフルを実行',shuffleEnabled),recipeRow=row('使用する手順',shuffleRecipe),cutRow=row('カットを実行',cutEnabled),countRow=row('分割数',cutCount),repeatRow=row('カットの回数',cutRepeat);
+ const toggleSteps=()=>{recipeRow.hidden=!shuffleEnabled.checked;countRow.hidden=repeatRow.hidden=!cutEnabled.checked};
  shuffleEnabled.onchange=toggleSteps;cutEnabled.onchange=toggleSteps;toggleSteps();
  const save=document.createElement('button');save.type='button';save.textContent='保存';
  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='キャンセル';
@@ -103,7 +104,7 @@ function editStoredSpreadDeal(spread){
   if(shuffleEnabled.checked){
    procedure.push(shuffleRecipe.value==='selected'?{type:'shuffle',source:'selected'}:{type:'shuffle',source:'recipe',recipeId:shuffleRecipe.value});
   }
-  if(cutEnabled.checked)procedure.push({type:'cut',count:Number(cutCount.value)});
+  if(cutEnabled.checked)procedure.push({type:'cut',count:Number(cutCount.value),repetitions:Number(cutRepeat.value)});
   if(procedure.length)candidate={version:1,steps:[...procedure,{type:'deal-remaining',order:'slot-order',excludeOccupied:true}]};
   try{if(candidate)candidate=TabulaSpreadDeal.normalize(candidate,spread.slots.length)}catch(e){alert(e.message);return}
   const previous=spread.deal;
@@ -111,7 +112,7 @@ function editStoredSpreadDeal(spread){
   try{storeSpreadLibrary()}catch(e){if(previous)spread.deal=previous;else delete spread.deal;alert('保存できませんでした。');return}
   close();setStatus('ディール設定を保存しました。');
  };
- panel.append(heading,row('カード選択',mode),...controlRows,recommendationSection,stepsHeading,stepsHint,shuffleRow,recipeRow,cutRow,countRow,cancel,save);
+ panel.append(heading,row('カード選択',mode),...controlRows,recommendationSection,stepsHeading,stepsHint,shuffleRow,recipeRow,cutRow,countRow,repeatRow,cancel,save);
  overlay.append(panel);document.body.append(overlay);document.addEventListener('keydown',escape);
 }
 function renderSpreadArchive(){const root=$('archiveItems');root.replaceChildren();$('archiveCount').textContent=spreadLibrary.length+'篇';if(!spreadLibrary.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}spreadLibrary.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚';info.append(name,count);const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('ディール設定',()=>editStoredSpreadDeal(v));action('書き出し',()=>exportSingleSpread(v));action('複製',()=>{const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id='custom_'+Date.now()+'_'+Math.floor(Math.random()*10000);copy.name=name;spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});row.append(thumb,info,actions);root.append(row)})}
@@ -2617,8 +2618,11 @@ async function runSpreadDealPrerequisites(){
    if(!success)return false;
   }else if(step.type==='cut'){
    if(state.deck.length<step.count){setStatus('指定された分割数に対して山札が不足しています。');return false}
-   const success=await new Promise(resolve=>cutModal(true,{count:step.count,onComplete:resolve}));
-   if(!success)return false;
+   for(let repeat=0;repeat<(step.repetitions||1);repeat++){
+    setStatus('カット '+(repeat+1)+' / '+(step.repetitions||1)+' 回：束を積み直してください。');
+    const success=await new Promise(resolve=>cutModal(true,{count:step.count,onComplete:resolve}));
+    if(!success)return false;
+   }
   }
  }
  return true;
