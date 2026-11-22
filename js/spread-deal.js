@@ -28,6 +28,16 @@ function normalize(plan,count){
    if(step.recommendations!==undefined&&(!Array.isArray(step.recommendations)||step.recommendations.length>12||step.recommendations.some(v=>typeof v!=='string'||v.length>100)))throw Error('推奨カードの指定が不正です。');
    return {type:'select-card',target:step.target,role:step.role||'ordinary',orientation:step.orientation||'keep',allowed:step.allowed||'any',recommendations:[...new Set(step.recommendations||[])],recommendedNote:step.recommendedNote||''};
   }
+  if(step.type==='shuffle'){
+   if(remaining||!['selected','recipe'].includes(step.source||'selected'))throw Error('シャッフル工程の指定が不正です。');
+   if(step.recipeId!==undefined&&(typeof step.recipeId!=='string'||step.recipeId.length>100))throw Error('シャッフルレシピ名が不正です。');
+   if(step.source==='recipe'&&!step.recipeId)throw Error('シャッフルレシピを指定してください。');
+   return {type:'shuffle',source:step.source||'selected',...(step.recipeId?{recipeId:step.recipeId}:{})};
+  }
+  if(step.type==='cut'){
+   if(remaining||!Number.isInteger(step.count)||step.count<2||step.count>8)throw Error('カットは2〜8分割で指定してください。');
+   return {type:'cut',count:step.count};
+  }
   if(step.type==='deal-remaining'){
    if(remaining||i!==plan.steps.length-1||step.order!=='slot-order'||step.excludeOccupied!==true)throw Error('残りの配札工程が不正です。');
    remaining=true;return {type:'deal-remaining',order:'slot-order',excludeOccupied:true};
