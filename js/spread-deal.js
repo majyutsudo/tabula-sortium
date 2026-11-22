@@ -6,6 +6,10 @@ const BUILTIN=Object.freeze({
  foliGrandFigure:{version:1,steps:[
   {type:'select-card',target:67,role:'significator',orientation:'keep',recommendations:['major_01','major_02']},
   {type:'deal-remaining',order:'slot-order',excludeOccupied:true}
+ ]},
+ grandStar:{version:1,steps:[
+  {type:'select-card',target:1,role:'significator',orientation:'keep',allowed:'playing-court',recommendations:[]},
+  {type:'deal-remaining',order:'slot-order',excludeOccupied:true}
  ]}
 });
 function normalize(plan,count){
@@ -17,10 +21,11 @@ function normalize(plan,count){
   if(step.type==='select-card'){
    if(remaining||!Number.isInteger(step.target)||step.target<1||step.target>count||seenTargets.has(step.target))throw Error('カード選択の配置先が不正です。');
    seenTargets.add(step.target);
+   if(step.allowed!==undefined&&!['any','playing-court'].includes(step.allowed))throw Error('選択可能なカードの範囲が不正です。');
    if(step.role!==undefined&&step.role!=='significator'&&step.role!=='ordinary')throw Error('カードの役割が不正です。');
    if(step.orientation!==undefined&&!['keep','upright','reversed','random'].includes(step.orientation))throw Error('正逆位置の指定が不正です。');
    if(step.recommendations!==undefined&&(!Array.isArray(step.recommendations)||step.recommendations.length>12||step.recommendations.some(v=>typeof v!=='string'||v.length>100)))throw Error('推奨カードの指定が不正です。');
-   return {type:'select-card',target:step.target,role:step.role||'ordinary',orientation:step.orientation||'keep',recommendations:[...(step.recommendations||[])]};
+   return {type:'select-card',target:step.target,role:step.role||'ordinary',orientation:step.orientation||'keep',allowed:step.allowed||'any',recommendations:[...new Set(step.recommendations||[])]};
   }
   if(step.type==='deal-remaining'){
    if(remaining||i!==plan.steps.length-1||step.order!=='slot-order'||step.excludeOccupied!==true)throw Error('残りの配札工程が不正です。');
@@ -35,7 +40,7 @@ function resolve(spreadId,library){
  const custom=(library||[]).find(p=>p.id===spreadId);
  const definition=custom?custom.deal:BUILTIN[spreadId];
  if(!definition)return null;
- const count=custom?.slots?.length|| (spreadId==='foliGrandFigure'?78:0);
+ const count=custom?.slots?.length|| ({foliGrandFigure:78,grandStar:22}[spreadId]||0);
  return normalize(definition,count);
 }
 root.TabulaSpreadDeal=Object.freeze({BUILTIN,normalize,resolve});
