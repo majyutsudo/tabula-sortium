@@ -302,7 +302,7 @@ const DEFAULT_SETTINGS=Object.freeze({
  deckId:'builtin',cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',
  spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'front',
  sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',
- dealAnimation:'standard',openMode:'normal',framesVisible:false,
+ dealAnimation:'standard',openMode:'normal',framesVisible:false,presetSnap:true,
  initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,
  dealSkipFirst:0,dealSkipSchedule:'',dealFaceUp:false,
  cardLanguage:'original',tableCardLanguage:'linked',pipBackground:'landscape',
@@ -1209,8 +1209,9 @@ function updateNaturalTiltButton(){
   }
   // All frame controls belong to the tabletop placement menu.
   // Move the existing switch rather than creating competing state handlers.
-  const frameButton=$('quickFrames');
-  if(frameButton){
+  for(const id of ['quickFrames','presetSnapToggle']){
+   const frameButton=$(id);
+   if(!frameButton)continue;
    const oldContainer=frameButton.closest('.table-display-frame-control');
    frameButton.removeAttribute('hidden');
    frameButton.classList.add('placement-tools-button');
@@ -1495,7 +1496,7 @@ function updateStackIntent(active,node){
 // spreads two frames may overlap, so the nearest frame might be occupied while
 // another vacant frame is a valid destination.
 function vacantDropSlot(item,index){
- if(!dragMoved||spreadWorkbench||dualSession||settings.spread==='free'||settings.spread==='monteCarlo')return null;
+ if(!dragMoved||spreadWorkbench||dualSession||settings.presetSnap===false||settings.spread==='free'||settings.spread==='monteCarlo')return null;
  const slots=getSlots(),m=metrics(),z=$('zone').getBoundingClientRect();
  const cw=Math.max(1,m.w),ch=Math.max(1,m.h);
  const free=slots.map((p,i)=>{
@@ -1532,7 +1533,7 @@ if(vacantTarget!==null){
  snappedToPreset=true;
  setStatus((vacantTarget+1)+'番の枠にカードを配置しました。');
 }
-if(dragMoved&&settings.spread==='monteCarlo'&&!spreadWorkbench&&!dualSession){
+if(dragMoved&&settings.spread==='monteCarlo'&&!spreadWorkbench&&!dualSession&&settings.presetSnap!==false){
  // Resolve the physical drop against the 25 visible frames, not the card's
  // original slot metadata. A free target becomes its new registered location.
  const slots=getSlots();
@@ -1991,6 +1992,14 @@ function spreadFramePolicy(id=settings.spread){
 function resetFramesForSpread(id=settings.spread){
  settings.framesVisible=spreadFramePolicy(id).initialVisible;
 }
+function syncPresetSnap(){
+ const button=$('presetSnapToggle');
+ if(!button)return;
+ const enabled=settings.presetSnap!==false;
+ button.textContent='配置枠への吸着：'+(enabled?'ON':'OFF');
+ button.setAttribute('aria-pressed',String(enabled));
+ button.title=enabled?'手動移動したカードを空き配置枠へ吸着させる':'手動移動では配置枠に吸着させない（通常の配札は維持）';
+}
 function syncFrameVisibility(){
  const visible=settings.framesVisible!==false;
  $('zone').classList.toggle('frames-hidden',!visible&&!spreadWorkbench);
@@ -2011,7 +2020,7 @@ function hideFramesForDeal(){
 }
 function render(){
  stopFreeSlide();
- syncFrameVisibility();
+ syncFrameVisibility();syncPresetSnap();
  alignRegisteredSpreadPositions();
  updateAppearanceControls();
  refreshClothIndicators();
@@ -3385,7 +3394,7 @@ $('reversals').onchange=e=>{
   render();dualSave();
   setStatus(settings.reversals?'このデッキで正逆位置を使用します。':'このデッキの未配札カードを正位置に揃えました。配置済みのカードは維持します。');
  }else initialize();
-};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false,openingStopRequested=false;
+};$('altarToggle').onchange=e=>{settings.altar=e.target.checked;render();saveLocal()};$('quickLabels').onclick=()=>{settings.labels=!settings.labels;sync();render();saveLocal()};$('quickFrames').onclick=()=>{setFrameVisibility(settings.framesVisible===false);setStatus(settings.framesVisible?'配置枠を再表示しました。':'配置枠を非表示にしました。')};$('presetSnapToggle').onclick=()=>{settings.presetSnap=settings.presetSnap===false;syncPresetSnap();saveLocal();setStatus('配置枠への吸着：'+(settings.presetSnap?'ON':'OFF'));};$('initialOrder').onchange=e=>{settings.initialOrder=e.target.value;saveLocal();setStatus('デッキの初期状態を設定しました。')};$('cutCountSetting').onchange=e=>{settings.cutCount=Number(e.target.value);updateStandaloneAvailability();saveLocal()};$('dealAnimation').onchange=e=>{settings.dealAnimation=TabulaDealAnimation.normalize(e.target.value);e.target.value=settings.dealAnimation;saveLocal();setStatus('配札演出を「'+TabulaDealAnimation.MODES[settings.dealAnimation]+'」に変更しました。')};$('dealSkipFirst').onchange=e=>{const n=Math.max(0,Math.min(77,Math.trunc(Number(e.target.value)||0)));settings.dealSkipFirst=n;e.target.value=n;updateDealRuleSummary();saveLocal();setStatus('配札前の除外枚数を設定しました。')};$('dealSkipSchedule').onchange=e=>{try{parseDealSchedule(e.target.value);settings.dealSkipSchedule=e.target.value.trim();$('dealRuleStatus').textContent='除外タイミングを保存しました。';updateDealRuleSummary();saveLocal()}catch(err){$('dealRuleStatus').textContent=err.message;e.target.value=settings.dealSkipSchedule||''}};$('quickWashDirection').onchange=e=>{settings.quickWashDirection=e.target.value;updateStandaloneAvailability();saveLocal()};$('quickWashRounds').onchange=e=>{settings.quickWashRounds=Math.max(1,Math.min(10,Number(e.target.value)||1));e.target.value=settings.quickWashRounds;saveLocal()};$('crossLabelLayer').onchange=e=>{settings.crossLabelLayer=e.target.value;render();saveLocal()};$('shuffleMethod').onchange=e=>{settings.shuffleMethod=e.target.value;recipes.find(r=>r.id==='single').steps[0].method=e.target.value;recipeId='single';syncRecipes();saveLocal();setStatus('シャッフル方式を変更しました。')};$('newSessionStandalone').onclick=initialize;$('quickWash').onclick=()=>runWashQuick();const quickShuffleChoice=document.createElement('select');quickShuffleChoice.id='quickShuffleChoice';quickShuffleChoice.setAttribute('aria-label','卓上のシャッフル手順を選択');quickShuffleChoice.title='シャッフル手順を選択';const shuffleButton=$('quickShuffle');const shuffleGroup=document.createElement('div');shuffleGroup.className='quick-action-choice';shuffleButton.before(shuffleGroup);shuffleGroup.append(shuffleButton,quickShuffleChoice);quickShuffleChoice.onchange=()=>{const value=quickShuffleChoice.value;if(value==='__edit__'){syncRecipes();recipeEditor();return}if(value.startsWith('method:')){const method=value.slice(7);settings.shuffleMethod=method;const single=recipes.find(r=>r.id==='single');if(single){if(!single.steps.length)single.steps=[shuffleStepDefaults(method)];else single.steps[0].method=method}recipeId='single';$('shuffleMethod').value=method}else if(value.startsWith('recipe:')){recipeId=value.slice(7)}$('shuffleRecipe').value=recipeId;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};syncRecipes();$('quickShuffle').onclick=()=>runRecipe(false);$('quickCut').onclick=()=>cutModal(true);$('quickDeal').onclick=dealAuto;let openingBusy=false,openingStopRequested=false;
 function syncOpeningControls(){
  const button=$('quickOpen');
  if(!button)return;
