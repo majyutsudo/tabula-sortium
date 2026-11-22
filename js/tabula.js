@@ -1107,7 +1107,15 @@ function createPlacedSlotLabel(item,slot,slotIndex,m){
   if(window.innerWidth<=780)t.classList.add('mobile-num-label');
   const dist=window.innerWidth<=780?m.h*.52+5:m.h*.52+8;
   const angle=Number(slot.angle)||0, rad=angle*Math.PI/180;
-  const dx=Math.sin(rad)*dist,dy=-Math.cos(rad)*dist;
+  // Distinct positions may intentionally share the same coordinates (e.g.
+  // the Significator beneath the first Celtic card). Fan their labels out
+  // without moving the cards or changing the spread definition.
+  const coincident=getSlots().map((p,i)=>({p,i}))
+   .filter(({p})=>Math.abs(p.x-slot.x)<0.01&&Math.abs(p.y-slot.y)<0.01)
+   .map(({i})=>i);
+  const labelOrder=coincident.indexOf(slotIndex);
+  const separation=labelOrder<0?0:(labelOrder-(coincident.length-1)/2)*m.w*1.3;
+  const dx=Math.sin(rad)*dist+separation,dy=-Math.cos(rad)*dist;
   t.style.left=`calc(${slot.x}% + ${dx.toFixed(1)}px)`;
   t.style.top=`calc(${slot.y}% + ${dy.toFixed(1)}px)`;
   t.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
@@ -2714,7 +2722,7 @@ async function dealAuto(){
  if(!dealCancelRequested&&settings.spread===startingSpread&&state.placed.length>alreadyDealt&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))&&!state.deck.length)
   setStatus('山札がなくなりました。残りの位置には配札できません。');
  // The final arrival animation is complete; check face-up spreads once.
- if(!startingSession&&settings.spread===startingSpread&&settings.dealFaceUp===true){maybeTriggerCompletionEffect();saveLocal();}
+ if(!startingSession&&settings.spread===startingSpread){maybeTriggerCompletionEffect();saveLocal();}
 }
 let shuffleBusy=false;
 const riffleSequence=TabulaShuffle.riffleSequence;
