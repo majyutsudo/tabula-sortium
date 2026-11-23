@@ -79,7 +79,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / I CHING EXPERIMENT 03</div><h1>I CHING DICE</h1><div class="subtitle">THE EIGHT TRIGRAMS · SIXTY-FOUR HEXAGRAMS</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / I CHING EXPERIMENT 04</div><h1>I CHING DICE</h1><div class="subtitle">THE EIGHT TRIGRAMS · SIXTY-FOUR HEXAGRAMS</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · I CHING</div><div class="corner br">THE BOOK OF CHANGES</div>
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
@@ -107,7 +107,7 @@ button{font:inherit;cursor:pointer}
  <button type="button" id="roll" disabled>◆　ダイスを振る　◆</button>
 </div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">象牙色の本体に漢字を大きく刻んだ易占ダイス実験版。八卦の8面体2個（上卦は赤字・下卦は黒字）と動爻の6面体1個を使用。上卦と下卦を組み合わせて本卦を作り、動爻を変えて之卦を表示します。<br>この簡便法では動爻が必ず1本出ます。筮竹・三枚銭の確率構造とは異なります。<br><a href="dice-lab.html" style="color:#c6af7b">通常のDICE LABに戻る</a>　·　<a href="astro-dice-lab.html" style="color:#c6af7b">アストロダイス</a></p>
+<p class="note">象牙色の本体に漢字を大きく刻んだ易占ダイス実験版。八卦の8面体2個（上卦は赤字・下卦は黒字）と動爻の6面体1個（「初」のみ朱、ほかは墨色）を使用。上卦と下卦を組み合わせて本卦を作り、動爻を変えて之卦を表示します。<br>この簡便法では動爻が必ず1本出ます。筮竹・三枚銭の確率構造とは異なります。<br><a href="dice-lab.html" style="color:#c6af7b">通常のDICE LABに戻る</a>　·　<a href="astro-dice-lab.html" style="color:#c6af7b">アストロダイス</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -600,8 +600,11 @@ function ichingTexture(face,dieIndex,ink,ringRadius=null){
  // Simulate a carved, ink-filled recess: the lower-right wall of the
  // engraving is lit, the upper-left wall is dark, then pigment sits below
  // the ivory face. Keep the edge fine enough for small triangular faces.
- const dark=dieIndex===1?'#141319':'#69151b';
- const pigment=dieIndex===1?'#29242a':'#a0252b';
+ // On the moving-line die, only 初 is vermilion; 二・三・四・五・上
+ // are black. The two trigram dice keep their respective red/black inks.
+ const vermilion=dieIndex===0||(dieIndex===2&&face.glyph==='初');
+ const dark=vermilion?'#69151b':'#141319';
+ const pigment=vermilion?'#a0252b':'#29242a';
  c.save();
  c.shadowColor='rgba(38,28,19,.68)';
  c.shadowBlur=Math.max(3,font*.032);
@@ -623,7 +626,7 @@ function ichingTexture(face,dieIndex,ink,ringRadius=null){
  c.fillText(face.glyph,256,256,maxWidth);
  // Minute gloss on the pigment, not a raised letter outline.
  c.save();c.globalAlpha=.20;
- c.fillStyle='#e8b2a4';c.fillText(face.glyph,256+1,256+1,maxWidth);
+ c.fillStyle=vermilion?'#e8b2a4':'#aaa2a2';c.fillText(face.glyph,256+1,256+1,maxWidth);
  c.restore();
  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
  return tex;
