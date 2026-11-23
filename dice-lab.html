@@ -264,7 +264,7 @@ function renderPoly(d){
   // without changing the face's 3D location, slant, or perspective.
   const det=ux*vy-uy*vx;
   if(det>0){vx=-vx;vy=-vy}
-  const isTop=item===top,opacity=isTop?1:Math.max(.38,normal[2]*.8);
+  const isTop=item===top,opacity=isTop?1:(d.settled?Math.max(.22,normal[2]*.37):Math.max(.40,normal[2]*.73));
   const matrix=[ux,uy,vx,vy,centre[0],centre[1]].map(n=>n.toFixed(3)).join(' ');
   const backing=shadeColor(d.settings.color,light);
   html+='<text x="0" y="0" font-size="1" opacity="'+opacity.toFixed(2)+'" transform="matrix('+matrix+')" fill="'+ink+'" stroke="'+backing+'">'+(i+1)+'</text>';
