@@ -62,7 +62,7 @@ button{font:inherit;cursor:pointer}
 .astro-results #total{display:none}
 .astro-results #values{width:100%;gap:8px;justify-content:space-around}
 .astro-results .result-die{max-width:none;padding:2px 6px}
-.astro-results .result-number{font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif;font-size:29px}
+.astro-results .result-number{font-family:"Yu Mincho","Noto Serif CJK JP","Noto Serif JP",serif;font-size:29px;font-weight:900}
 .astro-name{font-size:11px;color:#e1d2b0;white-space:nowrap}
 @media(max-width:500px){.astro-legend small{font-size:9px}.astro-results .result-number{font-size:25px}.astro-name{font-size:10px}}
 .hexagram-reading{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:97px;width:min(94%,690px);text-align:center;padding:9px 7px;border:1px solid #c0aa7655;border-radius:5px;background:#172a22e0;color:#f1e1bc;font-size:13px;line-height:1.5;pointer-events:none}
@@ -74,7 +74,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / I CHING EXPERIMENT 01</div><h1>I CHING DICE</h1><div class="subtitle">THE EIGHT TRIGRAMS · SIXTY-FOUR HEXAGRAMS</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / I CHING EXPERIMENT 02</div><h1>I CHING DICE</h1><div class="subtitle">THE EIGHT TRIGRAMS · SIXTY-FOUR HEXAGRAMS</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · I CHING</div><div class="corner br">THE BOOK OF CHANGES</div>
  <div class="results astro-results" aria-live="polite"><div id="values"></div><div id="total" hidden></div></div><div class="hexagram-reading" id="hexagram-reading" aria-live="polite">本卦 —　·　動爻 —　·　之卦 —</div>
@@ -90,9 +90,9 @@ button{font:inherit;cursor:pointer}
  <div class="force-range" aria-hidden="true"><span>そっと</span><span>強く</span><span>激しく</span></div>
 </div>
 <div class="astro-legend">
- <div><span class="astro-dot" style="background:#b97359"></span><strong>上卦・D8</strong><small>乾 ☰ ～ 坤 ☷</small></div>
- <div><span class="astro-dot" style="background:#626f83"></span><strong>下卦・D8</strong><small>乾 ☰ ～ 坤 ☷</small></div>
- <div><span class="astro-dot" style="background:#b0a274"></span><strong>動爻・D6</strong><small>初爻～上爻</small></div>
+ <div><span class="astro-dot" style="background:#b73338"></span><strong>上卦・D8</strong><small>乾 ☰ ～ 坤 ☷</small></div>
+ <div><span class="astro-dot" style="background:#27252a"></span><strong>下卦・D8</strong><small>乾 ☰ ～ 坤 ☷</small></div>
+ <div><span class="astro-dot" style="background:#8c262c"></span><strong>動爻・D6</strong><small>初爻～上爻</small></div>
 </div>
 <div class="roll-actions">
  <button type="button" id="collect" disabled>◇　ダイスを握る</button>
@@ -100,7 +100,7 @@ button{font:inherit;cursor:pointer}
  <button type="button" id="roll" disabled>◆　ダイスを振る　◆</button>
 </div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">2個の八卦ダイス（8面体）と動爻ダイス（6面体）を使う易占実験版。上卦と下卦を組み合わせて本卦を作り、動爻を変えて之卦を表示します。<br>この簡便法では動爻が必ず1本出ます。筮竹・三枚銭の確率構造とは異なります。<br><a href="dice-lab.html" style="color:#c6af7b">通常のDICE LABに戻る</a>　·　<a href="astro-dice-lab.html" style="color:#c6af7b">アストロダイス</a></p>
+<p class="note">象牙色の本体に漢字を大きく刻んだ易占ダイス実験版。八卦の8面体2個（上卦は赤字・下卦は黒字）と動爻の6面体1個を使用。上卦と下卦を組み合わせて本卦を作り、動爻を変えて之卦を表示します。<br>この簡便法では動爻が必ず1本出ます。筮竹・三枚銭の確率構造とは異なります。<br><a href="dice-lab.html" style="color:#c6af7b">通常のDICE LABに戻る</a>　·　<a href="astro-dice-lab.html" style="color:#c6af7b">アストロダイス</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -148,14 +148,14 @@ const pipGrid={
 const trigramNames=['乾','兌','離','震','巽','坎','艮','坤'];
 const trigramGlyphs=['☰','☱','☲','☳','☴','☵','☶','☷'];
 const astroFaces=[
- trigramNames.map((name,i)=>({glyph:trigramGlyphs[i],name})),
- trigramNames.map((name,i)=>({glyph:trigramGlyphs[i],name})),
- Array.from({length:6},(_,i)=>({glyph:String(i+1),name:i===0?'初爻':i===5?'上爻':'第'+(i+1)+'爻'}))
+ trigramNames.map(name=>({glyph:name,name})),
+ trigramNames.map(name=>({glyph:name,name})),
+ ['初','二','三','四','五','上'].map((glyph,i)=>({glyph,name:i===0?'初爻':i===5?'上爻':'第'+(i+1)+'爻'}))
 ];
 const diceSettings=[
- {sides:8,color:'#b97359',material:'astro',label:'上卦'},
- {sides:8,color:'#626f83',material:'astro',label:'下卦'},
- {sides:6,color:'#b0a274',material:'ring',label:'動爻'}
+ {sides:8,color:'#b73338',material:'astro',label:'上卦'},
+ {sides:8,color:'#27252a',material:'astro',label:'下卦'},
+ {sides:6,color:'#8c262c',material:'iching',label:'動爻'}
 ];
 // King Wen numbers indexed [upper trigram][lower trigram] in order
 // 乾、兌、離、震、巽、坎、艮、坤.
@@ -566,31 +566,39 @@ function complementaryFaceValues(normals){
  if(next!==7)throw Error('Incorrect opposite pairs');
  return values;
 }
-function astroTexture(face,dieIndex,color,ringRadius){
+// Reference-inspired design: an ivory body with large engraved Chinese
+// characters, without the ring motif of the normal/polyhedral dice.
+// Face glyphs and result values use the exact same semantic index.
+function ichingTexture(face,dieIndex,ink,ringRadius=null){
  const n=512,canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
  const c=canvas.getContext('2d'),img=c.createImageData(n,n);
- const rgb=parseInt(color.slice(1),16),base=[rgb>>16&255,rgb>>8&255,rgb&255];
- const rng=seededRandom(71413+dieIndex*79+face.glyph.codePointAt(0));
+ const random=seededRandom(71507+dieIndex*157+face.glyph.codePointAt(0));
+ const base=[226,215,175];
  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
-  const at=(y*n+x)*4,grain=Math.sin(x*.063+y*.014)*4+Math.sin(x*.17+y*.031)*2+(rng()-.5)*16;
-  const edge=Math.max(0,1-Math.min(x,y,n-1-x,n-1-y)/72);
-  for(let k=0;k<3;k++)img.data[at+k]=Math.max(0,Math.min(255,base[k]+grain-edge*16));
-  img.data[at+3]=255;
+  const p=(y*n+x)*4;
+  const grain=Math.sin(x*.028+y*.011)*2.7+(random()-.5)*8;
+  const wear=Math.max(0,1-Math.min(x,y,n-x,n-y)/75)*10;
+  for(let k=0;k<3;k++)img.data[p+k]=Math.max(0,Math.min(255,base[k]+grain-wear));
+  img.data[p+3]=255;
  }
  c.putImageData(img,0,0);
- const r=Math.min(182,Math.max(12,ringRadius*.99)),x=256,y=256;
- c.beginPath();c.arc(x+2,y+3,r+3,0,Math.PI*2);c.fillStyle='rgba(27,22,17,.43)';c.fill();
- c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.strokeStyle='#ebd2a0';c.lineWidth=Math.max(3,r*.1);c.stroke();
- c.beginPath();c.arc(x,y,r*.84,0,Math.PI*2);c.strokeStyle='#453528';c.lineWidth=Math.max(4,r*.13);c.stroke();
- c.beginPath();c.arc(x,y,r*.70,0,Math.PI*2);c.fillStyle='#d7bc8f';c.fill();
- c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
- const house=dieIndex===2,double=house&&face.glyph.length===2;
- const font=r*(double?1.12:house?1.45:1.47);
- c.font=(house?'bold ':'normal ')+font+'px '+(house?'Georgia,serif':'"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif');
- c.strokeStyle='#f7deb0';c.lineWidth=Math.max(2,r*.08);
- c.strokeText(face.glyph,x,y+2,r*1.32);
- c.fillStyle='#271f18';c.fillText(face.glyph,x,y,r*1.32);
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;return texture;
+ // D8 triangular faces are smaller, but Chinese characters should fill
+ // most of the available inscribed area without splitting across edges.
+ const isCube=dieIndex===2;
+ const r=isCube?173:Math.max(44,Math.min(170,ringRadius*1.05));
+ const font=isCube?265:r*2.03;
+ const maxWidth=isCube?326:r*1.85;
+ c.font='900 '+font+'px "Yu Mincho","Hiragino Mincho ProN","Noto Serif CJK JP","Noto Serif JP","MS Mincho",serif';
+ c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';c.lineCap='round';
+ // An offset dark/light edge gives the suggestion of deeply painted engraving.
+ c.strokeStyle='rgba(255,246,211,.88)';c.lineWidth=Math.max(3,font*.052);
+ c.strokeText(face.glyph,256+2,256+4,maxWidth);
+ c.strokeStyle=dieIndex===1?'#242027':'#932128';
+ c.lineWidth=Math.max(3,font*.018);
+ c.strokeText(face.glyph,256,256,maxWidth);
+ c.fillStyle=ink;c.fillText(face.glyph,256,256,maxWidth);
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
+ return tex;
 }
 function numberedMesh(sides,color,material='standard',astroDieIndex=0){
  const source=getSolid(sides),scale=polyScale(sides);
@@ -647,7 +655,7 @@ function numberedMesh(sides,color,material='standard',astroDieIndex=0){
  const isRing=material==='ring'&&[8,10,12,20].includes(sides);
  const astroValues=material==='astro'?faces.map((_,i)=>i+1):null;
  const materials=faces.map((_,i)=>new THREE.MeshStandardMaterial({
-  map:astroValues?astroTexture(astroFaces[astroDieIndex][astroValues[i]-1],astroDieIndex,color,rings[i]):isRing?ringNumberTexture(i+1,color,sides,rings[i],i):numberTexture(i+1,color,sides),
+  map:astroValues?ichingTexture(astroFaces[astroDieIndex][astroValues[i]-1],astroDieIndex,color,rings[i]):isRing?ringNumberTexture(i+1,color,sides,rings[i],i):numberTexture(i+1,color,sides),
   roughness:material==='astro'?.84:isRing?.88:.49,metalness:(material==='astro'||isRing)?0:.025,side:THREE.DoubleSide
  }));
  const mesh=new THREE.Mesh(geometry,materials);
@@ -678,10 +686,10 @@ function makeDie(i){
  const settings=diceSettings[i],sides=settings.sides;
  let mesh,solid=null,normals,faceNumbers;
  if(sides===6){
-  const geometry=settings.material==='standard'?new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE):wornCubeGeometry(settings.material);
+  const geometry=settings.material==='standard'?new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE):wornCubeGeometry(settings.material==='iching'?'ivory':settings.material);
   const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({
-   map:settings.material==='standard'?faceTexture(n,settings.color):finishTexture(n,settings.color,settings.material,i),
-   roughness:settings.material==='wood'?.94:settings.material==='standard'?.47:.88,metalness:0
+   map:settings.material==='iching'?ichingTexture(astroFaces[i][n-1],i,settings.color):settings.material==='standard'?faceTexture(n,settings.color):finishTexture(n,settings.color,settings.material,i),
+   roughness:settings.material==='wood'?.94:settings.material==='standard'?.47:settings.material==='iching'?.42:.88,metalness:0
   }));
   mesh=new THREE.Mesh(geometry,materials);normals=faceNormals;faceNumbers=faceValues;
  }else{
