@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 24</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 25</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -67,9 +67,9 @@ button{font:inherit;cursor:pointer}
  <div class="force-range" aria-hidden="true"><span>そっと</span><span>強く</span><span>激しく</span></div>
 </div>
 <div class="dice-settings" role="group" aria-label="ダイスの面数と色">
- <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material0" aria-label="ダイス1の素材"><option value="standard">標準</option><option value="ivory" selected>象牙</option><option value="wood">古木</option><option value="archaic" selected>古代風</option><option value="ring">環状刻印</option><option value="archaic">古代風</option><option value="ring">環状刻印</option></select><input id="color0" type="color" value="#ead9ae" aria-label="ダイス1の色"></div>
+ <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material0" aria-label="ダイス1の素材"><option value="standard">標準</option><option value="ivory" selected>象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring">環状刻印</option></select><input id="color0" type="color" value="#ead9ae" aria-label="ダイス1の色"></div>
  <div class="die-setting"><label for="sides1">ダイス2</label><select id="sides1" aria-label="ダイス2の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material1" aria-label="ダイス2の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood" selected>古木</option><option value="archaic">古代風</option><option value="ring">環状刻印</option></select><input id="color1" type="color" value="#9c6541" aria-label="ダイス2の色"></div>
- <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material2" aria-label="ダイス3の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option></select><input id="color2" type="color" value="#bc8847" aria-label="ダイス3の色"></div>
+ <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material2" aria-label="ダイス3の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic" selected>古代風</option><option value="ring">環状刻印</option></select><input id="color2" type="color" value="#bc8847" aria-label="ダイス3の色"></div>
 </div>
 <div class="roll-actions">
  <button type="button" id="collect" disabled>◇　ダイスを握る</button>
@@ -226,7 +226,7 @@ function finishTexture(value,color,material,dieIndex){
  }else{
   const ring=material==='ring';
   const wood=material==='wood';
-  const pipR=ring?19:wood?25:24;
+  const pipR=ring?29:wood?25:24;
   for(const [px,py] of pipGrid[value]){
    const x=n/2+px*101,y=n/2+py*101;
    // Tool-cut outer boundary, strongly dark on old wood.
@@ -241,8 +241,8 @@ function finishTexture(value,color,material,dieIndex){
     c.beginPath();c.arc(x,y,pipR-5,0,Math.PI*2);
     c.fillStyle='#ae9466';c.fill();
     c.beginPath();c.arc(x,y,pipR-8,0,Math.PI*2);
-    c.strokeStyle='rgba(44,36,25,.66)';c.lineWidth=3;c.stroke();
-    c.beginPath();c.arc(x,y,7,0,Math.PI*2);c.fillStyle='#342920';c.fill();
+    c.strokeStyle='rgba(44,36,25,.82)';c.lineWidth=5;c.stroke();
+    c.beginPath();c.arc(x,y,11,0,Math.PI*2);c.fillStyle='#342920';c.fill();
    }else{
     const dark=wood?'#24150d':'#514431';
     const indent=c.createRadialGradient(x-7,y-8,1,x,y,pipR+4);
@@ -516,7 +516,7 @@ settingsInputs.forEach(({sides,color,material},i)=>{
   if(material.value==='ivory')color.value='#ead9ae';
   if(material.value==='wood')color.value='#9c6541';
   if(material.value==='archaic')color.value='#bc8847';
-  if(material.value==='ring')color.value='#b5a078';
+  if(material.value==='ring')color.value='#c7b48d';
   changeDie(i);
  });
 });
