@@ -612,6 +612,11 @@ function makeDie(i){
  // max radial extent, including cube vertices, for wall clearance.
  const radius=sides===6?Math.sqrt(3)*HALF:
   Math.max(...solid.vertices.map(v=>Math.hypot(...v)));
+ // Present the five dice on the cloth before the first throw.
+ // Rapier is paused until rolling starts, so the initial pose should
+ // place each solid exactly on the surface instead of floating.
+ const lowest=sides===6?-HALF:Math.min(...solid.vertices.map(v=>v[1]));
+ body.setTranslation({x:(i-(diceSettings.length-1)/2)*1.65,y:-lowest+.02,z:0},true);
  return {mesh,body,normals,faceNumbers,sides,radius};
 }
 function destroyDie(obj){
@@ -740,7 +745,9 @@ function releaseDice(options={}){
  // with horizontal momentum aimed in the dragged direction.
  const tx=-dz,tz=dx;
  objects.forEach(({body,mesh,radius},i)=>{
-  const offset=(i-(objects.length-1)/2)*Math.min(1.25,width*.11,depth*.165);
+  const maxRadius=Math.max(...objects.map(d=>d.radius));
+  const lateralCapacity=Math.max(.35,Math.min(width,depth)/2-maxRadius-.37);
+  const offset=(i-(objects.length-1)/2)*Math.min(1.23,lateralCapacity/((objects.length-1)/2));
   // Compute EACH launch position separately. The old shared edge origin
   // could put the outer die beyond a side wall on diagonal throws.
   const ox=tx*offset,oz=tz*offset;
