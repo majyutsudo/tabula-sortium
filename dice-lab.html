@@ -29,7 +29,7 @@ h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin
 .cube{position:absolute;width:70px;height:70px;transform-style:preserve-3d;will-change:transform}
 .face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:9px;border:1.5px solid #857a66;border-radius:9px;background:linear-gradient(137deg,color-mix(in srgb,var(--die-color,#f1e3c7),white 24%) 2%,var(--die-color,#f1e3c7) 58%,color-mix(in srgb,var(--die-color,#f1e3c7),black 21%));box-shadow:inset 0 0 8px #8d735c55,inset 2px 2px 4px #fff9}
 .face:after{content:"";position:absolute;inset:3px;border:1px solid #baab9255;border-radius:6px;pointer-events:none}
-.pip{display:block;width:10px;height:10px;align-self:center;justify-self:center;border-radius:50%;background:#262421;box-shadow:inset 1px 1px 2px #080707,1px 1px 0 #fff9}
+.pip{display:block;width:10px;height:10px;align-self:center;justify-self:center;border-radius:50%;background:var(--die-ink,#262421);box-shadow:inset 1px 1px 2px #080707,1px 1px 0 #fff9}
 .face[data-face="1"]{transform:translateZ(35px)}
 .face[data-face="6"]{transform:rotateY(180deg) translateZ(35px)}
 .face[data-face="2"]{transform:rotateX(-90deg) translateZ(35px)}
@@ -128,8 +128,14 @@ function paint(d){
  d.el.style.left=d.x+'px';d.el.style.top=(d.y-d.h)+'px';
  d.shadow.style.transform='translateY('+d.h+'px) scale('+Math.max(.7,1-d.h/300)+')';
  d.shadow.style.opacity=String(Math.max(.2,1-d.h/130));
- const visual=d.poly||d.cube;
- visual.style.transform='rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
+ if(d.poly){
+  // Faceted prototype: limit tilt to keep the resulting numeral legible.
+  const tiltX=Math.sin(d.rx*Math.PI/180)*37;
+  const tiltY=Math.sin(d.ry*Math.PI/180)*37;
+  d.poly.style.transform='rotateZ('+d.rz+'deg) rotateX('+tiltX+'deg) rotateY('+tiltY+'deg)';
+ }else{
+  d.cube.style.transform='rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
+ }
 }
 function applyDieSettings(d,setting){
  d.settings=setting;
@@ -205,6 +211,7 @@ function incomingOrigin(x,y,dx,dy,w,h,offset=SIZE*1.6){
 function begin(options={}){
  if(rolling)return;
  const power=options.power??powerModes[selectedPower];
+ for(const input of document.querySelectorAll('.die-sides,.die-color'))input.disabled=true;
  const direction=options.direction??{x:0,y:-1};
  const magnitude=Math.hypot(direction.x,direction.y)||1;
  const dir={x:direction.x/magnitude,y:direction.y/magnitude};
@@ -343,6 +350,7 @@ function tick(time){
  dice.forEach(paint);
  if(dice.every(d=>d.phase!=='incoming'&&d.settled&&elapsed-d.settleStart>=d.settleDuration)){
   rolling=false;button.disabled=false;
+  for(const input of document.querySelectorAll('.die-sides,.die-color'))input.disabled=false;
   values.textContent=dice.map(d=>'D'+d.settings.sides+': '+d.value).join(' · ');
   total.textContent=String(dice.reduce((sum,d)=>sum+d.value,0));
   status.textContent='THE DICE HAVE FALLEN';
