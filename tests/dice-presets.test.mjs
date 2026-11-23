@@ -5,7 +5,7 @@ import {PRESETS,preset,TRIGRAMS} from '../js/dice-presets.js';
 
 test('all unified dice presets have complete symbolic face definitions',()=>{
  for(const [id,setting] of Object.entries(PRESETS)){
-  assert.equal(setting.dice.length,id==='normal'?5:3);
+  assert.equal(setting.dice.length,3);
   for(const die of setting.dice){
    assert.ok([6,8,10,12,20].includes(die.sides));
    if(die.markings==='number')continue;
@@ -39,8 +39,8 @@ test('unified page has one physics engine and all preset selectors',()=>{
  assert.match(html,/value="normal"/);
  assert.match(html,/value="astro"/);
  assert.match(html,/value="iching"/);
- assert.match(html,/js\/dice-engine\.js\?v=0716/);
- assert.match(engine,/from '\.\/dice-presets\.js\?v=0716'/);
+ assert.match(html,/js\/dice-engine\.js\?v=0717/);
+ assert.match(engine,/from '\.\/dice-presets\.js\?v=0717'/);
  assert.match(engine,/complementaryFaceValues\(faceNormals\)/);
  assert.match(engine,/function hexagramSummary\(/);
 });
@@ -55,5 +55,16 @@ test('normal dice count, palette and text-presentation zodiac marks are supporte
  assert.doesNotMatch(engine,/\['wood','古木'\]/);
  assert.doesNotMatch(engine,/\['archaic','古代風'\]/);
  assert.match(engine,/\\uFE0E/);
- assert.match(html,/UNIFIED DICE LAB v0\.716/);
+ assert.match(html,/UNIFIED DICE LAB v0\.717/);
+});
+
+test('default dice are three D6 and ordinary table labels are not I Ching labels',()=>{
+ assert.deepEqual(PRESETS.normal.dice.map(d=>d.sides),[6,6,6]);
+ const html=readFileSync(new URL('../dice-unified-lab.html',import.meta.url),'utf8');
+ const engine=readFileSync(new URL('../js/dice-engine.js',import.meta.url),'utf8');
+ assert.match(html,/id="table-corner-top">TABULA · DICE/);
+ assert.match(html,/id="table-corner-bottom">RIGID BODY EXPERIMENT/);
+ assert.match(engine,/table-corner-top/);
+ assert.match(engine,/table-corner-bottom/);
+ assert.match(engine,/const font=r\*\(double\?1\.12:house\?1\.45:1\.78\)/);
 });
