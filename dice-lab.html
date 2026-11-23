@@ -278,7 +278,16 @@ function numberTexture(value,color){
 function numberedMesh(sides,color){
  const solid=getSolid(sides),{vertices,faces}=solid;
  const positions=[],uvs=[],groups=[],faceNormals=[];
- faces.forEach((ids,index)=>{
+ faces.forEach((faceIds,index)=>{
+  // Keep the rendered front face winding outward, including the upper
+  // five kites of D10, whose authored ordering is clockwise from outside.
+  const ids=[...faceIds];
+  const a0=vectorFrom(vertices[ids[0]]),b0=vectorFrom(vertices[ids[1]]),c0=vectorFrom(vertices[ids[2]]);
+  const raw=b0.clone().sub(a0).cross(c0.clone().sub(a0));
+  const centroid=new THREE.Vector3();
+  ids.forEach(k=>centroid.add(vectorFrom(vertices[k])));
+  centroid.multiplyScalar(1/ids.length);
+  if(raw.dot(centroid)<0)ids.reverse();
   const {normal,centre}=facePlane(vertices,ids);
   faceNormals.push(normal);
   const a=vectorFrom(vertices[ids[0]]).sub(centre).normalize();
