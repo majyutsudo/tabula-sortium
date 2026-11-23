@@ -1,0 +1,11 @@
+/* TABULA dice workspace v0.722: reversible first-stage adapter */
+.instrument-section{border-bottom:1px solid var(--line,#554b3e)}
+.instrument-section .instrument-heading{margin:0 0 9px;font-size:13px;letter-spacing:.1em}
+.instrument-section .field[hidden],.instrument-section .mini[hidden]{display:none!important}
+.dice-workspace[hidden]{display:none!important}
+.dice-workspace{width:100%;max-width:900px;margin:0 auto;padding:8px 10px 20px;box-sizing:border-box}
+.dice-workspace iframe{display:block;width:100%;height:980px;border:0;background:transparent}
+body.tabula-dice-mode aside>section:not(#instrumentSection),body.tabula-dice-mode aside>.aside-help-area{display:none!important}
+body.tabula-dice-mode .main>:not(#diceWorkspace){display:none!important}
+body.tabula-dice-mode .main>#diceWorkspace{display:block!important}
+@media(max-width:650px){.dice-workspace{padding:4px 2px 12px}}
