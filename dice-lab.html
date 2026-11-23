@@ -50,7 +50,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 19</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 20</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -261,7 +261,7 @@ function solidFaces(sides){
 }
 const solids=new Map();
 function getSolid(sides){if(!solids.has(sides))solids.set(sides,solidFaces(sides));return solids.get(sides)}
-function numberTexture(value,color){
+function numberTexture(value,color,sides){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const c=canvas.getContext('2d');
  c.fillStyle=color;c.fillRect(0,0,256,256);
@@ -270,9 +270,16 @@ function numberTexture(value,color){
  c.fillStyle=shade;c.fillRect(0,0,256,256);
  const rgb=parseInt(color.slice(1),16),lum=(rgb>>16&255)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
  c.textAlign='center';c.textBaseline='middle';c.fillStyle=lum<140?'#fff1d8':'#24231e';
- c.font='bold '+(value>=10?107:137)+'px Georgia,serif';c.fillText(String(value),128,128);
- // A small underline helps distinguish 6 and 9.
- if(value===6||value===9){c.fillRect(105,206,46,6)}
+ // A D10 kite is much narrower than a square face. Fit every numeral
+ // inside a conservative central patch instead of letting it cross edges.
+ const fontSize=sides===10?(value>=10?59:72):sides===4?92:sides===20?(value>=10?76:98):(value>=10?86:112);
+ c.font='bold '+fontSize+'px Georgia,serif';
+ c.fillText(String(value),128,128,112);
+ // Underline for 6/9 sits near the baseline and scales with the glyph.
+ if(value===6||value===9){
+  const underlineWidth=Math.min(42,fontSize*.33);
+  c.fillRect(128-underlineWidth/2,128+fontSize*.43,underlineWidth,Math.max(3,fontSize*.045));
+ }
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
 }
 function numberedMesh(sides,color){
@@ -312,7 +319,7 @@ function numberedMesh(sides,color){
  groups.forEach(g=>geometry.addGroup(g.start,g.count,g.materialIndex));
  geometry.computeVertexNormals();
  const materials=faces.map((_,i)=>new THREE.MeshStandardMaterial({
-  map:numberTexture(i+1,color),roughness:.49,metalness:.025,side:THREE.DoubleSide
+  map:numberTexture(i+1,color,sides),roughness:.49,metalness:.025,side:THREE.DoubleSide
  }));
  const mesh=new THREE.Mesh(geometry,materials);
  return {mesh,solid,normals:faceNormals,values:faces.map((_,i)=>i+1)};
