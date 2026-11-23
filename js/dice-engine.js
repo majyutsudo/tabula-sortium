@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0719';
+import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0720';
 
 const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
@@ -115,6 +115,7 @@ function rebuildNormalDice(){
 }
 function renderSettings(){
  const host=document.getElementById('dice-settings');host.replaceChildren();
+ const panel=document.getElementById('normal-dice-panel');panel.hidden=current.id!=='normal';
  host.hidden=current.id!=='normal';if(host.hidden)return;
  const toolbar=document.createElement('div');toolbar.className='dice-config-toolbar';
  const count=document.createElement('span');count.textContent='使用数：'+diceSettings.length+'個';
