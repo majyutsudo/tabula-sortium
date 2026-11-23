@@ -67,6 +67,11 @@ button{font:inherit;cursor:pointer}
 @media(max-width:500px){.astro-legend small{font-size:9px}.astro-results .result-number{font-size:25px}.astro-name{font-size:10px}}
 .hexagram-reading{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:97px;width:min(94%,690px);text-align:center;padding:9px 7px;border:1px solid #c0aa7655;border-radius:5px;background:#172a22e0;color:#f1e1bc;font-size:13px;line-height:1.5;pointer-events:none}
 @media(max-width:480px){.hexagram-reading{bottom:83px;font-size:11px}}
+.iching-outcome{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:100%;max-width:840px;margin:0 auto}
+.iching-outcome .hexagram-reading{position:static;left:auto;bottom:auto;transform:none;width:100%;box-sizing:border-box;padding:10px 12px;background:#182e25;border:1px solid #b6a47665;color:#f1e1bc;font-size:14px;line-height:1.6;pointer-events:auto}
+.iching-outcome .results.astro-results{position:static;left:auto;bottom:auto;transform:none;width:100%;box-sizing:border-box;background:#162b23;border:1px solid #baa77a70;pointer-events:auto;padding:9px 12px}
+.iching-outcome .astro-results .result-number{font-size:30px}
+@media(max-width:480px){.iching-outcome{gap:5px}.iching-outcome .hexagram-reading{font-size:12px;padding:8px 6px}.iching-outcome .results.astro-results{padding:7px 5px}.iching-outcome .astro-results .result-number{font-size:25px}}
 .note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
 #failure{color:#f2c7aa;text-align:center;font-size:12px;line-height:1.6}
 @media(max-width:480px){body{padding:8px}main{gap:10px}.frame{padding:6px}#felt{height:52dvh;min-height:340px}.mode{padding:8px 11px}}
@@ -74,13 +79,15 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / I CHING EXPERIMENT 02</div><h1>I CHING DICE</h1><div class="subtitle">THE EIGHT TRIGRAMS · SIXTY-FOUR HEXAGRAMS</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / I CHING EXPERIMENT 03</div><h1>I CHING DICE</h1><div class="subtitle">THE EIGHT TRIGRAMS · SIXTY-FOUR HEXAGRAMS</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · I CHING</div><div class="corner br">THE BOOK OF CHANGES</div>
- <div class="results astro-results" aria-live="polite"><div id="values"></div><div id="total" hidden></div></div><div class="hexagram-reading" id="hexagram-reading" aria-live="polite">本卦 —　·　動爻 —　·　之卦 —</div>
- 
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
  </div>
+</div>
+<div class="iching-outcome">
+ <div class="hexagram-reading" id="hexagram-reading" aria-live="polite">本卦 —　·　動爻 —　·　之卦 —</div>
+ <div class="results astro-results" aria-live="polite"><div id="values"></div><div id="total" hidden></div></div>
 </div>
 <div class="status" id="status" aria-live="polite">物理エンジンを読み込み中…</div>
 <div class="force-control">
@@ -590,13 +597,34 @@ function ichingTexture(face,dieIndex,ink,ringRadius=null){
  const maxWidth=isCube?326:r*1.85;
  c.font='900 '+font+'px "Yu Mincho","Hiragino Mincho ProN","Noto Serif CJK JP","Noto Serif JP","MS Mincho",serif';
  c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';c.lineCap='round';
- // An offset dark/light edge gives the suggestion of deeply painted engraving.
- c.strokeStyle='rgba(255,246,211,.88)';c.lineWidth=Math.max(3,font*.052);
- c.strokeText(face.glyph,256+2,256+4,maxWidth);
- c.strokeStyle=dieIndex===1?'#242027':'#932128';
- c.lineWidth=Math.max(3,font*.018);
+ // Simulate a carved, ink-filled recess: the lower-right wall of the
+ // engraving is lit, the upper-left wall is dark, then pigment sits below
+ // the ivory face. Keep the edge fine enough for small triangular faces.
+ const dark=dieIndex===1?'#141319':'#69151b';
+ const pigment=dieIndex===1?'#29242a':'#a0252b';
+ c.save();
+ c.shadowColor='rgba(38,28,19,.68)';
+ c.shadowBlur=Math.max(3,font*.032);
+ c.shadowOffsetX=-Math.max(2,font*.025);
+ c.shadowOffsetY=-Math.max(2,font*.028);
+ c.strokeStyle='rgba(92,72,47,.65)';
+ c.lineWidth=Math.max(3,font*.065);
  c.strokeText(face.glyph,256,256,maxWidth);
- c.fillStyle=ink;c.fillText(face.glyph,256,256,maxWidth);
+ c.restore();
+ // Fine exposed ivory rim catches light just below the cut.
+ c.strokeStyle='rgba(255,250,218,.95)';
+ c.lineWidth=Math.max(3,font*.041);
+ c.strokeText(face.glyph,256+Math.max(2,font*.019),256+Math.max(2,font*.022),maxWidth);
+ // The dark inside rim makes the incision read as below the surface.
+ c.strokeStyle=dark;
+ c.lineWidth=Math.max(3,font*.032);
+ c.strokeText(face.glyph,256-Math.max(1,font*.008),256-Math.max(1,font*.01),maxWidth);
+ c.fillStyle=pigment;
+ c.fillText(face.glyph,256,256,maxWidth);
+ // Minute gloss on the pigment, not a raised letter outline.
+ c.save();c.globalAlpha=.20;
+ c.fillStyle='#e8b2a4';c.fillText(face.glyph,256+1,256+1,maxWidth);
+ c.restore();
  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
  return tex;
 }
