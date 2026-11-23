@@ -54,7 +54,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 33</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 34</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  <div class="results" aria-live="polite"><span id="values">D6 — · D8 — · D10 — · D12 — · D20 —</span><span id="total">合計 —</span></div>
@@ -82,7 +82,7 @@ button{font:inherit;cursor:pointer}
  <button type="button" id="roll" disabled>◆　ダイスを振る　◆</button>
 </div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">D6・D8・D10・D12・D20を各1個、5個同時に転がす実験。D20は見やすいよう大きめ。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
+<p class="note">D6・D8・D10・D12・D20を各1個、5個同時に転がす実験。各多面体の数字が同程度の大きさに見えるよう、立体と衝突判定を調整。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -504,7 +504,11 @@ function numberTexture(value,color,sides){
  return texture;
 }
 // Visual and physical scale are derived from the same vertex set.
-function polyScale(sides){return ({8:1.12,10:1.16,12:1.23,20:1.43})[sides]||1}
+// Calibrated by the visual size of the face numerals, not equal
+// circumscribed diameters. A many-sided die needs a larger body so
+// its smaller triangular faces can carry comparably legible numerals.
+// The D6's finished ring-and-dot design retains its established size.
+function polyScale(sides){return ({8:1.17,10:1.24,12:1.14,20:1.77})[sides]||1}
 function numberedMesh(sides,color,material='standard'){
  const source=getSolid(sides),scale=polyScale(sides);
  const solid={vertices:source.vertices.map(v=>v.map(x=>x*scale)),faces:source.faces};
