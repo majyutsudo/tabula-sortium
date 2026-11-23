@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>TABULA DICE v0.716 — Unified Laboratory</title>
+<title>TABULA DICE v0.717 — Unified Laboratory</title>
 <style>
 :root{color-scheme:dark;font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN",serif;background:#101815;color:#eadfc8}
 *{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% 5%,#24372e,#101815 70%);display:flex;justify-content:center;padding:clamp(9px,3vw,28px)}
@@ -62,7 +62,7 @@ button{font:inherit;cursor:pointer}
 .astro-results #total{display:none}
 .astro-results #values{width:100%;gap:8px;justify-content:space-around}
 .astro-results .result-die{max-width:none;padding:2px 6px}
-.iching-outcome .results #values{flex-wrap:wrap;row-gap:6px}.iching-outcome .results .result-die{min-width:65px;flex:1 1 75px}.astro-results .result-number{font-family:"Yu Mincho","Noto Serif CJK JP","Noto Serif JP",serif;font-size:29px;font-weight:900}
+.iching-outcome .results #values{flex-wrap:wrap;row-gap:6px}.iching-outcome .results .result-die{min-width:65px;flex:1 1 75px} .astro-results .result-number{font-family:"Yu Mincho","Noto Serif CJK JP","Noto Serif JP",serif;font-size:29px;font-weight:900}
 .astro-name{font-size:11px;color:#e1d2b0;white-space:nowrap}
 @media(max-width:500px){.astro-legend small{font-size:9px}.astro-results .result-number{font-size:25px}.astro-name{font-size:10px}}
 .hexagram-reading{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:97px;width:min(94%,690px);text-align:center;padding:9px 7px;border:1px solid #c0aa7655;border-radius:5px;background:#172a22e0;color:#f1e1bc;font-size:13px;line-height:1.5;pointer-events:none}
@@ -79,9 +79,9 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / UNIFIED DICE LAB v0.716</div><h1 id="title">DICE LAB</h1><div class="subtitle" id="subtitle">PHYSICS OF FORTUNE</div></header><nav class="dice-mode" aria-label="ダイス体系"><label for="preset">占術の選択</label><select id="preset"><option value="normal">通常ダイス</option><option value="astro">アストロダイス</option><option value="iching">易占ダイス</option></select></nav>
+<header><div class="eyebrow">TABULA SORTIUM / UNIFIED DICE LAB v0.717</div><h1 id="title">DICE LAB</h1><div class="subtitle" id="subtitle">PHYSICS OF FORTUNE</div></header><nav class="dice-mode" aria-label="ダイス体系"><label for="preset">占術の選択</label><select id="preset"><option value="normal">通常ダイス</option><option value="astro">アストロダイス</option><option value="iching">易占ダイス</option></select></nav>
 <div class="frame">
- <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · I CHING</div><div class="corner br">THE BOOK OF CHANGES</div>
+ <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl" id="table-corner-top">TABULA · DICE</div><div class="corner br" id="table-corner-bottom">RIGID BODY EXPERIMENT</div>
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
  </div>
 </div>
@@ -105,6 +105,6 @@ button{font:inherit;cursor:pointer}
 <div id="failure" role="alert" hidden></div>
 <p class="note"><span id="description">通常ダイス。面数・仕上げ・色を変更できます。</span>　<a href="dice-lab.html">元の通常版</a> · <a href="astro-dice-lab.html">元のアストロ版</a> · <a href="iching-dice-lab.html">元の易占版</a></p>
 </main>
-<script type="module" src="js/dice-engine.js?v=0716"></script>
+<script type="module" src="js/dice-engine.js?v=0717"></script>
 </body>
 </html>
