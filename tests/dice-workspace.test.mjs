@@ -19,7 +19,7 @@ test('independent card state stays mounted during dice mode',()=>{
  assert.match(page,/id="deck"/);
  assert.match(page,/id="spread"/);
  assert.match(page,/id="instrumentItem"/);
- assert.match(adapter,/workspace\.hidden=false/);
+ assert.match(adapter,/workspace\.hidden=true/);
  assert.match(adapter,/workspace\.hidden=true/);
  assert.match(adapter,/classList\.remove\('tabula-dice-mode'\)/);
  assert.doesNotMatch(adapter,/innerHTML|removeChild|replaceChildren/);
@@ -27,7 +27,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0724'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0725'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.setMode\(id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -58,4 +58,23 @@ test('the renderer skips zero-size resize while cards are active',()=>{
  const js=file('js/dice-table-engine.js');
  assert.match(js,/if\(w<80\|\|h<80\)return/);
  assert.match(js,/if\(!document\.body\.classList\.contains\('tabula-dice-mode'\)\)return/);
+});
+
+test('same TABULA toolbar and layout are kept, only five shortcut buttons swap',()=>{
+ const html=file('table.html'),style=file('css/dice-workspace.css');
+ for(const id of ['quickWash','quickShuffle','quickCut','quickDeal','quickOpen'])assert.match(html,new RegExp('id="'+id+'"'));
+ for(const id of ['diceQuickCollect','diceQuickMix','diceQuickRoll','diceQuickResults','diceQuickSettings'])assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(html,/<nav class="table-shortcuts dice-quick-actions"/);
+ assert.match(style,/body\.tabula-dice-mode \.table-shortcuts:not\(\.dice-quick-actions\)/);
+ assert.doesNotMatch(style,/body\.tabula-dice-mode \.main>\.toolbar,[^\n]*display:none/);
+ assert.match(html,/id="tableActionSettings"/);
+ assert.match(html,/id="liveResults"/);
+});
+test('dice results/settings and force move into existing TABULA slots',()=>{
+ const adapter=file('js/dice-workspace.js');
+ assert.match(adapter,/resultsHolder\.append\(workspace\.querySelector\('\.iching-outcome'\)\)/);
+ assert.match(adapter,/strengthHolder\.append\(workspace\.querySelector\('\.force-control'\)\)/);
+ assert.match(adapter,/settingsHolder\.append\(element\)/);
+ assert.match(adapter,/sourceButtons\[i\]\.click\(\)/);
+ assert.match(adapter,/MutationObserver\(syncActionStates\)/);
 });
