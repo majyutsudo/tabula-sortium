@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS} from './dice-presets.js?v=0716';
+import {preset,TRIGRAMS} from './dice-presets.js?v=0717';
 
 const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
@@ -158,6 +158,8 @@ function switchPreset(id){
  document.getElementById('title').textContent=current.title;
  document.getElementById('subtitle').textContent=current.subtitle;
  document.getElementById('description').textContent=current.description;
+ document.getElementById('table-corner-top').textContent='TABULA · '+(id==='normal'?'DICE':id==='astro'?'ASTRO':'I CHING');
+ document.getElementById('table-corner-bottom').textContent=id==='normal'?'RIGID BODY EXPERIMENT':id==='astro'?'ASTROLOGICAL DICE':'THE BOOK OF CHANGES';
  renderSettings();createDice();syncMeshes();showResults();
  collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
 }
@@ -594,12 +596,12 @@ function astroTexture(face,dieIndex,color,ringRadius){
  c.beginPath();c.arc(x,y,r*.70,0,Math.PI*2);c.fillStyle='#d7bc8f';c.fill();
  c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
  const house=dieIndex===2,double=house&&face.glyph.length===2;
- const font=r*(double?1.12:house?1.45:1.47);
- c.font=(house?'bold ':'normal ')+font+'px '+(house?'Georgia,serif':'"DejaVu Sans","Noto Sans Symbols 2","Segoe UI Symbol",serif');
+ const font=r*(double?1.12:house?1.45:1.78);
+ c.font=(house?'bold ':'bold ')+font+'px '+(house?'Georgia,serif':'"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif');
  const glyph=dieIndex===1?face.glyph+'\uFE0E':face.glyph;
- c.strokeStyle='#f7deb0';c.lineWidth=Math.max(2,r*.08);
- c.strokeText(glyph,x,y+2,r*1.32);
- c.fillStyle='#271f18';c.fillText(glyph,x,y,r*1.32);
+ c.strokeStyle='#f7deb0';c.lineWidth=Math.max(3,r*.12);
+ c.strokeText(glyph,x,y+2,r*1.58);
+ c.fillStyle='#271f18';c.fillText(glyph,x,y,r*1.58);
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;return texture;
 }
 function numberedMesh(sides,color,material='standard',astroDieIndex=0){
