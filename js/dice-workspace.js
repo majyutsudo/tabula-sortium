@@ -9,6 +9,10 @@
  const diceModes=new Set(['normal','astro','iching']);
  let loadPromise=null,lastCardId=source.value||'builtin';
  const diceSelect=document.getElementById('dice-preset');
+ const felt=document.getElementById('dice-felt');
+ for(const type of ['pointerdown','pointermove','pointerup','pointercancel','click','dblclick','wheel']){
+  felt.addEventListener(type,event=>event.stopPropagation());
+ }
  function loadEngine(){
   if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0724').catch(err=>{
    loadPromise=null;
