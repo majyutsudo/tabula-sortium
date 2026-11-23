@@ -425,7 +425,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
  c.putImageData(img,0,0);
  // The mark must fit inside the actual projected polygon, not merely
  // inside the square texture. Face-specific radius comes from geometry.
- const rad=Math.max(12,Math.min(190,ringRadius*2));
+ const rad=Math.max(10,Math.min(190,ringRadius));
  const cx=256,cy=256;
  c.beginPath();c.arc(cx+2,cy+3,rad+4,0,Math.PI*2);
  c.fillStyle='rgba(55,39,24,.5)';c.fill();
@@ -437,13 +437,13 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
  c.fillStyle='#b59a6d';c.fill();
  c.beginPath();c.arc(cx,cy,rad*.67,0,Math.PI*2);
  c.strokeStyle='rgba(56,39,24,.55)';c.lineWidth=Math.max(2,rad*.045);c.stroke();
- const textColor='#33291e',fontSize=rad*(value>=10?.95:1.25);
+ const textColor='#33291e',fontSize=rad*(value>=10?.74:.92);
  c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
  c.font='bold '+fontSize+'px Georgia,serif';
  c.strokeStyle='rgba(240,216,164,.85)';c.lineWidth=Math.max(3,rad*.12);
- c.strokeText(String(value),cx+1,cy+1,rad*1.45);
+ c.strokeText(String(value),cx+1,cy+1,rad*1.18);
  c.fillStyle=textColor;
- c.fillText(String(value),cx,cy,rad*1.45);
+ c.fillText(String(value),cx,cy,rad*1.18);
  if(value===6||value===9){
   const w=rad*.24;
   c.fillRect(cx-w/2,cy+fontSize*.40,w,Math.max(2,rad*.055));
