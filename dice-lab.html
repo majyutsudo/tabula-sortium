@@ -35,7 +35,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 10</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 11</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
@@ -110,7 +110,8 @@ let wallColliders=[];
 function buildWalls(){
  for(const col of wallColliders){world.removeCollider(col,true)}
  wallColliders=[];
- const wallHeight=2.0;
+ // Invisible high retaining walls: strong throws must not vault out of bounds.
+ const wallHeight=5.0;
  const segments=[
  {x:0,z:depth/2+.19,hx:width/2+.3,hz:.22},
  {x:0,z:-depth/2-.19,hx:width/2+.3,hz:.22},
@@ -165,18 +166,21 @@ function releaseDice(options={}){
  // In 3D, the edge is a low wall; spawn just inside the tabletop and above it,
  // with horizontal momentum aimed in the dragged direction.
  const tx=-dz,tz=dx;
- const across=dx!==0||dz!==0;
- let edgeDistance=Infinity;
- if(dx>1e-4)edgeDistance=Math.min(edgeDistance,(width*.43)/dx);
- if(dx< -1e-4)edgeDistance=Math.min(edgeDistance,(width*.43)/-dx);
- if(dz>1e-4)edgeDistance=Math.min(edgeDistance,(depth*.43)/dz);
- if(dz< -1e-4)edgeDistance=Math.min(edgeDistance,(depth*.43)/-dz);
- edgeDistance=Math.min(edgeDistance,Math.max(width,depth));
- const originX=-dx*edgeDistance,originZ=-dz*edgeDistance;
  objects.forEach(({body},i)=>{
-  const offset=(i-1)*Math.min(1.14,width*.19);
+  const offset=(i-1)*Math.min(1.05,width*.18,depth*.17);
+  // Compute EACH launch position separately. The old shared edge origin
+  // could put the outer die beyond a side wall on diagonal throws.
+  const ox=tx*offset,oz=tz*offset;
+  const limitX=width/2-HALF-.32,limitZ=depth/2-HALF-.32;
+  let reach=Infinity;
+  if(dx>1e-4)reach=Math.min(reach,(limitX+ox)/dx);
+  if(dx< -1e-4)reach=Math.min(reach,(limitX-ox)/-dx);
+  if(dz>1e-4)reach=Math.min(reach,(limitZ+oz)/dz);
+  if(dz< -1e-4)reach=Math.min(reach,(limitZ-oz)/-dz);
+  reach=Math.max(.35,Math.min(reach,Math.max(width,depth)));
+  const x=ox-dx*reach,z=oz-dz*reach;
   body.wakeUp();
-  body.setTranslation({x:originX+tx*offset,y:random(1.9,2.8)+power*.22,z:originZ+tz*offset},true);
+  body.setTranslation({x,y:random(1.7,2.5)+Math.min(.4,power*.18),z},true);
   const orientation=new THREE.Quaternion().setFromEuler(new THREE.Euler(random(-3,3),random(-3,3),random(-3,3)));
   body.setRotation({x:orientation.x,y:orientation.y,z:orientation.z,w:orientation.w},true);
   body.setLinvel({x:dx*random(3.8,5.2)*power+random(-.6,.6),
@@ -224,11 +228,11 @@ async function init(){
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   felt.prepend(renderer.domElement);
   scene.add(new THREE.HemisphereLight(0xe1efe8,0x1a3427,2.3));
-  const key=new THREE.DirectionalLight(0xffe9c5,3.0);key.position.set(-4,9,6);
+  const key=new THREE.DirectionalLight(0xffe9c5,2.8);key.position.set(-4,17,-6);
   key.castShadow=true;key.shadow.mapSize.set(1024,1024);
   key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;
-  key.shadow.normalBias=.015;scene.add(key);
-  ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShadowMaterial({opacity:.32}));
+  key.shadow.normalBias=.018;key.shadow.bias=-.0002;key.shadow.radius=3;scene.add(key);
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShadowMaterial({opacity:.19}));
   ground.rotation.x=-Math.PI/2;ground.position.y=.007;ground.receiveShadow=true;scene.add(ground);
   updateDimensions();
   createDice();syncMeshes();
