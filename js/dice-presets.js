@@ -7,7 +7,7 @@ const astroFaces=[
 
 export const TRIGRAMS=["乾","兌","離","震","巽","坎","艮","坤"];
 export const PRESETS={
- normal:{title:'DICE LAB',subtitle:'PHYSICS OF FORTUNE',result:'sum',description:'通常ダイス。面数・仕上げ・色を変更できます。',dice:[6,8,10,12,20].map((sides,i)=>({sides,color:['#c7b48d','#b8a17a','#c7b48d','#d2bc98','#c7b48d'][i],surface:'ring',markings:'number',label:'D'+sides}))},
+ normal:{title:'DICE LAB',subtitle:'PHYSICS OF FORTUNE',result:'sum',description:'通常ダイス。種類・使用数・色を自由に設定できます。',dice:[6,8,10,12,20].map((sides,i)=>({sides,color:['#c7b48d','#b8a17a','#c7b48d','#d2bc98','#c7b48d'][i],surface:'ring',markings:'number',label:'D'+sides}))},
  astro:{title:'ASTRO DICE',subtitle:'PLANETS · ZODIAC · HOUSES',result:'symbols',description:'3個の12面体。対向面の値は合計13。',dice:['天体','十二宮','ハウス'].map((label,i)=>({sides:12,color:['#c5a269','#6b81a1','#658c78'][i],surface:'ivory',markings:'astro',label,faces:astroFaces[i],opposites:'sum13'}))},
  iching:{title:'I CHING DICE',subtitle:'THE EIGHT TRIGRAMS · SIXTY-FOUR HEXAGRAMS',result:'hexagram',description:'八卦2個と動爻1個。象牙風の漢字刻印。動爻が必ず1本出る簡便法。',dice:[
   {sides:8,color:'#e2d7af',surface:'ivory',markings:'engraved',label:'上卦',ink:'#a0252b',faces:TRIGRAMS.map(glyph=>({glyph,name:glyph}))},
