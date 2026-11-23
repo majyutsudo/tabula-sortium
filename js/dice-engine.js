@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS} from './dice-presets.js?v=0715';
+import {preset,TRIGRAMS} from './dice-presets.js?v=0716';
 
 const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
@@ -86,7 +86,7 @@ function showResults(results=null){
   const label=document.createElement('span');label.textContent=d.label;kind.append(dot,label);
   const symbol=document.createElement('span');symbol.className='result-number';
   const face=results?d.faces?.[results[i]-1]:null;
-  symbol.textContent=results?(face?.glyph??String(results[i])):'—';
+  symbol.textContent=results?(face?.glyph===undefined?String(results[i]):current.id==='astro'&&i===1?face.glyph+'\uFE0E':face.glyph):'—';
   tile.append(kind,symbol);
   if(symbolic){const desc=document.createElement('span');desc.className='astro-name';desc.textContent=face?.name||'未投擲';tile.append(desc);}
   values.append(tile);
@@ -99,23 +99,56 @@ function showResults(results=null){
   reading.textContent='本卦 '+String.fromCodePoint(0x4dc0+h.primary-1)+' 第'+h.primary+'卦（'+trigramNames[results[0]-1]+'上'+trigramNames[results[1]-1]+'下） · '+diceSettings[2].faces[results[2]-1].name+' → 之卦 '+String.fromCodePoint(0x4dc0+h.changed-1)+' 第'+h.changed+'卦';
  }else reading.textContent='本卦 —　·　動爻 —　·　之卦 —';
 }
-function lockSettings(locked){document.getElementById('preset').disabled=locked;document.querySelectorAll('#dice-settings input,#dice-settings select').forEach(el=>el.disabled=locked);}
+function lockSettings(locked){document.getElementById('preset').disabled=locked;document.querySelectorAll('#dice-settings input,#dice-settings select,#dice-settings button').forEach(el=>el.disabled=locked);}
+const NORMAL_DICE_MAX=8;
+function rebuildNormalDice(){
+ if(!ready)return;
+ objects.forEach(destroyDie);objects=[];
+ createDice();syncMeshes();showResults();
+ held=false;mixing=false;mixCount=0;
+ collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;
+ status.textContent='READY TO COLLECT';
+}
 function renderSettings(){
- const host=document.getElementById('dice-settings');host.replaceChildren();host.hidden=current.id!=='normal';
- if(host.hidden)return;
+ const host=document.getElementById('dice-settings');host.replaceChildren();
+ host.hidden=current.id!=='normal';if(host.hidden)return;
+ const toolbar=document.createElement('div');toolbar.className='dice-config-toolbar';
+ const count=document.createElement('span');count.textContent='使用数：'+diceSettings.length+'個';
+ const add=document.createElement('button');add.type='button';add.textContent='＋ ダイスを追加';
+ add.disabled=diceSettings.length>=NORMAL_DICE_MAX;
+ add.addEventListener('click',()=>{
+  if(!ready||rolling||mixing||diceSettings.length>=NORMAL_DICE_MAX)return;
+  diceSettings.push({sides:6,color:'#c7b48d',surface:'ring',markings:'number',label:'D6'});
+  rebuildNormalDice();renderSettings();
+ });
+ toolbar.append(count,add);host.append(toolbar);
  diceSettings.forEach((d,i)=>{
   const row=document.createElement('div');row.className='die-setting';
   const label=document.createElement('label');label.textContent='ダイス'+(i+1);
   const sides=document.createElement('select');sides.setAttribute('aria-label','ダイス'+(i+1)+'の面数');
   for(const n of [6,8,10,12,20])sides.add(new Option('D'+n,String(n)));sides.value=String(d.sides);
-  const surface=document.createElement('select');surface.className='material';surface.setAttribute('aria-label','ダイス'+(i+1)+'の仕上げ');
-  for(const [id,name] of [['standard','標準'],['ivory','象牙'],['wood','古木'],['archaic','古代風'],['ring','環状刻印']])surface.add(new Option(name,id));surface.value=d.surface;
+  const material=document.createElement('select');material.className='material';material.setAttribute('aria-label','ダイス'+(i+1)+'の仕上げ');
+  for(const [key,name] of [['standard','標準'],['ivory','象牙'],['ring','環状刻印']])material.add(new Option(name,key));material.value=d.surface;
   const color=document.createElement('input');color.type='color';color.value=d.color;color.setAttribute('aria-label','ダイス'+(i+1)+'の色');
-  const refresh=()=>{for(const o of surface.options)o.disabled=Number(sides.value)!==6&&!['standard','ring'].includes(o.value);if(surface.selectedOptions[0]?.disabled)surface.value='standard';};
-  const change=()=>{if(!ready||rolling||mixing)return;d.sides=Number(sides.value);d.surface=surface.value;d.color=color.value;d.label='D'+d.sides;const visible=!held;destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=visible;syncMeshes();showResults();};
-  sides.addEventListener('change',()=>{refresh();change()});
-  surface.addEventListener('change',()=>{const c={ivory:'#ead9ae',wood:'#9c6541',archaic:'#bc8847',ring:'#c7b48d'};if(c[surface.value])color.value=c[surface.value];change()});
-  color.addEventListener('change',change);refresh();row.append(label,sides,surface,color);host.append(row);
+  const remove=document.createElement('button');remove.type='button';remove.className='dice-remove';remove.textContent='×';remove.setAttribute('aria-label','ダイス'+(i+1)+'を削除');remove.disabled=diceSettings.length===1;
+  function refresh(){
+   for(const option of material.options)option.disabled=Number(sides.value)!==6&&option.value==='ivory';
+   if(material.selectedOptions[0]?.disabled)material.value='standard';
+  }
+  function update(){
+   if(!ready||rolling||mixing)return;
+   d.sides=Number(sides.value);d.surface=material.value;d.color=color.value;d.label='D'+d.sides;
+   const visible=!held;destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=visible;
+   syncMeshes();showResults();
+  }
+  sides.addEventListener('change',()=>{refresh();update();});
+  material.addEventListener('change',()=>{const defaults={ivory:'#ead9ae',ring:'#c7b48d'};if(defaults[material.value])color.value=defaults[material.value];update();});
+  color.addEventListener('change',update);
+  remove.addEventListener('click',()=>{
+   if(!ready||rolling||mixing||diceSettings.length===1)return;
+   diceSettings.splice(i,1);rebuildNormalDice();renderSettings();
+  });
+  refresh();row.append(label,sides,material,color,remove);host.append(row);
  });
 }
 function switchPreset(id){
@@ -562,10 +595,11 @@ function astroTexture(face,dieIndex,color,ringRadius){
  c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
  const house=dieIndex===2,double=house&&face.glyph.length===2;
  const font=r*(double?1.12:house?1.45:1.47);
- c.font=(house?'bold ':'normal ')+font+'px '+(house?'Georgia,serif':'"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif');
+ c.font=(house?'bold ':'normal ')+font+'px '+(house?'Georgia,serif':'"DejaVu Sans","Noto Sans Symbols 2","Segoe UI Symbol",serif');
+ const glyph=dieIndex===1?face.glyph+'\uFE0E':face.glyph;
  c.strokeStyle='#f7deb0';c.lineWidth=Math.max(2,r*.08);
- c.strokeText(face.glyph,x,y+2,r*1.32);
- c.fillStyle='#271f18';c.fillText(face.glyph,x,y,r*1.32);
+ c.strokeText(glyph,x,y+2,r*1.32);
+ c.fillStyle='#271f18';c.fillText(glyph,x,y,r*1.32);
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;return texture;
 }
 function numberedMesh(sides,color,material='standard',astroDieIndex=0){
@@ -682,7 +716,8 @@ function makeDie(i){
  // Rapier is paused until rolling starts, so the initial pose should
  // place each solid exactly on the surface instead of floating.
  const lowest=sides===6?-HALF:Math.min(...solid.vertices.map(v=>v[1]));
- body.setTranslation({x:(i-(diceSettings.length-1)/2)*1.65,y:-lowest+.02,z:0},true);
+ const columns=Math.min(4,diceSettings.length),col=i%columns,row=Math.floor(i/columns),rows=Math.ceil(diceSettings.length/columns);
+  body.setTranslation({x:(col-(columns-1)/2)*1.65,y:-lowest+.02,z:(row-(rows-1)/2)*1.65},true);
  return {mesh,body,normals,faceNumbers,sides,radius};
 }
 function destroyDie(obj){
@@ -787,7 +822,8 @@ function releaseDice(options={}){
  objects.forEach(({body,mesh,radius},i)=>{
   const maxRadius=Math.max(...objects.map(d=>d.radius));
   const lateralCapacity=Math.max(.35,Math.min(width,depth)/2-maxRadius-.37);
-  const offset=(i-(objects.length-1)/2)*Math.min(1.43,lateralCapacity/((objects.length-1)/2));
+  const spacing=objects.length>1?Math.min(1.43,2*lateralCapacity/(objects.length-1)):0;
+   const offset=(i-(objects.length-1)/2)*spacing;
   // Compute EACH launch position separately. The old shared edge origin
   // could put the outer die beyond a side wall on diagonal throws.
   const ox=tx*offset,oz=tz*offset;
