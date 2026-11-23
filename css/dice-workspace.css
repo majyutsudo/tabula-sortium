@@ -1,15 +1,57 @@
-/* TABULA dice workspace v0.722: reversible first-stage adapter */
-.dice-workspace[hidden]{display:none!important}
-.dice-workspace{width:100%;max-width:900px;margin:0 auto;padding:8px 10px 20px;box-sizing:border-box}
-.dice-workspace iframe{display:block;width:100%;height:980px;border:0;background:transparent}
+/* v0.724 — dice rendered on TABULA's existing cloth/altar, not in iframe */
+.dice-workspace[hidden],#dice-felt:not(.unused)[hidden]{display:none!important}
+#dice-felt{display:none;position:absolute;inset:0;overflow:hidden;z-index:7;touch-action:none;cursor:crosshair;outline:none}
+body.tabula-dice-mode #dice-felt{display:block}
+#dice-felt canvas{display:block;width:100%;height:100%;position:absolute;inset:0;pointer-events:none}
+#dice-felt .corner{position:absolute;z-index:2;color:#f3e9c1b8;font:10px Georgia,serif;letter-spacing:.16em;pointer-events:none}
+#dice-felt .tl{left:12px;top:12px}
+#dice-felt .br{right:12px;bottom:10px}
+#dice-throwGuide{position:absolute;inset:0;width:100%;height:100%;z-index:2;display:none;pointer-events:none}
+#dice-throwGuide line{stroke:#ebd7aa;stroke-width:3;stroke-dasharray:7 7}
+#dice-throwGuide circle{fill:none;stroke:#f2e3ba;stroke-width:2}
+#dice-throwGuide polygon{fill:#ead5a3}
+body.tabula-dice-mode #surface>.table-zone,body.tabula-dice-mode #surface>.deck,body.tabula-dice-mode #surface>.deck-label,body.tabula-dice-mode #surface>.shuffle-layer,body.tabula-dice-mode #surface>.removed-pile{visibility:hidden!important}
+body.tabula-dice-mode #surface>.altar{z-index:8;pointer-events:none}
 body.tabula-dice-mode aside>section:not(#instrumentChoiceSection),body.tabula-dice-mode aside>.aside-help-area{display:none!important}
-body.tabula-dice-mode .main>:not(#diceWorkspace){display:none!important}
-body.tabula-dice-mode .main>#diceWorkspace{display:block!important}
-@media(max-width:650px){.dice-workspace{padding:4px 2px 12px}}
-
-/* Tool switch lives inside the existing section II; groups are visually separated. */
+body.tabula-dice-mode #instrumentChoiceSection{display:block!important}
+body.tabula-dice-mode #instrumentChoiceSection>:not(h2):not(.instrument-picker){display:none!important}
+body.tabula-dice-mode #instrumentChoiceSection.is-collapsed .instrument-picker{display:block!important}
+body.tabula-dice-mode .main>.toolbar,body.tabula-dice-mode .main>.spread-archive,body.tabula-dice-mode .main>.spread-workbench,body.tabula-dice-mode .main>.dual-mode-bar,body.tabula-dice-mode .main>.table-card-controls,body.tabula-dice-mode .main>.table-shortcuts,body.tabula-dice-mode .main>.table-active-recipe,body.tabula-dice-mode .main>.table-action-settings,body.tabula-dice-mode .main>.table-utility-actions,body.tabula-dice-mode .main>.results-toggle-bar,body.tabula-dice-mode .main>.live-results,body.tabula-dice-mode .main>.table-record-actions,body.tabula-dice-mode .main>.info{display:none!important}
+body.tabula-dice-mode .main>#diceWorkspace{display:flex!important}
+.dice-workspace{order:4;display:flex;flex-direction:column;gap:10px;padding:10px 15px 22px;max-width:920px;width:100%;box-sizing:border-box;margin:0 auto;color:#eadfc8;font-family:Georgia,"Yu Mincho",serif}
+.dice-workspace .iching-outcome{display:flex;flex-direction:column;gap:8px}
+.dice-workspace .hexagram-reading[hidden],.dice-workspace .normal-config[hidden],.dice-workspace .dice-settings[hidden],.dice-workspace .astro-colors[hidden],.dice-workspace .iching-colors[hidden]{display:none!important}
+.dice-workspace .hexagram-reading,.dice-workspace .results{padding:9px 12px;background:#162b23;border:1px solid #baa77a70;border-radius:7px;text-align:center;color:#f2dfb8}
+.dice-workspace .results{display:flex;align-items:center;justify-content:center;gap:8px}
+.dice-workspace #dice-values{display:flex;flex:1;justify-content:space-around;flex-wrap:wrap;gap:7px}
+.dice-workspace .result-die{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:50px;padding:3px 6px}
+.dice-workspace .result-kind{font-size:11px;color:#cab99b;display:flex;align-items:center;gap:5px}
+.dice-workspace .result-swatch{width:9px;height:9px;border-radius:50%}
+.dice-workspace .result-number{font-size:26px;font-weight:bold}
+.dice-workspace .astro-name{font-size:11px}
+.dice-workspace #dice-total{border-left:1px solid #bca77860;padding:0 10px}
+.dice-workspace #dice-total[hidden]{display:none!important}
+.dice-workspace .status{text-align:center;min-height:18px;font-size:11px;letter-spacing:.15em}
+.dice-workspace .force-control{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;font-size:12px}
+.dice-workspace #dice-force{width:100%;accent-color:#d1b273}
+.dice-workspace .force-range{grid-column:2;display:flex;justify-content:space-between;color:#bcae92;font-size:10px}
+.dice-workspace .roll-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.dice-workspace .roll-actions button{border:1px solid #9b8762;border-radius:5px;background:#263d31;color:#eddbba;padding:13px;min-width:120px;cursor:pointer}
+.dice-workspace .roll-actions button:disabled{opacity:.4;cursor:default}
+.dice-workspace #dice-roll{background:#cdb17b;color:#231f1a}
+.dice-workspace .normal-config{border:1px solid #647462;border-radius:7px;background:#1d332a}
+.dice-workspace .normal-config summary{padding:11px 14px;cursor:pointer;font-size:13px}
+.dice-workspace .normal-config-summary{font-size:11px;color:#c1ae8b}
+.dice-workspace .dice-settings{display:grid;grid-template-columns:1fr;gap:8px;padding:10px}
+.dice-workspace .die-setting,.dice-workspace .dice-config-toolbar,.dice-workspace .astro-colors,.dice-workspace .iching-colors{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:7px}
+.dice-workspace .die-setting{border-bottom:1px solid #a18b5830}
+.dice-workspace select,.dice-workspace button,.dice-workspace input{font:inherit}
+.dice-workspace select{background:#293f34;color:#f2e2c4;border:1px solid #8d866f;border-radius:4px;padding:6px}
+.dice-workspace input[type=color]{width:37px;height:33px;border:1px solid #978a69;background:#293f34;padding:2px;border-radius:4px}
+.dice-workspace .astro-color-control{display:flex;align-items:center;gap:7px}
+.dice-workspace .dice-add,.dice-workspace .dice-remove,.dice-workspace .dice-config-toolbar button{background:#263c31;color:#eadebe;border:1px solid #8d866f;border-radius:5px;padding:7px}
+.dice-workspace #dice-preset{display:none}
+.dice-workspace #dice-failure[hidden]{display:none!important}
 .instrument-picker{padding:8px 0 12px;margin:0 0 12px;border-bottom:1px solid #867554}
 .instrument-picker select{width:100%;max-width:100%}
-body.tabula-dice-mode #instrumentChoiceSection>:not(h2):not(.instrument-picker){display:none!important}
-body.tabula-dice-mode #instrumentChoiceSection{display:block!important}
-body.tabula-dice-mode #instrumentChoiceSection.is-collapsed .instrument-picker{display:block!important}
+@media(max-width:600px){.dice-workspace{padding:9px 8px 20px}.dice-workspace .roll-actions button{min-width:0;flex:1;padding:11px 5px}.dice-workspace .result-number{font-size:23px}.dice-workspace .force-control{gap:4px}}
