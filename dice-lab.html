@@ -60,7 +60,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 36</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 37</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  <div class="results" aria-live="polite"><div id="values"></div><div id="total">合計 <strong>—</strong></div></div>
@@ -538,7 +538,7 @@ function numberTexture(value,color,sides){
 // circumscribed diameters. A many-sided die needs a larger body so
 // its smaller triangular faces can carry comparably legible numerals.
 // The D6's finished ring-and-dot design retains its established size.
-function polyScale(sides){return ({8:1.17,10:1.24,12:1.14,20:1.62})[sides]||1}
+function polyScale(sides){return ({8:1.17,10:1.24,12:1.14,20:1.50})[sides]||1}
 function numberedMesh(sides,color,material='standard'){
  const source=getSolid(sides),scale=polyScale(sides);
  const solid={vertices:source.vertices.map(v=>v.map(x=>x*scale)),faces:source.faces};
