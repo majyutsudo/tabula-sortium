@@ -59,6 +59,7 @@ button{font:inherit;cursor:pointer}
 .astro-legend small{font-size:10px;color:#b5ac94}
 .astro-dot{width:9px;height:9px;border-radius:50%;border:1px solid #fff8;display:inline-block}
 .astro-results{width:min(94%,710px)}
+.astro-results #total{display:none}
 .astro-results #values{width:100%;gap:8px;justify-content:space-around}
 .astro-results .result-die{max-width:none;padding:2px 6px}
 .astro-results .result-number{font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif;font-size:29px}
@@ -606,7 +607,7 @@ function numberedMesh(sides,color,material='standard',astroDieIndex=0){
  const astroValues=material==='astro'?complementaryFaceValues(faceNormals):null;
  const materials=faces.map((_,i)=>new THREE.MeshStandardMaterial({
   map:astroValues?astroTexture(astroFaces[astroDieIndex][astroValues[i]-1],astroDieIndex,color,rings[i]):isRing?ringNumberTexture(i+1,color,sides,rings[i],i):numberTexture(i+1,color,sides),
-  roughness:isRing?.88:.49,metalness:isRing?0:.025,side:THREE.DoubleSide
+  roughness:material==='astro'?.84:isRing?.88:.49,metalness:(material==='astro'||isRing)?0:.025,side:THREE.DoubleSide
  }));
  const mesh=new THREE.Mesh(geometry,materials);
  return {mesh,solid,normals:faceNormals,values:astroValues||faces.map((_,i)=>i+1)};
