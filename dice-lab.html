@@ -36,8 +36,7 @@ h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin
 .face[data-face="5"]{transform:rotateX(90deg) translateZ(47px)}
 .face[data-face="3"]{transform:rotateY(90deg) translateZ(47px)}
 .face[data-face="4"]{transform:rotateY(-90deg) translateZ(47px)}
-.poly-core{position:absolute;inset:0;pointer-events:none}
-.poly-core svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(2px 3px 2px #05080880)}
+.poly-core{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(2px 3px 2px #05080880);pointer-events:none}
 .poly-core polygon{stroke:#241d1f;stroke-opacity:.65;stroke-width:1;stroke-linejoin:round}
 .poly-core text{font-family:Georgia,serif;font-weight:700;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke-width:1.3;pointer-events:none}
 .dice-config{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -272,7 +271,7 @@ function applyDieSettings(d,setting){
 }
 function addDice(){
  const {w,h}=dimensions();
- dice=Array.from({length:NUM},(_,i)=>{const d=makeDie();d.x=w*(.27+.23*i);d.y=h*.52;d.value=i+1;d.ry=0;d.rx=0;d.rz=0;applyDieSettings(d,dieSettings[i]);return d});
+ dice=Array.from({length:NUM},(_,i)=>{const d=makeDie();d.x=w*(.29+.21*i);d.y=h*(i===1?.66:.43);d.value=i+1;d.ry=0;d.rx=0;d.rz=0;applyDieSettings(d,dieSettings[i]);return d});
 }
 // A face's pip count is derived from the cube's actual final orientation.
  // This avoids a preselected result disagreeing with the visible top face.
@@ -338,11 +337,12 @@ function begin(options={}){
   d.flightDuration=Math.max(.35,.66-power*.075+rand(-.035,.035));
   // Separate the three landing points across the throw direction.
   const tangent={x:-dir.y,y:dir.x};
-  const spread=(i-(NUM-1)/2)*Math.min(SIZE*1.53,Math.min(w,h)*.22);
+  const spread=(i-(NUM-1)/2)*Math.min(SIZE*1.1,Math.min(w,h)*.27);
+  const depth=i===1?Math.min(SIZE*.89,Math.min(w,h)*.22):0;
   const centerX=w*.50+dir.x*Math.min(w*.12,power*18);
   const centerY=h*.50+dir.y*Math.min(h*.12,power*18);
-  d.impactX=Math.max(radius,Math.min(w-radius,centerX+tangent.x*spread+rand(-13,13)));
-  d.impactY=Math.max(radius,Math.min(h-radius,centerY+tangent.y*spread+rand(-13,13)));
+  d.impactX=Math.max(radius,Math.min(w-radius,centerX+tangent.x*spread+dir.x*depth+rand(-9,9)));
+  d.impactY=Math.max(radius,Math.min(h-radius,centerY+tangent.y*spread+dir.y*depth+rand(-9,9)));
   const entry=incomingOrigin(d.impactX,d.impactY,dir.x,dir.y,w,h,SIZE*1.1+rand(8,35));
   d.launchX=entry.x;d.launchY=entry.y;
   d.flightHeight=(40+rand(8,35))*Math.max(.65,Math.min(1.8,power));
