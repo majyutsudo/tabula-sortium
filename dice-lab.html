@@ -24,8 +24,11 @@ header{text-align:center}.eyebrow{font-size:10px;letter-spacing:.32em;color:#bca
 button{font:inherit;cursor:pointer}
 .mode{border:1px solid #5c6d58;color:#d1c3a7;background:#21342d;border-radius:5px;padding:9px 15px;min-height:38px}
 .mode[aria-pressed=true]{background:#705d3a;color:#fff0c9;border-color:#d6ba81}
-#roll{margin:0 auto;width:min(320px,100%);border:1px solid #dbc08a;color:#2b271b;background:linear-gradient(#e3cb99,#b99b62);min-height:54px;padding:12px 20px;border-radius:5px;font-size:17px;letter-spacing:.12em;box-shadow:0 3px 0 #6a5739,0 6px 16px #0006}
-#roll:hover{filter:brightness(1.08)}#roll:disabled{opacity:.60;cursor:wait}
+#roll{margin:0;width:min(320px,100%);border:1px solid #dbc08a;color:#2b271b;background:linear-gradient(#e3cb99,#b99b62);min-height:54px;padding:12px 20px;border-radius:5px;font-size:17px;letter-spacing:.12em;box-shadow:0 3px 0 #6a5739,0 6px 16px #0006}
+#roll:hover{filter:brightness(1.08)}#roll:disabled{opacity:.45;cursor:not-allowed}
+.roll-actions{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+#collect{border:1px solid #8d866f;color:#e5d4b4;background:#263c31;min-height:54px;padding:12px 22px;border-radius:5px;font-size:15px;letter-spacing:.08em}
+#collect:hover{background:#30483b}#collect:disabled{opacity:.45;cursor:not-allowed}
 .results{display:flex;justify-content:center;align-items:baseline;gap:20px;flex-wrap:wrap;min-height:32px;font-variant-numeric:tabular-nums}
 #values{font-size:16px;color:#d8c7a1}#total{font-size:24px;color:#edd8aa}
 .note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
@@ -35,7 +38,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 12</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 13</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
@@ -43,10 +46,13 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="status" id="status" aria-live="polite">物理エンジンを読み込み中…</div>
 <div class="control-row" role="group" aria-label="投げ方"><span>投げ方</span><button type="button" class="mode" data-strength="gentle" aria-pressed="false">そっと</button><button type="button" class="mode" data-strength="normal" aria-pressed="true">普通</button><button type="button" class="mode" data-strength="strong" aria-pressed="false">勢いよく</button></div>
-<button type="button" id="roll" disabled>◆　ダイスを振る　◆</button>
+<div class="roll-actions">
+ <button type="button" id="collect" disabled>◇　ダイスを握る</button>
+ <button type="button" id="roll" disabled>◆　ダイスを振る　◆</button>
+</div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 —</span></div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">D6 × 3個。本物の剛体シミュレーションを使った比較実験です。<br>卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
+<p class="note">D6 × 3個。まず「ダイスを握る」で卓を空にし、次に投げ入れます。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -54,13 +60,14 @@ import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
 
 const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
+const collectButton=document.getElementById('collect');
 const status=document.getElementById('status');
 const values=document.getElementById('values');
 const total=document.getElementById('total');
 const failure=document.getElementById('failure');
 const modes={gentle:.57,normal:1,strong:1.65};
 let strength='normal',world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
-let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false;
+let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false;
 const DICE_SIZE=.76,HALF=DICE_SIZE/2,FIXED_STEP=1/60;
 const up=new THREE.Vector3(0,1,0);
 const faceNormals=[
@@ -156,8 +163,20 @@ function topFace(object){
  return faceValues[index];
 }
 function random(min,max){return min+Math.random()*(max-min)}
+function collectDice(){
+ if(!ready||rolling||held)return;
+ // Leave physical dice untouched until the next throw; merely remove
+ // them from the visible table. This preserves genuine physics on release.
+ held=true;
+ objects.forEach(({mesh})=>{mesh.visible=false});
+ collectButton.disabled=true;
+ button.disabled=false;
+ values.textContent='—';total.textContent='合計 —';
+ status.textContent='IN HAND — 投げる準備ができました';
+}
 function releaseDice(options={}){
- if(!ready||rolling)return;
+ if(!ready||rolling||!held)return;
+ held=false;
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
  button.disabled=true;values.textContent='—';total.textContent='合計 —';
  status.textContent='ROLLING…';
@@ -169,7 +188,7 @@ function releaseDice(options={}){
  // In 3D, the edge is a low wall; spawn just inside the tabletop and above it,
  // with horizontal momentum aimed in the dragged direction.
  const tx=-dz,tz=dx;
- objects.forEach(({body},i)=>{
+ objects.forEach(({body,mesh},i)=>{
   const offset=(i-1)*Math.min(1.05,width*.18,depth*.17);
   // Compute EACH launch position separately. The old shared edge origin
   // could put the outer die beyond a side wall on diagonal throws.
@@ -189,12 +208,13 @@ function releaseDice(options={}){
   body.setLinvel({x:dx*random(3.8,5.2)*power+random(-.6,.6),
     y:random(-1.7,-.5)*Math.max(.65,power),z:dz*random(3.8,5.2)*power+random(-.6,.6)},true);
   body.setAngvel({x:random(-12,12)*power,y:random(-11,11)*power,z:random(-12,12)*power},true);
+  mesh.visible=true;
  });
 }
 function render(time){
  frame=requestAnimationFrame(render);
  const dt=Math.min(.05,lastTime?(time-lastTime)/1000:0);lastTime=time;
- if(ready){
+ if(ready&&rolling){
   accumulator=Math.min(.12,accumulator+dt);
   while(accumulator>=FIXED_STEP){world.step();accumulator-=FIXED_STEP}
   syncMeshes();
@@ -206,7 +226,7 @@ function render(time){
    ));
    stableTime=stopped?stableTime+dt:0;
    if(stableTime>.50||rollTime>12){
-    rolling=false;button.disabled=false;
+    rolling=false;button.disabled=true;collectButton.disabled=false;
     const results=objects.map(topFace);
     values.textContent=results.join(' · ');
     total.textContent='合計 '+results.reduce((n,v)=>n+v,0);
@@ -239,7 +259,7 @@ async function init(){
   ground.rotation.x=-Math.PI/2;ground.position.y=.007;ground.receiveShadow=true;scene.add(ground);
   updateDimensions();
   createDice();syncMeshes();
-  ready=true;button.disabled=false;status.textContent='READY TO ROLL';
+  ready=true;collectButton.disabled=false;button.disabled=true;status.textContent='READY TO COLLECT';
   frame=requestAnimationFrame(render);
   new ResizeObserver(updateDimensions).observe(felt);
  }catch(error){
@@ -253,6 +273,7 @@ document.querySelectorAll('.mode').forEach(mode=>mode.addEventListener('click',(
  strength=mode.dataset.strength;
  document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-pressed',String(b===mode)));
 }));
+collectButton.addEventListener('click',collectDice);
 button.addEventListener('click',()=>releaseDice());
 const guide=document.getElementById('throwGuide'),startPoint=document.getElementById('startPoint'),line=document.getElementById('throwLine'),arrow=document.getElementById('throwArrow');
 let gesture=null,suppressClick=false;
@@ -266,7 +287,7 @@ function drawGuide(x,y,dx,dy){
  arrow.setAttribute('transform','translate('+X+' '+Y+') rotate('+(Math.atan2(dy,dx)*180/Math.PI)+')');
 }
 felt.addEventListener('pointerdown',event=>{
- if(!ready||rolling||!event.isPrimary||event.button!==0)return;
+ if(!ready||rolling||!held||!event.isPrimary||event.button!==0)return;
  const p=local(event);gesture={id:event.pointerId,x:event.clientX,y:event.clientY,localX:p.x,localY:p.y,time:performance.now()};
  felt.setPointerCapture(event.pointerId);drawGuide(p.x,p.y,0,0);
 });
@@ -284,8 +305,8 @@ felt.addEventListener('pointerup',event=>{
  suppressClick=true;releaseDice({direction:{x:dx/distance,y:dy/distance},power});
 });
 felt.addEventListener('pointercancel',()=>{gesture=null;guide.style.display='none'});
-felt.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}releaseDice()});
-felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();releaseDice()}});
+felt.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}if(held)releaseDice();else collectDice()});
+felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();if(held)releaseDice();else collectDice()}});
 init();
 </script>
 </body>
