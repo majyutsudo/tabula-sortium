@@ -1,29 +1,31 @@
-/* TABULA v0.723 — unified tool selection in section II.
-   The card deck selector remains the card model's source of truth.
-   Dice scene is kept alive in a separate, hidden iframe when cards are active. */
+/* TABULA v0.724: shared table dice overlay, no iframe.
+   Card drawing remains mounted in the original #surface. */
 (()=>{'use strict';
  const picker=document.getElementById('instrumentItem');
  const source=document.getElementById('deckLibrarySelect');
  const section=document.getElementById('instrumentChoiceSection');
- const workspace=document.getElementById('diceWorkspace'),frame=document.getElementById('diceWorkspaceFrame');
- if(!picker||!source||!section||!workspace||!frame)return;
- let frameLoaded=false,lastCardId=source.value||'builtin';
+ const workspace=document.getElementById('diceWorkspace');
+ if(!picker||!source||!section||!workspace)return;
  const diceModes=new Set(['normal','astro','iching']);
- function sendPreset(id){
-  if(frameLoaded&&frame.contentWindow)
-   frame.contentWindow.postMessage({type:'tabula:dice:mode',mode:id},location.origin);
+ let loadPromise=null,lastCardId=source.value||'builtin';
+ const diceSelect=document.getElementById('dice-preset');
+ function loadEngine(){
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0724').catch(err=>{
+   loadPromise=null;
+   document.getElementById('dice-failure').hidden=false;
+   document.getElementById('dice-failure').textContent='ダイスの読み込みに失敗しました：'+err.message;
+   throw err;
+  });
+  return loadPromise;
  }
  function syncAvailableCards(){
-  const cardGroup=picker.querySelector('optgroup[label="カード"]');
-  const previous=picker.value;
-  cardGroup.replaceChildren();
-  for(const option of source.options)cardGroup.append(new Option(option.text,'card:'+option.value));
+  const group=picker.querySelector('optgroup[label="カード"]'),previous=picker.value;
+  group.replaceChildren();
+  for(const item of source.options)group.append(new Option(item.text,'card:'+item.value));
   const desired=document.body.classList.contains('tabula-dice-mode')?previous:'card:'+source.value;
-  if([...picker.options].some(o=>o.value===desired))picker.value=desired;
-  else picker.value='card:'+source.value;
+  picker.value=[...picker.options].some(o=>o.value===desired)?desired:'card:'+source.value;
  }
- const observer=new MutationObserver(syncAvailableCards);
- observer.observe(source,{childList:true,subtree:true,characterData:true});
+ new MutationObserver(syncAvailableCards).observe(source,{childList:true,subtree:true,characterData:true});
  function switchToCard(id){
   document.body.classList.remove('tabula-dice-mode');workspace.hidden=true;
   if(id&&source.value!==id&&[...source.options].some(o=>o.value===id)){
@@ -33,13 +35,15 @@
   requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));
  }
  function switchToDice(id){
-  document.body.classList.add('tabula-dice-mode');
-  workspace.hidden=false;
+  document.body.classList.add('tabula-dice-mode');workspace.hidden=false;
   section.classList.remove('is-collapsed');
   const toggle=section.querySelector('.section-toggle');
   if(toggle)toggle.setAttribute('aria-expanded','true');
-  if(!frame.getAttribute('src'))frame.src='dice-unified-lab.html?embedded=1&v=0722';
-  else sendPreset(id);
+  diceSelect.value=id;
+  loadEngine().then(()=>{
+   window.TabulaDiceTable?.setMode(id);
+   requestAnimationFrame(()=>window.TabulaDiceTable?.resize());
+  }).catch(()=>{});
  }
  picker.addEventListener('change',()=>{
   const [kind,id]=picker.value.split(':');
@@ -50,15 +54,8 @@
   lastCardId=source.value;
   if(!document.body.classList.contains('tabula-dice-mode'))picker.value='card:'+lastCardId;
  });
- frame.addEventListener('load',()=>{
-  frameLoaded=true;const id=picker.value.slice(5);
-  if(picker.value.startsWith('dice:')&&diceModes.has(id))sendPreset(id);
- });
- window.addEventListener('message',event=>{
-  if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
-  if(event.data?.type!=='tabula:dice:height')return;
-  const height=Number(event.data.height);
-  if(Number.isFinite(height)&&height>200&&height<4000)frame.style.height=Math.ceil(height)+'px';
+ window.addEventListener('resize',()=>{
+  if(document.body.classList.contains('tabula-dice-mode'))window.TabulaDiceTable?.resize();
  });
  syncAvailableCards();
 })();
