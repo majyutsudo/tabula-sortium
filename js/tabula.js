@@ -3218,7 +3218,7 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');workflowOptions?.onComplete?.(true);
  }
 }
-function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){if(dualSession){dualSave();return}try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;TabulaPhysicalIdentity.ensureSingle(persistedState);localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}))}catch(e){setStatus('このブラウザでは保存できません。')}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};
+function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){if(dualSession)return dualSave();try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;TabulaPhysicalIdentity.ensureSingle(persistedState);localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}));return true}catch(e){setStatus('このブラウザでは保存できません。');return false}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};
  if(!settings.deckBackColors||typeof settings.deckBackColors!=='object'){
   // Legacy versions shared the active back tone across decks. Do not let
   // LENORMAND's green contaminate the restored TAROT default.
@@ -5905,7 +5905,7 @@ function dualRefreshControls(){
  refreshWorkspaceSwitcher();
 }
 function dualSave(){
- if(!dualSession||state.cutStage)return; // Never persist a temporarily split stock during a cut.
+ if(!dualSession||state.cutStage)return false; // Never persist a temporarily split stock during a cut.
  try{
   dualCapture();
   if(!state.cutStage){
@@ -5913,8 +5913,23 @@ function dualSave(){
   }
   localStorage.setItem(DUAL_SESSION_KEY,JSON.stringify(dualSession));
   dualRefreshControls();
- }catch(e){setStatus('ダブルデッキの保存に失敗しました：'+e.message)}
+  return true;
+ }catch(e){setStatus('ダブルデッキの保存に失敗しました：'+e.message);return false}
 }
+// Leave the tabletop only once its active physical state is safely saved.
+function installEntranceNavigation(){
+ const link=$('tabulaEntranceLink');if(!link)return;
+ link.addEventListener('click',event=>{
+  if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+  event.preventDefault();
+  if(shuffleBusy||openingBusy||dualDealBusy||spreadDealPreparing||autoDealBusy||spreadWorkbench||state.cutStage||document.getElementById('physicalCutOverlay')){
+   setStatus('操作が完了してから入口へ戻ってください。');return;
+  }
+  if(!saveLocal()){setStatus('卓の状態を保存できなかったため、入口への移動を中止しました。');return}
+  window.location.assign(link.href);
+ });
+}
+installEntranceNavigation();
 function dualBusy(){
  if(shuffleBusy||openingBusy||dualDealBusy||spreadDealPreparing||autoDealBusy||spreadWorkbench||state.cutStage){setStatus('操作完了後に卓・山札を切り替えてください。');return true}
  return false;
