@@ -39,8 +39,21 @@ test('unified page has one physics engine and all preset selectors',()=>{
  assert.match(html,/value="normal"/);
  assert.match(html,/value="astro"/);
  assert.match(html,/value="iching"/);
- assert.match(html,/js\/dice-engine\.js\?v=0715/);
- assert.match(engine,/from '\.\/dice-presets\.js\?v=0715'/);
+ assert.match(html,/js\/dice-engine\.js\?v=0716/);
+ assert.match(engine,/from '\.\/dice-presets\.js\?v=0716'/);
  assert.match(engine,/complementaryFaceValues\(faceNormals\)/);
  assert.match(engine,/function hexagramSummary\(/);
+});
+
+test('normal dice count, palette and text-presentation zodiac marks are supported',()=>{
+ const engine=readFileSync(new URL('../js/dice-engine.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../dice-unified-lab.html',import.meta.url),'utf8');
+ assert.match(engine,/NORMAL_DICE_MAX=8/);
+ assert.match(engine,/diceSettings\.push\(/);
+ assert.match(engine,/diceSettings\.splice\(i,1\)/);
+ assert.match(engine,/objects\.length>1\?/);
+ assert.doesNotMatch(engine,/\['wood','古木'\]/);
+ assert.doesNotMatch(engine,/\['archaic','古代風'\]/);
+ assert.match(engine,/\\uFE0E/);
+ assert.match(html,/UNIFIED DICE LAB v0\.716/);
 });
