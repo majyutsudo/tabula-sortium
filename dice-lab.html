@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 27</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 28</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -232,9 +232,15 @@ function finishTexture(value,color,material,dieIndex){
   // Ring radius 54 at ±112 leaves 24px from the face edges;
   // even the six's three rows remain distinct and legible.
   const pipR=ring?54:wood?25:24;
-  const spacing=ring?112:101;
+  // A consistent inset margin makes the ring stamps read as a group,
+  // not as four ornaments trapped in the die's corners.
+  // For D6, the middle row shares the same large rings: keep full
+  // vertical separation to prevent adjacent circles overlapping, but
+  // bring both columns closer to the centre.
+  const spacingX=ring?(value===6?82:86):101;
+  const spacingY=ring?(value===6?112:86):101;
   for(const [px,py] of pipGrid[value]){
-   const x=n/2+px*spacing,y=n/2+py*spacing;
+   const x=n/2+px*spacingX,y=n/2+py*spacingY;
    if(ring){
     // Strong ring-and-dot stamp; kept to a compact 56px outer radius
     // so neighboring stamps do not collide on faces 5 or 6.
