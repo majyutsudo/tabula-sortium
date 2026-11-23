@@ -43,10 +43,16 @@ button{font:inherit;cursor:pointer}
 .die-setting select:disabled,.die-setting input:disabled{opacity:.45;cursor:not-allowed}
 @media(min-width:631px){.die-setting{gap:6px;padding:9px 5px}.die-setting label{font-size:11px}.die-setting select{min-width:56px}.die-setting select.material{min-width:72px}.die-setting input[type=color]{width:32px}}
 @media(max-width:630px){.dice-settings{grid-template-columns:1fr}.die-setting{justify-content:space-between;padding:7px 12px}}
-.results{position:absolute;z-index:4;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:min(92%,675px);padding:7px 12px;background:#162b23d9;border:1px solid #baa77a70;border-radius:6px;box-shadow:0 3px 12px #0a160e8a;pointer-events:none;font-variant-numeric:tabular-nums}
-#values{font-size:13px;line-height:1.4;color:#e4d7b8;letter-spacing:.05em;text-align:center}
-#total{font-size:17px;line-height:1.4;color:#ffe6b6;white-space:nowrap}
-@media(max-width:500px){.results{bottom:8px;gap:5px;padding:6px 8px}#values{font-size:11px}#total{font-size:14px}}
+.results{position:absolute;z-index:4;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:stretch;justify-content:center;gap:8px;flex-wrap:nowrap;width:min(92%,690px);padding:8px;background:#162b23e8;border:1px solid #baa77a70;border-radius:7px;box-shadow:0 3px 12px #0a160e8a;pointer-events:none;font-variant-numeric:tabular-nums}
+#values{display:flex;flex:1;justify-content:center;align-items:stretch;gap:5px;min-width:0}
+.result-die{display:flex;flex:1;min-width:0;max-width:95px;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;border-right:1px solid #bca77830}
+.result-die:last-child{border-right:none}
+.result-kind{display:flex;align-items:center;gap:5px;font:10px Georgia,serif;color:#cfc0a2;letter-spacing:.04em}
+.result-swatch{display:block;width:9px;height:9px;flex-shrink:0;border-radius:50%;border:1px solid #f3e4c85e}
+.result-number{font-size:24px;line-height:1.15;color:#fff0c9;font-weight:600}
+#total{display:flex;align-items:center;gap:5px;padding:0 7px 0 13px;border-left:1px solid #bca77860;font-size:12px;color:#d5c49e;white-space:nowrap}
+#total strong{font-size:25px;font-weight:600;color:#ffe6b6}
+@media(max-width:500px){.results{bottom:8px;width:96%;padding:5px 3px;gap:2px}#values{gap:0}.result-die{padding:2px 1px}.result-kind{font-size:9px;gap:3px}.result-number{font-size:19px}.result-swatch{width:7px;height:7px}#total{padding:0 4px 0 6px;font-size:10px;gap:3px}#total strong{font-size:21px}}
 .note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
 #failure{color:#f2c7aa;text-align:center;font-size:12px;line-height:1.6}
 @media(max-width:480px){body{padding:8px}main{gap:10px}.frame{padding:6px}#felt{height:52dvh;min-height:340px}.mode{padding:8px 11px}}
@@ -54,10 +60,10 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 35</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 36</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
- <div class="results" aria-live="polite"><span id="values">1：— · 2：— · 3：— · 4：— · 5：—</span><span id="total">合計 —</span></div>
+ <div class="results" aria-live="polite"><div id="values"></div><div id="total">合計 <strong>—</strong></div></div>
  
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
  </div>
@@ -157,6 +163,30 @@ const settingsInputs=Array.from({length:5},(_,i)=>({
  color:document.getElementById('color'+i),
  material:document.getElementById('material'+i)
 }));
+// Results are separate, colour-linked tiles instead of a string of
+// numeric die indices. The D-label denotes the number of faces, and the
+// large numeral is the outcome. Duplicate die types remain distinguishable
+// by order and their corresponding coloured dots.
+function showResults(results=null){
+ values.replaceChildren();
+ diceSettings.forEach((die,i)=>{
+  const tile=document.createElement('div');tile.className='result-die';
+  const kind=document.createElement('span');kind.className='result-kind';
+  const swatch=document.createElement('span');swatch.className='result-swatch';
+  swatch.style.backgroundColor=die.color;
+  const label=document.createElement('span');label.textContent='D'+die.sides;
+  kind.append(swatch,label);
+  const number=document.createElement('span');number.className='result-number';
+  number.textContent=results===null?'—':String(results[i]);
+  tile.append(kind,number);values.append(tile);
+ });
+ total.replaceChildren();
+ const caption=document.createElement('span');caption.textContent='合計';
+ const sum=document.createElement('strong');
+ sum.textContent=results===null?'—':String(results.reduce((n,v)=>n+v,0));
+ total.append(caption,sum);
+}
+showResults();
 function refreshMaterialOptions(i){
  const {sides,material}=settingsInputs[i],n=Number(sides.value);
  const supported=[6,8,10,12,20].includes(n);
@@ -508,7 +538,7 @@ function numberTexture(value,color,sides){
 // circumscribed diameters. A many-sided die needs a larger body so
 // its smaller triangular faces can carry comparably legible numerals.
 // The D6's finished ring-and-dot design retains its established size.
-function polyScale(sides){return ({8:1.17,10:1.24,12:1.14,20:1.68})[sides]||1}
+function polyScale(sides){return ({8:1.17,10:1.24,12:1.14,20:1.62})[sides]||1}
 function numberedMesh(sides,color,material='standard'){
  const source=getSolid(sides),scale=polyScale(sides);
  const solid={vertices:source.vertices.map(v=>v.map(x=>x*scale)),faces:source.faces};
@@ -648,6 +678,7 @@ function changeDie(i){
  if(!wasVisible)status.textContent='IN HAND — ダイス'+(i+1)+'を変更しました';
  else status.textContent='READY TO COLLECT';
  syncMeshes();
+ showResults();
 }
 settingsInputs.forEach(({sides,color,material},i)=>{
  sides.addEventListener('change',()=>changeDie(i));
@@ -687,7 +718,7 @@ function collectDice(){
  mixCount=0;
  mixButton.textContent='⟳　混ぜ始める';
  mixButton.setAttribute('aria-pressed','false');
- values.textContent=diceSettings.map((_,i)=>(i+1)+'：—').join(' · ');total.textContent='合計 —';
+ showResults();
  status.textContent='IN HAND — 投げる準備ができました';
 }
 // Mix the very same 3D meshes used for the physical throw, at full size.
@@ -738,7 +769,7 @@ function releaseDice(options={}){
  held=false;
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
  lockSettings(true);
- button.disabled=true;mixButton.disabled=true;values.textContent='—';total.textContent='合計 —';
+ button.disabled=true;mixButton.disabled=true;showResults();
  status.textContent='ROLLING…';
  const dir=options.direction||{x:0,y:-1};
  const length=Math.hypot(dir.x,dir.y)||1;
@@ -792,8 +823,7 @@ function render(time){
     rolling=false;button.disabled=true;collectButton.disabled=false;mixButton.disabled=true;
     lockSettings(false);
     const results=objects.map(topFace);
-    values.textContent=results.map((v,i)=>(i+1)+'：'+v).join(' · ');
-    total.textContent='合計 '+results.reduce((n,v)=>n+v,0);
+    showResults(results);
     status.textContent='THE DICE HAVE FALLEN';
    }
   }
