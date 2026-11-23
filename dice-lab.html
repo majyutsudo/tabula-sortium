@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 30</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 31</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -67,9 +67,9 @@ button{font:inherit;cursor:pointer}
  <div class="force-range" aria-hidden="true"><span>そっと</span><span>強く</span><span>激しく</span></div>
 </div>
 <div class="dice-settings" role="group" aria-label="ダイスの面数と色">
- <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material0" aria-label="ダイス1の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring" selected>環状刻印</option></select><input id="color0" type="color" value="#c7b48d" aria-label="ダイス1の色"></div>
+ <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="6">D6</option><option value="8" selected>D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material0" aria-label="ダイス1の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring" selected>環状刻印</option></select><input id="color0" type="color" value="#c7b48d" aria-label="ダイス1の色"></div>
  <div class="die-setting"><label for="sides1">ダイス2</label><select id="sides1" aria-label="ダイス2の面数"><option value="6">D6</option><option value="8">D8</option><option value="10" selected>D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material1" aria-label="ダイス2の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring" selected>環状刻印</option></select><input id="color1" type="color" value="#c7b48d" aria-label="ダイス2の色"></div>
- <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="6">D6</option><option value="8">D8</option><option value="10">D10</option><option value="12" selected>D12</option><option value="20">D20</option></select><select class="material" id="material2" aria-label="ダイス3の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring" selected>環状刻印</option></select><input id="color2" type="color" value="#c7b48d" aria-label="ダイス3の色"></div>
+ <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="6">D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20" selected>D20</option></select><select class="material" id="material2" aria-label="ダイス3の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring" selected>環状刻印</option></select><input id="color2" type="color" value="#c7b48d" aria-label="ダイス3の色"></div>
 </div>
 <div class="roll-actions">
  <button type="button" id="collect" disabled>◇　ダイスを握る</button>
@@ -78,7 +78,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 —</span></div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">D6の環状の目と、D10・D12の環に刻んだ数字を比較する実験版。D6・D10・D12の面数・意匠・色を個別に変更できます。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
+<p class="note">D8・D10・D20を初期配置した環状数字の比較実験。D6・D12にも切り替えられます。三角面の環は小さめに調整しています。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -122,9 +122,9 @@ const pipGrid={
  6:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,0],[1,1]]
 };
 const diceSettings=[
- {sides:6,color:'#c7b48d',material:'ring'},
+ {sides:8,color:'#c7b48d',material:'ring'},
  {sides:10,color:'#c7b48d',material:'ring'},
- {sides:12,color:'#c7b48d',material:'ring'}
+ {sides:20,color:'#c7b48d',material:'ring'}
 ];
 const settingsInputs=Array.from({length:3},(_,i)=>({
  sides:document.getElementById('sides'+i),
@@ -133,7 +133,7 @@ const settingsInputs=Array.from({length:3},(_,i)=>({
 }));
 function refreshMaterialOptions(i){
  const {sides,material}=settingsInputs[i],n=Number(sides.value);
- const supported=[6,10,12].includes(n);
+ const supported=[6,8,10,12,20].includes(n);
  for(const option of material.options){
   option.disabled=n!==6 && !['standard','ring'].includes(option.value);
  }
@@ -423,9 +423,9 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
   img.data[i+3]=255;
  }
  c.putImageData(img,0,0);
- // The mark must fit inside the actual projected polygon, not merely
- // inside the square texture. Face-specific radius comes from geometry.
- const rad=Math.max(10,Math.min(190,ringRadius));
+ // The mark must fit inside the actual polygon rather than the square
+ // texture. Triangular D8/D20 faces use a narrower etched ring.
+ const rad=Math.max(8,Math.min(190,ringRadius*(sides===8||sides===20?.92:1)));
  const cx=256,cy=256;
  c.beginPath();c.arc(cx+2,cy+3,rad+4,0,Math.PI*2);
  c.fillStyle='rgba(55,39,24,.5)';c.fill();
@@ -496,7 +496,7 @@ function numberedMesh(sides,color,material='standard'){
   const b=normal.clone().cross(a).normalize();
   const maxR=Math.max(...ids.map(k=>vectorFrom(vertices[k]).sub(centre).length()));
   // Estimate the radius of the largest circle wholly inside each face.
-  // It prevents the ring from overflowing narrow D10 kite faces.
+  // This handles triangular D8/D20, narrow D10 kites and D12 pentagons.
   let inRadius=Infinity;
   for(let j=0;j<ids.length;j++){
    const p=vectorFrom(vertices[ids[j]]).sub(centre),q=vectorFrom(vertices[ids[(j+1)%ids.length]]).sub(centre);
@@ -524,7 +524,7 @@ function numberedMesh(sides,color,material='standard'){
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
  groups.forEach(g=>geometry.addGroup(g.start,g.count,g.materialIndex));
  geometry.computeVertexNormals();
- const isRing=material==='ring'&&(sides===10||sides===12);
+ const isRing=material==='ring'&&[8,10,12,20].includes(sides);
  const materials=faces.map((_,i)=>new THREE.MeshStandardMaterial({
   map:isRing?ringNumberTexture(i+1,color,sides,rings[i],i):numberTexture(i+1,color,sides),
   roughness:isRing?.88:.49,metalness:isRing?0:.025,side:THREE.DoubleSide
