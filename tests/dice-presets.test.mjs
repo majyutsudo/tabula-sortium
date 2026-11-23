@@ -39,8 +39,8 @@ test('unified page has one physics engine and all preset selectors',()=>{
  assert.match(html,/value="normal"/);
  assert.match(html,/value="astro"/);
  assert.match(html,/value="iching"/);
- assert.match(html,/js\/dice-engine\.js\?v=0718/);
- assert.match(engine,/from '\.\/dice-presets\.js\?v=0718'/);
+ assert.match(html,/js\/dice-engine\.js\?v=0719/);
+ assert.match(engine,/from '\.\/dice-presets\.js\?v=0719'/);
  assert.match(engine,/complementaryFaceValues\(faceNormals\)/);
  assert.match(engine,/function hexagramSummary\(/);
 });
@@ -55,7 +55,7 @@ test('normal dice count, palette and text-presentation zodiac marks are supporte
  assert.doesNotMatch(engine,/\['wood','古木'\]/);
  assert.doesNotMatch(engine,/\['archaic','古代風'\]/);
  assert.match(engine,/\\uFE0E/);
- assert.match(html,/UNIFIED DICE LAB v0\.718/);
+ assert.match(html,/UNIFIED DICE LAB v0\.719/);
 });
 
 test('default dice are three D6 and ordinary table labels are not I Ching labels',()=>{
@@ -80,4 +80,18 @@ test('I Ching outer and inner trigram color scheme changes without changing face
  assert.deepEqual(dice.map(d=>d.faces.map(f=>f.glyph)),faceSets);
  assert.deepEqual(dice[2].faces.filter(f=>f.ink===ICHING_INKS.red).map(f=>f.glyph),['初']);
  assert.throws(()=>setIChingColors(dice,'bogus'));
+});
+
+test('astro colors are individually editable without remapping their faces',()=>{
+ const html=readFileSync(new URL('../dice-unified-lab.html',import.meta.url),'utf8');
+ const engine=readFileSync(new URL('../js/dice-engine.js',import.meta.url),'utf8');
+ assert.match(html,/id="astro-colors"/);
+ assert.match(html,/astro-colors\[hidden\]/);
+ assert.match(engine,/function renderAstroColors\(/);
+ assert.match(engine,/input\.type='color'/);
+ assert.match(engine,/die\.color=color/);
+ assert.match(engine,/astroDiceColors=diceSettings\.map/);
+ assert.match(engine,/renderAstroColors\(\);createDice\(\)/);
+ assert.match(engine,/complementaryFaceValues\(faceNormals\)/);
+ assert.deepEqual(PRESETS.astro.dice.map(d=>d.color),['#c5a269','#6b81a1','#658c78']);
 });
