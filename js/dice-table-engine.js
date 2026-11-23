@@ -380,7 +380,10 @@ function finishTexture(value,color,material,dieIndex){
  return texture;
 }
 function updateDimensions(){
- const w=felt.clientWidth||800,h=felt.clientHeight||520;
+ const w=felt.clientWidth,h=felt.clientHeight;
+  // The card tool hides the dice overlay. Never rebuild physics walls with
+  // zero dimensions while that overlay is not laid out.
+  if(w<80||h<80)return;
  width=10;depth=10*h/w;
  // Avoid a tall, narrow table causing dice to be too small on mobile.
  if(depth>14){width=8;depth=8*h/w}
