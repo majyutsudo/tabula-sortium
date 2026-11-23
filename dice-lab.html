@@ -16,6 +16,11 @@ h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin
 .table-frame{padding:9px;border:1px solid #786443;background:#292820;box-shadow:0 14px 45px #0009,inset 0 0 0 2px #39342a;border-radius:16px}
 #felt{position:relative;height:clamp(320px,57dvh,530px);overflow:hidden;touch-action:none;cursor:pointer;border:1px solid #3d5745;border-radius:10px;background:radial-gradient(ellipse at 50% 44%,#355747 0%,#243e33 64%,#192e26 100%);box-shadow:inset 0 0 90px #08170ed9,inset 0 0 0 1px #58715a2f}
 #felt:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.16;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='82' height='82'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.38'/%3E%3C/svg%3E")}
+.throw-guide{position:absolute;inset:0;z-index:10;pointer-events:none;display:none}
+.throw-guide line{stroke:#e9ce91;stroke-width:3;stroke-linecap:round;stroke-dasharray:7 5}
+.throw-guide circle{stroke:#e9ce91;stroke-width:2;fill:#e9ce9125}
+.throw-guide polygon{fill:#e9ce91}
+#felt.aiming{cursor:grabbing}
 .corner{position:absolute;z-index:1;font-size:10px;color:#afbd9a88;letter-spacing:.22em;pointer-events:none}.corner.tl{left:16px;top:15px}.corner.br{right:16px;bottom:14px}
 .die{width:70px;height:70px;position:absolute;left:0;top:0;transform:translate(-50%,-50%);z-index:3;will-change:left,top}
 .die .shadow{position:absolute;width:64px;height:24px;left:3px;top:49px;border-radius:50%;background:#040b09a6;filter:blur(11px);transform-origin:center;pointer-events:none}
@@ -54,7 +59,7 @@ button{font:inherit;cursor:pointer}
 <body>
 <main>
 <header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 01</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
-<div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div></div></div>
+<div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div></div>
 <div id="status" class="status" aria-live="polite">READY TO ROLL</div>
 <div class="throw-modes" role="group" aria-label="ダイスの投げ方">
  <span class="throw-label">投げ方</span>
@@ -98,7 +103,7 @@ function paint(d){
 }
 function addDice(){
  const {w,h}=dimensions();
- dice=Array.from({length:NUM},(_,i)=>{const d=makeDie();d.x=w*(.32+.18*i);d.y=h*.52;d.value=i+1;d.ry=0;d.rx=0;d.rz=0;paint(d);return d});
+ dice=Array.from({length:NUM},(_,i)=>{const d=makeDie();d.x=w*(.27+.23*i);d.y=h*.52;d.value=i+1;d.ry=0;d.rx=0;d.rz=0;paint(d);return d});
 }
 // A face's pip count is derived from the cube's actual final orientation.
  // This avoids a preselected result disagreeing with the visible top face.
@@ -129,8 +134,8 @@ function begin(options={}){
  const {w,h}=dimensions();
  const radius=HALF+7;
  dice.forEach((d,i)=>{
-  d.x=Math.min(w-radius,Math.max(radius,w*(.40+.1*i)+rand(-16,16)));
-  d.y=Math.min(h-radius,Math.max(radius,h*(.54+.035*i)+rand(-10,10)));
+  d.x=Math.min(w-radius,Math.max(radius,w*(.25+.25*i)+rand(-7,7)));
+  d.y=Math.min(h-radius,Math.max(radius,h*(.47+.035*i)+rand(-8,8)));
   d.vx=(rand(-270,270)+(i-1)*115+((direction?.x)||0)*240)*power;
   d.vy=(rand(-200,200)+((direction?.y)||0)*240)*power;
   d.h=rand(15,38)*power;d.vh=rand(110,260)*power;
@@ -139,7 +144,7 @@ function begin(options={}){
   d.value=0; // Resolved from the actual resting orientation.
   d.settled=false;d.settleStart=0;d.from=null;d.to=null;
   // Slightly different end times feel less synthetic than a synchronized stop.
-  d.endAt=rand(1.25,1.65)+power*rand(.55,.92)+i*.11;d.bounces=0;paint(d);
+  d.endAt=rand(.85,1.12)+power*rand(.45,.70)+i*.09;d.bounces=0;paint(d);
  });
  cancelAnimationFrame(frame);frame=requestAnimationFrame(tick);
 }
@@ -149,46 +154,73 @@ function tick(time){
  const {w,h}=dimensions(),margin=HALF+5;
  for(const d of dice){
   if(d.settled){
-   const t=Math.min(1,(elapsed-d.settleStart)/.72);
-   const smooth=1-Math.pow(1-t,3);
+   const t=Math.min(1,(elapsed-d.settleStart)/.32);
+   const smooth=1-Math.pow(1-t,2);
    [d.rx,d.ry,d.rz]=d.from.map((v,i)=>v+(d.to[i]-v)*smooth);
    paint(d);continue;
   }
-  const drag=Math.pow(.52,dt);
-  d.vx*=drag;d.vy*=drag;
+  // Airborne drift is possible, but felt friction halts lateral motion soon after landing.
+  const grounded=d.h<=.1&&d.vh<=.1;
+  const speed=Math.hypot(d.vx,d.vy);
+  if(grounded){
+   const friction=540*dt;
+   const factor=speed>friction?(speed-friction)/speed:0;
+   d.vx*=factor;d.vy*=factor;
+  }else{
+   const drag=Math.pow(.68,dt);
+   d.vx*=drag;d.vy*=drag;
+  }
   d.x+=d.vx*dt;d.y+=d.vy*dt;
-  d.vh-=860*dt;d.h+=d.vh*dt;
+  if(d.h>0||d.vh>0){d.vh-=860*dt;d.h+=d.vh*dt}
   if(d.h<=0){
    d.h=0;
-   if(Math.abs(d.vh)>65&&d.bounces<8){d.vh=-d.vh*rand(.26,.45);d.bounces++}
+   if(d.vh< -65&&d.bounces<6){d.vh=-d.vh*rand(.23,.38);d.bounces++}
    else d.vh=0;
-   d.wx*=.80;d.wy*=.80;d.wz*=.80;
   }
   if(d.x<margin){d.x=margin;d.vx=Math.abs(d.vx)*.57;d.wy+=150}
   if(d.x>w-margin){d.x=w-margin;d.vx=-Math.abs(d.vx)*.57;d.wy-=150}
   if(d.y<margin){d.y=margin;d.vy=Math.abs(d.vy)*.57;d.wx+=120}
   if(d.y>h-margin){d.y=h-margin;d.vy=-Math.abs(d.vy)*.57;d.wx-=120}
   d.rx+=d.wx*dt;d.ry+=d.wy*dt;d.rz+=d.wz*dt;
-  const rotDrag=Math.pow(.58,dt);d.wx*=rotDrag;d.wy*=rotDrag;d.wz*=rotDrag;
-  if(elapsed>d.endAt)beginSettle(d);
+  const rotDrag=Math.pow(d.h<=0&&d.vh===0?.045:.60,dt);
+  d.wx*=rotDrag;d.wy*=rotDrag;d.wz*=rotDrag;
+  if(d.h===0&&d.vh===0&&
+    ((Math.hypot(d.vx,d.vy)<13&&Math.hypot(d.wx,d.wy,d.wz)<55&&elapsed>.55)
+      ||elapsed>d.endAt+.35))beginSettle(d);
   paint(d);
  }
- // Approximate planar collisions between the three moving bodies.
- for(let i=0;i<dice.length;i++)for(let j=i+1;j<dice.length;j++){
-  const a=dice[i],b=dice[j];if(a.settled&&b.settled)continue;
-  const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy)||.001,minDist=SIZE*.88;
-  if(dist<minDist&&Math.abs(a.h-b.h)<SIZE*.8){
-   const nx=dx/dist,ny=dy/dist,overlap=minDist-dist;
-   if(!a.settled){a.x-=nx*overlap*.5;a.y-=ny*overlap*.5}
-   if(!b.settled){b.x+=nx*overlap*.5;b.y+=ny*overlap*.5}
-   const speed=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
-   if(speed<0){const impulse=-speed*.66;
-    if(!a.settled){a.vx-=impulse*nx;a.vy-=impulse*ny;a.wx+=rand(-180,180);a.vh=Math.max(a.vh,rand(70,150))}
-    if(!b.settled){b.vx+=impulse*nx;b.vy+=impulse*ny;b.wy+=rand(-180,180);b.vh=Math.max(b.vh,rand(70,150))}
+ // Prevent overlapping final silhouettes, including rotated corners.
+ // Settled dice are solid obstacles. Iterate constraints to resolve three-way clusters.
+ const minDist=SIZE*1.43;
+ for(let pass=0;pass<8;pass++){
+  for(let i=0;i<dice.length;i++)for(let j=i+1;j<dice.length;j++){
+   const a=dice[i],b=dice[j];
+   const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy);
+   if(dist>=minDist)continue;
+   const angle=dist>.001?null:(i*2.11+j*1.37);
+   const nx=angle===null?dx/dist:Math.cos(angle),ny=angle===null?dy/dist:Math.sin(angle);
+   const overlap=minDist-dist+.15;
+   // Equal position correction also works when both dice are already at rest.
+   a.x-=nx*overlap*.5;a.y-=ny*overlap*.5;
+   b.x+=nx*overlap*.5;b.y+=ny*overlap*.5;
+   if(pass===0&&!a.settled&&!b.settled&&Math.abs(a.h-b.h)<SIZE*.8){
+    const impact=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+    if(impact< -20){
+     const impulse=-impact*.36;
+     a.vx-=impulse*nx;a.vy-=impulse*ny;
+     b.vx+=impulse*nx;b.vy+=impulse*ny;
+     a.wx+=rand(-100,100);b.wy+=rand(-100,100);
+    }
    }
   }
+  for(const d of dice){
+   d.x=Math.max(margin,Math.min(w-margin,d.x));
+   d.y=Math.max(margin,Math.min(h-margin,d.y));
+  }
  }
- if(dice.every(d=>d.settled&&elapsed-d.settleStart>=.72)){
+ // Apply final collision corrections immediately, rather than one frame later.
+ dice.forEach(paint);
+ if(dice.every(d=>d.settled&&elapsed-d.settleStart>=.32)){
   rolling=false;button.disabled=false;
   values.textContent=dice.map(d=>d.value).join(' · ');
   total.textContent=String(dice.reduce((sum,d)=>sum+d.value,0));
@@ -205,22 +237,49 @@ document.querySelectorAll('.throw-mode').forEach(mode=>{
 });
 button.addEventListener('click',()=>begin());
 let gesture=null,suppressClick=false;
+const guide=document.getElementById('throwGuide');
+const startCircle=document.getElementById('throwStart'),line=document.getElementById('throwLine'),arrow=document.getElementById('throwArrow');
+function localPoint(event){
+ const r=felt.getBoundingClientRect();
+ return {x:event.clientX-r.left,y:event.clientY-r.top};
+}
+function showGuide(x,y,dx,dy){
+ const distance=Math.hypot(dx,dy),length=Math.min(180,distance);
+ const scale=distance>0?length/distance:0;
+ const endX=x+dx*scale,endY=y+dy*scale;
+ guide.style.display='block';guide.setAttribute('viewBox','0 0 '+felt.clientWidth+' '+felt.clientHeight);
+ startCircle.setAttribute('cx',x);startCircle.setAttribute('cy',y);
+ line.setAttribute('x1',x);line.setAttribute('y1',y);line.setAttribute('x2',endX);line.setAttribute('y2',endY);
+ arrow.setAttribute('transform','translate('+endX+' '+endY+') rotate('+(Math.atan2(dy,dx)*180/Math.PI)+')');
+ status.textContent=distance<24?'引いて方向と勢いを指定':'投擲の強さ '+Math.min(100,Math.round(distance/2))+'%';
+}
+function clearGuide(){
+ guide.style.display='none';felt.classList.remove('aiming');
+}
 felt.addEventListener('pointerdown',event=>{
- if(rolling||!event.isPrimary)return;
- gesture={id:event.pointerId,x:event.clientX,y:event.clientY,time:performance.now()};
+ if(rolling||!event.isPrimary||event.button!==0)return;
+ const p=localPoint(event);
+ gesture={id:event.pointerId,x:event.clientX,y:event.clientY,localX:p.x,localY:p.y,time:performance.now()};
+ felt.setPointerCapture(event.pointerId);
+ felt.classList.add('aiming');showGuide(p.x,p.y,0,0);
+});
+felt.addEventListener('pointermove',event=>{
+ if(!gesture||gesture.id!==event.pointerId)return;
+ showGuide(gesture.localX,gesture.localY,event.clientX-gesture.x,event.clientY-gesture.y);
 });
 felt.addEventListener('pointerup',event=>{
  if(!gesture||gesture.id!==event.pointerId)return;
  const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
  const distance=Math.hypot(dx,dy),duration=Math.max(1,performance.now()-gesture.time);
- gesture=null;
- if(distance<24)return; // A tap is handled by the normal click.
+ gesture=null;clearGuide();
+ if(distance<24){status.textContent='READY TO ROLL';return}
  const speed=distance/duration;
- const power=Math.max(.45,Math.min(2.15,.45+speed*.95+distance/360));
+ // Mouse drag distance gives predictable force, flick velocity adds a smaller bonus.
+ const power=Math.max(.35,Math.min(2.35,.35+distance/150+speed*.24));
  suppressClick=true;
  begin({power,direction:{x:dx/distance,y:dy/distance}});
 });
-felt.addEventListener('pointercancel',()=>gesture=null);
+felt.addEventListener('pointercancel',()=>{gesture=null;clearGuide();status.textContent='READY TO ROLL'});
 felt.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}begin()});
 felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();begin()}});
 window.addEventListener('resize',()=>{if(rolling)return;const {w,h}=dimensions();dice.forEach(d=>{d.x=Math.max(HALF,Math.min(w-HALF,d.x));d.y=Math.max(HALF,Math.min(h-HALF,d.y));paint(d)})});
