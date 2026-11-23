@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 28</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 29</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -67,9 +67,9 @@ button{font:inherit;cursor:pointer}
  <div class="force-range" aria-hidden="true"><span>そっと</span><span>強く</span><span>激しく</span></div>
 </div>
 <div class="dice-settings" role="group" aria-label="ダイスの面数と色">
- <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material0" aria-label="ダイス1の素材"><option value="standard">標準</option><option value="ivory" selected>象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring">環状刻印</option></select><input id="color0" type="color" value="#ead9ae" aria-label="ダイス1の色"></div>
- <div class="die-setting"><label for="sides1">ダイス2</label><select id="sides1" aria-label="ダイス2の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material1" aria-label="ダイス2の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood" selected>古木</option><option value="archaic">古代風</option><option value="ring">環状刻印</option></select><input id="color1" type="color" value="#9c6541" aria-label="ダイス2の色"></div>
- <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material2" aria-label="ダイス3の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic" selected>古代風</option><option value="ring">環状刻印</option></select><input id="color2" type="color" value="#bc8847" aria-label="ダイス3の色"></div>
+ <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material0" aria-label="ダイス1の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring" selected>環状刻印</option></select><input id="color0" type="color" value="#c7b48d" aria-label="ダイス1の色"></div>
+ <div class="die-setting"><label for="sides1">ダイス2</label><select id="sides1" aria-label="ダイス2の面数"><option value="6">D6</option><option value="8">D8</option><option value="10" selected>D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material1" aria-label="ダイス2の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring" selected>環状刻印</option></select><input id="color1" type="color" value="#c7b48d" aria-label="ダイス2の色"></div>
+ <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="6">D6</option><option value="8">D8</option><option value="10">D10</option><option value="12" selected>D12</option><option value="20">D20</option></select><select class="material" id="material2" aria-label="ダイス3の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option><option value="archaic">古代風</option><option value="ring" selected>環状刻印</option></select><input id="color2" type="color" value="#c7b48d" aria-label="ダイス3の色"></div>
 </div>
 <div class="roll-actions">
  <button type="button" id="collect" disabled>◇　ダイスを握る</button>
@@ -78,7 +78,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 —</span></div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">ダイス1～3の面数・仕上げ・色を個別指定。象牙・古木・古代風・環状刻印はD6での実験的な意匠です。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
+<p class="note">D6の環状の目と、D10・D12の環に刻んだ数字を比較する実験版。D6・D10・D12の面数・意匠・色を個別に変更できます。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -122,17 +122,30 @@ const pipGrid={
  6:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,0],[1,1]]
 };
 const diceSettings=[
- {sides:6,color:'#ead9ae',material:'ivory'},
- {sides:6,color:'#9c6541',material:'wood'},
- {sides:6,color:'#bc8847',material:'archaic'}
+ {sides:6,color:'#c7b48d',material:'ring'},
+ {sides:10,color:'#c7b48d',material:'ring'},
+ {sides:12,color:'#c7b48d',material:'ring'}
 ];
 const settingsInputs=Array.from({length:3},(_,i)=>({
  sides:document.getElementById('sides'+i),
  color:document.getElementById('color'+i),
  material:document.getElementById('material'+i)
 }));
+function refreshMaterialOptions(i){
+ const {sides,material}=settingsInputs[i],n=Number(sides.value);
+ const supported=[6,10,12].includes(n);
+ for(const option of material.options){
+  option.disabled=n!==6 && !['standard','ring'].includes(option.value);
+ }
+ if(!supported||material.selectedOptions[0]?.disabled)material.value='standard';
+ material.disabled=!supported||rolling;
+}
 function lockSettings(locked){
- settingsInputs.forEach(({sides,color,material})=>{sides.disabled=locked;color.disabled=locked;material.disabled=locked||Number(sides.value)!==6});
+ settingsInputs.forEach(({sides,color},i)=>{
+  sides.disabled=locked;color.disabled=locked;
+  refreshMaterialOptions(i);
+  settingsInputs[i].material.disabled=locked||settingsInputs[i].material.disabled;
+ });
 }
 function faceTexture(value,color){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
@@ -393,6 +406,52 @@ function solidFaces(sides){
 }
 const solids=new Map();
 function getSolid(sides){if(!solids.has(sides))solids.set(sides,solidFaces(sides));return solids.get(sides)}
+function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
+ const n=512,canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
+ const c=canvas.getContext('2d'),img=c.createImageData(n,n);
+ const rgb=parseInt(color.slice(1),16),r=rgb>>16&255,g=rgb>>8&255,b=rgb&255;
+ const random=seededRandom(9001+sides*151+faceIndex*97);
+ // A warm, worn mineral/bone-like base with subtle grain, matching D6.
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+  const i=(y*n+x)*4;
+  const striation=Math.sin(x*.065+y*.016)*4+Math.sin(x*.18+y*.035)*2;
+  const pores=(random()-.5)*21,edge=Math.max(0,1-Math.min(x,y,n-1-x,n-1-y)/64);
+  const noise=striation+pores-edge*18;
+  img.data[i]=Math.max(0,Math.min(255,r+noise));
+  img.data[i+1]=Math.max(0,Math.min(255,g+noise*.96));
+  img.data[i+2]=Math.max(0,Math.min(255,b+noise*.91));
+  img.data[i+3]=255;
+ }
+ c.putImageData(img,0,0);
+ // The mark must fit inside the actual projected polygon, not merely
+ // inside the square texture. Face-specific radius comes from geometry.
+ const rad=Math.max(12,Math.min(190,ringRadius*2));
+ const cx=256,cy=256;
+ c.beginPath();c.arc(cx+2,cy+3,rad+4,0,Math.PI*2);
+ c.fillStyle='rgba(55,39,24,.5)';c.fill();
+ c.beginPath();c.arc(cx-2,cy-3,rad,0,Math.PI*2);
+ c.strokeStyle='#e2ce9e';c.lineWidth=Math.max(3,rad*.12);c.stroke();
+ c.beginPath();c.arc(cx,cy,rad*.87,0,Math.PI*2);
+ c.strokeStyle='#423325';c.lineWidth=Math.max(4,rad*.15);c.stroke();
+ c.beginPath();c.arc(cx,cy,rad*.70,0,Math.PI*2);
+ c.fillStyle='#b59a6d';c.fill();
+ c.beginPath();c.arc(cx,cy,rad*.67,0,Math.PI*2);
+ c.strokeStyle='rgba(56,39,24,.55)';c.lineWidth=Math.max(2,rad*.045);c.stroke();
+ const textColor='#33291e',fontSize=rad*(value>=10?.95:1.25);
+ c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
+ c.font='bold '+fontSize+'px Georgia,serif';
+ c.strokeStyle='rgba(240,216,164,.85)';c.lineWidth=Math.max(3,rad*.12);
+ c.strokeText(String(value),cx+1,cy+1,rad*1.45);
+ c.fillStyle=textColor;
+ c.fillText(String(value),cx,cy,rad*1.45);
+ if(value===6||value===9){
+  const w=rad*.24;
+  c.fillRect(cx-w/2,cy+fontSize*.40,w,Math.max(2,rad*.055));
+ }
+ const texture=new THREE.CanvasTexture(canvas);
+ texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
+ return texture;
+}
 function numberTexture(value,color,sides){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const c=canvas.getContext('2d');
@@ -402,21 +461,18 @@ function numberTexture(value,color,sides){
  c.fillStyle=shade;c.fillRect(0,0,256,256);
  const rgb=parseInt(color.slice(1),16),lum=(rgb>>16&255)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
  c.textAlign='center';c.textBaseline='middle';c.fillStyle=lum<140?'#fff1d8':'#24231e';
- // A D10 kite is much narrower than a square face. Fit every numeral
- // inside a conservative central patch instead of letting it cross edges.
- const fontSize=sides===10?(value>=10?59:72):sides===4?92:sides===20?(value>=10?76:98):(value>=10?86:112);
- c.font='bold '+fontSize+'px Georgia,serif';
- c.fillText(String(value),128,128,112);
- // Underline for 6/9 sits near the baseline and scales with the glyph.
+ const fontSize=sides===10?(value>=10?59:72):sides===20?(value>=10?76:98):(value>=10?86:112);
+ c.font='bold '+fontSize+'px Georgia,serif';c.fillText(String(value),128,128,112);
  if(value===6||value===9){
-  const underlineWidth=Math.min(42,fontSize*.33);
-  c.fillRect(128-underlineWidth/2,128+fontSize*.43,underlineWidth,Math.max(3,fontSize*.045));
+  const w=Math.min(42,fontSize*.33);
+  c.fillRect(128-w/2,128+fontSize*.43,w,Math.max(3,fontSize*.045));
  }
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ return texture;
 }
-function numberedMesh(sides,color){
+function numberedMesh(sides,color,material='standard'){
  const solid=getSolid(sides),{vertices,faces}=solid;
- const positions=[],uvs=[],groups=[],faceNormals=[];
+ const positions=[],uvs=[],groups=[],faceNormals=[],rings=[];
  faces.forEach((faceIds,index)=>{
   // Keep the rendered front face winding outward, including the upper
   // five kites of D10, whose authored ordering is clockwise from outside.
@@ -432,6 +488,17 @@ function numberedMesh(sides,color){
   const a=vectorFrom(vertices[ids[0]]).sub(centre).normalize();
   const b=normal.clone().cross(a).normalize();
   const maxR=Math.max(...ids.map(k=>vectorFrom(vertices[k]).sub(centre).length()));
+  // Estimate the radius of the largest circle wholly inside each face.
+  // It prevents the ring from overflowing narrow D10 kite faces.
+  let inRadius=Infinity;
+  for(let j=0;j<ids.length;j++){
+   const p=vectorFrom(vertices[ids[j]]).sub(centre),q=vectorFrom(vertices[ids[(j+1)%ids.length]]).sub(centre);
+   const px=p.dot(a),py=p.dot(b),qx=q.dot(a),qy=q.dot(b);
+   const dist=Math.abs(px*qy-py*qx)/Math.hypot(qx-px,qy-py);
+   inRadius=Math.min(inRadius,dist);
+  }
+  // UVs span 0..1 over 2.2*maxR; texture uses 512px for the ring.
+  rings.push(Math.max(0,inRadius/(maxR*2.2)*512*.78));
   const coords=ids.map(k=>{
    const d=vectorFrom(vertices[k]).sub(centre);
    return [.5+d.dot(a)/(maxR*2.2),.5+d.dot(b)/(maxR*2.2)];
@@ -450,8 +517,10 @@ function numberedMesh(sides,color){
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
  groups.forEach(g=>geometry.addGroup(g.start,g.count,g.materialIndex));
  geometry.computeVertexNormals();
+ const isRing=material==='ring'&&(sides===10||sides===12);
  const materials=faces.map((_,i)=>new THREE.MeshStandardMaterial({
-  map:numberTexture(i+1,color,sides),roughness:.49,metalness:.025,side:THREE.DoubleSide
+  map:isRing?ringNumberTexture(i+1,color,sides,rings[i],i):numberTexture(i+1,color,sides),
+  roughness:isRing?.88:.49,metalness:isRing?0:.025,side:THREE.DoubleSide
  }));
  const mesh=new THREE.Mesh(geometry,materials);
  return {mesh,solid,normals:faceNormals,values:faces.map((_,i)=>i+1)};
@@ -488,7 +557,7 @@ function makeDie(i){
   }));
   mesh=new THREE.Mesh(geometry,materials);normals=faceNormals;faceNumbers=faceValues;
  }else{
-  const poly=numberedMesh(sides,settings.color);
+  const poly=numberedMesh(sides,settings.color,settings.material);
   mesh=poly.mesh;solid=poly.solid;normals=poly.normals;faceNumbers=poly.values;
  }
  mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
@@ -523,7 +592,7 @@ function changeDie(i){
  destroyDie(objects[i]);
  objects[i]=makeDie(i);
  objects[i].mesh.visible=wasVisible;
- settingsInputs[i].material.disabled=setting.sides!==6;
+ refreshMaterialOptions(i);
  if(!wasVisible)status.textContent='IN HAND — ダイス'+(i+1)+'を変更しました';
  else status.textContent='READY TO COLLECT';
  syncMeshes();
