@@ -215,7 +215,7 @@ window.addEventListener('message',event=>{
  if(event.data?.type!=='tabula:dice:mode')return;
  const id=event.data.mode;if(!['normal','astro','iching'].includes(id))return;
  pendingParentMode=id;
- if(ready&&!rolling&&!mixing){document.getElementById('preset').value=id;switchPreset(id)}
+ if(ready&&!rolling&&!mixing&&current.id!==id){document.getElementById('preset').value=id;switchPreset(id)}
 });
 document.getElementById('preset').addEventListener('change',e=>switchPreset(e.target.value));
 document.getElementById('iching-color-scheme').addEventListener('change',event=>updateIChingColors(event.target.value));
@@ -954,7 +954,7 @@ async function init(){
   createDice();syncMeshes();
   ready=true;collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
   frame=requestAnimationFrame(render);
-  if(pendingParentMode){document.getElementById('preset').value=pendingParentMode;switchPreset(pendingParentMode)}
+  if(pendingParentMode&&current.id!==pendingParentMode){document.getElementById('preset').value=pendingParentMode;switchPreset(pendingParentMode)}
   new ResizeObserver(updateDimensions).observe(felt);
  }catch(error){
   console.error(error);
