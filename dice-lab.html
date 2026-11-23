@@ -35,7 +35,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 11</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 12</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
@@ -102,7 +102,10 @@ function updateDimensions(){
  camera.position.set(0,13,3.3);
  camera.lookAt(0,0,0);
  camera.updateProjectionMatrix();
- ground.scale.set(width,1,depth);
+ // PlaneGeometry lies in local XY. After rotation.x=-PI/2, local Y
+ // becomes the tabletop's world-Z axis. Scaling local Z only changed
+ // the normal, leaving a narrow shadow-receiving strip in world space.
+ ground.scale.set(width,depth,1);
  // Walls are rebuilt when the aspect ratio changes, without disturbing dice.
  if(world)buildWalls();
 }
@@ -232,7 +235,7 @@ async function init(){
   key.castShadow=true;key.shadow.mapSize.set(1024,1024);
   key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;
   key.shadow.normalBias=.018;key.shadow.bias=-.0002;key.shadow.radius=3;scene.add(key);
-  ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShadowMaterial({opacity:.19}));
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShadowMaterial({opacity:.24}));
   ground.rotation.x=-Math.PI/2;ground.position.y=.007;ground.receiveShadow=true;scene.add(ground);
   updateDimensions();
   createDice();syncMeshes();
