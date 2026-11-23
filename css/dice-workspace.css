@@ -1,5 +1,5 @@
 /* TABULA dice workspace v0.722: reversible first-stage adapter */
-.instrument-section{border-bottom:1px solid var(--line,#554b3e)}
+.instrument-section{padding:12px 14px 15px;border-bottom:1px solid var(--line,#554b3e)}
 .instrument-section .instrument-heading{margin:0 0 9px;font-size:13px;letter-spacing:.1em}
 .instrument-section .field[hidden],.instrument-section .mini[hidden]{display:none!important}
 .dice-workspace[hidden]{display:none!important}
