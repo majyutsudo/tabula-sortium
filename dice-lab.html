@@ -59,7 +59,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 01</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 04</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
 <div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div><div id="flightLayer" aria-hidden="true"></div></div>
 <div id="status" class="status" aria-live="polite">READY TO ROLL</div>
 <div class="throw-modes" role="group" aria-label="ダイスの投げ方">
@@ -70,7 +70,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="controls"><button type="button" id="roll">◆　ダイスを振る　◆</button></div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 <b>—</b></span></div>
-<p class="note">六面ダイス3個の投擲実験。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>まずは転がり方を眺めるための独立版です。既存のTABULAの卓は変更しません。</p>
+<p class="note">六面ダイス3個の投擲実験。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>卓の手前から投げ込む演出の実験版です。既存のTABULAの卓は変更しません。</p>
 </main>
 <script>
 (()=>{'use strict';
@@ -98,7 +98,7 @@ function makeDie(){
   cube.append(side);
  }
  anchor.append(cube);el.append(anchor);felt.append(el);
- return {el,shadow,cube,x:0,y:0,vx:0,vy:0,h:0,vh:0,rx:0,ry:0,rz:0,wx:0,wy:0,wz:0,value:1,settled:false,settleStart:0,from:null,to:null,endAt:0,bounces:0,phase:'rest',entryDelay:0,flightDuration:0,launchX:0,launchY:0,impactX:0,impactY:0,flightHeight:0};
+ return {el,shadow,cube,x:0,y:0,vx:0,vy:0,h:0,vh:0,rx:0,ry:0,rz:0,wx:0,wy:0,wz:0,value:1,settled:false,settleStart:0,from:null,to:null,endAt:0,bounces:0,phase:'rest',entryDelay:0,flightDuration:0,launchX:0,launchY:0,impactX:0,impactY:0,flightHeight:0,throwPower:1};
 }
 function dimensions(){return {w:felt.clientWidth,h:felt.clientHeight}}
 function paint(d){
@@ -143,7 +143,7 @@ function begin(options={}){
  dice.forEach((d,i)=>{
   // Launch from beyond the near edge. Keep airborne pieces in an unclipped
   // overlay, then return them to the ordinary felt when they enter its area.
-  d.phase='incoming';
+  d.phase='incoming';d.throwPower=power;
   d.entryDelay=i*.09+rand(0,.045);
   d.flightDuration=Math.max(.35,.66-power*.075+rand(-.035,.035));
   d.launchX=Math.max(radius,Math.min(w-radius,w*(.37+.13*i)+rand(-18,18)));
@@ -189,7 +189,7 @@ function tick(time){
    d.phase='rolling';
    felt.appendChild(d.el);
    d.x=d.impactX;d.y=d.impactY;
-   d.h=rand(24,52)*Math.min(1.6,Math.max(.6,powerModes[selectedPower]));
+   d.h=rand(24,52)*Math.min(1.6,Math.max(.6,d.throwPower));
    d.vh=-rand(175,285);
    d.vx=(d.impactX-d.launchX)/d.flightDuration*.65+rand(-125,125);
    d.vy=Math.max(-275,(d.impactY-d.launchY)/d.flightDuration*.3);
@@ -258,6 +258,7 @@ function tick(time){
    }
   }
   for(const d of dice){
+   if(d.phase==='incoming')continue;
    d.x=Math.max(margin,Math.min(w-margin,d.x));
    d.y=Math.max(margin,Math.min(h-margin,d.y));
   }
