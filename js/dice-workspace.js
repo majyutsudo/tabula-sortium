@@ -91,6 +91,7 @@
  function switchToCard(id){
   document.body.classList.remove('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=false;diceActions.hidden=true;
+  resultsButton.setAttribute('aria-pressed','false');
   cardResults.hidden=!cardResultsOpen;
   resultToggle.setAttribute('aria-expanded',String(cardResultsOpen));
   resultToggle.textContent=cardResultsOpen?'結果を閉じる ▴':'結果を表示 ▾';
@@ -105,6 +106,7 @@
   document.body.classList.add('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=true;diceActions.hidden=false;
   cardResults.hidden=true;
+  resultsButton.setAttribute('aria-pressed','false');
   resultToggle.setAttribute('aria-expanded','false');
   resultToggle.textContent='結果を表示 ▾';
   section.classList.remove('is-collapsed');
