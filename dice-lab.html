@@ -38,8 +38,10 @@ button{font:inherit;cursor:pointer}
 .die-setting{display:flex;align-items:center;justify-content:center;gap:9px;padding:10px 8px;border:1px solid #647462;background:#1d332a;border-radius:6px}
 .die-setting label{font-size:12px;color:#e3cfab;white-space:nowrap}
 .die-setting select{min-width:66px;padding:6px 4px;border-radius:4px;border:1px solid #6b725b;background:#293f34;color:#f2e2c4;font:13px Georgia,serif}
+.die-setting select.material{min-width:78px}
 .die-setting input[type=color]{width:35px;height:31px;border:1px solid #978a69;border-radius:4px;padding:2px;background:#293f34;cursor:pointer}
 .die-setting select:disabled,.die-setting input:disabled{opacity:.45;cursor:not-allowed}
+@media(min-width:631px){.die-setting{gap:6px;padding:9px 5px}.die-setting label{font-size:11px}.die-setting select{min-width:56px}.die-setting select.material{min-width:72px}.die-setting input[type=color]{width:32px}}
 @media(max-width:630px){.dice-settings{grid-template-columns:1fr}.die-setting{justify-content:space-between;padding:7px 12px}}
 .results{display:flex;justify-content:center;align-items:baseline;gap:20px;flex-wrap:wrap;min-height:32px;font-variant-numeric:tabular-nums}
 #values{font-size:16px;color:#d8c7a1}#total{font-size:24px;color:#edd8aa}
@@ -50,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 20</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 21</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -65,9 +67,9 @@ button{font:inherit;cursor:pointer}
  <div class="force-range" aria-hidden="true"><span>そっと</span><span>強く</span><span>激しく</span></div>
 </div>
 <div class="dice-settings" role="group" aria-label="ダイスの面数と色">
- <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="4">D4</option><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><input id="color0" type="color" value="#efe3c9" aria-label="ダイス1の色"></div>
- <div class="die-setting"><label for="sides1">ダイス2</label><select id="sides1" aria-label="ダイス2の面数"><option value="4">D4</option><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><input id="color1" type="color" value="#c65343" aria-label="ダイス2の色"></div>
- <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="4">D4</option><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><input id="color2" type="color" value="#557da3" aria-label="ダイス3の色"></div>
+ <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material0" aria-label="ダイス1の素材"><option value="standard">標準</option><option value="ivory" selected>象牙</option><option value="wood">古木</option></select><input id="color0" type="color" value="#ead9ae" aria-label="ダイス1の色"></div>
+ <div class="die-setting"><label for="sides1">ダイス2</label><select id="sides1" aria-label="ダイス2の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material1" aria-label="ダイス2の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood" selected>古木</option></select><input id="color1" type="color" value="#9c6541" aria-label="ダイス2の色"></div>
+ <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><select class="material" id="material2" aria-label="ダイス3の素材"><option value="standard">標準</option><option value="ivory">象牙</option><option value="wood">古木</option></select><input id="color2" type="color" value="#557da3" aria-label="ダイス3の色"></div>
 </div>
 <div class="roll-actions">
  <button type="button" id="collect" disabled>◇　ダイスを握る</button>
@@ -76,7 +78,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 —</span></div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">ダイス1～3の面数と色を個別に選択できます。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
+<p class="note">ダイス1～3の面数・素材・色を個別指定。象牙・古木の質感はD6で試験実装しています。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -120,16 +122,17 @@ const pipGrid={
  6:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,0],[1,1]]
 };
 const diceSettings=[
- {sides:6,color:'#efe3c9'},
- {sides:6,color:'#c65343'},
- {sides:6,color:'#557da3'}
+ {sides:6,color:'#ead9ae',material:'ivory'},
+ {sides:6,color:'#9c6541',material:'wood'},
+ {sides:6,color:'#557da3',material:'standard'}
 ];
 const settingsInputs=Array.from({length:3},(_,i)=>({
  sides:document.getElementById('sides'+i),
- color:document.getElementById('color'+i)
+ color:document.getElementById('color'+i),
+ material:document.getElementById('material'+i)
 }));
 function lockSettings(locked){
- settingsInputs.forEach(({sides,color})=>{sides.disabled=locked;color.disabled=locked});
+ settingsInputs.forEach(({sides,color,material})=>{sides.disabled=locked;color.disabled=locked;material.disabled=locked||Number(sides.value)!==6});
 }
 function faceTexture(value,color){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
@@ -143,6 +146,80 @@ function faceTexture(value,color){
   c.beginPath();c.arc(128+x*68,128+y*68,16,0,Math.PI*2);c.fill();
  }
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
+ return texture;
+}
+
+// Deterministic procedural face painting. The materials are illustrative
+// historic-inspired finishes, not photographic scans of ancient objects.
+function seededRandom(seed){
+ let v=(seed>>>0)||1;
+ return ()=>{v=(Math.imul(1664525,v)+1013904223)>>>0;return v/4294967296};
+}
+function finishTexture(value,color,material,dieIndex){
+ const n=384,canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
+ const c=canvas.getContext('2d'),img=c.createImageData(n,n);
+ const raw=parseInt(color.slice(1),16),r=raw>>16&255,g=raw>>8&255,b=raw&255;
+ const random=seededRandom(1097+value*13+dieIndex*419+(material==='wood'?7001:0));
+ const offsets=Array.from({length:8},()=>({a:random()*6.28,w:2+random()*5,p:random()*6.28}));
+ for(let y=0;y<n;y++){
+  for(let x=0;x<n;x++){
+   const i=(y*n+x)*4,xx=x/n,yy=y/n;
+   const grain=material==='wood'
+    ? Math.sin(yy*32+3.5*Math.sin(xx*11)+.75*Math.sin(yy*29+xx*17))*8
+      +Math.sin(yy*94+Math.sin(xx*21+yy*8)*4)*3.3
+      +Math.sin(yy*170+xx*17)*1.2
+    : Math.sin(xx*29+yy*5)*1.1+Math.sin(xx*87+yy*21)*.65;
+   let patina=0;
+   for(const a of offsets){
+    patina+=Math.sin(xx*a.w*6+yy*a.w*2+a.p)*.65;
+   }
+   const wear= Math.max(0,1-Math.min(xx,yy,1-xx,1-yy)*15);
+   const pore=(random()-.5)*(material==='wood'?12:8);
+   const variation=grain+patina*(material==='wood'?1.7:1.05)+pore
+     +(material==='wood'?-3:-5)*wear;
+   img.data[i]=Math.min(255,Math.max(0,r+variation));
+   img.data[i+1]=Math.min(255,Math.max(0,g+variation*(material==='wood'?.78:1)));
+   img.data[i+2]=Math.min(255,Math.max(0,b+variation*(material==='wood'?.55:.93)));
+   img.data[i+3]=255;
+  }
+ }
+ c.putImageData(img,0,0);
+ // Fine directional fibres and a handful of irregular tool marks.
+ c.lineCap='round';
+ for(let k=0;k<(material==='wood'?150:40);k++){
+  const x=random()*n,y=random()*n;
+  c.strokeStyle=material==='wood'?'rgba(43,26,16,'+(.018+random()*.035)+')':'rgba(111,83,52,'+(.018+random()*.025)+')';
+  c.lineWidth=.4+random()*1.5;
+  c.beginPath();c.moveTo(x,y);
+  if(material==='wood')c.bezierCurveTo(x+random()*6,y+12,x-3+random()*8,y+23,x+random()*4,y+30+random()*110);
+  else c.lineTo(x+random()*13-6,y+random()*3-1.5);
+  c.stroke();
+ }
+ const sideShade=c.createRadialGradient(170,140,85,192,192,266);
+ sideShade.addColorStop(0,'rgba(255,244,218,0)');
+ sideShade.addColorStop(1,material==='wood'?'rgba(43,21,12,.23)':'rgba(82,65,39,.13)');
+ c.fillStyle=sideShade;c.fillRect(0,0,n,n);
+ // Inset pips: a bright, cut edge plus an uneven dark recess. They look
+ // excavated rather than flat printed circles, without altering physics.
+ const pipR=material==='wood'?24:23;
+ const dark=material==='wood'?'#342013':'#514633';
+ for(const [px,py] of pipGrid[value]){
+  const x=n/2+px*101,y=n/2+py*101;
+  c.beginPath();c.ellipse(x,y,pipR+9,pipR+9,0,0,Math.PI*2);
+  c.fillStyle='rgba(42,25,13,.19)';c.fill();
+  c.beginPath();c.ellipse(x+1,y+2,pipR+6,pipR+6,0,0,Math.PI*2);
+  c.strokeStyle='rgba(250,230,185,.60)';c.lineWidth=4;c.stroke();
+  c.beginPath();c.ellipse(x,y,pipR+3,pipR+3,0,0,Math.PI*2);
+  c.strokeStyle='rgba(57,33,17,.44)';c.lineWidth=3;c.stroke();
+  const indent=c.createRadialGradient(x-6,y-8,2,x,y,pipR+4);
+  indent.addColorStop(0,dark);
+  indent.addColorStop(.7,material==='wood'?'#4d2e18':'#5e4d38');
+  indent.addColorStop(1,material==='wood'?'#7b4a25':'#88775a');
+  c.fillStyle=indent;c.beginPath();c.arc(x,y,pipR,0,Math.PI*2);c.fill();
+  c.fillStyle='rgba(20,14,10,.32)';c.beginPath();c.arc(x-2,y-1,7,0,Math.PI*2);c.fill();
+ }
+ const texture=new THREE.CanvasTexture(canvas);
+ texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
  return texture;
 }
 function updateDimensions(){
@@ -330,7 +407,8 @@ function makeDie(i){
  if(sides===6){
   const geometry=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE);
   const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({
-   map:faceTexture(n,settings.color),roughness:.47,metalness:.025
+   map:settings.material==='standard'?faceTexture(n,settings.color):finishTexture(n,settings.color,settings.material,i),
+   roughness:settings.material==='wood'?.94:settings.material==='ivory'?.83:.47,metalness:.0
   }));
   mesh=new THREE.Mesh(geometry,materials);normals=faceNormals;faceNumbers=faceValues;
  }else{
@@ -364,17 +442,24 @@ function changeDie(i){
  const setting=diceSettings[i];
  setting.sides=Number(settingsInputs[i].sides.value);
  setting.color=settingsInputs[i].color.value;
+ setting.material=settingsInputs[i].material.value;
  const wasVisible=!held;
  destroyDie(objects[i]);
  objects[i]=makeDie(i);
  objects[i].mesh.visible=wasVisible;
+ settingsInputs[i].material.disabled=setting.sides!==6;
  if(!wasVisible)status.textContent='IN HAND — ダイス'+(i+1)+'を変更しました';
  else status.textContent='READY TO COLLECT';
  syncMeshes();
 }
-settingsInputs.forEach(({sides,color},i)=>{
+settingsInputs.forEach(({sides,color,material},i)=>{
  sides.addEventListener('change',()=>changeDie(i));
- color.addEventListener('input',()=>changeDie(i));
+ color.addEventListener('change',()=>changeDie(i));
+ material.addEventListener('change',()=>{
+  if(material.value==='ivory')color.value='#ead9ae';
+  if(material.value==='wood')color.value='#9c6541';
+  changeDie(i);
+ });
 });
 function syncMeshes(){
  for(const {mesh,body} of objects){
