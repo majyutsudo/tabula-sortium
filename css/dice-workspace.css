@@ -95,7 +95,7 @@ body.tabula-dice-mode #diceSettingsHolder{margin-top:10px}
 #diceResultsHolder .result-number{font-size:25px;font-weight:bold}
 #diceResultsHolder .astro-name{font-size:11px}
 #diceResultsHolder #dice-total{border-left:1px solid #baa77a70;padding-left:10px}
-#diceStrengthHolder{width:100%;box-sizing:border-box;padding:5px 10px}
+#diceStrengthHolder{width:100%;grid-column:1/-1;box-sizing:border-box;padding:5px 10px}
 #diceStrengthHolder .force-control{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:12px}
 #diceStrengthHolder #dice-force{width:100%;accent-color:#c8a76e}
 #diceStrengthHolder .force-range{grid-column:2;display:flex;justify-content:space-between;font-size:10px}
