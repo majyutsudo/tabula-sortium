@@ -34,6 +34,13 @@ button{font:inherit;cursor:pointer}
 #collect:hover{background:#30483b}#collect:disabled{opacity:.45;cursor:not-allowed}
 #mix{border:1px solid #8d866f;color:#e5d4b4;background:#263c31;min-height:54px;padding:12px 18px;border-radius:5px;font-size:15px;letter-spacing:.06em}
 #mix:hover{background:#30483b}#mix:disabled{opacity:.45;cursor:not-allowed}
+.dice-settings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:2px 0 0}
+.die-setting{display:flex;align-items:center;justify-content:center;gap:9px;padding:10px 8px;border:1px solid #647462;background:#1d332a;border-radius:6px}
+.die-setting label{font-size:12px;color:#e3cfab;white-space:nowrap}
+.die-setting select{min-width:66px;padding:6px 4px;border-radius:4px;border:1px solid #6b725b;background:#293f34;color:#f2e2c4;font:13px Georgia,serif}
+.die-setting input[type=color]{width:35px;height:31px;border:1px solid #978a69;border-radius:4px;padding:2px;background:#293f34;cursor:pointer}
+.die-setting select:disabled,.die-setting input:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:630px){.dice-settings{grid-template-columns:1fr}.die-setting{justify-content:space-between;padding:7px 12px}}
 .results{display:flex;justify-content:center;align-items:baseline;gap:20px;flex-wrap:wrap;min-height:32px;font-variant-numeric:tabular-nums}
 #values{font-size:16px;color:#d8c7a1}#total{font-size:24px;color:#edd8aa}
 .note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
@@ -43,7 +50,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 18</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 19</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -57,6 +64,11 @@ button{font:inherit;cursor:pointer}
  <output id="forceValue" for="force">30 / 100</output>
  <div class="force-range" aria-hidden="true"><span>そっと</span><span>強く</span><span>激しく</span></div>
 </div>
+<div class="dice-settings" role="group" aria-label="ダイスの面数と色">
+ <div class="die-setting"><label for="sides0">ダイス1</label><select id="sides0" aria-label="ダイス1の面数"><option value="4">D4</option><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><input id="color0" type="color" value="#efe3c9" aria-label="ダイス1の色"></div>
+ <div class="die-setting"><label for="sides1">ダイス2</label><select id="sides1" aria-label="ダイス2の面数"><option value="4">D4</option><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><input id="color1" type="color" value="#c65343" aria-label="ダイス2の色"></div>
+ <div class="die-setting"><label for="sides2">ダイス3</label><select id="sides2" aria-label="ダイス3の面数"><option value="4">D4</option><option value="6" selected>D6</option><option value="8">D8</option><option value="10">D10</option><option value="12">D12</option><option value="20">D20</option></select><input id="color2" type="color" value="#557da3" aria-label="ダイス3の色"></div>
+</div>
 <div class="roll-actions">
  <button type="button" id="collect" disabled>◇　ダイスを握る</button>
  <button type="button" id="mix" disabled>⟳　混ぜ始める</button>
@@ -64,7 +76,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 —</span></div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">D6 × 3個。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
+<p class="note">ダイス1～3の面数と色を個別に選択できます。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -107,7 +119,18 @@ const pipGrid={
  5:[[-1,-1],[-1,1],[0,0],[1,-1],[1,1]],
  6:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,0],[1,1]]
 };
-const diceColors=['#efe3c9','#c65343','#557da3'];
+const diceSettings=[
+ {sides:6,color:'#efe3c9'},
+ {sides:6,color:'#c65343'},
+ {sides:6,color:'#557da3'}
+];
+const settingsInputs=Array.from({length:3},(_,i)=>({
+ sides:document.getElementById('sides'+i),
+ color:document.getElementById('color'+i)
+}));
+function lockSettings(locked){
+ settingsInputs.forEach(({sides,color})=>{sides.disabled=locked;color.disabled=locked});
+}
 function faceTexture(value,color){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const c=canvas.getContext('2d');c.fillStyle=color;c.fillRect(0,0,256,256);
@@ -160,19 +183,183 @@ function buildWalls(){
   ));
  }
 }
-function createDice(){
- const geo=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE);
- for(let i=0;i<3;i++){
-  const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({map:faceTexture(n,diceColors[i]),roughness:.47,metalness:.025}));
-  const mesh=new THREE.Mesh(geo,materials);
-  mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
-  const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
-   .setTranslation((i-1)*1.2,HALF+.03,0)
-   .setLinearDamping(.13).setAngularDamping(.23).setCanSleep(true).setCcdEnabled(true));
-  world.createCollider(RAPIER.ColliderDesc.cuboid(HALF,HALF,HALF).setRestitution(.38).setFriction(.76).setDensity(1),body);
-  objects.push({mesh,body});
+// Build a true solid polyhedron, one face and one real material map per
+// numbered face. Collision uses the identical 3D vertices as the renderer.
+function normaliseSolid(geometry){
+ const a=geometry.getAttribute('position');
+ const vertices=[], triangles=[],indexByKey=new Map();
+ for(let i=0;i<a.count;i++){
+  const p=[a.getX(i),a.getY(i),a.getZ(i)];
+  const key=p.map(v=>v.toFixed(5)).join(',');
+  if(!indexByKey.has(key)){indexByKey.set(key,vertices.length);vertices.push(p)}
  }
+ const radius=Math.max(...vertices.map(v=>Math.hypot(...v)));
+ const scale=.64/radius;
+ vertices.forEach(v=>{v[0]*=scale;v[1]*=scale;v[2]*=scale});
+ for(let i=0;i<a.count;i+=3){
+  const tri=[];
+  for(let k=0;k<3;k++){
+   const p=[a.getX(i+k),a.getY(i+k),a.getZ(i+k)];
+   tri.push(indexByKey.get(p.map(v=>v.toFixed(5)).join(',')));
+  }
+  triangles.push(tri);
+ }
+ geometry.dispose();
+ return {vertices,triangles};
 }
+function createTenGeometry(){
+ // Pentagonal trapezohedron: 10 planar kite faces, two poles and a
+ // staggered equatorial ring. The exact ratio makes each kite coplanar.
+ const c=Math.cos(Math.PI/5),h=(1-c)/(1+c);
+ const vertices=[[0,1,0],[0,-1,0]];
+ for(let i=0;i<10;i++){
+  const a=i*Math.PI/5;
+  vertices.push([Math.cos(a),i%2===0?-h:h,Math.sin(a)]);
+ }
+ const radius=Math.max(...vertices.map(v=>Math.hypot(...v)));
+ vertices.forEach(v=>{v[0]*=.64/radius;v[1]*=.64/radius;v[2]*=.64/radius});
+ const faces=[];
+ for(let i=0;i<10;i+=2)faces.push([0,2+((i+9)%10),2+i,2+((i+1)%10)]);
+ for(let i=1;i<10;i+=2)faces.push([1,2+((i+9)%10),2+i,2+((i+1)%10)]);
+ return {vertices,faces};
+}
+function vectorFrom(v){return new THREE.Vector3(v[0],v[1],v[2])}
+function facePlane(vertices,indices){
+ const a=vectorFrom(vertices[indices[0]]),b=vectorFrom(vertices[indices[1]]),c=vectorFrom(vertices[indices[2]]);
+ const n=b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+ const centre=new THREE.Vector3();
+ indices.forEach(k=>centre.add(vectorFrom(vertices[k])));centre.multiplyScalar(1/indices.length);
+ if(n.dot(centre)<0)n.negate();
+ return {normal:n,centre};
+}
+function solidFaces(sides){
+ if(sides===10){
+  const g=createTenGeometry();
+  return {vertices:g.vertices,faces:g.faces};
+ }
+ const makers={4:THREE.TetrahedronGeometry,8:THREE.OctahedronGeometry,12:THREE.DodecahedronGeometry,20:THREE.IcosahedronGeometry};
+ const g=normaliseSolid(new makers[sides](1,0));
+ const planes=[];
+ for(const tri of g.triangles){
+  const {normal,centre}=facePlane(g.vertices,tri),offset=normal.dot(centre);
+  let face=planes.find(f=>f.normal.dot(normal)>.999&&Math.abs(f.offset-offset)<.003);
+  if(!face){face={normal,offset,indices:new Set()};planes.push(face)}
+  tri.forEach(k=>face.indices.add(k));
+ }
+ const faces=planes.map(f=>{
+  const ids=[...f.indices];
+  const centre=new THREE.Vector3();ids.forEach(i=>centre.add(vectorFrom(g.vertices[i])));centre.multiplyScalar(1/ids.length);
+  const u=vectorFrom(g.vertices[ids[0]]).sub(centre).normalize(),v=f.normal.clone().cross(u).normalize();
+  ids.sort((a,b)=>{
+   const A=vectorFrom(g.vertices[a]).sub(centre),B=vectorFrom(g.vertices[b]).sub(centre);
+   return Math.atan2(A.dot(v),A.dot(u))-Math.atan2(B.dot(v),B.dot(u));
+  });
+  return ids;
+ });
+ if(faces.length!==sides)throw Error('D'+sides+' face count: '+faces.length);
+ return {vertices:g.vertices,faces};
+}
+const solids=new Map();
+function getSolid(sides){if(!solids.has(sides))solids.set(sides,solidFaces(sides));return solids.get(sides)}
+function numberTexture(value,color){
+ const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+ const c=canvas.getContext('2d');
+ c.fillStyle=color;c.fillRect(0,0,256,256);
+ const shade=c.createLinearGradient(0,0,256,256);
+ shade.addColorStop(0,'#ffffff45');shade.addColorStop(.7,'#ffffff00');shade.addColorStop(1,'#00000039');
+ c.fillStyle=shade;c.fillRect(0,0,256,256);
+ const rgb=parseInt(color.slice(1),16),lum=(rgb>>16&255)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
+ c.textAlign='center';c.textBaseline='middle';c.fillStyle=lum<140?'#fff1d8':'#24231e';
+ c.font='bold '+(value>=10?107:137)+'px Georgia,serif';c.fillText(String(value),128,128);
+ // A small underline helps distinguish 6 and 9.
+ if(value===6||value===9){c.fillRect(105,206,46,6)}
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
+function numberedMesh(sides,color){
+ const solid=getSolid(sides),{vertices,faces}=solid;
+ const positions=[],uvs=[],groups=[],faceNormals=[];
+ faces.forEach((ids,index)=>{
+  const {normal,centre}=facePlane(vertices,ids);
+  faceNormals.push(normal);
+  const a=vectorFrom(vertices[ids[0]]).sub(centre).normalize();
+  const b=normal.clone().cross(a).normalize();
+  const maxR=Math.max(...ids.map(k=>vectorFrom(vertices[k]).sub(centre).length()));
+  const coords=ids.map(k=>{
+   const d=vectorFrom(vertices[k]).sub(centre);
+   return [.5+d.dot(a)/(maxR*2.2),.5+d.dot(b)/(maxR*2.2)];
+  });
+  const start=positions.length/3;
+  for(let i=1;i<ids.length-1;i++){
+   for(const j of [0,i,i+1]){
+    positions.push(...vertices[ids[j]]);
+    uvs.push(...coords[j]);
+   }
+  }
+  groups.push({start,count:positions.length/3-start,materialIndex:index});
+ });
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+ groups.forEach(g=>geometry.addGroup(g.start,g.count,g.materialIndex));
+ geometry.computeVertexNormals();
+ const materials=faces.map((_,i)=>new THREE.MeshStandardMaterial({
+  map:numberTexture(i+1,color),roughness:.49,metalness:.025,side:THREE.DoubleSide
+ }));
+ const mesh=new THREE.Mesh(geometry,materials);
+ return {mesh,solid,normals:faceNormals,values:faces.map((_,i)=>i+1)};
+}
+function makeDie(i){
+ const settings=diceSettings[i],sides=settings.sides;
+ let mesh,solid=null,normals,faceNumbers;
+ if(sides===6){
+  const geometry=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE);
+  const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({
+   map:faceTexture(n,settings.color),roughness:.47,metalness:.025
+  }));
+  mesh=new THREE.Mesh(geometry,materials);normals=faceNormals;faceNumbers=faceValues;
+ }else{
+  const poly=numberedMesh(sides,settings.color);
+  mesh=poly.mesh;solid=poly.solid;normals=poly.normals;faceNumbers=poly.values;
+ }
+ mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
+ const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
+  .setTranslation((i-1)*1.2,.85,0)
+  .setLinearDamping(.13).setAngularDamping(.23).setCanSleep(true).setCcdEnabled(true));
+ const collider=sides===6?
+  RAPIER.ColliderDesc.cuboid(HALF,HALF,HALF):
+  RAPIER.ColliderDesc.convexHull(new Float32Array(solid.vertices.flat()));
+ if(!collider)throw Error('Convex collider failed for D'+sides);
+ world.createCollider(collider.setRestitution(.38).setFriction(.76).setDensity(1),body);
+ return {mesh,body,normals,faceNumbers,sides};
+}
+function destroyDie(obj){
+ if(!obj)return;
+ world.removeRigidBody(obj.body);
+ scene.remove(obj.mesh);
+ obj.mesh.geometry.dispose();
+ const materials=Array.isArray(obj.mesh.material)?obj.mesh.material:[obj.mesh.material];
+ for(const m of materials){m.map?.dispose();m.dispose()}
+}
+function createDice(){
+ for(let i=0;i<3;i++)objects.push(makeDie(i));
+}
+function changeDie(i){
+ if(!ready||rolling||mixing)return;
+ const setting=diceSettings[i];
+ setting.sides=Number(settingsInputs[i].sides.value);
+ setting.color=settingsInputs[i].color.value;
+ const wasVisible=!held;
+ destroyDie(objects[i]);
+ objects[i]=makeDie(i);
+ objects[i].mesh.visible=wasVisible;
+ if(!wasVisible)status.textContent='IN HAND — ダイス'+(i+1)+'を変更しました';
+ else status.textContent='READY TO COLLECT';
+ syncMeshes();
+}
+settingsInputs.forEach(({sides,color},i)=>{
+ sides.addEventListener('change',()=>changeDie(i));
+ color.addEventListener('input',()=>changeDie(i));
+});
 function syncMeshes(){
  for(const {mesh,body} of objects){
   const p=body.translation(),q=body.rotation();
@@ -180,12 +367,12 @@ function syncMeshes(){
  }
 }
 function topFace(object){
- const q=object.mesh.quaternion;let best=-1,index=0;
- for(let i=0;i<6;i++){
-  const score=faceNormals[i].clone().applyQuaternion(q).dot(up);
+ const q=object.mesh.quaternion;let best=-Infinity,index=0;
+ for(let i=0;i<object.normals.length;i++){
+  const score=object.normals[i].clone().applyQuaternion(q).dot(up);
   if(score>best){best=score;index=i}
  }
- return faceValues[index];
+ return object.faceNumbers[index];
 }
 function random(min,max){return min+Math.random()*(max-min)}
 function collectDice(){
@@ -250,6 +437,7 @@ function releaseDice(options={}){
  if(!ready||rolling||!held||mixing)return;
  held=false;
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
+ lockSettings(true);
  button.disabled=true;mixButton.disabled=true;values.textContent='—';total.textContent='合計 —';
  status.textContent='ROLLING…';
  const dir=options.direction||{x:0,y:-1};
@@ -300,6 +488,7 @@ function render(time){
    stableTime=stopped?stableTime+dt:0;
    if(stableTime>.50||rollTime>12){
     rolling=false;button.disabled=true;collectButton.disabled=false;mixButton.disabled=true;
+    lockSettings(false);
     const results=objects.map(topFace);
     values.textContent=results.join(' · ');
     total.textContent='合計 '+results.reduce((n,v)=>n+v,0);
