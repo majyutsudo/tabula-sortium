@@ -2687,3 +2687,18 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManage
 @media(max-width:420px){
  .records-active .record-restore{grid-template-columns:1fr}
 }
+
+/* Brand doubles as the quiet return path to the entrance page. */
+aside header .tabula-entrance-link{
+ color:inherit;
+ text-decoration:none;
+ cursor:pointer;
+ border-radius:4px;
+ transition:filter .18s ease;
+}
+aside header .tabula-entrance-link:hover,
+aside header .tabula-entrance-link:focus-visible{filter:brightness(1.2)}
+aside header .tabula-entrance-link:focus-visible{
+ outline:2px solid #c6ac77;
+ outline-offset:4px;
+}
