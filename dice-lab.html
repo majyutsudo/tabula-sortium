@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 29</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 30</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -431,22 +431,29 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
  c.fillStyle='rgba(55,39,24,.5)';c.fill();
  c.beginPath();c.arc(cx-2,cy-3,rad,0,Math.PI*2);
  c.strokeStyle='#e2ce9e';c.lineWidth=Math.max(3,rad*.12);c.stroke();
- c.beginPath();c.arc(cx,cy,rad*.87,0,Math.PI*2);
- c.strokeStyle='#423325';c.lineWidth=Math.max(4,rad*.15);c.stroke();
- c.beginPath();c.arc(cx,cy,rad*.70,0,Math.PI*2);
- c.fillStyle='#b59a6d';c.fill();
+ // Keep the ring as a framing device rather than competing with
+ // the numeral. A quiet pale centre gives the carved black digit contrast.
+ c.beginPath();c.arc(cx,cy,rad*.80,0,Math.PI*2);
+ c.strokeStyle='#423325';c.lineWidth=Math.max(3,rad*.095);c.stroke();
+ c.beginPath();c.arc(cx,cy,rad*.68,0,Math.PI*2);
+ c.fillStyle='#d5bd8f';c.fill();
  c.beginPath();c.arc(cx,cy,rad*.67,0,Math.PI*2);
- c.strokeStyle='rgba(56,39,24,.55)';c.lineWidth=Math.max(2,rad*.045);c.stroke();
- const textColor='#33291e',fontSize=rad*(value>=10?.74:.92);
+ c.strokeStyle='rgba(72,50,32,.35)';c.lineWidth=Math.max(1.5,rad*.025);c.stroke();
+ // Previous glyphs used only 0.74–0.92 of the ring radius in font
+ // size and vanished at actual tabletop scale. Give the digit most of
+ // the central field, including 10, 11 and 12 on D12.
+ const twoDigits=value>=10;
+ const fontSize=rad*(twoDigits?1.14:1.56);
+ const maxWidth=rad*(twoDigits?1.36:1.00);
  c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
- c.font='bold '+fontSize+'px Georgia,serif';
- c.strokeStyle='rgba(240,216,164,.85)';c.lineWidth=Math.max(3,rad*.12);
- c.strokeText(String(value),cx+1,cy+1,rad*1.18);
- c.fillStyle=textColor;
- c.fillText(String(value),cx,cy,rad*1.18);
+ c.font='900 '+fontSize+'px Georgia,serif';
+ c.strokeStyle='rgba(247,224,177,.88)';
+ c.lineWidth=Math.max(2,rad*.085);
+ c.strokeText(String(value),cx+1,cy+2,maxWidth);
+ c.fillStyle='#211a14';c.fillText(String(value),cx,cy,maxWidth);
  if(value===6||value===9){
-  const w=rad*.24;
-  c.fillRect(cx-w/2,cy+fontSize*.40,w,Math.max(2,rad*.055));
+  const w=rad*.31;
+  c.fillRect(cx-w/2,cy+fontSize*.34,w,Math.max(2,rad*.06));
  }
  const texture=new THREE.CanvasTexture(canvas);
  texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
