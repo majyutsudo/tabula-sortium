@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0721';
+import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0722';
 
 const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
@@ -209,6 +209,14 @@ function switchPreset(id){
  renderSettings();renderAstroColors();createDice();syncMeshes();showResults();
  collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
 }
+let pendingParentMode=null;
+window.addEventListener('message',event=>{
+ if(event.source!==window.parent||event.origin!==location.origin)return;
+ if(event.data?.type!=='tabula:dice:mode')return;
+ const id=event.data.mode;if(!['normal','astro','iching'].includes(id))return;
+ pendingParentMode=id;
+ if(ready&&!rolling&&!mixing){document.getElementById('preset').value=id;switchPreset(id)}
+});
 document.getElementById('preset').addEventListener('change',e=>switchPreset(e.target.value));
 document.getElementById('iching-color-scheme').addEventListener('change',event=>updateIChingColors(event.target.value));
 renderSettings();renderAstroColors();showResults();
@@ -946,6 +954,7 @@ async function init(){
   createDice();syncMeshes();
   ready=true;collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
   frame=requestAnimationFrame(render);
+  if(pendingParentMode){document.getElementById('preset').value=pendingParentMode;switchPreset(pendingParentMode)}
   new ResizeObserver(updateDimensions).observe(felt);
  }catch(error){
   console.error(error);
