@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0724';
+import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0725';
 
 const diceDOM={
  getElementById(id){return window.document.getElementById('dice-'+id)},
