@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {PRESETS,preset,TRIGRAMS} from '../js/dice-presets.js';
+import {PRESETS,preset,TRIGRAMS,ICHING_INKS,setIChingColors} from '../js/dice-presets.js';
 
 test('all unified dice presets have complete symbolic face definitions',()=>{
  for(const [id,setting] of Object.entries(PRESETS)){
@@ -21,8 +21,8 @@ test('astronomical dodecahedra carry complementary opposite-value policy',()=>{
 test('I Ching preset uses ivory with independent trigram inks and vermilion first line',()=>{
  assert.deepEqual(PRESETS.iching.dice.map(d=>d.sides),[8,8,6]);
  assert.ok(PRESETS.iching.dice.every(d=>d.surface==='ivory'));
- assert.equal(PRESETS.iching.dice[0].ink,'#a0252b');
- assert.equal(PRESETS.iching.dice[1].ink,'#29242a');
+ assert.equal(PRESETS.iching.dice[0].ink,ICHING_INKS.black);
+ assert.equal(PRESETS.iching.dice[1].ink,ICHING_INKS.red);
  assert.deepEqual(PRESETS.iching.dice[0].faces.map(f=>f.glyph),TRIGRAMS);
  assert.deepEqual(PRESETS.iching.dice[2].faces.filter(f=>f.ink==='#a0252b').map(f=>f.glyph),['初']);
 });
@@ -39,8 +39,8 @@ test('unified page has one physics engine and all preset selectors',()=>{
  assert.match(html,/value="normal"/);
  assert.match(html,/value="astro"/);
  assert.match(html,/value="iching"/);
- assert.match(html,/js\/dice-engine\.js\?v=0717/);
- assert.match(engine,/from '\.\/dice-presets\.js\?v=0717'/);
+ assert.match(html,/js\/dice-engine\.js\?v=0718/);
+ assert.match(engine,/from '\.\/dice-presets\.js\?v=0718'/);
  assert.match(engine,/complementaryFaceValues\(faceNormals\)/);
  assert.match(engine,/function hexagramSummary\(/);
 });
@@ -55,7 +55,7 @@ test('normal dice count, palette and text-presentation zodiac marks are supporte
  assert.doesNotMatch(engine,/\['wood','古木'\]/);
  assert.doesNotMatch(engine,/\['archaic','古代風'\]/);
  assert.match(engine,/\\uFE0E/);
- assert.match(html,/UNIFIED DICE LAB v0\.717/);
+ assert.match(html,/UNIFIED DICE LAB v0\.718/);
 });
 
 test('default dice are three D6 and ordinary table labels are not I Ching labels',()=>{
@@ -67,4 +67,17 @@ test('default dice are three D6 and ordinary table labels are not I Ching labels
  assert.match(engine,/table-corner-top/);
  assert.match(engine,/table-corner-bottom/);
  assert.match(engine,/const font=r\*\(double\?1\.12:house\?1\.45:1\.78\)/);
+});
+
+test('I Ching outer and inner trigram color scheme changes without changing face identities',()=>{
+ const dice=preset('iching').dice,faceSets=dice.map(d=>d.faces.map(f=>f.glyph));
+ setIChingColors(dice,'redUpper');
+ assert.equal(dice[0].ink,ICHING_INKS.red);
+ assert.equal(dice[1].ink,ICHING_INKS.black);
+ setIChingColors(dice,'blackUpper');
+ assert.equal(dice[0].ink,ICHING_INKS.black);
+ assert.equal(dice[1].ink,ICHING_INKS.red);
+ assert.deepEqual(dice.map(d=>d.faces.map(f=>f.glyph)),faceSets);
+ assert.deepEqual(dice[2].faces.filter(f=>f.ink===ICHING_INKS.red).map(f=>f.glyph),['初']);
+ assert.throws(()=>setIChingColors(dice,'bogus'));
 });
