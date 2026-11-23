@@ -40,7 +40,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 16</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 17</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -51,12 +51,12 @@ button{font:inherit;cursor:pointer}
 <div class="control-row" role="group" aria-label="投げ方"><span>投げ方</span><button type="button" class="mode" data-strength="gentle" aria-pressed="false">そっと</button><button type="button" class="mode" data-strength="normal" aria-pressed="true">普通</button><button type="button" class="mode" data-strength="strong" aria-pressed="false">勢いよく</button></div>
 <div class="roll-actions">
  <button type="button" id="collect" disabled>◇　ダイスを握る</button>
- <button type="button" id="mix" disabled>⟳　ダイスを混ぜる</button>
+ <button type="button" id="mix" disabled>⟳　混ぜ始める</button>
  <button type="button" id="roll" disabled>◆　ダイスを振る　◆</button>
 </div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 —</span></div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">D6 × 3個。「握る」→「混ぜる」（実物と同じ3Dダイスを使用）→「振る」の順で操作できます。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
+<p class="note">D6 × 3個。「握る」→「混ぜ始める」→ 好きな時間だけ空中で混ぜる →「止める」→「振る」。実物と同じ3Dダイスを使用。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -178,40 +178,53 @@ function collectDice(){
  mixButton.disabled=false;
  button.disabled=false;
  mixCount=0;
+ mixButton.textContent='⟳　混ぜ始める';
+ mixButton.setAttribute('aria-pressed','false');
  values.textContent='—';total.textContent='合計 —';
  status.textContent='IN HAND — 投げる準備ができました';
 }
 // Mix the very same 3D meshes used for the physical throw, at full size.
 // Rapier is not stepped while the dice are held; these are visual poses only.
+// A free-running, user-controlled in-hand mixing action.
+// The full-size meshes represent dice tossed upward from an unseen palm;
+// Rapier is deliberately paused, and the final numbers are determined on throw.
 function mixDice(){
- if(!ready||rolling||!held||mixing)return;
+ if(!ready||rolling||!held)return;
+ if(mixing){
+  mixing=false;
+  objects.forEach(({mesh})=>{mesh.visible=false;mesh.castShadow=true});
+  mixButton.textContent='⟳　もう一度混ぜる';
+  mixButton.setAttribute('aria-pressed','false');
+  button.disabled=false;
+  status.textContent='IN HAND — 混ぜ終わりました（'+mixCount+'回）';
+  return;
+ }
  mixing=true;mixCount++;mixTime=0;
- button.disabled=true;mixButton.disabled=true;
+ button.disabled=true;
+ mixButton.textContent='■　混ぜるのを止める';
+ mixButton.setAttribute('aria-pressed','true');
  objects.forEach(({mesh})=>{mesh.visible=true;mesh.castShadow=false});
- status.textContent='MIXING… — ダイスを混ぜています';
+ status.textContent='MIXING… — 好きなタイミングで止められます';
 }
 function animateMix(dt){
  mixTime+=dt;
  const t=mixTime;
- // Maintain each die's orbit until the end: no contraction into a
- // single point. At completion all three simply disappear together.
- // They do not collide with the cloth during this in-hand animation.
+ // A vertical toss roughly every 0.9 seconds: lift, apex, catch,
+ // then another toss. Each die has a distinct lateral position and
+ // slightly staggered flight, so they never fuse.
+ const period=.92;
  objects.forEach(({mesh},i)=>{
-  const angle=t*12+i*Math.PI*2/3;
-  const radius=.65+Math.sin(t*17+i*2)*.12;
-  mesh.position.set(Math.cos(angle)*radius,
-    1.8+Math.sin(t*15+i*2.2)*.27,
-    Math.sin(angle)*radius*.75);
-  mesh.rotation.set(t*19+i*2.3,t*16+i*1.8,t*13+i*2.8);
+  const phase=((t+i*.075)%period)/period;
+  const tossHeight=4*phase*(1-phase); // a smooth rise and fall, 0 at catches
+  const orbit=t*2.7+i*2*Math.PI/3;
+  const r=.79+Math.sin(t*4.4+i)*.07;
+  const x=Math.cos(orbit)*r;
+  const z=Math.sin(orbit)*r*.77;
+  mesh.position.set(x,1.15+2.35*tossHeight,z);
+  // The upward throw has real visible somersaults. Faces remain attached
+  // to the actual 3D cubes, as during a Rapier throw.
+  mesh.rotation.set(t*9+i*2.1,t*7+i*2.4,t*8+i*1.9);
  });
- if(mixTime>=1.3){
-  mixing=false;
-  objects.forEach(({mesh})=>{mesh.visible=false;mesh.castShadow=true});
-  if(held&&!rolling){
-   button.disabled=false;mixButton.disabled=false;
-   status.textContent='IN HAND — '+mixCount+'回混ぜました';
-  }
- }
 }
 function releaseDice(options={}){
  if(!ready||rolling||!held||mixing)return;
