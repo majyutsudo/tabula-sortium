@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TABULA — DICE LAB / 投擲実験</title>
+<style>
+:root{color-scheme:dark;font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN",serif;background:#101815;color:#eadfc8}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% 5%,#24372e,#101815 70%);display:flex;justify-content:center;align-items:flex-start;padding:clamp(12px,3vw,32px)}
+main{width:min(840px,100%);display:grid;gap:15px}
+header{text-align:center;padding:5px 4px 0}
+.eyebrow{font-size:10px;letter-spacing:.35em;color:#bca577}
+h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin:7px 0 4px;padding-left:.22em}
+.subtitle{font-size:12px;color:#b7ad93;letter-spacing:.12em}
+.table-frame{padding:9px;border:1px solid #786443;background:#292820;box-shadow:0 14px 45px #0009,inset 0 0 0 2px #39342a;border-radius:16px}
+#felt{position:relative;height:clamp(320px,57dvh,530px);overflow:hidden;touch-action:manipulation;cursor:pointer;border:1px solid #3d5745;border-radius:10px;background:radial-gradient(ellipse at 50% 44%,#355747 0%,#243e33 64%,#192e26 100%);box-shadow:inset 0 0 90px #08170ed9,inset 0 0 0 1px #58715a2f}
+#felt:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.16;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='82' height='82'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.38'/%3E%3C/svg%3E")}
+.corner{position:absolute;z-index:1;font-size:10px;color:#afbd9a88;letter-spacing:.22em;pointer-events:none}.corner.tl{left:16px;top:15px}.corner.br{right:16px;bottom:14px}
+.die{width:70px;height:70px;position:absolute;left:0;top:0;transform:translate(-50%,-50%);z-index:3;will-change:left,top}
+.die .shadow{position:absolute;width:64px;height:24px;left:3px;top:49px;border-radius:50%;background:#040b09a6;filter:blur(11px);transform-origin:center;pointer-events:none}
+.cube-anchor{position:absolute;inset:0;perspective:520px;pointer-events:none}
+.cube{position:absolute;width:70px;height:70px;transform-style:preserve-3d;will-change:transform}
+.face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:9px;border:1.5px solid #857a66;border-radius:9px;background:linear-gradient(137deg,#fff8e9 2%,#f1e3c7 58%,#d4c4a8);box-shadow:inset 0 0 8px #8d735c55,inset 2px 2px 4px #fff9}
+.face:after{content:"";position:absolute;inset:3px;border:1px solid #baab9255;border-radius:6px;pointer-events:none}
+.pip{display:block;width:10px;height:10px;align-self:center;justify-self:center;border-radius:50%;background:#262421;box-shadow:inset 1px 1px 2px #080707,1px 1px 0 #fff9}
+.face[data-face="1"]{transform:translateZ(35px)}
+.face[data-face="6"]{transform:rotateY(180deg) translateZ(35px)}
+.face[data-face="2"]{transform:rotateX(-90deg) translateZ(35px)}
+.face[data-face="5"]{transform:rotateX(90deg) translateZ(35px)}
+.face[data-face="3"]{transform:rotateY(90deg) translateZ(35px)}
+.face[data-face="4"]{transform:rotateY(-90deg) translateZ(35px)}
+.controls{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
+button{font:inherit;cursor:pointer}
+#roll{border:1px solid #dbc08a;color:#2b271b;background:linear-gradient(#e3cb99,#b99b62);min-height:57px;padding:13px 42px;border-radius:5px;font-size:17px;letter-spacing:.12em;box-shadow:0 3px 0 #6a5739,0 6px 16px #0006;touch-action:manipulation}
+#roll:hover{filter:brightness(1.12)}
+#roll:active{transform:translateY(2px);box-shadow:0 1px 0 #6a5739}
+#roll:disabled{opacity:.65;cursor:default}
+.results{display:flex;justify-content:center;align-items:baseline;gap:20px;min-height:38px;flex-wrap:wrap}
+#values{font-variant-numeric:tabular-nums;font-size:15px;letter-spacing:.12em;color:#d1bea0}
+#total{font-size:25px;color:#edd8aa;font-variant-numeric:tabular-nums}
+#total b{font-weight:normal}
+.note{font-size:11px;line-height:1.8;color:#a89e88;text-align:center;margin:0 0 8px}
+.status{text-align:center;color:#c1b38f;font-size:12px;min-height:17px;letter-spacing:.16em}
+@media(max-width:480px){body{padding:10px} main{gap:11px}.table-frame{padding:6px}#felt{height:57dvh;min-height:340px;max-height:500px}#roll{width:100%}.results{gap:12px}}
+@media(prefers-reduced-motion:reduce){#roll{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 01</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
+<div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div></div></div>
+<div id="status" class="status" aria-live="polite">READY TO ROLL</div>
+<div class="controls"><button type="button" id="roll">◆　ダイスを振る　◆</button></div>
+<div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 <b>—</b></span></div>
+<p class="note">六面ダイス3個の投擲実験。卓をタップしても振れます。<br>まずは転がり方を眺めるための独立版です。既存のTABULAの卓は変更しません。</p>
+</main>
+<script>
+(()=>{'use strict';
+const felt=document.getElementById('felt'),button=document.getElementById('roll');
+const status=document.getElementById('status'),values=document.getElementById('values'),total=document.querySelector('#total b');
+const SIZE=70,NUM=3,HALF=SIZE/2;
+let dice=[],rolling=false,frame=0,previousTime=0,elapsed=0;
+const rand=(min,max)=>min+Math.random()*(max-min);
+const dicePositions={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function makeDie(){
+ const el=document.createElement('div');el.className='die';
+ const shadow=document.createElement('div');shadow.className='shadow';el.append(shadow);
+ const anchor=document.createElement('div');anchor.className='cube-anchor';
+ const cube=document.createElement('div');cube.className='cube';
+ for(let face=1;face<=6;face++){
+  const side=document.createElement('div');side.className='face';side.dataset.face=String(face);
+  for(let cell=0;cell<9;cell++){const dot=document.createElement('span');if(dicePositions[face].includes(cell))dot.className='pip';side.append(dot)}
+  cube.append(side);
+ }
+ anchor.append(cube);el.append(anchor);felt.append(el);
+ return {el,shadow,cube,x:0,y:0,vx:0,vy:0,h:0,vh:0,rx:0,ry:0,rz:0,wx:0,wy:0,wz:0,value:1,settled:false,settleStart:0,from:null,to:null};
+}
+function dimensions(){return {w:felt.clientWidth,h:felt.clientHeight}}
+function paint(d){
+ d.el.style.left=d.x+'px';d.el.style.top=(d.y-d.h)+'px';
+ d.shadow.style.transform='translateY('+d.h+'px) scale('+Math.max(.7,1-d.h/300)+')';
+ d.shadow.style.opacity=String(Math.max(.2,1-d.h/130));
+ d.cube.style.transform='rotateX('+d.rx+'deg) rotateY('+d.ry+'deg) rotateZ('+d.rz+'deg)';
+}
+function addDice(){
+ const {w,h}=dimensions();
+ dice=Array.from({length:NUM},(_,i)=>{const d=makeDie();d.x=w*(.32+.18*i);d.y=h*.52;d.value=i+1;d.ry=0;d.rx=0;d.rz=0;paint(d);return d});
+}
+const topRotations={
+ 1:[0,0],6:[0,180],2:[90,0],5:[-90,0],3:[0,-90],4:[0,90]
+};
+// The die's front is face 1. Each target places the chosen face toward the camera.
+function nearestAngle(current,target){
+ return target+360*Math.round((current-target)/360);
+}
+function beginSettle(d){
+ if(d.settled)return;
+ d.settled=true;d.settleStart=elapsed;
+ d.from=[d.rx,d.ry,d.rz];
+ const [rx,ry]=topRotations[d.value];
+ d.to=[nearestAngle(d.rx,rx),nearestAngle(d.ry,ry),nearestAngle(d.rz,Math.round(d.rz/90)*90)];
+ d.h=0;d.vh=0;d.vx=0;d.vy=0;
+}
+function begin(){
+ if(rolling)return;
+ rolling=true;elapsed=0;previousTime=0;
+ status.textContent='ROLLING…';button.disabled=true;values.textContent='—';total.textContent='—';
+ const {w,h}=dimensions();
+ const radius=HALF+7;
+ dice.forEach((d,i)=>{
+  d.x=Math.min(w-radius,Math.max(radius,w*(.40+.1*i)+rand(-16,16)));
+  d.y=Math.min(h-radius,Math.max(radius,h*(.54+.035*i)+rand(-10,10)));
+  d.vx=rand(-320,320)+(i-1)*100;d.vy=rand(-230,230);
+  d.h=rand(30,65);d.vh=rand(120,320);
+  d.wx=rand(-1050,1050);d.wy=rand(-1100,1100);d.wz=rand(-650,650);
+  d.rx=rand(-180,180);d.ry=rand(-180,180);d.rz=rand(-180,180);
+  d.value=1+Math.floor(Math.random()*6);
+  d.settled=false;d.settleStart=0;d.from=null;d.to=null;
+  // Slightly different end times feel less synthetic than a synchronized stop.
+  d.endAt=rand(1.8,2.65)+i*.10;d.bounces=0;paint(d);
+ });
+ cancelAnimationFrame(frame);frame=requestAnimationFrame(tick);
+}
+function tick(time){
+ if(!previousTime)previousTime=time;
+ const dt=Math.min((time-previousTime)/1000,.035);previousTime=time;elapsed+=dt;
+ const {w,h}=dimensions(),margin=HALF+5;
+ for(const d of dice){
+  if(d.settled){
+   const t=Math.min(1,(elapsed-d.settleStart)/.50);
+   const smooth=1-Math.pow(1-t,3);
+   [d.rx,d.ry,d.rz]=d.from.map((v,i)=>v+(d.to[i]-v)*smooth);
+   paint(d);continue;
+  }
+  const drag=Math.pow(.52,dt);
+  d.vx*=drag;d.vy*=drag;
+  d.x+=d.vx*dt;d.y+=d.vy*dt;
+  d.vh-=860*dt;d.h+=d.vh*dt;
+  if(d.h<=0){
+   d.h=0;
+   if(Math.abs(d.vh)>65&&d.bounces<8){d.vh=-d.vh*rand(.26,.45);d.bounces++}
+   else d.vh=0;
+   d.wx*=.80;d.wy*=.80;d.wz*=.80;
+  }
+  if(d.x<margin){d.x=margin;d.vx=Math.abs(d.vx)*.57;d.wy+=150}
+  if(d.x>w-margin){d.x=w-margin;d.vx=-Math.abs(d.vx)*.57;d.wy-=150}
+  if(d.y<margin){d.y=margin;d.vy=Math.abs(d.vy)*.57;d.wx+=120}
+  if(d.y>h-margin){d.y=h-margin;d.vy=-Math.abs(d.vy)*.57;d.wx-=120}
+  d.rx+=d.wx*dt;d.ry+=d.wy*dt;d.rz+=d.wz*dt;
+  const rotDrag=Math.pow(.58,dt);d.wx*=rotDrag;d.wy*=rotDrag;d.wz*=rotDrag;
+  if(elapsed>d.endAt)beginSettle(d);
+  paint(d);
+ }
+ // Approximate planar collisions between the three moving bodies.
+ for(let i=0;i<dice.length;i++)for(let j=i+1;j<dice.length;j++){
+  const a=dice[i],b=dice[j];if(a.settled&&b.settled)continue;
+  const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy)||.001,minDist=SIZE*.88;
+  if(dist<minDist&&Math.abs(a.h-b.h)<SIZE*.8){
+   const nx=dx/dist,ny=dy/dist,overlap=minDist-dist;
+   if(!a.settled){a.x-=nx*overlap*.5;a.y-=ny*overlap*.5}
+   if(!b.settled){b.x+=nx*overlap*.5;b.y+=ny*overlap*.5}
+   const speed=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+   if(speed<0){const impulse=-speed*.66;
+    if(!a.settled){a.vx-=impulse*nx;a.vy-=impulse*ny;a.wx+=rand(-180,180);a.vh=Math.max(a.vh,rand(70,150))}
+    if(!b.settled){b.vx+=impulse*nx;b.vy+=impulse*ny;b.wy+=rand(-180,180);b.vh=Math.max(b.vh,rand(70,150))}
+   }
+  }
+ }
+ if(dice.every(d=>d.settled&&elapsed-d.settleStart>=.50)){
+  rolling=false;button.disabled=false;
+  values.textContent=dice.map(d=>d.value).join(' · ');
+  total.textContent=String(dice.reduce((sum,d)=>sum+d.value,0));
+  status.textContent='THE DICE HAVE FALLEN';
+  return;
+ }
+ frame=requestAnimationFrame(tick);
+}
+button.addEventListener('click',begin);
+felt.addEventListener('click',begin);
+felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();begin()}});
+window.addEventListener('resize',()=>{if(rolling)return;const {w,h}=dimensions();dice.forEach(d=>{d.x=Math.max(HALF,Math.min(w-HALF,d.x));d.y=Math.max(HALF,Math.min(h-HALF,d.y));paint(d)})});
+addDice();
+})();
+</script>
+</body>
+</html>
