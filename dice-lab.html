@@ -3,577 +3,283 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>TABULA — DICE LAB / 投擲実験</title>
+<title>DICE LAB — Physics Experiment / TABULA SORTIUM</title>
 <style>
 :root{color-scheme:dark;font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN",serif;background:#101815;color:#eadfc8}
-*{box-sizing:border-box}
-body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% 5%,#24372e,#101815 70%);display:flex;justify-content:center;align-items:flex-start;padding:clamp(12px,3vw,32px)}
-main{width:min(840px,100%);display:grid;gap:15px}
-header{text-align:center;padding:5px 4px 0}
-.eyebrow{font-size:10px;letter-spacing:.35em;color:#bca577}
-h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin:7px 0 4px;padding-left:.22em}
-.subtitle{font-size:12px;color:#b7ad93;letter-spacing:.12em}
-.table-frame{position:relative;padding:9px;border:1px solid #786443;background:#292820;box-shadow:0 14px 45px #0009,inset 0 0 0 2px #39342a;border-radius:16px}
-#felt{position:relative;height:clamp(320px,57dvh,530px);overflow:hidden;touch-action:none;cursor:pointer;border:1px solid #3d5745;border-radius:10px;background:radial-gradient(ellipse at 50% 44%,#355747 0%,#243e33 64%,#192e26 100%);box-shadow:inset 0 0 90px #08170ed9,inset 0 0 0 1px #58715a2f}
-#felt:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.16;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='82' height='82'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.38'/%3E%3C/svg%3E")}
-.throw-guide{position:absolute;inset:0;z-index:10;pointer-events:none;display:none}
-.throw-guide line{stroke:#e9ce91;stroke-width:3;stroke-linecap:round;stroke-dasharray:7 5}
-.throw-guide circle{stroke:#e9ce91;stroke-width:2;fill:#e9ce9125}
-.throw-guide polygon{fill:#e9ce91}
-#felt.aiming{cursor:grabbing}
-.corner{position:absolute;z-index:1;font-size:10px;color:#afbd9a88;letter-spacing:.22em;pointer-events:none}.corner.tl{left:16px;top:15px}.corner.br{right:16px;bottom:14px}
-#flightLayer{position:absolute;z-index:8;pointer-events:none;overflow:visible}
-.die{width:94px;height:94px;position:absolute;left:0;top:0;transform:translate(-50%,-50%);z-index:3;will-change:left,top}
-.die .shadow{position:absolute;width:86px;height:31px;left:4px;top:67px;border-radius:50%;background:#040b09a6;filter:blur(11px);transform-origin:center;pointer-events:none}
-.cube-anchor{position:absolute;inset:0;perspective:520px;pointer-events:none}
-.cube{position:absolute;width:94px;height:94px;transform-style:preserve-3d;will-change:transform}
-.face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:12px;border:1.5px solid #857a66;border-radius:9px;background:linear-gradient(137deg,color-mix(in srgb,var(--die-color,#f1e3c7),white 24%) 2%,var(--die-color,#f1e3c7) 58%,color-mix(in srgb,var(--die-color,#f1e3c7),black 21%));box-shadow:inset 0 0 8px #8d735c55,inset 2px 2px 4px #fff9}
-.face:after{content:"";position:absolute;inset:3px;border:1px solid #baab9255;border-radius:6px;pointer-events:none}
-.pip{display:block;width:13px;height:13px;align-self:center;justify-self:center;border-radius:50%;background:var(--die-ink,#262421);box-shadow:inset 1px 1px 2px #080707,1px 1px 0 #fff9}
-.face[data-face="1"]{transform:translateZ(47px)}
-.face[data-face="6"]{transform:rotateY(180deg) translateZ(47px)}
-.face[data-face="2"]{transform:rotateX(-90deg) translateZ(47px)}
-.face[data-face="5"]{transform:rotateX(90deg) translateZ(47px)}
-.face[data-face="3"]{transform:rotateY(90deg) translateZ(47px)}
-.face[data-face="4"]{transform:rotateY(-90deg) translateZ(47px)}
-.poly-core{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(2px 3px 2px #05080880);pointer-events:none}
-.poly-core polygon{stroke:#241d1f;stroke-opacity:.65;stroke-width:1;stroke-linejoin:round}
-.poly-core text{font-family:Georgia,serif;font-weight:700;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke-width:.075;pointer-events:none}
-.dice-config{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.die-config{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center;background:#192820aa;border:1px solid #66705580;border-radius:7px;padding:8px}
-.die-config label{font-size:12px;color:#c7b89b;white-space:nowrap}
-.die-config select{background:#263c31;border:1px solid #72856c;border-radius:4px;color:#f0dfc1;padding:7px 5px;font:14px Georgia,serif;min-width:0;width:100%;cursor:pointer}
-.die-config input[type=color]{border:1px solid #90836b;border-radius:4px;background:#23362c;width:36px;height:35px;padding:3px;cursor:pointer}
-.die-config select:focus-visible,.die-config input:focus-visible{outline:2px solid #d8ba79;outline-offset:2px}
-.throw-modes{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
-.throw-label{font-size:12px;color:#c2b495;margin-right:5px;letter-spacing:.09em}
-.throw-mode{font:inherit;color:#d1c3a7;background:#21342d;border:1px solid #5c6d58;border-radius:5px;padding:7px 13px;min-height:37px}
-.throw-mode[aria-pressed="true"]{background:#705d3a;color:#fff0c9;border-color:#d6ba81}
-.throw-mode:focus-visible,#felt:focus-visible,#roll:focus-visible{outline:2px solid #d8ba79;outline-offset:3px}
-.controls{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% 5%,#24372e,#101815 70%);display:flex;justify-content:center;padding:clamp(9px,3vw,28px)}
+main{width:min(840px,100%);display:grid;align-content:start;gap:13px}
+header{text-align:center}.eyebrow{font-size:10px;letter-spacing:.32em;color:#bca577}h1{font-size:clamp(25px,4vw,35px);font-weight:normal;letter-spacing:.20em;margin:7px 0 4px}.subtitle{font-size:12px;color:#b7ad93;letter-spacing:.12em}
+.frame{position:relative;padding:9px;border:1px solid #786443;background:#292820;box-shadow:0 14px 45px #0009,inset 0 0 0 2px #39342a;border-radius:16px}
+#felt{position:relative;height:clamp(340px,58dvh,535px);touch-action:none;overflow:hidden;border:1px solid #3d5745;border-radius:10px;background:radial-gradient(ellipse at 50% 44%,#355747 0%,#243e33 64%,#192e26 100%);box-shadow:inset 0 0 90px #08170ed9,inset 0 0 0 1px #58715a2f;cursor:crosshair}
+#felt:focus-visible,button:focus-visible{outline:2px solid #e0be78;outline-offset:3px}
+#felt canvas{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
+.corner{position:absolute;z-index:2;font-size:10px;letter-spacing:.19em;color:#bad2b88e;pointer-events:none}.tl{left:14px;top:13px}.br{bottom:12px;right:12px}
+#throwGuide{display:none;position:absolute;z-index:5;inset:0;width:100%;height:100%;pointer-events:none}
+#throwGuide line{stroke:#f1d59f;stroke-width:3;stroke-dasharray:6 5;stroke-linecap:round}
+#throwGuide circle{fill:#e7ce9b44;stroke:#ead09a;stroke-width:2}
+#throwGuide polygon{fill:#ead09a}
+.status{text-align:center;color:#cabb95;font-size:11px;letter-spacing:.17em;min-height:16px}
+.control-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.control-row span{font-size:12px;color:#c2b495;margin-right:3px}
 button{font:inherit;cursor:pointer}
-#roll{border:1px solid #dbc08a;color:#2b271b;background:linear-gradient(#e3cb99,#b99b62);min-height:57px;padding:13px 42px;border-radius:5px;font-size:17px;letter-spacing:.12em;box-shadow:0 3px 0 #6a5739,0 6px 16px #0006;touch-action:manipulation}
-#roll:hover{filter:brightness(1.12)}
-#roll:active{transform:translateY(2px);box-shadow:0 1px 0 #6a5739}
-#roll:disabled{opacity:.65;cursor:default}
-.results{display:flex;justify-content:center;align-items:baseline;gap:20px;min-height:38px;flex-wrap:wrap}
-#values{font-variant-numeric:tabular-nums;font-size:15px;letter-spacing:.12em;color:#d1bea0}
-#total{font-size:25px;color:#edd8aa;font-variant-numeric:tabular-nums}
-#total b{font-weight:normal}
-.note{font-size:11px;line-height:1.8;color:#a89e88;text-align:center;margin:0 0 8px}
-.status{text-align:center;color:#c1b38f;font-size:12px;min-height:17px;letter-spacing:.16em}
-@media(max-width:480px){.dice-config{grid-template-columns:1fr}.die-config{grid-template-columns:55px 1fr auto}body{padding:10px} main{gap:11px}.table-frame{padding:6px}#felt{height:57dvh;min-height:340px;max-height:500px}#roll{width:100%}.results{gap:12px}}
-@media(prefers-reduced-motion:reduce){#roll{transition:none}}
+.mode{border:1px solid #5c6d58;color:#d1c3a7;background:#21342d;border-radius:5px;padding:9px 15px;min-height:38px}
+.mode[aria-pressed=true]{background:#705d3a;color:#fff0c9;border-color:#d6ba81}
+#roll{margin:0 auto;width:min(320px,100%);border:1px solid #dbc08a;color:#2b271b;background:linear-gradient(#e3cb99,#b99b62);min-height:54px;padding:12px 20px;border-radius:5px;font-size:17px;letter-spacing:.12em;box-shadow:0 3px 0 #6a5739,0 6px 16px #0006}
+#roll:hover{filter:brightness(1.08)}#roll:disabled{opacity:.60;cursor:wait}
+.results{display:flex;justify-content:center;align-items:baseline;gap:20px;flex-wrap:wrap;min-height:32px;font-variant-numeric:tabular-nums}
+#values{font-size:16px;color:#d8c7a1}#total{font-size:24px;color:#edd8aa}
+.note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
+#failure{color:#f2c7aa;text-align:center;font-size:12px;line-height:1.6}
+@media(max-width:480px){body{padding:8px}main{gap:10px}.frame{padding:6px}#felt{height:52dvh;min-height:340px}.mode{padding:8px 11px}}
 </style>
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 09</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
-<div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div><div id="flightLayer" aria-hidden="true"></div></div>
-<div class="dice-config" aria-label="各ダイスの設定">
- <div class="die-config"><label for="sides0">ダイス 1</label><select id="sides0" class="die-sides" data-index="0" aria-label="ダイス1の面数"></select><input type="color" class="die-color" data-index="0" value="#f1e3c7" aria-label="ダイス1の色"></div>
- <div class="die-config"><label for="sides1">ダイス 2</label><select id="sides1" class="die-sides" data-index="1" aria-label="ダイス2の面数"></select><input type="color" class="die-color" data-index="1" value="#b84b41" aria-label="ダイス2の色"></div>
- <div class="die-config"><label for="sides2">ダイス 3</label><select id="sides2" class="die-sides" data-index="2" aria-label="ダイス3の面数"></select><input type="color" class="die-color" data-index="2" value="#53769b" aria-label="ダイス3の色"></div>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 10</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<div class="frame">
+ <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
+ <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
+ </div>
 </div>
-<div id="status" class="status" aria-live="polite">READY TO ROLL</div>
-<div class="throw-modes" role="group" aria-label="ダイスの投げ方">
- <span class="throw-label">投げ方</span>
- <button type="button" class="throw-mode" data-power="gentle" aria-pressed="false">そっと</button>
- <button type="button" class="throw-mode" data-power="normal" aria-pressed="true">普通</button>
- <button type="button" class="throw-mode" data-power="strong" aria-pressed="false">勢いよく</button>
-</div>
-<div class="controls"><button type="button" id="roll">◆　ダイスを振る　◆</button></div>
-<div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 <b>—</b></span></div>
-<p class="note">各ダイスの面数と色を変更できます。数字は各面の傾きに沿って表示し、最も手前を向いた面の数を出目としています。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>卓の手前から投げ込む演出の実験版です。既存のTABULAの卓は変更しません。</p>
+<div class="status" id="status" aria-live="polite">物理エンジンを読み込み中…</div>
+<div class="control-row" role="group" aria-label="投げ方"><span>投げ方</span><button type="button" class="mode" data-strength="gentle" aria-pressed="false">そっと</button><button type="button" class="mode" data-strength="normal" aria-pressed="true">普通</button><button type="button" class="mode" data-strength="strong" aria-pressed="false">勢いよく</button></div>
+<button type="button" id="roll" disabled>◆　ダイスを振る　◆</button>
+<div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 —</span></div>
+<div id="failure" role="alert" hidden></div>
+<p class="note">D6 × 3個。本物の剛体シミュレーションを使った比較実験です。<br>卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
-<script>
-(()=>{'use strict';
-const felt=document.getElementById('felt'),flightLayer=document.getElementById('flightLayer'),button=document.getElementById('roll');
-const status=document.getElementById('status'),values=document.getElementById('values'),total=document.querySelector('#total b');
-const powerModes={gentle:.48,normal:1,strong:1.65};
-let selectedPower='normal';
-const SIZE=94,NUM=3,HALF=SIZE/2;
-const SUPPORTED_SIDES=[4,6,8,10,12,20];
-const dieSettings=[{sides:6,color:'#f1e3c7'},{sides:6,color:'#b84b41'},{sides:6,color:'#53769b'}];
-function positionFlightLayer(){
- const f=felt.getBoundingClientRect(),p=flightLayer.parentElement.getBoundingClientRect();
- flightLayer.style.left=(f.left-p.left)+'px';flightLayer.style.top=(f.top-p.top)+'px';
- flightLayer.style.width=f.width+'px';flightLayer.style.height=f.height+'px';
-}
-let dice=[],rolling=false,frame=0,previousTime=0,elapsed=0;
-const rand=(min,max)=>min+Math.random()*(max-min);
-const dicePositions={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
-function makeDie(){
- const el=document.createElement('div');el.className='die';
- const shadow=document.createElement('div');shadow.className='shadow';el.append(shadow);
- const anchor=document.createElement('div');anchor.className='cube-anchor';
- const cube=document.createElement('div');cube.className='cube';
- for(let face=1;face<=6;face++){
-  const side=document.createElement('div');side.className='face';side.dataset.face=String(face);
-  for(let cell=0;cell<9;cell++){const dot=document.createElement('span');if(dicePositions[face].includes(cell))dot.className='pip';side.append(dot)}
-  cube.append(side);
- }
- anchor.append(cube);el.append(anchor);felt.append(el);
- return {el,shadow,cube,poly:null,settings:null,x:0,y:0,vx:0,vy:0,h:0,vh:0,rx:0,ry:0,rz:0,wx:0,wy:0,wz:0,value:1,settled:false,settleStart:0,settleDuration:.32,from:null,to:null,endAt:0,bounces:0,phase:'rest',entryDelay:0,flightDuration:0,launchX:0,launchY:0,impactX:0,impactY:0,flightHeight:0,throwPower:1};
-}
-function dimensions(){return {w:felt.clientWidth,h:felt.clientHeight}}
-function paint(d){
- d.el.style.left=d.x+'px';d.el.style.top=(d.y-d.h)+'px';
- d.shadow.style.transform='translateY('+d.h+'px) scale('+Math.max(.7,1-d.h/300)+')';
- d.shadow.style.opacity=String(Math.max(.2,1-d.h/130));
- d.shadow.style.width=d.settings?.sides===6?'72px':'86px';
- if(d.poly)renderPoly(d);
- else d.cube.style.transform='scale(.81) rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
-}
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
+import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
 
-const V=(x,y,z)=>[x,y,z],sub=(a,b)=>a.map((n,i)=>n-b[i]),dot=(a,b)=>a.reduce((n,v,i)=>n+v*b[i],0);
-const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
-const norm=a=>{const n=Math.hypot(...a)||1;return a.map(x=>x/n)};
-function outwardFace(vertices,indices){
- const pts=indices.map(i=>vertices[i]);
- let normal=norm(cross(sub(pts[1],pts[0]),sub(pts[2],pts[0])));
- const centroid=pts[0].map((_,j)=>pts.reduce((sum,p)=>sum+p[j],0)/pts.length);
- if(dot(normal,centroid)<0){indices=[...indices].reverse();normal=normal.map(x=>-x)}
- return {indices,normal,centroid};
-}
-function hullTriangles(vertices){
- const faces=[],seen=new Set(),eps=1e-5;
- for(let a=0;a<vertices.length;a++)for(let b=a+1;b<vertices.length;b++)for(let c=b+1;c<vertices.length;c++){
-  const normal=cross(sub(vertices[b],vertices[a]),sub(vertices[c],vertices[a]));
-  if(Math.hypot(...normal)<eps)continue;
-  let pos=false,neg=false,coplanar=0;
-  for(let j=0;j<vertices.length;j++){
-   const d=dot(normal,sub(vertices[j],vertices[a]));
-   if(d>eps)pos=true;else if(d< -eps)neg=true;else coplanar++;
-  }
-  if(pos&&neg||coplanar!==3)continue;
-  const key=[a,b,c].join('-');if(seen.has(key))continue;seen.add(key);
-  faces.push(outwardFace(vertices,[a,b,c]));
+const felt=document.getElementById('felt');
+const button=document.getElementById('roll');
+const status=document.getElementById('status');
+const values=document.getElementById('values');
+const total=document.getElementById('total');
+const failure=document.getElementById('failure');
+const modes={gentle:.57,normal:1,strong:1.65};
+let strength='normal',world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
+let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false;
+const DICE_SIZE=.76,HALF=DICE_SIZE/2,FIXED_STEP=1/60;
+const up=new THREE.Vector3(0,1,0);
+const faceNormals=[
+ new THREE.Vector3(1,0,0),new THREE.Vector3(-1,0,0),
+ new THREE.Vector3(0,1,0),new THREE.Vector3(0,-1,0),
+ new THREE.Vector3(0,0,1),new THREE.Vector3(0,0,-1)
+];
+const faceValues=[3,4,1,6,2,5]; // Three.js box material ordering: +X -X +Y -Y +Z -Z
+const pipGrid={
+ 1:[[0,0]],2:[[-1,-1],[1,1]],3:[[-1,-1],[0,0],[1,1]],
+ 4:[[-1,-1],[-1,1],[1,-1],[1,1]],
+ 5:[[-1,-1],[-1,1],[0,0],[1,-1],[1,1]],
+ 6:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,0],[1,1]]
+};
+const diceColors=['#efe3c9','#c65343','#557da3'];
+function faceTexture(value,color){
+ const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+ const c=canvas.getContext('2d');c.fillStyle=color;c.fillRect(0,0,256,256);
+ const shade=c.createLinearGradient(0,0,256,256);shade.addColorStop(0,'#ffffff50');shade.addColorStop(.65,'#ffffff00');shade.addColorStop(1,'#0000003c');c.fillStyle=shade;c.fillRect(0,0,256,256);
+ c.strokeStyle='#171a1990';c.lineWidth=6;c.strokeRect(7,7,242,242);
+ let col=0;const hex=color.slice(1),rgb=parseInt(hex,16),r=rgb>>16&255,g=rgb>>8&255,b=rgb&255;
+ col=r*.299+g*.587+b*.114;
+ c.fillStyle=col<140?'#f8eed6':'#25221f';
+ for(const [x,y] of pipGrid[value]){
+  c.beginPath();c.arc(128+x*68,128+y*68,16,0,Math.PI*2);c.fill();
  }
- return faces;
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
+ return texture;
 }
-function polyGeometry(sides){
- let vertices,faces;
- const phi=(1+Math.sqrt(5))/2;
- if(sides===4){
-  vertices=[V(1,1,1),V(-1,-1,1),V(-1,1,-1),V(1,-1,-1)];
-  faces=hullTriangles(vertices);
- }else if(sides===8){
-  vertices=[V(1,0,0),V(-1,0,0),V(0,1,0),V(0,-1,0),V(0,0,1),V(0,0,-1)];
-  faces=hullTriangles(vertices);
- }else if(sides===10){
-  const r=1.03;
-  vertices=[V(0,0,1.65),V(0,0,-1.65)];
-  for(let i=0;i<5;i++)vertices.push(V(r*Math.cos(i*2*Math.PI/5),r*Math.sin(i*2*Math.PI/5),.36));
-  for(let i=0;i<5;i++)vertices.push(V(r*Math.cos((i+.5)*2*Math.PI/5),r*Math.sin((i+.5)*2*Math.PI/5),-.36));
-  faces=[];
-  for(let i=0;i<5;i++){
-   const j=(i+1)%5;
-   faces.push(outwardFace(vertices,[0,2+i,7+i,2+j]));
-   faces.push(outwardFace(vertices,[1,7+i,2+j,7+j]));
-  }
- }else{
-  const ico=[];
-  for(const y of [-1,1])for(const z of [-phi,phi])ico.push(V(0,y,z));
-  for(const x of [-1,1])for(const y of [-phi,phi])ico.push(V(x,y,0));
-  for(const x of [-phi,phi])for(const z of [-1,1])ico.push(V(x,0,z));
-  const icoFaces=hullTriangles(ico);
-  if(sides===20){vertices=ico;faces=icoFaces}
-  else{
-   // The dual of a regular icosahedron is a regular dodecahedron.
-   vertices=icoFaces.map(face=>norm(face.centroid));
-   faces=[];
-   ico.forEach((point,i)=>{
-    const around=icoFaces.flatMap((face,j)=>face.indices.includes(i)?[j]:[]);
-    const axis=norm(point),ref=norm(cross(axis,Math.abs(axis[2])<.95?V(0,0,1):V(1,0,0)));
-    const secondary=cross(axis,ref);
-    around.sort((a,b)=>{
-     const ua=vertices[a],ub=vertices[b];
-     return Math.atan2(dot(ua,secondary),dot(ua,ref))-Math.atan2(dot(ub,secondary),dot(ub,ref));
-    });
-    faces.push(outwardFace(vertices,around));
-   });
-  }
+function updateDimensions(){
+ const w=felt.clientWidth||800,h=felt.clientHeight||520;
+ width=10;depth=10*h/w;
+ // Avoid a tall, narrow table causing dice to be too small on mobile.
+ if(depth>14){width=8;depth=8*h/w}
+ renderer.setSize(w,h,false);
+ renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+ camera.left=-width*.53;camera.right=width*.53;
+ camera.top=depth*.53;camera.bottom=-depth*.53;
+ camera.position.set(0,13,3.3);
+ camera.lookAt(0,0,0);
+ camera.updateProjectionMatrix();
+ ground.scale.set(width,1,depth);
+ // Walls are rebuilt when the aspect ratio changes, without disturbing dice.
+ if(world)buildWalls();
+}
+let wallColliders=[];
+function buildWalls(){
+ for(const col of wallColliders){world.removeCollider(col,true)}
+ wallColliders=[];
+ const wallHeight=2.0;
+ const segments=[
+ {x:0,z:depth/2+.19,hx:width/2+.3,hz:.22},
+ {x:0,z:-depth/2-.19,hx:width/2+.3,hz:.22},
+ {x:width/2+.19,z:0,hx:.22,hz:depth/2+.3},
+ {x:-width/2-.19,z:0,hx:.22,hz:depth/2+.3}
+ ];
+ for(const o of segments){
+  wallColliders.push(world.createCollider(
+   RAPIER.ColliderDesc.cuboid(o.hx,wallHeight,o.hz)
+    .setTranslation(o.x,wallHeight-.1,o.z).setRestitution(.28).setFriction(.8)
+  ));
  }
- const maxRadius=Math.max(...vertices.map(v=>Math.hypot(...v)));
- vertices=vertices.map(v=>v.map(x=>x/maxRadius));
- return {vertices,faces};
 }
-const POLYHEDRA=Object.fromEntries([4,8,10,12,20].map(n=>[n,polyGeometry(n)]));
-function rotatePoint(v,rx,ry,rz){
- const a=rx*Math.PI/180,b=ry*Math.PI/180,c=rz*Math.PI/180;
- let [x,y,z]=v;
- [x,z]=[x*Math.cos(b)+z*Math.sin(b),-x*Math.sin(b)+z*Math.cos(b)];
- [y,z]=[y*Math.cos(a)-z*Math.sin(a),y*Math.sin(a)+z*Math.cos(a)];
- [x,y]=[x*Math.cos(c)-y*Math.sin(c),x*Math.sin(c)+y*Math.cos(c)];
- return [x,y,z];
+function createDice(){
+ const geo=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE);
+ for(let i=0;i<3;i++){
+  const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({map:faceTexture(n,diceColors[i]),roughness:.47,metalness:.025}));
+  const mesh=new THREE.Mesh(geo,materials);
+  mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
+  const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
+   .setTranslation((i-1)*1.2,HALF+.03,0)
+   .setLinearDamping(.13).setAngularDamping(.23).setCanSleep(true).setCcdEnabled(true));
+  world.createCollider(RAPIER.ColliderDesc.cuboid(HALF,HALF,HALF).setRestitution(.38).setFriction(.76).setDensity(1),body);
+  objects.push({mesh,body});
+ }
 }
-function polyFaceOnTop(geometry,rx,ry,rz){
- let selected=0,score=-Infinity;
- geometry.faces.forEach((face,i)=>{
-  const n=rotatePoint(face.normal,rx,ry,rz);
-  if(n[2]>score){score=n[2];selected=i}
+function syncMeshes(){
+ for(const {mesh,body} of objects){
+  const p=body.translation(),q=body.rotation();
+  mesh.position.set(p.x,p.y,p.z);mesh.quaternion.set(q.x,q.y,q.z,q.w);
+ }
+}
+function topFace(object){
+ const q=object.mesh.quaternion;let best=-1,index=0;
+ for(let i=0;i<6;i++){
+  const score=faceNormals[i].clone().applyQuaternion(q).dot(up);
+  if(score>best){best=score;index=i}
+ }
+ return faceValues[index];
+}
+function random(min,max){return min+Math.random()*(max-min)}
+function releaseDice(options={}){
+ if(!ready||rolling)return;
+ rolling=true;rollTime=0;stableTime=0;accumulator=0;
+ button.disabled=true;values.textContent='—';total.textContent='合計 —';
+ status.textContent='ROLLING…';
+ const dir=options.direction||{x:0,y:-1};
+ const length=Math.hypot(dir.x,dir.y)||1;
+ const dx=dir.x/length,dz=dir.y/length;
+ const power=options.power??modes[strength];
+ // The launch is beyond the near/opposite table edge, then enters toward its centre.
+ // In 3D, the edge is a low wall; spawn just inside the tabletop and above it,
+ // with horizontal momentum aimed in the dragged direction.
+ const tx=-dz,tz=dx;
+ const across=dx!==0||dz!==0;
+ let edgeDistance=Infinity;
+ if(dx>1e-4)edgeDistance=Math.min(edgeDistance,(width*.43)/dx);
+ if(dx< -1e-4)edgeDistance=Math.min(edgeDistance,(width*.43)/-dx);
+ if(dz>1e-4)edgeDistance=Math.min(edgeDistance,(depth*.43)/dz);
+ if(dz< -1e-4)edgeDistance=Math.min(edgeDistance,(depth*.43)/-dz);
+ edgeDistance=Math.min(edgeDistance,Math.max(width,depth));
+ const originX=-dx*edgeDistance,originZ=-dz*edgeDistance;
+ objects.forEach(({body},i)=>{
+  const offset=(i-1)*Math.min(1.14,width*.19);
+  body.wakeUp();
+  body.setTranslation({x:originX+tx*offset,y:random(1.9,2.8)+power*.22,z:originZ+tz*offset},true);
+  const orientation=new THREE.Quaternion().setFromEuler(new THREE.Euler(random(-3,3),random(-3,3),random(-3,3)));
+  body.setRotation({x:orientation.x,y:orientation.y,z:orientation.z,w:orientation.w},true);
+  body.setLinvel({x:dx*random(3.8,5.2)*power+random(-.6,.6),
+    y:random(-1.7,-.5)*Math.max(.65,power),z:dz*random(3.8,5.2)*power+random(-.6,.6)},true);
+  body.setAngvel({x:random(-12,12)*power,y:random(-11,11)*power,z:random(-12,12)*power},true);
  });
- return selected+1;
 }
-function shadeColor(hex,brightness){
- const val=parseInt(hex.slice(1),16),rgb=[val>>16&255,val>>8&255,val&255];
- return 'rgb('+rgb.map(v=>Math.round(Math.min(255,Math.max(0,v*brightness)))).join(',')+')';
-}
-function renderPoly(d){
- const geometry=POLYHEDRA[d.settings.sides];if(!geometry)return;
- const rotated=geometry.vertices.map(v=>rotatePoint(v,d.rx,d.ry,d.rz));
- function project(v){
-  const k=4.8/(4.8-v[2]);
-  return [47+v[0]*42*k,47-v[1]*42*k];
- }
- const projected=rotated.map(project);
- const near=geometry.faces.map((face,i)=>{
-  const normal=rotatePoint(face.normal,d.rx,d.ry,d.rz);
-  const centroid=rotatePoint(face.centroid,d.rx,d.ry,d.rz);
-  return {face,i,normal,centroid,depth:centroid[2]};
- }).filter(item=>item.normal[2]>.014).sort((a,b)=>a.depth-b.depth);
- const svg=d.poly,ink=d.el.style.getPropertyValue('--die-ink')||'#272622';
- const top=near.reduce((best,item)=>item.normal[2]>(best?.normal[2]??-1)?item:best,null);
- const lightDirection=norm(V(-.4,.55,.85));
- let html='';
- for(const item of near){
-  const {face,i,normal,centroid}=item;
-  const points=face.indices.map(index=>projected[index]);
-  const polygon=points.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' ');
-  const light=.51+Math.max(0,dot(normal,lightDirection))*.58;
-  html+='<polygon points="'+polygon+'" fill="'+shadeColor(d.settings.color,light)+'"/>';
-  // The number is engraved on a physical face, so project its tangent
-  // vectors through the SAME 3D rotation and perspective as the polygon.
-  // It is not an independently upright screen-space label.
-  if(normal[2]<.11)continue;
-  const original=geometry.vertices[face.indices[0]];
-  const axisU=norm(sub(original,face.centroid));
-  const axisV=norm(cross(face.normal,axisU));
-  const centre=project(centroid);
-  const inRadius=Math.min(...face.indices.map(index=>Math.hypot(...sub(geometry.vertices[index],face.centroid))))*.78;
-  const digitCount=String(i+1).length;
-  const size=inRadius*(digitCount===2?.53:.68);
-  const rotU=rotatePoint(axisU.map(x=>x*size),d.rx,d.ry,d.rz);
-  const rotV=rotatePoint(axisV.map(x=>x*size),d.rx,d.ry,d.rz);
-  const pU=project(centroid.map((x,k)=>x+rotU[k]));
-  const pV=project(centroid.map((x,k)=>x+rotV[k]));
-  let ux=pU[0]-centre[0],uy=pU[1]-centre[1];
-  let vx=pV[0]-centre[0],vy=pV[1]-centre[1];
-  // Rotate the number on its own face to a readable orientation,
-  // without changing the face's 3D location, slant, or perspective.
-  const det=ux*vy-uy*vx;
-  if(det>0){vx=-vx;vy=-vy}
-  const isTop=item===top,opacity=isTop?1:(d.settled?Math.max(.22,normal[2]*.37):Math.max(.40,normal[2]*.73));
-  const matrix=[ux,uy,vx,vy,centre[0],centre[1]].map(n=>n.toFixed(3)).join(' ');
-  const backing=shadeColor(d.settings.color,light);
-  html+='<text x="0" y="0" font-size="1" opacity="'+opacity.toFixed(2)+'" transform="matrix('+matrix+')" fill="'+ink+'" stroke="'+backing+'">'+(i+1)+'</text>';
- }
- svg.innerHTML=html;
-}
-
-function applyDieSettings(d,setting){
- d.settings=setting;
- d.el.dataset.sides=String(setting.sides);
- d.el.style.setProperty('--die-color',setting.color);
- const rgb=parseInt(setting.color.slice(1),16);
- const r=rgb>>16&255,g=rgb>>8&255,b=rgb&255;
- d.el.style.setProperty('--die-ink',(r*.299+g*.587+b*.114)<135?'#fff7e6':'#272622');
- if(setting.sides===6){
-  d.cube.hidden=false;
-  if(d.poly){d.poly.remove();d.poly=null}
- }else{
-  d.cube.hidden=true;
-  if(!d.poly){
-   d.poly=document.createElementNS('http://www.w3.org/2000/svg','svg');
-   d.poly.classList.add('poly-core');
-   d.poly.setAttribute('viewBox','0 0 94 94');
-   d.poly.setAttribute('aria-hidden','true');
-   d.el.querySelector('.cube-anchor').append(d.poly);
-  }
- }
- paint(d);
-}
-function addDice(){
- const {w,h}=dimensions();
- dice=Array.from({length:NUM},(_,i)=>{const d=makeDie();d.x=w*(.29+.21*i);d.y=h*(i===1?.66:.43);d.value=i+1;d.ry=0;d.rx=0;d.rz=0;applyDieSettings(d,dieSettings[i]);return d});
-}
-// A face's pip count is derived from the cube's actual final orientation.
- // This avoids a preselected result disagreeing with the visible top face.
-function facingFace(rx,ry){
- const a=rx*Math.PI/180,b=ry*Math.PI/180;
- const z=[Math.cos(a)*Math.cos(b),Math.sin(a),
-  -Math.cos(a)*Math.sin(b),Math.cos(a)*Math.sin(b),
-  -Math.sin(a),-Math.cos(a)*Math.cos(b)];
- const faces=[1,2,3,4,5,6];
- return faces[z.indexOf(Math.max(...z))];
-}
-// Complete the final quarter-turn in the existing rotation direction.
-// Rounding to the nearest 90° used to reverse motion at the last moment.
-function nextRestAngle(angle,velocity){
- const grid=90,epsilon=.001;
- if(Math.abs(velocity)<epsilon)return Math.round(angle/grid)*grid;
- return velocity>0
-  ?Math.ceil((angle+epsilon)/grid)*grid
-  :Math.floor((angle-epsilon)/grid)*grid;
-}
-function beginSettle(d){
- if(d.settled)return;
- d.settled=true;d.settleStart=elapsed;
- d.from=[d.rx,d.ry,d.rz];
- const rx=nextRestAngle(d.rx,d.wx),ry=nextRestAngle(d.ry,d.wy);
- // Z is the angle on the cloth; it must not suddenly twist.
- d.to=[rx,ry,d.rz];
- const arc=Math.max(Math.abs(rx-d.rx),Math.abs(ry-d.ry));
- const spin=Math.max(Math.abs(d.wx),Math.abs(d.wy),48);
- d.settleDuration=Math.max(.20,Math.min(.70,arc*1.7/spin));
- d.value=d.settings.sides===6?facingFace(rx,ry):polyFaceOnTop(POLYHEDRA[d.settings.sides],rx,ry,d.rz);
- d.h=0;d.vh=0;d.vx=0;d.vy=0;
-}
-
-// Choose a point outside the table on the side opposite the drag vector.
-// The moving dice enter along the same line the user traced.
-function incomingOrigin(x,y,dx,dy,w,h,offset=SIZE*1.6){
- let distance=Infinity;
- if(dx>1e-6)distance=Math.min(distance,x/dx);
- else if(dx< -1e-6)distance=Math.min(distance,(w-x)/-dx);
- if(dy>1e-6)distance=Math.min(distance,y/dy);
- else if(dy< -1e-6)distance=Math.min(distance,(h-y)/-dy);
- if(!Number.isFinite(distance))distance=h;
- return {x:x-dx*(distance+offset),y:y-dy*(distance+offset)};
-}
-function begin(options={}){
- if(rolling)return;
- const power=options.power??powerModes[selectedPower];
- for(const input of document.querySelectorAll('.die-sides,.die-color'))input.disabled=true;
- const direction=options.direction??{x:0,y:-1};
- const magnitude=Math.hypot(direction.x,direction.y)||1;
- const dir={x:direction.x/magnitude,y:direction.y/magnitude};
- rolling=true;elapsed=0;previousTime=0;
- status.textContent='ROLLING…';button.disabled=true;values.textContent='—';total.textContent='—';
- const {w,h}=dimensions();
- positionFlightLayer();
- const radius=HALF+7;
- dice.forEach((d,i)=>{
-  // Launch from beyond the near edge. Keep airborne pieces in an unclipped
-  // overlay, then return them to the ordinary felt when they enter its area.
-  d.phase='incoming';d.throwPower=power;
-  d.entryDelay=i*.09+rand(0,.045);
-  d.flightDuration=Math.max(.35,.66-power*.075+rand(-.035,.035));
-  // Separate the three landing points across the throw direction.
-  const tangent={x:-dir.y,y:dir.x};
-  const spread=(i-(NUM-1)/2)*Math.min(SIZE*1.1,Math.min(w,h)*.27);
-  const depth=i===1?Math.min(SIZE*.89,Math.min(w,h)*.22):0;
-  const centerX=w*.50+dir.x*Math.min(w*.12,power*18);
-  const centerY=h*.50+dir.y*Math.min(h*.12,power*18);
-  d.impactX=Math.max(radius,Math.min(w-radius,centerX+tangent.x*spread+dir.x*depth+rand(-9,9)));
-  d.impactY=Math.max(radius,Math.min(h-radius,centerY+tangent.y*spread+dir.y*depth+rand(-9,9)));
-  const entry=incomingOrigin(d.impactX,d.impactY,dir.x,dir.y,w,h,SIZE*1.1+rand(8,35));
-  d.launchX=entry.x;d.launchY=entry.y;
-  d.flightHeight=(40+rand(8,35))*Math.max(.65,Math.min(1.8,power));
-  d.x=d.launchX;d.y=d.launchY;d.h=0;d.vh=0;
-  d.vx=0;d.vy=0;
-  d.wx=rand(-900,900)*power;d.wy=rand(-950,950)*power;d.wz=rand(-580,580)*power;
-  d.rx=rand(-180,180);d.ry=rand(-180,180);d.rz=rand(-180,180);
-  d.value=0;
-  d.settled=false;d.settleStart=0;d.settleDuration=.32;d.from=null;d.to=null;
-  d.endAt=d.entryDelay+d.flightDuration+rand(.85,1.12)+power*rand(.45,.70)+i*.09;
-  d.bounces=0;d.el.style.visibility='hidden';
-  flightLayer.appendChild(d.el);
-  paint(d);
- });
- cancelAnimationFrame(frame);frame=requestAnimationFrame(tick);
-}
-function tick(time){
- if(!previousTime)previousTime=time;
- const dt=Math.min((time-previousTime)/1000,.035);previousTime=time;elapsed+=dt;
- const {w,h}=dimensions(),margin=HALF+5;
- for(const d of dice){
-  if(d.phase==='incoming'){
-   const t=(elapsed-d.entryDelay)/d.flightDuration;
-   if(t<0)continue;
-   d.el.style.visibility='visible';
-   if(t<1){
-    const u=Math.max(0,t);
-    const progression=u*u*(2-u); // Slight acceleration as dice enter the field.
-    d.x=d.launchX+(d.impactX-d.launchX)*progression;
-    d.y=d.launchY+(d.impactY-d.launchY)*progression;
-    d.h=d.flightHeight*Math.sin(Math.PI*u);
-    d.rx+=d.wx*dt;d.ry+=d.wy*dt;d.rz+=d.wz*dt;
-    paint(d);
-    continue;
-   }
-   // Hand off position, spin and momentum to existing bounce/friction engine.
-   d.phase='rolling';
-   felt.appendChild(d.el);
-   d.x=d.impactX;d.y=d.impactY;
-   d.h=rand(24,52)*Math.min(1.6,Math.max(.6,d.throwPower));
-   d.vh=-rand(175,285);
-   d.vx=(d.impactX-d.launchX)/d.flightDuration*.38+rand(-75,75);
-   d.vy=(d.impactY-d.launchY)/d.flightDuration*.38+rand(-75,75);
-   d.bounces=0;
-  }
-
-  if(d.settled){
-   const t=Math.min(1,(elapsed-d.settleStart)/d.settleDuration);
-   const smooth=1-Math.pow(1-t,2);
-   [d.rx,d.ry,d.rz]=d.from.map((v,i)=>v+(d.to[i]-v)*smooth);
-   paint(d);continue;
-  }
-  // Airborne drift is possible, but felt friction halts lateral motion soon after landing.
-  const grounded=d.h<=.1&&d.vh<=.1;
-  const speed=Math.hypot(d.vx,d.vy);
-  if(grounded){
-   const friction=540*dt;
-   const factor=speed>friction?(speed-friction)/speed:0;
-   d.vx*=factor;d.vy*=factor;
-  }else{
-   const drag=Math.pow(.68,dt);
-   d.vx*=drag;d.vy*=drag;
-  }
-  d.x+=d.vx*dt;d.y+=d.vy*dt;
-  if(d.h>0||d.vh>0){d.vh-=860*dt;d.h+=d.vh*dt}
-  if(d.h<=0){
-   d.h=0;
-   if(d.vh< -65&&d.bounces<6){d.vh=-d.vh*rand(.23,.38);d.bounces++}
-   else d.vh=0;
-  }
-  if(d.x<margin){d.x=margin;d.vx=Math.abs(d.vx)*.57;d.wy+=150}
-  if(d.x>w-margin){d.x=w-margin;d.vx=-Math.abs(d.vx)*.57;d.wy-=150}
-  if(d.y<margin){d.y=margin;d.vy=Math.abs(d.vy)*.57;d.wx+=120}
-  if(d.y>h-margin){d.y=h-margin;d.vy=-Math.abs(d.vy)*.57;d.wx-=120}
-  d.rx+=d.wx*dt;d.ry+=d.wy*dt;d.rz+=d.wz*dt;
-  const rotDrag=Math.pow(d.h<=0&&d.vh===0?.12:.60,dt);
-  d.wx*=rotDrag;d.wy*=rotDrag;d.wz*=rotDrag;
-  if(d.h===0&&d.vh===0&&
-    ((Math.hypot(d.vx,d.vy)<13&&Math.hypot(d.wx,d.wy,d.wz)<95&&elapsed>.55)
-      ||elapsed>d.endAt+.35))beginSettle(d);
-  paint(d);
- }
- // Prevent overlapping final silhouettes, including rotated corners.
- // Settled dice are solid obstacles. Iterate constraints to resolve three-way clusters.
- const minDist=SIZE*1.43;
- for(let pass=0;pass<8;pass++){
-  for(let i=0;i<dice.length;i++)for(let j=i+1;j<dice.length;j++){
-   const a=dice[i],b=dice[j];
-   if(a.phase==='incoming'||b.phase==='incoming')continue;
-   const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy);
-   if(dist>=minDist)continue;
-   const angle=dist>.001?null:(i*2.11+j*1.37);
-   const nx=angle===null?dx/dist:Math.cos(angle),ny=angle===null?dy/dist:Math.sin(angle);
-   const overlap=minDist-dist+.15;
-   // Equal position correction also works when both dice are already at rest.
-   a.x-=nx*overlap*.5;a.y-=ny*overlap*.5;
-   b.x+=nx*overlap*.5;b.y+=ny*overlap*.5;
-   if(pass===0&&!a.settled&&!b.settled&&Math.abs(a.h-b.h)<SIZE*.8){
-    const impact=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
-    if(impact< -20){
-     const impulse=-impact*.36;
-     a.vx-=impulse*nx;a.vy-=impulse*ny;
-     b.vx+=impulse*nx;b.vy+=impulse*ny;
-     a.wx+=rand(-100,100);b.wy+=rand(-100,100);
-    }
+function render(time){
+ frame=requestAnimationFrame(render);
+ const dt=Math.min(.05,lastTime?(time-lastTime)/1000:0);lastTime=time;
+ if(ready){
+  accumulator=Math.min(.12,accumulator+dt);
+  while(accumulator>=FIXED_STEP){world.step();accumulator-=FIXED_STEP}
+  syncMeshes();
+  if(rolling){
+   rollTime+=dt;
+   const stopped=objects.every(({body})=>body.isSleeping()||(
+    body.linvel().x**2+body.linvel().y**2+body.linvel().z**2<.008
+    &&body.angvel().x**2+body.angvel().y**2+body.angvel().z**2<.02
+   ));
+   stableTime=stopped?stableTime+dt:0;
+   if(stableTime>.50||rollTime>12){
+    rolling=false;button.disabled=false;
+    const results=objects.map(topFace);
+    values.textContent=results.join(' · ');
+    total.textContent='合計 '+results.reduce((n,v)=>n+v,0);
+    status.textContent='THE DICE HAVE FALLEN';
    }
   }
-  for(const d of dice){
-   if(d.phase==='incoming')continue;
-   d.x=Math.max(margin,Math.min(w-margin,d.x));
-   d.y=Math.max(margin,Math.min(h-margin,d.y));
-  }
  }
- // Apply final collision corrections immediately, rather than one frame later.
- dice.forEach(paint);
- if(dice.every(d=>d.phase!=='incoming'&&d.settled&&elapsed-d.settleStart>=d.settleDuration)){
-  rolling=false;button.disabled=false;
-  for(const input of document.querySelectorAll('.die-sides,.die-color'))input.disabled=false;
-  values.textContent=dice.map(d=>'D'+d.settings.sides+': '+d.value).join(' · ');
-  total.textContent=String(dice.reduce((sum,d)=>sum+d.value,0));
-  status.textContent='THE DICE HAVE FALLEN';
-  return;
+ renderer.render(scene,camera);
+}
+async function init(){
+ try{
+  await RAPIER.init();
+  world=new RAPIER.World({x:0,y:-15,z:0});
+  world.timestep=FIXED_STEP;
+  world.createCollider(RAPIER.ColliderDesc.cuboid(100,.2,100).setTranslation(0,-.2,0).setFriction(.86).setRestitution(.28));
+  scene=new THREE.Scene();
+  camera=new THREE.OrthographicCamera(-5,5,3,-3,.1,100);
+  renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'high-performance'});
+  renderer.setClearColor(0,0);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  felt.prepend(renderer.domElement);
+  scene.add(new THREE.HemisphereLight(0xe1efe8,0x1a3427,2.3));
+  const key=new THREE.DirectionalLight(0xffe9c5,3.0);key.position.set(-4,9,6);
+  key.castShadow=true;key.shadow.mapSize.set(1024,1024);
+  key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;
+  key.shadow.normalBias=.015;scene.add(key);
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShadowMaterial({opacity:.32}));
+  ground.rotation.x=-Math.PI/2;ground.position.y=.007;ground.receiveShadow=true;scene.add(ground);
+  updateDimensions();
+  createDice();syncMeshes();
+  ready=true;button.disabled=false;status.textContent='READY TO ROLL';
+  frame=requestAnimationFrame(render);
+  new ResizeObserver(updateDimensions).observe(felt);
+ }catch(error){
+  console.error(error);
+  status.textContent='読み込みに失敗しました';
+  failure.hidden=false;
+  failure.textContent='3D描画または物理エンジンを読み込めませんでした。通信環境・WebGL対応を確認してください。'+(error?.message||'');
  }
- frame=requestAnimationFrame(tick);
 }
-for(const select of document.querySelectorAll('.die-sides')){
- for(const sides of SUPPORTED_SIDES){
-  const option=document.createElement('option');option.value=String(sides);option.textContent='D'+sides;select.append(option);
- }
- select.value='6';
- select.addEventListener('change',()=>{
-  const i=Number(select.dataset.index);
-  if(rolling)return;
-  const sides=Number(select.value);
-  if(!SUPPORTED_SIDES.includes(sides))return;
-  dieSettings[i].sides=sides;
-  dice[i].value=1;
-  dice[i].rx=0;dice[i].ry=0;dice[i].rz=0;
-  applyDieSettings(dice[i],dieSettings[i]);
-  values.textContent='—';total.textContent='—';status.textContent='READY TO ROLL';
- });
-}
-for(const picker of document.querySelectorAll('.die-color')){
- picker.addEventListener('input',()=>{
-  const i=Number(picker.dataset.index);
-  if(!/^#[0-9a-f]{6}$/i.test(picker.value))return;
-  dieSettings[i].color=picker.value;
-  applyDieSettings(dice[i],dieSettings[i]);
- });
-}
-document.querySelectorAll('.throw-mode').forEach(mode=>{
- mode.addEventListener('click',()=>{
-  selectedPower=mode.dataset.power;
-  document.querySelectorAll('.throw-mode').forEach(b=>b.setAttribute('aria-pressed',String(b===mode)));
- });
-});
-button.addEventListener('click',()=>begin());
+document.querySelectorAll('.mode').forEach(mode=>mode.addEventListener('click',()=>{
+ strength=mode.dataset.strength;
+ document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-pressed',String(b===mode)));
+}));
+button.addEventListener('click',()=>releaseDice());
+const guide=document.getElementById('throwGuide'),startPoint=document.getElementById('startPoint'),line=document.getElementById('throwLine'),arrow=document.getElementById('throwArrow');
 let gesture=null,suppressClick=false;
-const guide=document.getElementById('throwGuide');
-const startCircle=document.getElementById('throwStart'),line=document.getElementById('throwLine'),arrow=document.getElementById('throwArrow');
-function localPoint(event){
- const r=felt.getBoundingClientRect();
- return {x:event.clientX-r.left,y:event.clientY-r.top};
-}
-function showGuide(x,y,dx,dy){
- const distance=Math.hypot(dx,dy),length=Math.min(180,distance);
- const scale=distance>0?length/distance:0;
- const endX=x+dx*scale,endY=y+dy*scale;
+function local(event){const r=felt.getBoundingClientRect();return{x:event.clientX-r.left,y:event.clientY-r.top}}
+function drawGuide(x,y,dx,dy){
+ const size=Math.hypot(dx,dy),scale=Math.min(1,170/(size||1));
+ const X=x+dx*scale,Y=y+dy*scale;
  guide.style.display='block';guide.setAttribute('viewBox','0 0 '+felt.clientWidth+' '+felt.clientHeight);
- startCircle.setAttribute('cx',x);startCircle.setAttribute('cy',y);
- line.setAttribute('x1',x);line.setAttribute('y1',y);line.setAttribute('x2',endX);line.setAttribute('y2',endY);
- arrow.setAttribute('transform','translate('+endX+' '+endY+') rotate('+(Math.atan2(dy,dx)*180/Math.PI)+')');
- status.textContent=distance<24?'引いて方向と勢いを指定':'投擲の強さ '+Math.min(100,Math.round(distance/2))+'%';
-}
-function clearGuide(){
- guide.style.display='none';felt.classList.remove('aiming');
+ startPoint.setAttribute('cx',x);startPoint.setAttribute('cy',y);
+ for(const [attribute,value] of [['x1',x],['y1',y],['x2',X],['y2',Y]])line.setAttribute(attribute,value);
+ arrow.setAttribute('transform','translate('+X+' '+Y+') rotate('+(Math.atan2(dy,dx)*180/Math.PI)+')');
 }
 felt.addEventListener('pointerdown',event=>{
- if(rolling||!event.isPrimary||event.button!==0)return;
- const p=localPoint(event);
- gesture={id:event.pointerId,x:event.clientX,y:event.clientY,localX:p.x,localY:p.y,time:performance.now()};
- felt.setPointerCapture(event.pointerId);
- felt.classList.add('aiming');showGuide(p.x,p.y,0,0);
+ if(!ready||rolling||!event.isPrimary||event.button!==0)return;
+ const p=local(event);gesture={id:event.pointerId,x:event.clientX,y:event.clientY,localX:p.x,localY:p.y,time:performance.now()};
+ felt.setPointerCapture(event.pointerId);drawGuide(p.x,p.y,0,0);
 });
 felt.addEventListener('pointermove',event=>{
  if(!gesture||gesture.id!==event.pointerId)return;
- showGuide(gesture.localX,gesture.localY,event.clientX-gesture.x,event.clientY-gesture.y);
+ drawGuide(gesture.localX,gesture.localY,event.clientX-gesture.x,event.clientY-gesture.y);
 });
 felt.addEventListener('pointerup',event=>{
  if(!gesture||gesture.id!==event.pointerId)return;
  const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
- const distance=Math.hypot(dx,dy),duration=Math.max(1,performance.now()-gesture.time);
- gesture=null;clearGuide();
- if(distance<24){status.textContent='READY TO ROLL';return}
- const speed=distance/duration;
- // Mouse drag distance gives predictable force, flick velocity adds a smaller bonus.
- const power=Math.max(.35,Math.min(2.35,.35+distance/150+speed*.24));
- suppressClick=true;
- begin({power,direction:{x:dx/distance,y:dy/distance}});
+ const distance=Math.hypot(dx,dy),elapsed=Math.max(1,performance.now()-gesture.time);
+ gesture=null;guide.style.display='none';
+ if(distance<25)return;
+ const power=Math.max(.40,Math.min(2.2,.32+distance/165+(distance/elapsed)*.20));
+ suppressClick=true;releaseDice({direction:{x:dx/distance,y:dy/distance},power});
 });
-felt.addEventListener('pointercancel',()=>{gesture=null;clearGuide();status.textContent='READY TO ROLL'});
-felt.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}begin()});
-felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();begin()}});
-window.addEventListener('resize',()=>{positionFlightLayer();if(rolling)return;const {w,h}=dimensions();dice.forEach(d=>{d.x=Math.max(HALF,Math.min(w-HALF,d.x));d.y=Math.max(HALF,Math.min(h-HALF,d.y));paint(d)})});
-addDice();positionFlightLayer();
-})();
+felt.addEventListener('pointercancel',()=>{gesture=null;guide.style.display='none'});
+felt.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}releaseDice()});
+felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();releaseDice()}});
+init();
 </script>
 </body>
 </html>
