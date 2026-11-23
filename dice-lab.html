@@ -23,29 +23,23 @@ h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin
 #felt.aiming{cursor:grabbing}
 .corner{position:absolute;z-index:1;font-size:10px;color:#afbd9a88;letter-spacing:.22em;pointer-events:none}.corner.tl{left:16px;top:15px}.corner.br{right:16px;bottom:14px}
 #flightLayer{position:absolute;z-index:8;pointer-events:none;overflow:visible}
-.die{width:70px;height:70px;position:absolute;left:0;top:0;transform:translate(-50%,-50%);z-index:3;will-change:left,top}
-.die .shadow{position:absolute;width:64px;height:24px;left:3px;top:49px;border-radius:50%;background:#040b09a6;filter:blur(11px);transform-origin:center;pointer-events:none}
+.die{width:94px;height:94px;position:absolute;left:0;top:0;transform:translate(-50%,-50%);z-index:3;will-change:left,top}
+.die .shadow{position:absolute;width:86px;height:31px;left:4px;top:67px;border-radius:50%;background:#040b09a6;filter:blur(11px);transform-origin:center;pointer-events:none}
 .cube-anchor{position:absolute;inset:0;perspective:520px;pointer-events:none}
-.cube{position:absolute;width:70px;height:70px;transform-style:preserve-3d;will-change:transform}
-.face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:9px;border:1.5px solid #857a66;border-radius:9px;background:linear-gradient(137deg,color-mix(in srgb,var(--die-color,#f1e3c7),white 24%) 2%,var(--die-color,#f1e3c7) 58%,color-mix(in srgb,var(--die-color,#f1e3c7),black 21%));box-shadow:inset 0 0 8px #8d735c55,inset 2px 2px 4px #fff9}
+.cube{position:absolute;width:94px;height:94px;transform-style:preserve-3d;will-change:transform}
+.face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:12px;border:1.5px solid #857a66;border-radius:9px;background:linear-gradient(137deg,color-mix(in srgb,var(--die-color,#f1e3c7),white 24%) 2%,var(--die-color,#f1e3c7) 58%,color-mix(in srgb,var(--die-color,#f1e3c7),black 21%));box-shadow:inset 0 0 8px #8d735c55,inset 2px 2px 4px #fff9}
 .face:after{content:"";position:absolute;inset:3px;border:1px solid #baab9255;border-radius:6px;pointer-events:none}
-.pip{display:block;width:10px;height:10px;align-self:center;justify-self:center;border-radius:50%;background:var(--die-ink,#262421);box-shadow:inset 1px 1px 2px #080707,1px 1px 0 #fff9}
-.face[data-face="1"]{transform:translateZ(35px)}
-.face[data-face="6"]{transform:rotateY(180deg) translateZ(35px)}
-.face[data-face="2"]{transform:rotateX(-90deg) translateZ(35px)}
-.face[data-face="5"]{transform:rotateX(90deg) translateZ(35px)}
-.face[data-face="3"]{transform:rotateY(90deg) translateZ(35px)}
-.face[data-face="4"]{transform:rotateY(-90deg) translateZ(35px)}
-.poly-core{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
-.poly-face{position:absolute;inset:0;display:grid;place-items:center;filter:drop-shadow(1px 4px 3px #0007);background:linear-gradient(140deg,color-mix(in srgb,var(--die-color),white 31%),var(--die-color) 52%,color-mix(in srgb,var(--die-color),black 28%));clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);color:var(--die-ink,#272622)}
-.poly-face:before{content:"";position:absolute;inset:4px;clip-path:inherit;background:linear-gradient(125deg,#fff3,transparent 48%,#0002)}
-.poly-face span{position:relative;z-index:1;font:700 25px/1 Georgia,serif;text-shadow:0 1px 1px #fff6}
-.die[data-sides="4"] .poly-face{clip-path:polygon(50% 3%,97% 90%,3% 90%)}
-.die[data-sides="4"] .poly-face span{transform:translateY(12px)}
-.die[data-sides="8"] .poly-face{clip-path:polygon(50% 0%,97% 50%,50% 100%,3% 50%)}
-.die[data-sides="10"] .poly-face{clip-path:polygon(50% 0%,95% 28%,86% 67%,50% 100%,14% 67%,5% 28%)}
-.die[data-sides="12"] .poly-face{clip-path:polygon(50% 0%,97% 35%,79% 95%,21% 95%,3% 35%)}
-.die[data-sides="20"] .poly-face{clip-path:polygon(50% 0%,93% 24%,92% 75%,50% 100%,8% 75%,7% 24%)}
+.pip{display:block;width:13px;height:13px;align-self:center;justify-self:center;border-radius:50%;background:var(--die-ink,#262421);box-shadow:inset 1px 1px 2px #080707,1px 1px 0 #fff9}
+.face[data-face="1"]{transform:translateZ(47px)}
+.face[data-face="6"]{transform:rotateY(180deg) translateZ(47px)}
+.face[data-face="2"]{transform:rotateX(-90deg) translateZ(47px)}
+.face[data-face="5"]{transform:rotateX(90deg) translateZ(47px)}
+.face[data-face="3"]{transform:rotateY(90deg) translateZ(47px)}
+.face[data-face="4"]{transform:rotateY(-90deg) translateZ(47px)}
+.poly-core{position:absolute;inset:0;pointer-events:none}
+.poly-core svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(2px 3px 2px #05080880)}
+.poly-core polygon{stroke:#241d1f;stroke-opacity:.65;stroke-width:1;stroke-linejoin:round}
+.poly-core text{font-family:Georgia,serif;font-weight:700;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke-width:1.3;pointer-events:none}
 .dice-config{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .die-config{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center;background:#192820aa;border:1px solid #66705580;border-radius:7px;padding:8px}
 .die-config label{font-size:12px;color:#c7b89b;white-space:nowrap}
@@ -75,7 +69,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 07</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 08</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
 <div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div><div id="flightLayer" aria-hidden="true"></div></div>
 <div class="dice-config" aria-label="各ダイスの設定">
  <div class="die-config"><label for="sides0">ダイス 1</label><select id="sides0" class="die-sides" data-index="0" aria-label="ダイス1の面数"></select><input type="color" class="die-color" data-index="0" value="#f1e3c7" aria-label="ダイス1の色"></div>
@@ -91,7 +85,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="controls"><button type="button" id="roll">◆　ダイスを振る　◆</button></div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 <b>—</b></span></div>
-<p class="note">各ダイスの面数と色を変更できます。D6以外の多面体は外観を簡略化した試作表示です。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>卓の手前から投げ込む演出の実験版です。既存のTABULAの卓は変更しません。</p>
+<p class="note">各ダイスの面数と色を変更できます。多面体は立体モデルで表示しています。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>卓の手前から投げ込む演出の実験版です。既存のTABULAの卓は変更しません。</p>
 </main>
 <script>
 (()=>{'use strict';
@@ -99,7 +93,7 @@ const felt=document.getElementById('felt'),flightLayer=document.getElementById('
 const status=document.getElementById('status'),values=document.getElementById('values'),total=document.querySelector('#total b');
 const powerModes={gentle:.48,normal:1,strong:1.65};
 let selectedPower='normal';
-const SIZE=70,NUM=3,HALF=SIZE/2;
+const SIZE=94,NUM=3,HALF=SIZE/2;
 const SUPPORTED_SIDES=[4,6,8,10,12,20];
 const dieSettings=[{sides:6,color:'#f1e3c7'},{sides:6,color:'#b84b41'},{sides:6,color:'#53769b'}];
 function positionFlightLayer(){
@@ -128,14 +122,131 @@ function paint(d){
  d.el.style.left=d.x+'px';d.el.style.top=(d.y-d.h)+'px';
  d.shadow.style.transform='translateY('+d.h+'px) scale('+Math.max(.7,1-d.h/300)+')';
  d.shadow.style.opacity=String(Math.max(.2,1-d.h/130));
- if(d.poly){
-  // Faceted prototype: limit tilt to keep the resulting numeral legible.
-  const tiltX=Math.sin(d.rx*Math.PI/180)*37;
-  const tiltY=Math.sin(d.ry*Math.PI/180)*37;
-  d.poly.style.transform='rotateZ('+d.rz+'deg) rotateX('+tiltX+'deg) rotateY('+tiltY+'deg)';
- }else{
-  d.cube.style.transform='rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
+ if(d.poly)renderPoly(d);
+ else d.cube.style.transform='rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
+}
+
+const V=(x,y,z)=>[x,y,z],sub=(a,b)=>a.map((n,i)=>n-b[i]),dot=(a,b)=>a.reduce((n,v,i)=>n+v*b[i],0);
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const norm=a=>{const n=Math.hypot(...a)||1;return a.map(x=>x/n)};
+function outwardFace(vertices,indices){
+ const pts=indices.map(i=>vertices[i]);
+ let normal=norm(cross(sub(pts[1],pts[0]),sub(pts[2],pts[0])));
+ const centroid=pts[0].map((_,j)=>pts.reduce((sum,p)=>sum+p[j],0)/pts.length);
+ if(dot(normal,centroid)<0){indices=[...indices].reverse();normal=normal.map(x=>-x)}
+ return {indices,normal,centroid};
+}
+function hullTriangles(vertices){
+ const faces=[],seen=new Set(),eps=1e-5;
+ for(let a=0;a<vertices.length;a++)for(let b=a+1;b<vertices.length;b++)for(let c=b+1;c<vertices.length;c++){
+  const normal=cross(sub(vertices[b],vertices[a]),sub(vertices[c],vertices[a]));
+  if(Math.hypot(...normal)<eps)continue;
+  let pos=false,neg=false,coplanar=0;
+  for(let j=0;j<vertices.length;j++){
+   const d=dot(normal,sub(vertices[j],vertices[a]));
+   if(d>eps)pos=true;else if(d< -eps)neg=true;else coplanar++;
+  }
+  if(pos&&neg||coplanar!==3)continue;
+  const key=[a,b,c].join('-');if(seen.has(key))continue;seen.add(key);
+  faces.push(outwardFace(vertices,[a,b,c]));
  }
+ return faces;
+}
+function polyGeometry(sides){
+ let vertices,faces;
+ const phi=(1+Math.sqrt(5))/2;
+ if(sides===4){
+  vertices=[V(1,1,1),V(-1,-1,1),V(-1,1,-1),V(1,-1,-1)];
+  faces=hullTriangles(vertices);
+ }else if(sides===8){
+  vertices=[V(1,0,0),V(-1,0,0),V(0,1,0),V(0,-1,0),V(0,0,1),V(0,0,-1)];
+  faces=hullTriangles(vertices);
+ }else if(sides===10){
+  const r=1.03;
+  vertices=[V(0,0,1.65),V(0,0,-1.65)];
+  for(let i=0;i<5;i++)vertices.push(V(r*Math.cos(i*2*Math.PI/5),r*Math.sin(i*2*Math.PI/5),.36));
+  for(let i=0;i<5;i++)vertices.push(V(r*Math.cos((i+.5)*2*Math.PI/5),r*Math.sin((i+.5)*2*Math.PI/5),-.36));
+  faces=[];
+  for(let i=0;i<5;i++){
+   const j=(i+1)%5;
+   faces.push(outwardFace(vertices,[0,2+i,7+i,2+j]));
+   faces.push(outwardFace(vertices,[1,7+i,2+j,7+j]));
+  }
+ }else{
+  const ico=[];
+  for(const y of [-1,1])for(const z of [-phi,phi])ico.push(V(0,y,z));
+  for(const x of [-1,1])for(const y of [-phi,phi])ico.push(V(x,y,0));
+  for(const x of [-phi,phi])for(const z of [-1,1])ico.push(V(x,0,z));
+  const icoFaces=hullTriangles(ico);
+  if(sides===20){vertices=ico;faces=icoFaces}
+  else{
+   // The dual of a regular icosahedron is a regular dodecahedron.
+   vertices=icoFaces.map(face=>norm(face.centroid));
+   faces=[];
+   ico.forEach((point,i)=>{
+    const around=icoFaces.flatMap((face,j)=>face.indices.includes(i)?[j]:[]);
+    const axis=norm(point),ref=norm(cross(axis,Math.abs(axis[2])<.95?V(0,0,1):V(1,0,0)));
+    const secondary=cross(axis,ref);
+    around.sort((a,b)=>{
+     const ua=vertices[a],ub=vertices[b];
+     return Math.atan2(dot(ua,secondary),dot(ua,ref))-Math.atan2(dot(ub,secondary),dot(ub,ref));
+    });
+    faces.push(outwardFace(vertices,around));
+   });
+  }
+ }
+ const maxRadius=Math.max(...vertices.map(v=>Math.hypot(...v)));
+ vertices=vertices.map(v=>v.map(x=>x/maxRadius));
+ return {vertices,faces};
+}
+const POLYHEDRA=Object.fromEntries([4,8,10,12,20].map(n=>[n,polyGeometry(n)]));
+function rotatePoint(v,rx,ry,rz){
+ const a=rx*Math.PI/180,b=ry*Math.PI/180,c=rz*Math.PI/180;
+ let [x,y,z]=v;
+ [x,z]=[x*Math.cos(b)+z*Math.sin(b),-x*Math.sin(b)+z*Math.cos(b)];
+ [y,z]=[y*Math.cos(a)-z*Math.sin(a),y*Math.sin(a)+z*Math.cos(a)];
+ [x,y]=[x*Math.cos(c)-y*Math.sin(c),x*Math.sin(c)+y*Math.cos(c)];
+ return [x,y,z];
+}
+function polyFaceOnTop(geometry,rx,ry,rz){
+ let selected=0,score=-Infinity;
+ geometry.faces.forEach((face,i)=>{
+  const n=rotatePoint(face.normal,rx,ry,rz);
+  if(n[2]>score){score=n[2];selected=i}
+ });
+ return selected+1;
+}
+function shadeColor(hex,brightness){
+ const val=parseInt(hex.slice(1),16),rgb=[val>>16&255,val>>8&255,val&255];
+ return 'rgb('+rgb.map(v=>Math.round(Math.min(255,Math.max(0,v*brightness)))).join(',')+')';
+}
+function renderPoly(d){
+ const geometry=POLYHEDRA[d.settings.sides];if(!geometry)return;
+ const vertices=geometry.vertices.map(v=>rotatePoint(v,d.rx,d.ry,d.rz));
+ const projected=vertices.map(([x,y,z])=>{
+  const k=4.8/(4.8-z);
+  return [47+x*42*k,47-y*42*k,z];
+ });
+ const near=geometry.faces.map((face,i)=>{
+  const normal=rotatePoint(face.normal,d.rx,d.ry,d.rz);
+  const depth=face.indices.reduce((sum,j)=>sum+vertices[j][2],0)/face.indices.length;
+  return {face,i,normal,depth};
+ }).filter(item=>item.normal[2]>.012).sort((a,b)=>a.depth-b.depth);
+ const svg=d.poly;
+ let html='';
+ const textColor=d.el.style.getPropertyValue('--die-ink')||'#272622';
+ for(const {face,i,normal} of near){
+  const points=face.indices.map(index=>projected[index]);
+  const polygon=points.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' ');
+  const light=.52+Math.max(0,dot(normal,norm(V(-.4,.55,.85))))*.59;
+  html+='<polygon points="'+polygon+'" fill="'+shadeColor(d.settings.color,light)+'"/>';
+  if(normal[2]>.34){
+   const center=[0,1].map(k=>points.reduce((a,p)=>a+p[k],0)/points.length);
+   const font=d.settings.sides===20?13:d.settings.sides===12?15:18;
+   html+='<text x="'+center[0].toFixed(2)+'" y="'+center[1].toFixed(2)+'" font-size="'+font+'" fill="'+textColor+'" stroke="'+shadeColor(d.settings.color,light)+'">'+(i+1)+'</text>';
+  }
+ }
+ svg.innerHTML=html;
 }
 function applyDieSettings(d,setting){
  d.settings=setting;
@@ -150,12 +261,12 @@ function applyDieSettings(d,setting){
  }else{
   d.cube.hidden=true;
   if(!d.poly){
-   d.poly=document.createElement('div');d.poly.className='poly-core';
-   const face=document.createElement('div');face.className='poly-face';
-   const number=document.createElement('span');number.textContent='1';
-   face.append(number);d.poly.append(face);d.el.querySelector('.cube-anchor').append(d.poly);
+   d.poly=document.createElementNS('http://www.w3.org/2000/svg','svg');
+   d.poly.classList.add('poly-core');
+   d.poly.setAttribute('viewBox','0 0 94 94');
+   d.poly.setAttribute('aria-hidden','true');
+   d.el.querySelector('.cube-anchor').append(d.poly);
   }
-  d.poly.querySelector('span').textContent=String(d.value||1);
  }
  paint(d);
 }
@@ -192,8 +303,7 @@ function beginSettle(d){
  const arc=Math.max(Math.abs(rx-d.rx),Math.abs(ry-d.ry));
  const spin=Math.max(Math.abs(d.wx),Math.abs(d.wy),48);
  d.settleDuration=Math.max(.20,Math.min(.70,arc*1.7/spin));
- d.value=d.settings.sides===6?facingFace(rx,ry):1+Math.floor(Math.random()*d.settings.sides);
- if(d.poly)d.poly.querySelector('span').textContent=String(d.value);
+ d.value=d.settings.sides===6?facingFace(rx,ry):polyFaceOnTop(POLYHEDRA[d.settings.sides],rx,ry,d.rz);
  d.h=0;d.vh=0;d.vx=0;d.vy=0;
 }
 
