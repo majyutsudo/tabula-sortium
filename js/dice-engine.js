@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0718';
+import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0719';
 
 const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
@@ -46,6 +46,7 @@ const trigramNames=TRIGRAMS;
 let current=preset('normal');
 let diceSettings=current.dice;
 let ichingColorScheme='blackUpper';
+let astroDiceColors=null; // Preserve colors during mode switching.
 // King Wen numbers indexed [upper trigram][lower trigram] in order
 // 乾、兌、離、震、巽、坎、艮、坤.
 const kingWen=[
@@ -101,6 +102,7 @@ function showResults(results=null){
  }else reading.textContent='本卦 —　·　動爻 —　·　之卦 —';
 }
 function lockSettings(locked){document.getElementById('preset').disabled=locked;if(!locked&&current.id==='normal'){document.getElementById('iching-color-scheme').disabled=false;renderSettings();return;}document.getElementById('iching-color-scheme').disabled=locked;
+ document.querySelectorAll('#astro-colors input').forEach(input=>input.disabled=locked);
  document.querySelectorAll('#dice-settings input,#dice-settings select,#dice-settings button').forEach(el=>el.disabled=locked);}
 const NORMAL_DICE_MAX=8;
 function rebuildNormalDice(){
@@ -153,6 +155,28 @@ function renderSettings(){
   refresh();row.append(label,sides,material,color,remove);host.append(row);
  });
 }
+function renderAstroColors(){
+ const host=document.getElementById('astro-colors');host.replaceChildren();
+ host.hidden=current.id!=='astro';if(host.hidden)return;
+ const heading=document.createElement('span');heading.textContent='ダイスの色';heading.className='astro-colors-heading';host.append(heading);
+ diceSettings.forEach((die,i)=>{
+  const label=document.createElement('label');label.className='astro-color-control';
+  const text=document.createElement('span');text.textContent=die.label;
+  const input=document.createElement('input');input.type='color';input.value=die.color;
+  input.setAttribute('aria-label',die.label+'の色');
+  input.addEventListener('input',()=>{
+   if(!ready||rolling||mixing)return;
+   const color=input.value;
+   if(die.color===color)return;
+   die.color=color;astroDiceColors=diceSettings.map(d=>d.color);
+   const wasVisible=objects[i].mesh.visible;
+   destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=wasVisible;
+   syncMeshes();showResults();
+   status.textContent=held?'IN HAND — 色を変更しました':'READY TO COLLECT';
+  });
+  label.append(text,input);host.append(label);
+ });
+}
 function updateIChingColors(scheme){
  if(current.id!=='iching'||!ready||rolling||mixing)return;
  setIChingColors(diceSettings,scheme);ichingColorScheme=scheme;
@@ -167,6 +191,10 @@ function switchPreset(id){
  if(!ready||rolling||mixing){document.getElementById('preset').value=current.id;return;}
  objects.forEach(destroyDie);objects=[];current=preset(id);diceSettings=current.dice;
  if(id==='iching')setIChingColors(diceSettings,ichingColorScheme);
+ if(id==='astro'){
+  if(astroDiceColors)diceSettings.forEach((d,i)=>{d.color=astroDiceColors[i]});
+  else astroDiceColors=diceSettings.map(d=>d.color);
+ }
  const colorSettings=document.getElementById('iching-colors');colorSettings.hidden=id!=='iching';
  document.getElementById('iching-color-scheme').value=ichingColorScheme;
  held=false;mixing=false;mixCount=0;
@@ -175,12 +203,12 @@ function switchPreset(id){
  document.getElementById('description').textContent=current.description;
  document.getElementById('table-corner-top').textContent='TABULA · '+(id==='normal'?'DICE':id==='astro'?'ASTRO':'I CHING');
  document.getElementById('table-corner-bottom').textContent=id==='normal'?'RIGID BODY EXPERIMENT':id==='astro'?'ASTROLOGICAL DICE':'THE BOOK OF CHANGES';
- renderSettings();createDice();syncMeshes();showResults();
+ renderSettings();renderAstroColors();createDice();syncMeshes();showResults();
  collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
 }
 document.getElementById('preset').addEventListener('change',e=>switchPreset(e.target.value));
 document.getElementById('iching-color-scheme').addEventListener('change',event=>updateIChingColors(event.target.value));
-renderSettings();showResults();
+renderSettings();renderAstroColors();showResults();
 function faceTexture(value,color){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const c=canvas.getContext('2d');c.fillStyle=color;c.fillRect(0,0,256,256);
