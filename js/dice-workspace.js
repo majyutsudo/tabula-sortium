@@ -17,6 +17,7 @@
   const dice=mode.value==='dice';
   document.body.classList.toggle('tabula-dice-mode',dice);
   workspace.hidden=!dice;kindField.hidden=!dice;info.hidden=!dice;
+  if(!dice)requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));
   if(dice){
    if(!frame.getAttribute('src'))frame.src='dice-unified-lab.html?embedded=1&v=0722';
    else sendPreset();
