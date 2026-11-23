@@ -39,8 +39,8 @@ test('unified page has one physics engine and all preset selectors',()=>{
  assert.match(html,/value="normal"/);
  assert.match(html,/value="astro"/);
  assert.match(html,/value="iching"/);
- assert.match(html,/js\/dice-engine\.js\?v=0719/);
- assert.match(engine,/from '\.\/dice-presets\.js\?v=0719'/);
+ assert.match(html,/js\/dice-engine\.js\?v=0720/);
+ assert.match(engine,/from '\.\/dice-presets\.js\?v=0720'/);
  assert.match(engine,/complementaryFaceValues\(faceNormals\)/);
  assert.match(engine,/function hexagramSummary\(/);
 });
@@ -55,7 +55,7 @@ test('normal dice count, palette and text-presentation zodiac marks are supporte
  assert.doesNotMatch(engine,/\['wood','古木'\]/);
  assert.doesNotMatch(engine,/\['archaic','古代風'\]/);
  assert.match(engine,/\\uFE0E/);
- assert.match(html,/UNIFIED DICE LAB v0\.719/);
+ assert.match(html,/UNIFIED DICE LAB v0\.720/);
 });
 
 test('default dice are three D6 and ordinary table labels are not I Ching labels',()=>{
@@ -94,4 +94,13 @@ test('astro colors are individually editable without remapping their faces',()=>
  assert.match(engine,/renderAstroColors\(\);createDice\(\)/);
  assert.match(engine,/complementaryFaceValues\(faceNormals\)/);
  assert.deepEqual(PRESETS.astro.dice.map(d=>d.color),['#c5a269','#6b81a1','#658c78']);
+});
+
+test('normal settings are collapsed below roll actions and hidden for other modes',()=>{
+ const html=readFileSync(new URL('../dice-unified-lab.html',import.meta.url),'utf8');
+ const engine=readFileSync(new URL('../js/dice-engine.js',import.meta.url),'utf8');
+ assert.ok(html.indexOf('class="roll-actions"')<html.indexOf('id="normal-dice-panel"'));
+ assert.match(html,/<details class="normal-config" id="normal-dice-panel">/);
+ assert.match(html,/<summary>通常ダイスの設定/);
+ assert.match(engine,/panel\.hidden=current\.id!=='normal'/);
 });
