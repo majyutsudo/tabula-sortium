@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 31</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 32</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -425,7 +425,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
  c.putImageData(img,0,0);
  // The mark must fit inside the actual polygon rather than the square
  // texture. Triangular D8/D20 faces use a narrower etched ring.
- const rad=Math.max(8,Math.min(190,ringRadius*(sides===8||sides===20?.92:1)));
+ const rad=Math.max(8,Math.min(190,ringRadius*(sides===8?.92:1)));
  const cx=256,cy=256;
  c.beginPath();c.arc(cx+2,cy+3,rad+4,0,Math.PI*2);
  c.fillStyle='rgba(55,39,24,.5)';c.fill();
@@ -443,8 +443,8 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
  // size and vanished at actual tabletop scale. Give the digit most of
  // the central field, including 10, 11 and 12 on D12.
  const twoDigits=value>=10;
- const fontSize=rad*(twoDigits?1.14:1.56);
- const maxWidth=rad*(twoDigits?1.36:1.00);
+ const fontSize=rad*(twoDigits?(sides===20?1.32:1.14):(sides===20?1.68:1.56));
+ const maxWidth=rad*(twoDigits?(sides===20?1.53:1.36):1.00);
  c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
  c.font='900 '+fontSize+'px Georgia,serif';
  c.strokeStyle='rgba(247,224,177,.88)';
@@ -505,7 +505,10 @@ function numberedMesh(sides,color,material='standard'){
    inRadius=Math.min(inRadius,dist);
   }
   // UVs span 0..1 over 2.2*maxR; texture uses 512px for the ring.
-  rings.push(Math.max(0,inRadius/(maxR*2.2)*512*.78));
+  // D20 previously used .78 × .92 of the inscribed circle. Raise to
+  // .90 × 1.00, a ~25% larger ring while leaving a rim at every edge.
+  // All other dice retain their previously approved dimensions.
+  rings.push(Math.max(0,inRadius/(maxR*2.2)*512*(sides===20?.90:.78)));
   const coords=ids.map(k=>{
    const d=vectorFrom(vertices[k]).sub(centre);
    return [.5+d.dot(a)/(maxR*2.2),.5+d.dot(b)/(maxR*2.2)];
