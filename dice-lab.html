@@ -27,7 +27,7 @@ h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin
 .die .shadow{position:absolute;width:64px;height:24px;left:3px;top:49px;border-radius:50%;background:#040b09a6;filter:blur(11px);transform-origin:center;pointer-events:none}
 .cube-anchor{position:absolute;inset:0;perspective:520px;pointer-events:none}
 .cube{position:absolute;width:70px;height:70px;transform-style:preserve-3d;will-change:transform}
-.face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:9px;border:1.5px solid #857a66;border-radius:9px;background:linear-gradient(137deg,#fff8e9 2%,#f1e3c7 58%,#d4c4a8);box-shadow:inset 0 0 8px #8d735c55,inset 2px 2px 4px #fff9}
+.face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:9px;border:1.5px solid #857a66;border-radius:9px;background:linear-gradient(137deg,color-mix(in srgb,var(--die-color,#f1e3c7),white 24%) 2%,var(--die-color,#f1e3c7) 58%,color-mix(in srgb,var(--die-color,#f1e3c7),black 21%));box-shadow:inset 0 0 8px #8d735c55,inset 2px 2px 4px #fff9}
 .face:after{content:"";position:absolute;inset:3px;border:1px solid #baab9255;border-radius:6px;pointer-events:none}
 .pip{display:block;width:10px;height:10px;align-self:center;justify-self:center;border-radius:50%;background:#262421;box-shadow:inset 1px 1px 2px #080707,1px 1px 0 #fff9}
 .face[data-face="1"]{transform:translateZ(35px)}
@@ -36,6 +36,22 @@ h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin
 .face[data-face="5"]{transform:rotateX(90deg) translateZ(35px)}
 .face[data-face="3"]{transform:rotateY(90deg) translateZ(35px)}
 .face[data-face="4"]{transform:rotateY(-90deg) translateZ(35px)}
+.poly-core{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
+.poly-face{position:absolute;inset:0;display:grid;place-items:center;filter:drop-shadow(1px 4px 3px #0007);background:linear-gradient(140deg,color-mix(in srgb,var(--die-color),white 31%),var(--die-color) 52%,color-mix(in srgb,var(--die-color),black 28%));clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);color:var(--die-ink,#272622)}
+.poly-face:before{content:"";position:absolute;inset:4px;clip-path:inherit;background:linear-gradient(125deg,#fff3,transparent 48%,#0002)}
+.poly-face span{position:relative;z-index:1;font:700 25px/1 Georgia,serif;text-shadow:0 1px 1px #fff6}
+.die[data-sides="4"] .poly-face{clip-path:polygon(50% 3%,97% 90%,3% 90%)}
+.die[data-sides="4"] .poly-face span{transform:translateY(12px)}
+.die[data-sides="8"] .poly-face{clip-path:polygon(50% 0%,97% 50%,50% 100%,3% 50%)}
+.die[data-sides="10"] .poly-face{clip-path:polygon(50% 0%,95% 28%,86% 67%,50% 100%,14% 67%,5% 28%)}
+.die[data-sides="12"] .poly-face{clip-path:polygon(50% 0%,97% 35%,79% 95%,21% 95%,3% 35%)}
+.die[data-sides="20"] .poly-face{clip-path:polygon(50% 0%,93% 24%,92% 75%,50% 100%,8% 75%,7% 24%)}
+.dice-config{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.die-config{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center;background:#192820aa;border:1px solid #66705580;border-radius:7px;padding:8px}
+.die-config label{font-size:12px;color:#c7b89b;white-space:nowrap}
+.die-config select{background:#263c31;border:1px solid #72856c;border-radius:4px;color:#f0dfc1;padding:7px 5px;font:14px Georgia,serif;min-width:0;width:100%;cursor:pointer}
+.die-config input[type=color]{border:1px solid #90836b;border-radius:4px;background:#23362c;width:36px;height:35px;padding:3px;cursor:pointer}
+.die-config select:focus-visible,.die-config input:focus-visible{outline:2px solid #d8ba79;outline-offset:2px}
 .throw-modes{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
 .throw-label{font-size:12px;color:#c2b495;margin-right:5px;letter-spacing:.09em}
 .throw-mode{font:inherit;color:#d1c3a7;background:#21342d;border:1px solid #5c6d58;border-radius:5px;padding:7px 13px;min-height:37px}
@@ -53,14 +69,19 @@ button{font:inherit;cursor:pointer}
 #total b{font-weight:normal}
 .note{font-size:11px;line-height:1.8;color:#a89e88;text-align:center;margin:0 0 8px}
 .status{text-align:center;color:#c1b38f;font-size:12px;min-height:17px;letter-spacing:.16em}
-@media(max-width:480px){body{padding:10px} main{gap:11px}.table-frame{padding:6px}#felt{height:57dvh;min-height:340px;max-height:500px}#roll{width:100%}.results{gap:12px}}
+@media(max-width:480px){.dice-config{grid-template-columns:1fr}.die-config{grid-template-columns:55px 1fr auto}body{padding:10px} main{gap:11px}.table-frame{padding:6px}#felt{height:57dvh;min-height:340px;max-height:500px}#roll{width:100%}.results{gap:12px}}
 @media(prefers-reduced-motion:reduce){#roll{transition:none}}
 </style>
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 06</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 07</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
 <div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div><div id="flightLayer" aria-hidden="true"></div></div>
+<div class="dice-config" aria-label="各ダイスの設定">
+ <div class="die-config"><label for="sides0">ダイス 1</label><select id="sides0" class="die-sides" data-index="0" aria-label="ダイス1の面数"></select><input type="color" class="die-color" data-index="0" value="#f1e3c7" aria-label="ダイス1の色"></div>
+ <div class="die-config"><label for="sides1">ダイス 2</label><select id="sides1" class="die-sides" data-index="1" aria-label="ダイス2の面数"></select><input type="color" class="die-color" data-index="1" value="#b84b41" aria-label="ダイス2の色"></div>
+ <div class="die-config"><label for="sides2">ダイス 3</label><select id="sides2" class="die-sides" data-index="2" aria-label="ダイス3の面数"></select><input type="color" class="die-color" data-index="2" value="#53769b" aria-label="ダイス3の色"></div>
+</div>
 <div id="status" class="status" aria-live="polite">READY TO ROLL</div>
 <div class="throw-modes" role="group" aria-label="ダイスの投げ方">
  <span class="throw-label">投げ方</span>
@@ -70,7 +91,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="controls"><button type="button" id="roll">◆　ダイスを振る　◆</button></div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 <b>—</b></span></div>
-<p class="note">六面ダイス3個の投擲実験。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>卓の手前から投げ込む演出の実験版です。既存のTABULAの卓は変更しません。</p>
+<p class="note">各ダイスの面数と色を変更できます。D6以外の多面体は外観を簡略化した試作表示です。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>卓の手前から投げ込む演出の実験版です。既存のTABULAの卓は変更しません。</p>
 </main>
 <script>
 (()=>{'use strict';
@@ -79,6 +100,8 @@ const status=document.getElementById('status'),values=document.getElementById('v
 const powerModes={gentle:.48,normal:1,strong:1.65};
 let selectedPower='normal';
 const SIZE=70,NUM=3,HALF=SIZE/2;
+const SUPPORTED_SIDES=[4,6,8,10,12,20];
+const dieSettings=[{sides:6,color:'#f1e3c7'},{sides:6,color:'#b84b41'},{sides:6,color:'#53769b'}];
 function positionFlightLayer(){
  const f=felt.getBoundingClientRect(),p=flightLayer.parentElement.getBoundingClientRect();
  flightLayer.style.left=(f.left-p.left)+'px';flightLayer.style.top=(f.top-p.top)+'px';
@@ -98,18 +121,41 @@ function makeDie(){
   cube.append(side);
  }
  anchor.append(cube);el.append(anchor);felt.append(el);
- return {el,shadow,cube,x:0,y:0,vx:0,vy:0,h:0,vh:0,rx:0,ry:0,rz:0,wx:0,wy:0,wz:0,value:1,settled:false,settleStart:0,settleDuration:.32,from:null,to:null,endAt:0,bounces:0,phase:'rest',entryDelay:0,flightDuration:0,launchX:0,launchY:0,impactX:0,impactY:0,flightHeight:0,throwPower:1};
+ return {el,shadow,cube,poly:null,settings:null,x:0,y:0,vx:0,vy:0,h:0,vh:0,rx:0,ry:0,rz:0,wx:0,wy:0,wz:0,value:1,settled:false,settleStart:0,settleDuration:.32,from:null,to:null,endAt:0,bounces:0,phase:'rest',entryDelay:0,flightDuration:0,launchX:0,launchY:0,impactX:0,impactY:0,flightHeight:0,throwPower:1};
 }
 function dimensions(){return {w:felt.clientWidth,h:felt.clientHeight}}
 function paint(d){
  d.el.style.left=d.x+'px';d.el.style.top=(d.y-d.h)+'px';
  d.shadow.style.transform='translateY('+d.h+'px) scale('+Math.max(.7,1-d.h/300)+')';
  d.shadow.style.opacity=String(Math.max(.2,1-d.h/130));
- d.cube.style.transform='rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
+ const visual=d.poly||d.cube;
+ visual.style.transform='rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
+}
+function applyDieSettings(d,setting){
+ d.settings=setting;
+ d.el.dataset.sides=String(setting.sides);
+ d.el.style.setProperty('--die-color',setting.color);
+ const rgb=parseInt(setting.color.slice(1),16);
+ const r=rgb>>16&255,g=rgb>>8&255,b=rgb&255;
+ d.el.style.setProperty('--die-ink',(r*.299+g*.587+b*.114)<135?'#fff7e6':'#272622');
+ if(setting.sides===6){
+  d.cube.hidden=false;
+  if(d.poly){d.poly.remove();d.poly=null}
+ }else{
+  d.cube.hidden=true;
+  if(!d.poly){
+   d.poly=document.createElement('div');d.poly.className='poly-core';
+   const face=document.createElement('div');face.className='poly-face';
+   const number=document.createElement('span');number.textContent='1';
+   face.append(number);d.poly.append(face);d.el.querySelector('.cube-anchor').append(d.poly);
+  }
+  d.poly.querySelector('span').textContent=String(d.value||1);
+ }
+ paint(d);
 }
 function addDice(){
  const {w,h}=dimensions();
- dice=Array.from({length:NUM},(_,i)=>{const d=makeDie();d.x=w*(.27+.23*i);d.y=h*.52;d.value=i+1;d.ry=0;d.rx=0;d.rz=0;paint(d);return d});
+ dice=Array.from({length:NUM},(_,i)=>{const d=makeDie();d.x=w*(.27+.23*i);d.y=h*.52;d.value=i+1;d.ry=0;d.rx=0;d.rz=0;applyDieSettings(d,dieSettings[i]);return d});
 }
 // A face's pip count is derived from the cube's actual final orientation.
  // This avoids a preselected result disagreeing with the visible top face.
@@ -140,7 +186,8 @@ function beginSettle(d){
  const arc=Math.max(Math.abs(rx-d.rx),Math.abs(ry-d.ry));
  const spin=Math.max(Math.abs(d.wx),Math.abs(d.wy),48);
  d.settleDuration=Math.max(.20,Math.min(.70,arc*1.7/spin));
- d.value=facingFace(rx,ry);
+ d.value=d.settings.sides===6?facingFace(rx,ry):1+Math.floor(Math.random()*d.settings.sides);
+ if(d.poly)d.poly.querySelector('span').textContent=String(d.value);
  d.h=0;d.vh=0;d.vx=0;d.vy=0;
 }
 
@@ -296,12 +343,37 @@ function tick(time){
  dice.forEach(paint);
  if(dice.every(d=>d.phase!=='incoming'&&d.settled&&elapsed-d.settleStart>=d.settleDuration)){
   rolling=false;button.disabled=false;
-  values.textContent=dice.map(d=>d.value).join(' · ');
+  values.textContent=dice.map(d=>'D'+d.settings.sides+': '+d.value).join(' · ');
   total.textContent=String(dice.reduce((sum,d)=>sum+d.value,0));
   status.textContent='THE DICE HAVE FALLEN';
   return;
  }
  frame=requestAnimationFrame(tick);
+}
+for(const select of document.querySelectorAll('.die-sides')){
+ for(const sides of SUPPORTED_SIDES){
+  const option=document.createElement('option');option.value=String(sides);option.textContent='D'+sides;select.append(option);
+ }
+ select.value='6';
+ select.addEventListener('change',()=>{
+  const i=Number(select.dataset.index);
+  if(rolling)return;
+  const sides=Number(select.value);
+  if(!SUPPORTED_SIDES.includes(sides))return;
+  dieSettings[i].sides=sides;
+  dice[i].value=1;
+  dice[i].rx=0;dice[i].ry=0;dice[i].rz=0;
+  applyDieSettings(dice[i],dieSettings[i]);
+  values.textContent='—';total.textContent='—';status.textContent='READY TO ROLL';
+ });
+}
+for(const picker of document.querySelectorAll('.die-color')){
+ picker.addEventListener('input',()=>{
+  const i=Number(picker.dataset.index);
+  if(!/^#[0-9a-f]{6}$/i.test(picker.value))return;
+  dieSettings[i].color=picker.value;
+  applyDieSettings(dice[i],dieSettings[i]);
+ });
 }
 document.querySelectorAll('.throw-mode').forEach(mode=>{
  mode.addEventListener('click',()=>{
