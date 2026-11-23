@@ -13,6 +13,14 @@
  const cardResults=document.getElementById('liveResults');
  const resultToggle=document.getElementById('toggleResults');
  const cardStatus=document.getElementById('status');
+ // Leave card-only functions in their usual positions, but prevent editing
+ // the preserved card session while the user is working with dice.
+ const cardOnlyControls=[
+  ...['tableUndo','zoomOut','zoomReset','zoomIn','newSessionStandalone','cardGalleryOpen','spreadNotebook','toolbarDeckPicker','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','quickSnapshotSave','quickSnapshotList','printPlacement'].map(id=>document.getElementById(id)).filter(Boolean)
+ ];
+ function setCardControlsInactive(inactive){
+  cardOnlyControls.forEach(element=>{element.inert=inactive});
+ }
  // Attach existing dice UI fragments to TABULA's permanent interface.
  const addHolder=(parent,id,cls='')=>{
   const holder=document.createElement('div');holder.id=id;
@@ -91,6 +99,7 @@
  function switchToCard(id){
   document.body.classList.remove('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=false;diceActions.hidden=true;
+  setCardControlsInactive(false);
   resultsButton.setAttribute('aria-pressed','false');
   cardResults.hidden=!cardResultsOpen;
   resultToggle.setAttribute('aria-expanded',String(cardResultsOpen));
@@ -105,6 +114,7 @@
   if(!document.body.classList.contains('tabula-dice-mode'))cardResultsOpen=!cardResults.hidden;
   document.body.classList.add('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=true;diceActions.hidden=false;
+  setCardControlsInactive(true);
   cardResults.hidden=true;
   resultsButton.setAttribute('aria-pressed','false');
   resultToggle.setAttribute('aria-expanded','false');
