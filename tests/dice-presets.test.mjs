@@ -39,8 +39,8 @@ test('unified page has one physics engine and all preset selectors',()=>{
  assert.match(html,/value="normal"/);
  assert.match(html,/value="astro"/);
  assert.match(html,/value="iching"/);
- assert.match(html,/js\/dice-engine\.js\?v=0720/);
- assert.match(engine,/from '\.\/dice-presets\.js\?v=0720'/);
+ assert.match(html,/js\/dice-engine\.js\?v=0721/);
+ assert.match(engine,/from '\.\/dice-presets\.js\?v=0721'/);
  assert.match(engine,/complementaryFaceValues\(faceNormals\)/);
  assert.match(engine,/function hexagramSummary\(/);
 });
@@ -55,7 +55,7 @@ test('normal dice count, palette and text-presentation zodiac marks are supporte
  assert.doesNotMatch(engine,/\['wood','古木'\]/);
  assert.doesNotMatch(engine,/\['archaic','古代風'\]/);
  assert.match(engine,/\\uFE0E/);
- assert.match(html,/UNIFIED DICE LAB v0\.720/);
+ assert.match(html,/UNIFIED DICE LAB v0\.721/);
 });
 
 test('default dice are three D6 and ordinary table labels are not I Ching labels',()=>{
@@ -103,4 +103,18 @@ test('normal settings are collapsed below roll actions and hidden for other mode
  assert.match(html,/<details class="normal-config" id="normal-dice-panel">/);
  assert.match(html,/<summary>通常ダイスの設定/);
  assert.match(engine,/panel\.hidden=current\.id!=='normal'/);
+});
+
+test('all three mode-specific settings panels follow the roll controls',()=>{
+ const html=readFileSync(new URL('../dice-unified-lab.html',import.meta.url),'utf8');
+ const engine=readFileSync(new URL('../js/dice-engine.js',import.meta.url),'utf8');
+ const actions=html.indexOf('class="roll-actions"');
+ for(const panel of ['normal-dice-panel','astro-dice-panel','iching-dice-panel']){
+  assert.ok(html.indexOf('id="'+panel+'"')>actions);
+  assert.match(html,new RegExp('<details class="normal-config" id="'+panel+'"'));
+ }
+ assert.match(engine,/getElementById\('astro-dice-panel'\)\.hidden=current\.id!=='astro'/);
+ assert.match(engine,/getElementById\('iching-dice-panel'\)\.hidden=id!=='iching'/);
+ assert.match(html,/<summary>アストロダイスの設定/);
+ assert.match(html,/<summary>易占ダイスの設定/);
 });
