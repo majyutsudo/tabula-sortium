@@ -53,3 +53,9 @@ test('card-dice picker has a card/dice divider and no separate mode selector',()
  assert.match(html,/value="dice:iching"/);
  assert.doesNotMatch(html,/id="instrumentMode"/);
 });
+
+test('the renderer skips zero-size resize while cards are active',()=>{
+ const js=file('js/dice-table-engine.js');
+ assert.match(js,/if\(w<80\|\|h<80\)return/);
+ assert.match(js,/if\(!document\.body\.classList\.contains\('tabula-dice-mode'\)\)return/);
+});
