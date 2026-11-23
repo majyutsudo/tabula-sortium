@@ -99,7 +99,7 @@ function showResults(results=null){
   reading.textContent='本卦 '+String.fromCodePoint(0x4dc0+h.primary-1)+' 第'+h.primary+'卦（'+trigramNames[results[0]-1]+'上'+trigramNames[results[1]-1]+'下） · '+diceSettings[2].faces[results[2]-1].name+' → 之卦 '+String.fromCodePoint(0x4dc0+h.changed-1)+' 第'+h.changed+'卦';
  }else reading.textContent='本卦 —　·　動爻 —　·　之卦 —';
 }
-function lockSettings(locked){document.getElementById('preset').disabled=locked;document.querySelectorAll('#dice-settings input,#dice-settings select,#dice-settings button').forEach(el=>el.disabled=locked);}
+function lockSettings(locked){document.getElementById('preset').disabled=locked;if(!locked&&current.id==='normal'){renderSettings();return;}document.querySelectorAll('#dice-settings input,#dice-settings select,#dice-settings button').forEach(el=>el.disabled=locked);}
 const NORMAL_DICE_MAX=8;
 function rebuildNormalDice(){
  if(!ready)return;
