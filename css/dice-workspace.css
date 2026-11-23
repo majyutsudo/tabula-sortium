@@ -115,3 +115,6 @@ body.tabula-dice-mode #diceSettingsHolder{margin-top:10px}
  #diceStrengthHolder .force-control{gap:5px}
  #diceResultsHolder .result-number{font-size:21px}
 }
+
+/* The left-hand menus retain their positions; only section II switches its settings. */
+body.tabula-dice-mode #instrumentChoiceSection>:not(h2):not(.instrument-picker){display:none!important}
