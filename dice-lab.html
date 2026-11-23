@@ -13,7 +13,7 @@ header{text-align:center;padding:5px 4px 0}
 .eyebrow{font-size:10px;letter-spacing:.35em;color:#bca577}
 h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin:7px 0 4px;padding-left:.22em}
 .subtitle{font-size:12px;color:#b7ad93;letter-spacing:.12em}
-.table-frame{padding:9px;border:1px solid #786443;background:#292820;box-shadow:0 14px 45px #0009,inset 0 0 0 2px #39342a;border-radius:16px}
+.table-frame{position:relative;padding:9px;border:1px solid #786443;background:#292820;box-shadow:0 14px 45px #0009,inset 0 0 0 2px #39342a;border-radius:16px}
 #felt{position:relative;height:clamp(320px,57dvh,530px);overflow:hidden;touch-action:none;cursor:pointer;border:1px solid #3d5745;border-radius:10px;background:radial-gradient(ellipse at 50% 44%,#355747 0%,#243e33 64%,#192e26 100%);box-shadow:inset 0 0 90px #08170ed9,inset 0 0 0 1px #58715a2f}
 #felt:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.16;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='82' height='82'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.38'/%3E%3C/svg%3E")}
 .throw-guide{position:absolute;inset:0;z-index:10;pointer-events:none;display:none}
@@ -22,6 +22,7 @@ h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin
 .throw-guide polygon{fill:#e9ce91}
 #felt.aiming{cursor:grabbing}
 .corner{position:absolute;z-index:1;font-size:10px;color:#afbd9a88;letter-spacing:.22em;pointer-events:none}.corner.tl{left:16px;top:15px}.corner.br{right:16px;bottom:14px}
+#flightLayer{position:absolute;z-index:8;pointer-events:none;overflow:visible}
 .die{width:70px;height:70px;position:absolute;left:0;top:0;transform:translate(-50%,-50%);z-index:3;will-change:left,top}
 .die .shadow{position:absolute;width:64px;height:24px;left:3px;top:49px;border-radius:50%;background:#040b09a6;filter:blur(11px);transform-origin:center;pointer-events:none}
 .cube-anchor{position:absolute;inset:0;perspective:520px;pointer-events:none}
@@ -59,7 +60,7 @@ button{font:inherit;cursor:pointer}
 <body>
 <main>
 <header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 01</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
-<div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div></div>
+<div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div><div id="flightLayer" aria-hidden="true"></div></div>
 <div id="status" class="status" aria-live="polite">READY TO ROLL</div>
 <div class="throw-modes" role="group" aria-label="ダイスの投げ方">
  <span class="throw-label">投げ方</span>
@@ -73,11 +74,16 @@ button{font:inherit;cursor:pointer}
 </main>
 <script>
 (()=>{'use strict';
-const felt=document.getElementById('felt'),button=document.getElementById('roll');
+const felt=document.getElementById('felt'),flightLayer=document.getElementById('flightLayer'),button=document.getElementById('roll');
 const status=document.getElementById('status'),values=document.getElementById('values'),total=document.querySelector('#total b');
 const powerModes={gentle:.48,normal:1,strong:1.65};
 let selectedPower='normal';
 const SIZE=70,NUM=3,HALF=SIZE/2;
+function positionFlightLayer(){
+ const f=felt.getBoundingClientRect(),p=flightLayer.parentElement.getBoundingClientRect();
+ flightLayer.style.left=(f.left-p.left)+'px';flightLayer.style.top=(f.top-p.top)+'px';
+ flightLayer.style.width=f.width+'px';flightLayer.style.height=f.height+'px';
+}
 let dice=[],rolling=false,frame=0,previousTime=0,elapsed=0;
 const rand=(min,max)=>min+Math.random()*(max-min);
 const dicePositions={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
@@ -92,7 +98,7 @@ function makeDie(){
   cube.append(side);
  }
  anchor.append(cube);el.append(anchor);felt.append(el);
- return {el,shadow,cube,x:0,y:0,vx:0,vy:0,h:0,vh:0,rx:0,ry:0,rz:0,wx:0,wy:0,wz:0,value:1,settled:false,settleStart:0,from:null,to:null,endAt:0,bounces:0};
+ return {el,shadow,cube,x:0,y:0,vx:0,vy:0,h:0,vh:0,rx:0,ry:0,rz:0,wx:0,wy:0,wz:0,value:1,settled:false,settleStart:0,from:null,to:null,endAt:0,bounces:0,phase:'rest',entryDelay:0,flightDuration:0,launchX:0,launchY:0,impactX:0,impactY:0,flightHeight:0};
 }
 function dimensions(){return {w:felt.clientWidth,h:felt.clientHeight}}
 function paint(d){
@@ -132,19 +138,31 @@ function begin(options={}){
  rolling=true;elapsed=0;previousTime=0;
  status.textContent='ROLLING…';button.disabled=true;values.textContent='—';total.textContent='—';
  const {w,h}=dimensions();
+ positionFlightLayer();
  const radius=HALF+7;
  dice.forEach((d,i)=>{
-  d.x=Math.min(w-radius,Math.max(radius,w*(.25+.25*i)+rand(-7,7)));
-  d.y=Math.min(h-radius,Math.max(radius,h*(.47+.035*i)+rand(-8,8)));
-  d.vx=(rand(-270,270)+(i-1)*115+((direction?.x)||0)*240)*power;
-  d.vy=(rand(-200,200)+((direction?.y)||0)*240)*power;
-  d.h=rand(15,38)*power;d.vh=rand(110,260)*power;
+  // Launch from beyond the near edge. Keep airborne pieces in an unclipped
+  // overlay, then return them to the ordinary felt when they enter its area.
+  d.phase='incoming';
+  d.entryDelay=i*.09+rand(0,.045);
+  d.flightDuration=Math.max(.35,.66-power*.075+rand(-.035,.035));
+  d.launchX=Math.max(radius,Math.min(w-radius,w*(.37+.13*i)+rand(-18,18)));
+  d.launchY=h+SIZE+rand(5,40)+i*6;
+  d.impactX=Math.max(radius,Math.min(w-radius,
+   w*(.32+.17*i)+rand(-20,20)+(direction?.x||0)*Math.min(65,power*30)));
+  d.impactY=Math.max(radius,Math.min(h-radius,
+   h*(.40+.06*i)+rand(-24,24)+(direction?.y||0)*Math.min(52,power*28)));
+  d.flightHeight=(40+rand(8,35))*Math.max(.65,Math.min(1.8,power));
+  d.x=d.launchX;d.y=d.launchY;d.h=0;d.vh=0;
+  d.vx=0;d.vy=0;
   d.wx=rand(-900,900)*power;d.wy=rand(-950,950)*power;d.wz=rand(-580,580)*power;
   d.rx=rand(-180,180);d.ry=rand(-180,180);d.rz=rand(-180,180);
-  d.value=0; // Resolved from the actual resting orientation.
+  d.value=0;
   d.settled=false;d.settleStart=0;d.from=null;d.to=null;
-  // Slightly different end times feel less synthetic than a synchronized stop.
-  d.endAt=rand(.85,1.12)+power*rand(.45,.70)+i*.09;d.bounces=0;paint(d);
+  d.endAt=d.entryDelay+d.flightDuration+rand(.85,1.12)+power*rand(.45,.70)+i*.09;
+  d.bounces=0;d.el.style.visibility='hidden';
+  flightLayer.appendChild(d.el);
+  paint(d);
  });
  cancelAnimationFrame(frame);frame=requestAnimationFrame(tick);
 }
@@ -153,6 +171,31 @@ function tick(time){
  const dt=Math.min((time-previousTime)/1000,.035);previousTime=time;elapsed+=dt;
  const {w,h}=dimensions(),margin=HALF+5;
  for(const d of dice){
+  if(d.phase==='incoming'){
+   const t=(elapsed-d.entryDelay)/d.flightDuration;
+   if(t<0)continue;
+   d.el.style.visibility='visible';
+   if(t<1){
+    const u=Math.max(0,t);
+    const progression=u*u*(2-u); // Slight acceleration as dice enter the field.
+    d.x=d.launchX+(d.impactX-d.launchX)*progression;
+    d.y=d.launchY+(d.impactY-d.launchY)*progression;
+    d.h=d.flightHeight*Math.sin(Math.PI*u);
+    d.rx+=d.wx*dt;d.ry+=d.wy*dt;d.rz+=d.wz*dt;
+    paint(d);
+    continue;
+   }
+   // Hand off position, spin and momentum to existing bounce/friction engine.
+   d.phase='rolling';
+   felt.appendChild(d.el);
+   d.x=d.impactX;d.y=d.impactY;
+   d.h=rand(24,52)*Math.min(1.6,Math.max(.6,powerModes[selectedPower]));
+   d.vh=-rand(175,285);
+   d.vx=(d.impactX-d.launchX)/d.flightDuration*.65+rand(-125,125);
+   d.vy=Math.max(-275,(d.impactY-d.launchY)/d.flightDuration*.3);
+   d.bounces=0;
+  }
+
   if(d.settled){
    const t=Math.min(1,(elapsed-d.settleStart)/.32);
    const smooth=1-Math.pow(1-t,2);
@@ -195,6 +238,7 @@ function tick(time){
  for(let pass=0;pass<8;pass++){
   for(let i=0;i<dice.length;i++)for(let j=i+1;j<dice.length;j++){
    const a=dice[i],b=dice[j];
+   if(a.phase==='incoming'||b.phase==='incoming')continue;
    const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy);
    if(dist>=minDist)continue;
    const angle=dist>.001?null:(i*2.11+j*1.37);
@@ -220,7 +264,7 @@ function tick(time){
  }
  // Apply final collision corrections immediately, rather than one frame later.
  dice.forEach(paint);
- if(dice.every(d=>d.settled&&elapsed-d.settleStart>=.32)){
+ if(dice.every(d=>d.phase!=='incoming'&&d.settled&&elapsed-d.settleStart>=.32)){
   rolling=false;button.disabled=false;
   values.textContent=dice.map(d=>d.value).join(' · ');
   total.textContent=String(dice.reduce((sum,d)=>sum+d.value,0));
@@ -282,8 +326,8 @@ felt.addEventListener('pointerup',event=>{
 felt.addEventListener('pointercancel',()=>{gesture=null;clearGuide();status.textContent='READY TO ROLL'});
 felt.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}begin()});
 felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();begin()}});
-window.addEventListener('resize',()=>{if(rolling)return;const {w,h}=dimensions();dice.forEach(d=>{d.x=Math.max(HALF,Math.min(w-HALF,d.x));d.y=Math.max(HALF,Math.min(h-HALF,d.y));paint(d)})});
-addDice();
+window.addEventListener('resize',()=>{positionFlightLayer();if(rolling)return;const {w,h}=dimensions();dice.forEach(d=>{d.x=Math.max(HALF,Math.min(w-HALF,d.x));d.y=Math.max(HALF,Math.min(h-HALF,d.y));paint(d)})});
+addDice();positionFlightLayer();
 })();
 </script>
 </body>
