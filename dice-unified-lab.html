@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TABULA DICE v0.715 — Unified Laboratory</title>
+<style>
+:root{color-scheme:dark;font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN",serif;background:#101815;color:#eadfc8}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% 5%,#24372e,#101815 70%);display:flex;justify-content:center;padding:clamp(9px,3vw,28px)}
+main{width:min(840px,100%);display:grid;align-content:start;gap:13px}
+header{text-align:center}.eyebrow{font-size:10px;letter-spacing:.32em;color:#bca577}h1{font-size:clamp(25px,4vw,35px);font-weight:normal;letter-spacing:.20em;margin:7px 0 4px}.subtitle{font-size:12px;color:#b7ad93;letter-spacing:.12em}
+.frame{position:relative;padding:9px;border:1px solid #786443;background:#292820;box-shadow:0 14px 45px #0009,inset 0 0 0 2px #39342a;border-radius:16px}
+#felt{position:relative;height:clamp(340px,58dvh,535px);touch-action:none;overflow:hidden;border:1px solid #3d5745;border-radius:10px;background:radial-gradient(ellipse at 50% 44%,#355747 0%,#243e33 64%,#192e26 100%);box-shadow:inset 0 0 90px #08170ed9,inset 0 0 0 1px #58715a2f;cursor:crosshair}
+#felt:focus-visible,button:focus-visible{outline:2px solid #e0be78;outline-offset:3px}
+#felt canvas{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
+.corner{position:absolute;z-index:2;font-size:10px;letter-spacing:.19em;color:#bad2b88e;pointer-events:none}.tl{left:14px;top:13px}.br{bottom:12px;right:12px}
+#throwGuide{display:none;position:absolute;z-index:5;inset:0;width:100%;height:100%;pointer-events:none}
+#throwGuide line{stroke:#f1d59f;stroke-width:3;stroke-dasharray:6 5;stroke-linecap:round}
+#throwGuide circle{fill:#e7ce9b44;stroke:#ead09a;stroke-width:2}
+#throwGuide polygon{fill:#ead09a}
+.status{text-align:center;color:#cabb95;font-size:11px;letter-spacing:.17em;min-height:16px}
+.force-control{display:grid;grid-template-columns:auto minmax(130px,390px) auto;justify-content:center;align-items:center;gap:12px;padding:6px 10px}
+.force-control label{font-size:12px;color:#d5c39d;letter-spacing:.08em}
+#force{width:100%;height:28px;cursor:pointer;accent-color:#d4b67b;touch-action:pan-x}
+#force:focus-visible{outline:2px solid #e7cb92;outline-offset:2px}
+#forceValue{min-width:85px;font-size:12px;color:#e6d6b5;text-align:left;font-variant-numeric:tabular-nums}
+.force-range{display:flex;justify-content:space-between;font-size:10px;color:#a69c88;letter-spacing:.07em;margin-top:-6px;grid-column:2}
+@media(max-width:480px){.force-control{grid-template-columns:auto 1fr auto;gap:7px;padding:2px 4px}#forceValue{min-width:70px;font-size:11px}}
+button{font:inherit;cursor:pointer}
+#roll{margin:0;width:min(320px,100%);border:1px solid #dbc08a;color:#2b271b;background:linear-gradient(#e3cb99,#b99b62);min-height:54px;padding:12px 20px;border-radius:5px;font-size:17px;letter-spacing:.12em;box-shadow:0 3px 0 #6a5739,0 6px 16px #0006}
+#roll:hover{filter:brightness(1.08)}#roll:disabled{opacity:.45;cursor:not-allowed}
+.roll-actions{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+#collect{border:1px solid #8d866f;color:#e5d4b4;background:#263c31;min-height:54px;padding:12px 22px;border-radius:5px;font-size:15px;letter-spacing:.08em}
+#collect:hover{background:#30483b}#collect:disabled{opacity:.45;cursor:not-allowed}
+#mix{border:1px solid #8d866f;color:#e5d4b4;background:#263c31;min-height:54px;padding:12px 18px;border-radius:5px;font-size:15px;letter-spacing:.06em}
+#mix:hover{background:#30483b}#mix:disabled{opacity:.45;cursor:not-allowed}
+.dice-settings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:2px 0 0}
+.die-setting{display:flex;align-items:center;justify-content:center;gap:9px;padding:10px 8px;border:1px solid #647462;background:#1d332a;border-radius:6px}
+.die-setting label{font-size:12px;color:#e3cfab;white-space:nowrap}
+.die-setting select{min-width:66px;padding:6px 4px;border-radius:4px;border:1px solid #6b725b;background:#293f34;color:#f2e2c4;font:13px Georgia,serif}
+.die-setting select.material{min-width:78px}
+.die-setting input[type=color]{width:35px;height:31px;border:1px solid #978a69;border-radius:4px;padding:2px;background:#293f34;cursor:pointer}
+.die-setting select:disabled,.die-setting input:disabled{opacity:.45;cursor:not-allowed}
+@media(min-width:631px){.die-setting{gap:6px;padding:9px 5px}.die-setting label{font-size:11px}.die-setting select{min-width:56px}.die-setting select.material{min-width:72px}.die-setting input[type=color]{width:32px}}
+@media(max-width:630px){.dice-settings{grid-template-columns:1fr}.die-setting{justify-content:space-between;padding:7px 12px}}
+.results{position:absolute;z-index:4;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:stretch;justify-content:center;gap:8px;flex-wrap:nowrap;width:min(92%,690px);padding:8px;background:#162b23e8;border:1px solid #baa77a70;border-radius:7px;box-shadow:0 3px 12px #0a160e8a;pointer-events:none;font-variant-numeric:tabular-nums}
+#values{display:flex;flex:1;justify-content:center;align-items:stretch;gap:5px;min-width:0}
+.result-die{display:flex;flex:1;min-width:0;max-width:95px;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;border-right:1px solid #bca77830}
+.result-die:last-child{border-right:none}
+.result-kind{display:flex;align-items:center;gap:5px;font:10px Georgia,serif;color:#cfc0a2;letter-spacing:.04em}
+.result-swatch{display:block;width:9px;height:9px;flex-shrink:0;border-radius:50%;border:1px solid #f3e4c85e}
+.result-number{font-size:24px;line-height:1.15;color:#fff0c9;font-weight:600}
+#total{display:flex;align-items:center;gap:5px;padding:0 7px 0 13px;border-left:1px solid #bca77860;font-size:12px;color:#d5c49e;white-space:nowrap}
+#total strong{font-size:25px;font-weight:600;color:#ffe6b6}
+@media(max-width:500px){.results{bottom:8px;width:96%;padding:5px 3px;gap:2px}#values{gap:0}.result-die{padding:2px 1px}.result-kind{font-size:9px;gap:3px}.result-number{font-size:19px}.result-swatch{width:7px;height:7px}#total{padding:0 4px 0 6px;font-size:10px;gap:3px}#total strong{font-size:21px}}
+.astro-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.astro-legend>div{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;padding:9px 5px;border:1px solid #596d5d;border-radius:6px;background:#1d332a;text-align:center}
+.astro-legend strong{font-size:13px;color:#ebdbb8;font-weight:normal}
+.astro-legend small{font-size:10px;color:#b5ac94}
+.astro-dot{width:9px;height:9px;border-radius:50%;border:1px solid #fff8;display:inline-block}
+.astro-results{width:min(94%,710px)}
+.astro-results #total{display:none}
+.astro-results #values{width:100%;gap:8px;justify-content:space-around}
+.astro-results .result-die{max-width:none;padding:2px 6px}
+.astro-results .result-number{font-family:"Yu Mincho","Noto Serif CJK JP","Noto Serif JP",serif;font-size:29px;font-weight:900}
+.astro-name{font-size:11px;color:#e1d2b0;white-space:nowrap}
+@media(max-width:500px){.astro-legend small{font-size:9px}.astro-results .result-number{font-size:25px}.astro-name{font-size:10px}}
+.hexagram-reading{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:97px;width:min(94%,690px);text-align:center;padding:9px 7px;border:1px solid #c0aa7655;border-radius:5px;background:#172a22e0;color:#f1e1bc;font-size:13px;line-height:1.5;pointer-events:none}
+@media(max-width:480px){.hexagram-reading{bottom:83px;font-size:11px}}
+.iching-outcome{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:100%;max-width:840px;margin:0 auto}
+.iching-outcome .hexagram-reading{position:static;left:auto;bottom:auto;transform:none;width:100%;box-sizing:border-box;padding:10px 12px;background:#182e25;border:1px solid #b6a47665;color:#f1e1bc;font-size:14px;line-height:1.6;pointer-events:auto}
+.iching-outcome .results.astro-results{position:static;left:auto;bottom:auto;transform:none;width:100%;box-sizing:border-box;background:#162b23;border:1px solid #baa77a70;pointer-events:auto;padding:9px 12px}
+.iching-outcome .astro-results .result-number{font-size:30px}
+@media(max-width:480px){.iching-outcome{gap:5px}.iching-outcome .hexagram-reading{font-size:12px;padding:8px 6px}.iching-outcome .results.astro-results{padding:7px 5px}.iching-outcome .astro-results .result-number{font-size:25px}}
+.dice-mode{display:flex;justify-content:center;align-items:center;gap:16px;padding:12px;background:#1d332a;border:1px solid #786443;border-radius:8px}.dice-mode label{font-size:13px}.dice-mode select{background:#293f34;color:#f2e2c4;padding:9px 16px;border:1px solid #8d866f;border-radius:5px}.dice-settings[hidden],.hexagram-reading[hidden]{display:none!important}.dice-settings{grid-template-columns:repeat(5,minmax(0,1fr))}@media(max-width:700px){.dice-settings{grid-template-columns:1fr}.die-setting{justify-content:space-between}}.note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
+#failure{color:#f2c7aa;text-align:center;font-size:12px;line-height:1.6}
+@media(max-width:480px){body{padding:8px}main{gap:10px}.frame{padding:6px}#felt{height:52dvh;min-height:340px}.mode{padding:8px 11px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">TABULA SORTIUM / UNIFIED DICE LAB v0.715</div><h1 id="title">DICE LAB</h1><div class="subtitle" id="subtitle">PHYSICS OF FORTUNE</div></header><nav class="dice-mode" aria-label="ダイス体系"><label for="preset">占術の選択</label><select id="preset"><option value="normal">通常ダイス</option><option value="astro">アストロダイス</option><option value="iching">易占ダイス</option></select></nav>
+<div class="frame">
+ <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · I CHING</div><div class="corner br">THE BOOK OF CHANGES</div>
+ <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
+ </div>
+</div>
+<div class="iching-outcome">
+ <div class="hexagram-reading" id="hexagram-reading" aria-live="polite">本卦 —　·　動爻 —　·　之卦 —</div>
+ <div class="results" id="result-tiles" aria-live="polite"><div id="values"></div><div id="total" hidden></div></div>
+</div>
+<div class="status" id="status" aria-live="polite">物理エンジンを読み込み中…</div>
+<div class="force-control">
+ <label for="force">投げる強さ</label>
+ <input id="force" type="range" min="0" max="100" value="30" step="1" aria-label="投げる強さ">
+ <output id="forceValue" for="force">30 / 100</output>
+ <div class="force-range" aria-hidden="true"><span>そっと</span><span>強く</span><span>激しく</span></div>
+</div>
+<div class="dice-settings" id="dice-settings" role="group" aria-label="通常ダイス設定"></div>
+<div class="roll-actions">
+ <button type="button" id="collect" disabled>◇　ダイスを握る</button>
+ <button type="button" id="mix" disabled>⟳　混ぜ始める</button>
+ <button type="button" id="roll" disabled>◆　ダイスを振る　◆</button>
+</div>
+<div id="failure" role="alert" hidden></div>
+<p class="note"><span id="description">通常ダイス。面数・仕上げ・色を変更できます。</span>　<a href="dice-lab.html">元の通常版</a> · <a href="astro-dice-lab.html">元のアストロ版</a> · <a href="iching-dice-lab.html">元の易占版</a></p>
+</main>
+<script type="module" src="js/dice-engine.js?v=0715"></script>
+</body>
+</html>
