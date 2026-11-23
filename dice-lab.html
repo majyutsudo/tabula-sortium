@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 21</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 22</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -165,18 +165,18 @@ function finishTexture(value,color,material,dieIndex){
   for(let x=0;x<n;x++){
    const i=(y*n+x)*4,xx=x/n,yy=y/n;
    const grain=material==='wood'
-    ? Math.sin(yy*32+3.5*Math.sin(xx*11)+.75*Math.sin(yy*29+xx*17))*8
-      +Math.sin(yy*94+Math.sin(xx*21+yy*8)*4)*3.3
-      +Math.sin(yy*170+xx*17)*1.2
-    : Math.sin(xx*29+yy*5)*1.1+Math.sin(xx*87+yy*21)*.65;
+    ? Math.sin(yy*22+5.0*Math.sin(xx*6)+1.7*Math.sin(yy*13+xx*4))*21
+      +Math.sin(yy*53+Math.sin(xx*9+yy*6)*3)*9
+      +Math.sin(yy*113+xx*17)*3.7
+    : Math.sin(xx*14+yy*3)*4.5+Math.sin(xx*39+yy*9)*2.2;
    let patina=0;
    for(const a of offsets){
     patina+=Math.sin(xx*a.w*6+yy*a.w*2+a.p)*.65;
    }
    const wear= Math.max(0,1-Math.min(xx,yy,1-xx,1-yy)*15);
-   const pore=(random()-.5)*(material==='wood'?12:8);
+   const pore=(random()-.5)*(material==='wood'?17:12);
    const variation=grain+patina*(material==='wood'?1.7:1.05)+pore
-     +(material==='wood'?-3:-5)*wear;
+     +(material==='wood'?-22:-13)*wear;
    img.data[i]=Math.min(255,Math.max(0,r+variation));
    img.data[i+1]=Math.min(255,Math.max(0,g+variation*(material==='wood'?.78:1)));
    img.data[i+2]=Math.min(255,Math.max(0,b+variation*(material==='wood'?.55:.93)));
@@ -186,10 +186,10 @@ function finishTexture(value,color,material,dieIndex){
  c.putImageData(img,0,0);
  // Fine directional fibres and a handful of irregular tool marks.
  c.lineCap='round';
- for(let k=0;k<(material==='wood'?150:40);k++){
+ for(let k=0;k<(material==='wood'?240:90);k++){
   const x=random()*n,y=random()*n;
-  c.strokeStyle=material==='wood'?'rgba(43,26,16,'+(.018+random()*.035)+')':'rgba(111,83,52,'+(.018+random()*.025)+')';
-  c.lineWidth=.4+random()*1.5;
+  c.strokeStyle=material==='wood'?'rgba(43,26,16,'+(.055+random()*.075)+')':'rgba(111,83,52,'+(.035+random()*.05)+')';
+  c.lineWidth=.45+random()*2;
   c.beginPath();c.moveTo(x,y);
   if(material==='wood')c.bezierCurveTo(x+random()*6,y+12,x-3+random()*8,y+23,x+random()*4,y+30+random()*110);
   else c.lineTo(x+random()*13-6,y+random()*3-1.5);
@@ -201,22 +201,24 @@ function finishTexture(value,color,material,dieIndex){
  c.fillStyle=sideShade;c.fillRect(0,0,n,n);
  // Inset pips: a bright, cut edge plus an uneven dark recess. They look
  // excavated rather than flat printed circles, without altering physics.
- const pipR=material==='wood'?24:23;
+ const pipR=material==='wood'?25:25;
  const dark=material==='wood'?'#342013':'#514633';
  for(const [px,py] of pipGrid[value]){
   const x=n/2+px*101,y=n/2+py*101;
-  c.beginPath();c.ellipse(x,y,pipR+9,pipR+9,0,0,Math.PI*2);
-  c.fillStyle='rgba(42,25,13,.19)';c.fill();
+  // A broad incised halo makes the circular tool mark legible even when
+  // the finished die is only 40-60 screen pixels wide.
+  c.beginPath();c.ellipse(x,y,pipR+16,pipR+16,0,0,Math.PI*2);
+  c.fillStyle='rgba(42,25,13,.26)';c.fill();
   c.beginPath();c.ellipse(x+1,y+2,pipR+6,pipR+6,0,0,Math.PI*2);
-  c.strokeStyle='rgba(250,230,185,.60)';c.lineWidth=4;c.stroke();
-  c.beginPath();c.ellipse(x,y,pipR+3,pipR+3,0,0,Math.PI*2);
-  c.strokeStyle='rgba(57,33,17,.44)';c.lineWidth=3;c.stroke();
+  c.strokeStyle='rgba(250,230,185,.83)';c.lineWidth=7;c.stroke();
+  c.beginPath();c.ellipse(x,y,pipR+8,pipR+8,0,0,Math.PI*2);
+  c.strokeStyle='rgba(45,27,15,.68)';c.lineWidth=6;c.stroke();
   const indent=c.createRadialGradient(x-6,y-8,2,x,y,pipR+4);
   indent.addColorStop(0,dark);
   indent.addColorStop(.7,material==='wood'?'#4d2e18':'#5e4d38');
   indent.addColorStop(1,material==='wood'?'#7b4a25':'#88775a');
   c.fillStyle=indent;c.beginPath();c.arc(x,y,pipR,0,Math.PI*2);c.fill();
-  c.fillStyle='rgba(20,14,10,.32)';c.beginPath();c.arc(x-2,y-1,7,0,Math.PI*2);c.fill();
+  c.fillStyle='rgba(20,14,10,.45)';c.beginPath();c.arc(x-2,y-1,8,0,Math.PI*2);c.fill();
  }
  const texture=new THREE.CanvasTexture(canvas);
  texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
@@ -401,11 +403,32 @@ function numberedMesh(sides,color){
  const mesh=new THREE.Mesh(geometry,materials);
  return {mesh,solid,normals:faceNormals,values:faces.map((_,i)=>i+1)};
 }
+// RoundedBoxGeometry-style vertex shaping using the standard Three.js
+// face groups and UV maps. This avoids a new dependency and keeps the
+// numbers on their own cube faces. The collision cuboid stays unchanged.
+function wornCubeGeometry(material){
+ const segments=6;
+ const geometry=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE,segments,segments,segments);
+ const pos=geometry.getAttribute('position'),half=DICE_SIZE/2;
+ const radius=material==='wood'?.043:.076,inner=half-radius;
+ for(let i=0;i<pos.count;i++){
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  const cx=Math.max(-inner,Math.min(inner,x));
+  const cy=Math.max(-inner,Math.min(inner,y));
+  const cz=Math.max(-inner,Math.min(inner,z));
+  let dx=x-cx,dy=y-cy,dz=z-cz;
+  const len=Math.hypot(dx,dy,dz)||1;
+  pos.setXYZ(i,cx+radius*dx/len,cy+radius*dy/len,cz+radius*dz/len);
+ }
+ pos.needsUpdate=true;
+ geometry.computeVertexNormals();
+ return geometry;
+}
 function makeDie(i){
  const settings=diceSettings[i],sides=settings.sides;
  let mesh,solid=null,normals,faceNumbers;
  if(sides===6){
-  const geometry=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE);
+  const geometry=settings.material==='standard'?new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE):wornCubeGeometry(settings.material);
   const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({
    map:settings.material==='standard'?faceTexture(n,settings.color):finishTexture(n,settings.color,settings.material,i),
    roughness:settings.material==='wood'?.94:settings.material==='ivory'?.83:.47,metalness:.0
