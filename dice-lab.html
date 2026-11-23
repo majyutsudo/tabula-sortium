@@ -54,10 +54,10 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 34</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 35</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
- <div class="results" aria-live="polite"><span id="values">D6 — · D8 — · D10 — · D12 — · D20 —</span><span id="total">合計 —</span></div>
+ <div class="results" aria-live="polite"><span id="values">1：— · 2：— · 3：— · 4：— · 5：—</span><span id="total">合計 —</span></div>
  
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
  </div>
@@ -508,7 +508,7 @@ function numberTexture(value,color,sides){
 // circumscribed diameters. A many-sided die needs a larger body so
 // its smaller triangular faces can carry comparably legible numerals.
 // The D6's finished ring-and-dot design retains its established size.
-function polyScale(sides){return ({8:1.17,10:1.24,12:1.14,20:1.77})[sides]||1}
+function polyScale(sides){return ({8:1.17,10:1.24,12:1.14,20:1.68})[sides]||1}
 function numberedMesh(sides,color,material='standard'){
  const source=getSolid(sides),scale=polyScale(sides);
  const solid={vertices:source.vertices.map(v=>v.map(x=>x*scale)),faces:source.faces};
@@ -687,7 +687,7 @@ function collectDice(){
  mixCount=0;
  mixButton.textContent='⟳　混ぜ始める';
  mixButton.setAttribute('aria-pressed','false');
- values.textContent=diceSettings.map(d=>'D'+d.sides+' —').join(' · ');total.textContent='合計 —';
+ values.textContent=diceSettings.map((_,i)=>(i+1)+'：—').join(' · ');total.textContent='合計 —';
  status.textContent='IN HAND — 投げる準備ができました';
 }
 // Mix the very same 3D meshes used for the physical throw, at full size.
@@ -792,7 +792,7 @@ function render(time){
     rolling=false;button.disabled=true;collectButton.disabled=false;mixButton.disabled=true;
     lockSettings(false);
     const results=objects.map(topFace);
-    values.textContent=results.map((v,i)=>'D'+diceSettings[i].sides+' '+v).join(' · ');
+    values.textContent=results.map((v,i)=>(i+1)+'：'+v).join(' · ');
     total.textContent='合計 '+results.reduce((n,v)=>n+v,0);
     status.textContent='THE DICE HAVE FALLEN';
    }
