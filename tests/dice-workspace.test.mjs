@@ -20,7 +20,8 @@ test('independent card state stays mounted during dice mode',()=>{
  assert.match(page,/id="spread"/);
  assert.match(page,/id="instrumentItem"/);
  assert.match(adapter,/workspace\.hidden=true/);
- assert.match(adapter,/workspace\.hidden=true/);
+ assert.match(adapter,/setCardControlsInactive\(true\)/);
+ assert.match(adapter,/setCardControlsInactive\(false\)/);
  assert.match(adapter,/classList\.remove\('tabula-dice-mode'\)/);
  assert.doesNotMatch(adapter,/innerHTML|removeChild|replaceChildren/);
 });
@@ -77,4 +78,12 @@ test('dice results/settings and force move into existing TABULA slots',()=>{
  assert.match(adapter,/settingsHolder\.append\(element\)/);
  assert.match(adapter,/sourceButtons\[i\]\.click\(\)/);
  assert.match(adapter,/MutationObserver\(syncActionStates\)/);
+});
+
+test('card-only controls are inert in dice mode without altering TABULA layout',()=>{
+ const adapter=file('js/dice-workspace.js');
+ assert.match(adapter,/cardOnlyControls/);
+ assert.match(adapter,/element\.inert=inactive/);
+ assert.match(adapter,/setCardControlsInactive\(true\)/);
+ assert.match(adapter,/setCardControlsInactive\(false\)/);
 });
