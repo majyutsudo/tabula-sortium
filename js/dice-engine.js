@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0720';
+import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0721';
 
 const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
@@ -158,6 +158,7 @@ function renderSettings(){
 }
 function renderAstroColors(){
  const host=document.getElementById('astro-colors');host.replaceChildren();
+ document.getElementById('astro-dice-panel').hidden=current.id!=='astro';
  host.hidden=current.id!=='astro';if(host.hidden)return;
  const heading=document.createElement('span');heading.textContent='ダイスの色';heading.className='astro-colors-heading';host.append(heading);
  diceSettings.forEach((die,i)=>{
@@ -197,6 +198,7 @@ function switchPreset(id){
   else astroDiceColors=diceSettings.map(d=>d.color);
  }
  const colorSettings=document.getElementById('iching-colors');colorSettings.hidden=id!=='iching';
+ document.getElementById('iching-dice-panel').hidden=id!=='iching';
  document.getElementById('iching-color-scheme').value=ichingColorScheme;
  held=false;mixing=false;mixCount=0;
  document.getElementById('title').textContent=current.title;
