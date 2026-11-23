@@ -59,7 +59,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 05</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 06</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
 <div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div><div id="flightLayer" aria-hidden="true"></div></div>
 <div id="status" class="status" aria-live="polite">READY TO ROLL</div>
 <div class="throw-modes" role="group" aria-label="ダイスの投げ方">
@@ -144,10 +144,23 @@ function beginSettle(d){
  d.h=0;d.vh=0;d.vx=0;d.vy=0;
 }
 
+// Choose a point outside the table on the side opposite the drag vector.
+// The moving dice enter along the same line the user traced.
+function incomingOrigin(x,y,dx,dy,w,h,offset=SIZE*1.6){
+ let distance=Infinity;
+ if(dx>1e-6)distance=Math.min(distance,x/dx);
+ else if(dx< -1e-6)distance=Math.min(distance,(w-x)/-dx);
+ if(dy>1e-6)distance=Math.min(distance,y/dy);
+ else if(dy< -1e-6)distance=Math.min(distance,(h-y)/-dy);
+ if(!Number.isFinite(distance))distance=h;
+ return {x:x-dx*(distance+offset),y:y-dy*(distance+offset)};
+}
 function begin(options={}){
  if(rolling)return;
  const power=options.power??powerModes[selectedPower];
- const direction=options.direction??null;
+ const direction=options.direction??{x:0,y:-1};
+ const magnitude=Math.hypot(direction.x,direction.y)||1;
+ const dir={x:direction.x/magnitude,y:direction.y/magnitude};
  rolling=true;elapsed=0;previousTime=0;
  status.textContent='ROLLING…';button.disabled=true;values.textContent='—';total.textContent='—';
  const {w,h}=dimensions();
@@ -159,12 +172,15 @@ function begin(options={}){
   d.phase='incoming';d.throwPower=power;
   d.entryDelay=i*.09+rand(0,.045);
   d.flightDuration=Math.max(.35,.66-power*.075+rand(-.035,.035));
-  d.launchX=Math.max(radius,Math.min(w-radius,w*(.37+.13*i)+rand(-18,18)));
-  d.launchY=h+SIZE+rand(5,40)+i*6;
-  d.impactX=Math.max(radius,Math.min(w-radius,
-   w*(.32+.17*i)+rand(-20,20)+(direction?.x||0)*Math.min(65,power*30)));
-  d.impactY=Math.max(radius,Math.min(h-radius,
-   h*(.40+.06*i)+rand(-24,24)+(direction?.y||0)*Math.min(52,power*28)));
+  // Separate the three landing points across the throw direction.
+  const tangent={x:-dir.y,y:dir.x};
+  const spread=(i-(NUM-1)/2)*Math.min(SIZE*1.53,Math.min(w,h)*.22);
+  const centerX=w*.50+dir.x*Math.min(w*.12,power*18);
+  const centerY=h*.50+dir.y*Math.min(h*.12,power*18);
+  d.impactX=Math.max(radius,Math.min(w-radius,centerX+tangent.x*spread+rand(-13,13)));
+  d.impactY=Math.max(radius,Math.min(h-radius,centerY+tangent.y*spread+rand(-13,13)));
+  const entry=incomingOrigin(d.impactX,d.impactY,dir.x,dir.y,w,h,SIZE*1.1+rand(8,35));
+  d.launchX=entry.x;d.launchY=entry.y;
   d.flightHeight=(40+rand(8,35))*Math.max(.65,Math.min(1.8,power));
   d.x=d.launchX;d.y=d.launchY;d.h=0;d.vh=0;
   d.vx=0;d.vy=0;
@@ -204,8 +220,8 @@ function tick(time){
    d.x=d.impactX;d.y=d.impactY;
    d.h=rand(24,52)*Math.min(1.6,Math.max(.6,d.throwPower));
    d.vh=-rand(175,285);
-   d.vx=(d.impactX-d.launchX)/d.flightDuration*.65+rand(-125,125);
-   d.vy=Math.max(-275,(d.impactY-d.launchY)/d.flightDuration*.3);
+   d.vx=(d.impactX-d.launchX)/d.flightDuration*.38+rand(-75,75);
+   d.vy=(d.impactY-d.launchY)/d.flightDuration*.38+rand(-75,75);
    d.bounces=0;
   }
 
