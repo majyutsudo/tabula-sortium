@@ -31,23 +31,6 @@ button{font:inherit;cursor:pointer}
 #collect:hover{background:#30483b}#collect:disabled{opacity:.45;cursor:not-allowed}
 #mix{border:1px solid #8d866f;color:#e5d4b4;background:#263c31;min-height:54px;padding:12px 18px;border-radius:5px;font-size:15px;letter-spacing:.06em}
 #mix:hover{background:#30483b}#mix:disabled{opacity:.45;cursor:not-allowed}
-#handMix{position:absolute;z-index:6;left:50%;top:50%;width:140px;height:140px;transform:translate(-50%,-50%);pointer-events:none;display:none;place-items:center}
-#handMix.active{display:grid}
-#handMix .mix-circle{position:absolute;inset:13px;border:2px solid #c9af7b99;border-radius:50%;background:#17271f99;box-shadow:0 0 30px #101d15b0,inset 0 0 28px #c4ad7940}
-#handMix .mix-dice{position:absolute;width:29px;height:29px;display:grid;place-items:center;font:20px/1 Georgia,serif;color:#322b21;border-radius:5px;border:1px solid #fff7;box-shadow:2px 3px 7px #0008;transform-origin:62px 47px}
-#handMix .mix-dice:nth-child(2){background:#f0e3c9;left:36px;top:53px}
-#handMix .mix-dice:nth-child(3){background:#bf5143;left:66px;top:46px;color:#fff0dd}
-#handMix .mix-dice:nth-child(4){background:#597ca1;left:54px;top:74px;color:#fff0dd}
-#handMix.active .mix-circle{animation:mix-pulse .46s ease-in-out infinite alternate}
-#handMix.active .mix-dice:nth-child(2){animation:mix-one .35s ease-in-out infinite alternate}
-#handMix.active .mix-dice:nth-child(3){animation:mix-two .40s ease-in-out infinite alternate}
-#handMix.active .mix-dice:nth-child(4){animation:mix-three .32s ease-in-out infinite alternate}
-@keyframes mix-pulse{from{transform:scale(.96) rotate(-4deg)}to{transform:scale(1.06) rotate(4deg)}}
-@keyframes mix-one{from{transform:translate(-15px,-9px) rotate(-32deg)}to{transform:translate(14px,13px) rotate(55deg)}}
-@keyframes mix-two{from{transform:translate(15px,-8px) rotate(32deg)}to{transform:translate(-12px,16px) rotate(-50deg)}}
-@keyframes mix-three{from{transform:translate(-8px,13px) rotate(-20deg)}to{transform:translate(17px,-10px) rotate(38deg)}}
-@media(prefers-reduced-motion:reduce){#handMix.active .mix-circle,#handMix.active .mix-dice{animation:none}}
-
 .results{display:flex;justify-content:center;align-items:baseline;gap:20px;flex-wrap:wrap;min-height:32px;font-variant-numeric:tabular-nums}
 #values{font-size:16px;color:#d8c7a1}#total{font-size:24px;color:#edd8aa}
 .note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
@@ -57,10 +40,10 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 14</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 15</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
- <div id="handMix" aria-hidden="true"><div class="mix-circle"></div><div class="mix-dice">⚀</div><div class="mix-dice">⚄</div><div class="mix-dice">⚂</div></div>
+ 
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
  </div>
 </div>
@@ -73,7 +56,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 —</span></div>
 <div id="failure" role="alert" hidden></div>
-<p class="note">D6 × 3個。「握る」→「混ぜる」（何度でも）→「振る」の順で操作できます。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
+<p class="note">D6 × 3個。「握る」→「混ぜる」（実物と同じ3Dダイスを使用）→「振る」の順で操作できます。<br>握った状態で卓をドラッグして離すと、方向と勢いを指定できます。<a href="dice-lab-legacy.html" style="color:#c6af7b">旧実験版09</a></p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
@@ -83,14 +66,13 @@ const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
 const collectButton=document.getElementById('collect');
 const mixButton=document.getElementById('mix');
-const handMix=document.getElementById('handMix');
 const status=document.getElementById('status');
 const values=document.getElementById('values');
 const total=document.getElementById('total');
 const failure=document.getElementById('failure');
 const modes={gentle:.57,normal:1,strong:1.65};
 let strength='normal',world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
-let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0;
+let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
 const DICE_SIZE=.76,HALF=DICE_SIZE/2,FIXED_STEP=1/60;
 const up=new THREE.Vector3(0,1,0);
 const faceNormals=[
@@ -199,22 +181,38 @@ function collectDice(){
  values.textContent='—';total.textContent='合計 —';
  status.textContent='IN HAND — 投げる準備ができました';
 }
+// Mix the very same 3D meshes used for the physical throw, at full size.
+// Rapier is not stepped while the dice are held; these are visual poses only.
 function mixDice(){
  if(!ready||rolling||!held||mixing)return;
- mixing=true;mixCount++;
+ mixing=true;mixCount++;mixTime=0;
  button.disabled=true;mixButton.disabled=true;
- handMix.classList.add('active');
+ objects.forEach(({mesh})=>{mesh.visible=true;mesh.castShadow=false});
  status.textContent='MIXING… — ダイスを混ぜています';
- // This is a tactile in-hand animation only. The final result is still
- // determined exclusively by Rapier when the dice are physically thrown.
- window.setTimeout(()=>{
-  handMix.classList.remove('active');
+}
+function animateMix(dt){
+ mixTime+=dt;
+ const t=mixTime;
+ const ramp=Math.min(1,t/.18,(1.3-t)/.20);
+ const amp=Math.max(0,ramp);
+ // Orbiting, overlapping and tumbling at their normal size suggests
+ // a handful of dice being shaken; they do not collide with the cloth.
+ objects.forEach(({mesh},i)=>{
+  const angle=t*12+i*Math.PI*2/3;
+  const radius=.65+Math.sin(t*17+i*2)*.12;
+  mesh.position.set(Math.cos(angle)*radius*amp,
+    1.8+Math.sin(t*15+i*2.2)*.27*amp,
+    Math.sin(angle)*radius*.75*amp);
+  mesh.rotation.set(t*19+i*2.3,t*16+i*1.8,t*13+i*2.8);
+ });
+ if(mixTime>=1.3){
   mixing=false;
+  objects.forEach(({mesh})=>{mesh.visible=false;mesh.castShadow=true});
   if(held&&!rolling){
    button.disabled=false;mixButton.disabled=false;
    status.textContent='IN HAND — '+mixCount+'回混ぜました';
   }
- },850);
+ }
 }
 function releaseDice(options={}){
  if(!ready||rolling||!held||mixing)return;
@@ -256,6 +254,7 @@ function releaseDice(options={}){
 function render(time){
  frame=requestAnimationFrame(render);
  const dt=Math.min(.05,lastTime?(time-lastTime)/1000:0);lastTime=time;
+ if(ready&&mixing)animateMix(dt);
  if(ready&&rolling){
   accumulator=Math.min(.12,accumulator+dt);
   while(accumulator>=FIXED_STEP){world.step();accumulator-=FIXED_STEP}
