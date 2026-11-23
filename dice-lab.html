@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 22</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 23</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -107,7 +107,7 @@ forceSlider.addEventListener('input',updateForceLabel);
 updateForceLabel();
 let world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
 let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
-const DICE_SIZE=.76,HALF=DICE_SIZE/2,FIXED_STEP=1/60;
+const DICE_SIZE=1.05,HALF=DICE_SIZE/2,FIXED_STEP=1/60;
 const up=new THREE.Vector3(0,1,0);
 const faceNormals=[
  new THREE.Vector3(1,0,0),new THREE.Vector3(-1,0,0),
@@ -410,7 +410,7 @@ function wornCubeGeometry(material){
  const segments=6;
  const geometry=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE,segments,segments,segments);
  const pos=geometry.getAttribute('position'),half=DICE_SIZE/2;
- const radius=material==='wood'?.043:.076,inner=half-radius;
+ const radius=DICE_SIZE*(material==='wood'?.057:.10),inner=half-radius;
  for(let i=0;i<pos.count;i++){
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
   const cx=Math.max(-inner,Math.min(inner,x));
@@ -440,7 +440,7 @@ function makeDie(i){
  }
  mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
  const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
-  .setTranslation((i-1)*1.2,.85,0)
+  .setTranslation((i-1)*1.38,Math.max(.85,HALF+.10),0)
   .setLinearDamping(.13).setAngularDamping(.23).setCanSleep(true).setCcdEnabled(true));
  const collider=sides===6?
   RAPIER.ColliderDesc.cuboid(HALF,HALF,HALF):
@@ -548,7 +548,7 @@ function animateMix(dt){
   const phase=((t+i*.075)%period)/period;
   const tossHeight=4*phase*(1-phase); // a smooth rise and fall, 0 at catches
   const orbit=t*2.7+i*2*Math.PI/3;
-  const r=.79+Math.sin(t*4.4+i)*.07;
+  const r=1.03+Math.sin(t*4.4+i)*.09;
   const x=Math.cos(orbit)*r;
   const z=Math.sin(orbit)*r*.77;
   mesh.position.set(x,1.15+2.35*tossHeight,z);
@@ -573,7 +573,7 @@ function releaseDice(options={}){
  // with horizontal momentum aimed in the dragged direction.
  const tx=-dz,tz=dx;
  objects.forEach(({body,mesh},i)=>{
-  const offset=(i-1)*Math.min(1.05,width*.18,depth*.17);
+  const offset=(i-1)*Math.min(1.36,width*.19,depth*.21);
   // Compute EACH launch position separately. The old shared edge origin
   // could put the outer die beyond a side wall on diagonal throws.
   const ox=tx*offset,oz=tz*offset;
@@ -586,7 +586,7 @@ function releaseDice(options={}){
   reach=Math.max(.35,Math.min(reach,Math.max(width,depth)));
   const x=ox-dx*reach,z=oz-dz*reach;
   body.wakeUp();
-  body.setTranslation({x,y:random(1.7,2.5)+Math.min(.4,power*.18),z},true);
+  body.setTranslation({x,y:random(2.0,2.8)+Math.min(.4,power*.18),z},true);
   const orientation=new THREE.Quaternion().setFromEuler(new THREE.Euler(random(-3,3),random(-3,3),random(-3,3)));
   body.setRotation({x:orientation.x,y:orientation.y,z:orientation.z,w:orientation.w},true);
   body.setLinvel({x:dx*random(3.8,5.2)*power+random(-.6,.6),
