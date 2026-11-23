@@ -38,7 +38,7 @@ h1{font-size:clamp(23px,4vw,35px);font-weight:normal;letter-spacing:.22em;margin
 .face[data-face="4"]{transform:rotateY(-90deg) translateZ(47px)}
 .poly-core{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(2px 3px 2px #05080880);pointer-events:none}
 .poly-core polygon{stroke:#241d1f;stroke-opacity:.65;stroke-width:1;stroke-linejoin:round}
-.poly-core text{font-family:Georgia,serif;font-weight:700;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke-width:1.3;pointer-events:none}
+.poly-core text{font-family:Georgia,serif;font-weight:700;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke-width:.075;pointer-events:none}
 .dice-config{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .die-config{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center;background:#192820aa;border:1px solid #66705580;border-radius:7px;padding:8px}
 .die-config label{font-size:12px;color:#c7b89b;white-space:nowrap}
@@ -68,7 +68,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 08</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 09</div><h1>DICE LAB</h1><div class="subtitle">THE ROLL OF FORTUNE</div></header>
 <div class="table-frame"><div id="felt" role="button" tabindex="0" aria-label="卓を押してダイスを振る"><div class="corner tl">TABULA · DICE</div><div class="corner br">EXPERIMENTAL TABLE</div><svg id="throwGuide" class="throw-guide" aria-hidden="true"><circle id="throwStart" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -15,-7 -15,7"/></svg></div><div id="flightLayer" aria-hidden="true"></div></div>
 <div class="dice-config" aria-label="各ダイスの設定">
  <div class="die-config"><label for="sides0">ダイス 1</label><select id="sides0" class="die-sides" data-index="0" aria-label="ダイス1の面数"></select><input type="color" class="die-color" data-index="0" value="#f1e3c7" aria-label="ダイス1の色"></div>
@@ -84,7 +84,7 @@ button{font:inherit;cursor:pointer}
 </div>
 <div class="controls"><button type="button" id="roll">◆　ダイスを振る　◆</button></div>
 <div class="results" aria-live="polite"><span id="values">—</span><span id="total">合計 <b>—</b></span></div>
-<p class="note">各ダイスの面数と色を変更できます。多面体は立体モデルで表示しています。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>卓の手前から投げ込む演出の実験版です。既存のTABULAの卓は変更しません。</p>
+<p class="note">各ダイスの面数と色を変更できます。数字は各面の傾きに沿って表示し、最も手前を向いた面の数を出目としています。投げ方を選び、ボタンか卓のタップで投擲。指で弾いても振れます。<br>卓の手前から投げ込む演出の実験版です。既存のTABULAの卓は変更しません。</p>
 </main>
 <script>
 (()=>{'use strict';
@@ -121,8 +121,9 @@ function paint(d){
  d.el.style.left=d.x+'px';d.el.style.top=(d.y-d.h)+'px';
  d.shadow.style.transform='translateY('+d.h+'px) scale('+Math.max(.7,1-d.h/300)+')';
  d.shadow.style.opacity=String(Math.max(.2,1-d.h/130));
+ d.shadow.style.width=d.settings?.sides===6?'72px':'86px';
  if(d.poly)renderPoly(d);
- else d.cube.style.transform='rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
+ else d.cube.style.transform='scale(.81) rotateZ('+d.rz+'deg) rotateX('+d.rx+'deg) rotateY('+d.ry+'deg)';
 }
 
 const V=(x,y,z)=>[x,y,z],sub=(a,b)=>a.map((n,i)=>n-b[i]),dot=(a,b)=>a.reduce((n,v,i)=>n+v*b[i],0);
@@ -221,32 +222,56 @@ function shadeColor(hex,brightness){
 }
 function renderPoly(d){
  const geometry=POLYHEDRA[d.settings.sides];if(!geometry)return;
- const vertices=geometry.vertices.map(v=>rotatePoint(v,d.rx,d.ry,d.rz));
- const projected=vertices.map(([x,y,z])=>{
-  const k=4.8/(4.8-z);
-  return [47+x*42*k,47-y*42*k,z];
- });
+ const rotated=geometry.vertices.map(v=>rotatePoint(v,d.rx,d.ry,d.rz));
+ function project(v){
+  const k=4.8/(4.8-v[2]);
+  return [47+v[0]*42*k,47-v[1]*42*k];
+ }
+ const projected=rotated.map(project);
  const near=geometry.faces.map((face,i)=>{
   const normal=rotatePoint(face.normal,d.rx,d.ry,d.rz);
-  const depth=face.indices.reduce((sum,j)=>sum+vertices[j][2],0)/face.indices.length;
-  return {face,i,normal,depth};
- }).filter(item=>item.normal[2]>.012).sort((a,b)=>a.depth-b.depth);
- const svg=d.poly;
+  const centroid=rotatePoint(face.centroid,d.rx,d.ry,d.rz);
+  return {face,i,normal,centroid,depth:centroid[2]};
+ }).filter(item=>item.normal[2]>.014).sort((a,b)=>a.depth-b.depth);
+ const svg=d.poly,ink=d.el.style.getPropertyValue('--die-ink')||'#272622';
+ const top=near.reduce((best,item)=>item.normal[2]>(best?.normal[2]??-1)?item:best,null);
+ const lightDirection=norm(V(-.4,.55,.85));
  let html='';
- const textColor=d.el.style.getPropertyValue('--die-ink')||'#272622';
- for(const {face,i,normal} of near){
+ for(const item of near){
+  const {face,i,normal,centroid}=item;
   const points=face.indices.map(index=>projected[index]);
   const polygon=points.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' ');
-  const light=.52+Math.max(0,dot(normal,norm(V(-.4,.55,.85))))*.59;
+  const light=.51+Math.max(0,dot(normal,lightDirection))*.58;
   html+='<polygon points="'+polygon+'" fill="'+shadeColor(d.settings.color,light)+'"/>';
-  if(normal[2]>.34){
-   const center=[0,1].map(k=>points.reduce((a,p)=>a+p[k],0)/points.length);
-   const font=d.settings.sides===20?13:d.settings.sides===12?15:18;
-   html+='<text x="'+center[0].toFixed(2)+'" y="'+center[1].toFixed(2)+'" font-size="'+font+'" fill="'+textColor+'" stroke="'+shadeColor(d.settings.color,light)+'">'+(i+1)+'</text>';
-  }
+  // The number is engraved on a physical face, so project its tangent
+  // vectors through the SAME 3D rotation and perspective as the polygon.
+  // It is not an independently upright screen-space label.
+  if(normal[2]<.11)continue;
+  const original=geometry.vertices[face.indices[0]];
+  const axisU=norm(sub(original,face.centroid));
+  const axisV=norm(cross(face.normal,axisU));
+  const centre=project(centroid);
+  const inRadius=Math.min(...face.indices.map(index=>Math.hypot(...sub(geometry.vertices[index],face.centroid))))*.78;
+  const digitCount=String(i+1).length;
+  const size=inRadius*(digitCount===2?.53:.68);
+  const rotU=rotatePoint(axisU.map(x=>x*size),d.rx,d.ry,d.rz);
+  const rotV=rotatePoint(axisV.map(x=>x*size),d.rx,d.ry,d.rz);
+  const pU=project(centroid.map((x,k)=>x+rotU[k]));
+  const pV=project(centroid.map((x,k)=>x+rotV[k]));
+  let ux=pU[0]-centre[0],uy=pU[1]-centre[1];
+  let vx=pV[0]-centre[0],vy=pV[1]-centre[1];
+  // Rotate the number on its own face to a readable orientation,
+  // without changing the face's 3D location, slant, or perspective.
+  const det=ux*vy-uy*vx;
+  if(det>0){vx=-vx;vy=-vy}
+  const isTop=item===top,opacity=isTop?1:Math.max(.38,normal[2]*.8);
+  const matrix=[ux,uy,vx,vy,centre[0],centre[1]].map(n=>n.toFixed(3)).join(' ');
+  const backing=shadeColor(d.settings.color,light);
+  html+='<text x="0" y="0" font-size="1" opacity="'+opacity.toFixed(2)+'" transform="matrix('+matrix+')" fill="'+ink+'" stroke="'+backing+'">'+(i+1)+'</text>';
  }
  svg.innerHTML=html;
 }
+
 function applyDieSettings(d,setting){
  d.settings=setting;
  d.el.dataset.sides=String(setting.sides);
