@@ -2783,6 +2783,29 @@ const EXPORT_FORMAT='tabula-sortium';
 const fileNamePart=TabulaStorage.fileNamePart;
 function downloadJSON(payload,name){const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000)}
 function exportOne(v){if(!v)return;downloadJSON({format:EXPORT_FORMAT,version:1,kind:'reading',exportedAt:new Date().toISOString(),reading:v},'TABULA_'+fileNamePart(v.name)+'.json');setStatus('占例をJSONに書き出しました。')}
+function exportReadings(list){
+ if(!list.length){setStatus('書き出す占例を選択してください。');return}
+ downloadJSON(TabulaReadingHistory.readingBundle(list.map(v=>JSON.parse(JSON.stringify(v)))),
+  'TABULA_READINGS_'+new Date().toISOString().slice(0,10)+'.json');
+ setStatus(list.length+'件の占例を書き出しました。');
+}
+function importReadings(list){
+ if(!Array.isArray(list)||!list.length||list.length>1000||!list.every(v=>validateReading(v)
+  &&typeof v.id==='string'&&v.id.length>0&&v.id.length<=160
+  &&typeof v.name==='string'&&v.name.length<=100)){
+  alert('占例の内容または件数が不正です。取り込みは行っていません。');return;
+ }
+ const imported=list.map(v=>JSON.parse(JSON.stringify(v)));
+ const {added,duplicates,conflicts}=TabulaReadingHistory.planImport(snapshots,imported);
+ const summary='新規 '+added.length+'件 / 重複 '+duplicates.length+'件 / 同じIDで異なる内容 '+conflicts.length+'件';
+ if(!added.length){alert('追加する占例はありません。\\n'+summary+'\\n既存の占例は変更していません。');return}
+ if(snapshots.length+added.length>1000){alert('保存上限の1000件を超えるため、取り込みを中止しました。');return}
+ if(!confirm(summary+'\\n新規の占例だけを追加しますか？ 現在の卓と既存の占例は変更しません。'))return;
+ const original=snapshots;
+ snapshots=[...added,...snapshots];
+ if(!storeSnapshots()){snapshots=original;return}
+ setStatus(added.length+'件を追加しました（重複 '+duplicates.length+'件・競合 '+conflicts.length+'件はスキップ）。');
+}
 function exportCurrentReading(){
  if(!state.placed.length){setStatus('書き出すカードがありません。');return}
  if(dualBusy())return;
@@ -2876,7 +2899,7 @@ function validBackupMultiWorkspace(workspace,settings,blueprints){
 }
 function readExternalFile(file){
  if(!file)return;
- if(file.size>4*1024*1024){alert('ファイルが大きすぎます（上限4MB）。');return}
+ if(file.size>16*1024*1024){alert('ファイルが大きすぎます（上限16MB）。');return}
  const reader=new FileReader();
  reader.onerror=()=>alert('ファイルを読み込めませんでした。');
  reader.onload=()=>{
@@ -2887,19 +2910,12 @@ function readExternalFile(file){
   if(data?.kind==='spread'||(data&&!data.format&&!data.kind&&Array.isArray(data.slots))){
    importSingleSpread(data);return;
   }
-  if(data?.format!==EXPORT_FORMAT||!((data.kind==='reading'&&data.version===1)||(data.kind==='backup'&&[1,2,3].includes(data.version)))){
+  if(data?.format!==EXPORT_FORMAT||!((data.kind==='reading'&&data.version===1)||(data.kind==='readings'&&data.version===1)||(data.kind==='backup'&&[1,2,3].includes(data.version)))){
    alert('TABULA SORTIUMの対応するJSONファイルではありません。');return;
   }
-  if(data.kind==='reading'){
-   const v=data.reading;
-   if(!validateReading(v)){alert('占例の内容が不正です。');return}
-   const imported=dualClone(v);
-   imported.id='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
-   imported.name=String(imported.name||'読み込んだ占例').slice(0,100);
-   if(!confirm('占例「'+imported.name+'」を記録一覧に追加しますか？ 現在の卓は変更されません。'))return;
-   snapshots.unshift(imported);
-   if(!storeSnapshots()){snapshots.shift();return}
-   setStatus('占例を記録一覧に追加しました。');return;
+  if(data.kind==='reading'||data.kind==='readings'){
+   importReadings(data.kind==='reading'?[data.reading]:data.readings);
+   return;
   }
   const w=data.workspace,extra=data.version>=2?data.multiWorkspace:null;
   const blueprints=data.blueprintLibrary===undefined?[]:data.blueprintLibrary;
