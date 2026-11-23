@@ -126,8 +126,6 @@ function facingFace(rx,ry){
 function nextRestAngle(angle,velocity){
  const grid=90,epsilon=.001;
  if(Math.abs(velocity)<epsilon)return Math.round(angle/grid)*grid;
- const nearest=Math.round(angle/grid)*grid;
- if(Math.abs(nearest-angle)<.75)return nearest;
  return velocity>0
   ?Math.ceil((angle+epsilon)/grid)*grid
   :Math.floor((angle-epsilon)/grid)*grid;
