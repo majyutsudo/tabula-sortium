@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 26</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 27</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -226,29 +226,37 @@ function finishTexture(value,color,material,dieIndex){
  }else{
   const ring=material==='ring';
   const wood=material==='wood';
-  // For 2-6, spread the circles towards the corners and enlarge them.
-  // Outer painted radius (ringR + 12) stays within the 384px texture
-  // with roughly 15px margin, even at corner positions (±122px).
-  // A single mark can be substantially larger without competing marks.
-  const pipR=ring?(value===1?103:40):wood?25:24;
-  const spacing=ring?122:101;
+  // The reference die uses essentially the SAME ring stamp for 1–6.
+  // The previous large single pip was incorrect. Enlarge all circles
+  // uniformly while tightening the oversized decorative halo.
+  // Ring radius 54 at ±112 leaves 24px from the face edges;
+  // even the six's three rows remain distinct and legible.
+  const pipR=ring?54:wood?25:24;
+  const spacing=ring?112:101;
   for(const [px,py] of pipGrid[value]){
    const x=n/2+px*spacing,y=n/2+py*spacing;
-   // Tool-cut outer boundary, strongly dark on old wood.
-   c.beginPath();c.arc(x+2,y+3,pipR+12,0,Math.PI*2);
-   c.fillStyle=wood?'rgba(24,12,7,.8)':'rgba(52,39,23,.47)';c.fill();
-   c.beginPath();c.arc(x-1,y-2,pipR+9,0,Math.PI*2);
-   c.strokeStyle=wood?'#c89661':'#e4cf9e';c.lineWidth=7;c.stroke();
-   c.beginPath();c.arc(x,y,pipR+5,0,Math.PI*2);
-   c.strokeStyle=wood?'#26190f':'#41352b';c.lineWidth=7;c.stroke();
    if(ring){
-    // Recessed concentric-circle pip: unmistakable at small sizes.
-    c.beginPath();c.arc(x,y,pipR-5,0,Math.PI*2);
-    c.fillStyle='#ae9466';c.fill();
-    c.beginPath();c.arc(x,y,pipR-8,0,Math.PI*2);
-    c.strokeStyle='rgba(44,36,25,.82)';c.lineWidth=5;c.stroke();
-    c.beginPath();c.arc(x,y,ring&&value===1?24:14,0,Math.PI*2);c.fillStyle='#342920';c.fill();
+    // Strong ring-and-dot stamp; kept to a compact 56px outer radius
+    // so neighboring stamps do not collide on faces 5 or 6.
+    c.beginPath();c.arc(x+1,y+1,pipR+2,0,Math.PI*2);
+    c.fillStyle='rgba(56,41,26,.47)';c.fill();
+    c.beginPath();c.arc(x-1,y-2,pipR-1,0,Math.PI*2);
+    c.strokeStyle='#d8c398';c.lineWidth=6;c.stroke();
+    c.beginPath();c.arc(x,y,pipR-7,0,Math.PI*2);
+    c.strokeStyle='#403326';c.lineWidth=8;c.stroke();
+    c.beginPath();c.arc(x,y,pipR-16,0,Math.PI*2);
+    c.fillStyle='#b69a6c';c.fill();
+    c.beginPath();c.arc(x,y,pipR-20,0,Math.PI*2);
+    c.strokeStyle='rgba(62,44,27,.64)';c.lineWidth=3;c.stroke();
+    c.beginPath();c.arc(x,y,12,0,Math.PI*2);
+    c.fillStyle='#372a21';c.fill();
    }else{
+    c.beginPath();c.arc(x+2,y+3,pipR+12,0,Math.PI*2);
+    c.fillStyle=wood?'rgba(24,12,7,.8)':'rgba(52,39,23,.47)';c.fill();
+    c.beginPath();c.arc(x-1,y-2,pipR+9,0,Math.PI*2);
+    c.strokeStyle=wood?'#c89661':'#e4cf9e';c.lineWidth=7;c.stroke();
+    c.beginPath();c.arc(x,y,pipR+5,0,Math.PI*2);
+    c.strokeStyle=wood?'#26190f':'#41352b';c.lineWidth=7;c.stroke();
     const dark=wood?'#24150d':'#514431';
     const indent=c.createRadialGradient(x-7,y-8,1,x,y,pipR+4);
     indent.addColorStop(0,dark);
