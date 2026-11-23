@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>TABULA DICE v0.715 — Unified Laboratory</title>
+<title>TABULA DICE v0.716 — Unified Laboratory</title>
 <style>
 :root{color-scheme:dark;font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN",serif;background:#101815;color:#eadfc8}
 *{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% 5%,#24372e,#101815 70%);display:flex;justify-content:center;padding:clamp(9px,3vw,28px)}
@@ -72,14 +72,14 @@ button{font:inherit;cursor:pointer}
 .iching-outcome .results{position:static;left:auto;bottom:auto;transform:none;width:100%;box-sizing:border-box;background:#162b23;border:1px solid #baa77a70;pointer-events:auto;padding:9px 12px}
 .iching-outcome .astro-results .result-number{font-size:30px}
 @media(max-width:480px){.iching-outcome{gap:5px}.iching-outcome .hexagram-reading{font-size:12px;padding:8px 6px}.iching-outcome .results{padding:7px 5px}.iching-outcome .astro-results .result-number{font-size:25px}}
-.dice-mode{display:flex;justify-content:center;align-items:center;gap:16px;padding:12px;background:#1d332a;border:1px solid #786443;border-radius:8px}.dice-mode label{font-size:13px}.dice-mode select{background:#293f34;color:#f2e2c4;padding:9px 16px;border:1px solid #8d866f;border-radius:5px}.dice-settings[hidden],.hexagram-reading[hidden]{display:none!important}.dice-settings{grid-template-columns:repeat(5,minmax(0,1fr))}@media(max-width:700px){.dice-settings{grid-template-columns:1fr}.die-setting{justify-content:space-between}}.note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
+.dice-mode{display:flex;justify-content:center;align-items:center;gap:16px;padding:12px;background:#1d332a;border:1px solid #786443;border-radius:8px}.dice-mode label{font-size:13px}.dice-mode select{background:#293f34;color:#f2e2c4;padding:9px 16px;border:1px solid #8d866f;border-radius:5px}.dice-settings[hidden],.hexagram-reading[hidden]{display:none!important}.dice-settings{grid-template-columns:1fr!important;gap:7px}.dice-config-toolbar{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#ead9ae}.dice-config-toolbar button,.dice-remove{background:#263c31;color:#f0dfbe;border:1px solid #8d866f;border-radius:5px;padding:7px 11px}.dice-remove{font-size:18px;min-width:32px}.dice-config-toolbar button:disabled,.dice-remove:disabled{opacity:.35}.die-setting{justify-content:space-between;flex-wrap:wrap}.die-setting select{flex:1;max-width:200px}.astro-results .result-number{font-family:"DejaVu Sans","Noto Sans Symbols 2","Segoe UI Symbol",serif}@media(max-width:700px){.dice-settings{grid-template-columns:1fr}.die-setting{justify-content:space-between}}.note{font-size:11px;line-height:1.8;text-align:center;color:#a89e88;margin:0 0 8px}
 #failure{color:#f2c7aa;text-align:center;font-size:12px;line-height:1.6}
 @media(max-width:480px){body{padding:8px}main{gap:10px}.frame{padding:6px}#felt{height:52dvh;min-height:340px}.mode{padding:8px 11px}}
 </style>
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / UNIFIED DICE LAB v0.715</div><h1 id="title">DICE LAB</h1><div class="subtitle" id="subtitle">PHYSICS OF FORTUNE</div></header><nav class="dice-mode" aria-label="ダイス体系"><label for="preset">占術の選択</label><select id="preset"><option value="normal">通常ダイス</option><option value="astro">アストロダイス</option><option value="iching">易占ダイス</option></select></nav>
+<header><div class="eyebrow">TABULA SORTIUM / UNIFIED DICE LAB v0.716</div><h1 id="title">DICE LAB</h1><div class="subtitle" id="subtitle">PHYSICS OF FORTUNE</div></header><nav class="dice-mode" aria-label="ダイス体系"><label for="preset">占術の選択</label><select id="preset"><option value="normal">通常ダイス</option><option value="astro">アストロダイス</option><option value="iching">易占ダイス</option></select></nav>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · I CHING</div><div class="corner br">THE BOOK OF CHANGES</div>
  <svg id="throwGuide" aria-hidden="true"><circle id="startPoint" r="11"/><line id="throwLine"/><polygon id="throwArrow" points="0,0 -14,-7 -14,7"/></svg>
@@ -105,6 +105,6 @@ button{font:inherit;cursor:pointer}
 <div id="failure" role="alert" hidden></div>
 <p class="note"><span id="description">通常ダイス。面数・仕上げ・色を変更できます。</span>　<a href="dice-lab.html">元の通常版</a> · <a href="astro-dice-lab.html">元のアストロ版</a> · <a href="iching-dice-lab.html">元の易占版</a></p>
 </main>
-<script type="module" src="js/dice-engine.js?v=0715"></script>
+<script type="module" src="js/dice-engine.js?v=0716"></script>
 </body>
 </html>
