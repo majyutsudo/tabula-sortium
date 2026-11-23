@@ -2645,3 +2645,45 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) #tableManage
   grid-column:4 / 8;
  }
 }
+
+/* Reading history: controls remain readable at narrow viewport widths. */
+.records-active .record-restore,
+.records-active .reading-batch-actions{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+ gap:8px;
+ margin:10px 0;
+}
+.records-active .record-restore button,
+.records-active .reading-batch-actions button{
+ width:100%;
+ min-width:0;
+ max-width:none;
+ min-height:42px;
+ padding:8px 10px;
+ white-space:normal;
+ overflow-wrap:anywhere;
+ line-height:1.4;
+}
+.records-active .reading-batch-status{
+ display:block;
+ margin:5px 0 16px;
+ font-size:13px;
+ color:#d7c6a3;
+}
+.records-active .history-row>label.choice{flex:0 0 auto;margin-right:4px}
+@media(max-width:780px){
+ .records-active .record-restore,
+ .records-active .reading-batch-actions{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+ .records-active .record-restore button{min-height:46px}
+ .records-active .reading-batch-actions #readingExportSelected,
+ .records-active .reading-batch-actions #readingImportBatch{
+  grid-column:1/-1;
+ }
+ .records-active .history-row>div{flex-basis:calc(100% - 56px)}
+}
+@media(max-width:420px){
+ .records-active .record-restore{grid-template-columns:1fr}
+}
