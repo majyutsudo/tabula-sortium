@@ -1,51 +1,55 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-
 const file=(name)=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 
-test('TABULA retains card table while adding independent dice workspace',()=>{
+test('native dice render surface belongs to the TABULA table and shares altar',()=>{
  const page=file('table.html'),style=file('css/dice-workspace.css');
- assert.match(page,/id="stage"/);
+ assert.match(page,/id="surface"/);
+ assert.match(page,/id="cloth"[^>]*><\/div><div id="dice-felt"/);
+ assert.match(page,/id="altar"/);
+ assert.match(page,/id="diceWorkspace"/);
+ assert.doesNotMatch(page,/id="diceWorkspaceFrame"/);
+ assert.match(style,/#dice-felt\{display:none;position:absolute/);
+ assert.match(style,/body\.tabula-dice-mode #dice-felt\{display:block/);
+ assert.match(style,/#surface>\.altar/);
+});
+test('independent card state stays mounted during dice mode',()=>{
+ const page=file('table.html'),adapter=file('js/dice-workspace.js');
  assert.match(page,/id="deck"/);
  assert.match(page,/id="spread"/);
  assert.match(page,/id="instrumentItem"/);
- assert.match(page,/value="dice:normal"/);
- assert.match(page,/value="dice:astro"/);
- assert.match(page,/value="dice:iching"/);
- assert.match(page,/id="diceWorkspaceFrame"/);
- assert.match(style,/\.main>:not\(#diceWorkspace\)/);
- assert.match(style,/\.main>#diceWorkspace/);
+ assert.match(adapter,/workspace\.hidden=false/);
+ assert.match(adapter,/workspace\.hidden=true/);
+ assert.match(adapter,/classList\.remove\('tabula-dice-mode'\)/);
+ assert.doesNotMatch(adapter,/innerHTML|removeChild|replaceChildren/);
 });
-test('dice workspace adapter switches modes without disposing card objects',()=>{
- const js=file('js/dice-workspace.js');
- assert.match(js,/workspace\.hidden=false/);
- assert.match(js,/workspace\.hidden=true/);
- assert.match(js,/section\.classList\.remove/);
- assert.match(js,/dice-unified-lab\.html\?embedded=1&v=0722/);
- assert.match(js,/tabula:dice:mode/);
- assert.match(js,/tabula:dice:height/);
- assert.doesNotMatch(js,/innerHTML|removeChild|replaceChildren/);
+test('native physics module is imported once and shares the selector',()=>{
+ const adapter=file('js/dice-workspace.js');
+ const engine=file('js/dice-table-engine.js');
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0724'\)/);
+ assert.match(adapter,/window\.TabulaDiceTable\?\.setMode\(id\)/);
+ assert.match(engine,/window\.TabulaDiceTable=/);
+ assert.match(engine,/new THREE\.WebGLRenderer/);
+ assert.match(engine,/RAPIER\.World/);
+ assert.match(engine,/diceDOM\.getElementById\('felt'\)/);
+ assert.match(engine,/setIChingColors/);
+ assert.match(engine,/function renderAstroColors/);
+ assert.match(engine,/function renderSettings/);
 });
-test('embedded dice display handles parent mode messages and adapts height',()=>{
- const page=file('dice-unified-lab.html'),js=file('js/dice-engine.js');
- assert.match(page,/dice-embedded/);
- assert.match(page,/tabula:dice:height/);
- assert.match(js,/tabula:dice:mode/);
- assert.match(js,/pendingParentMode/);
- assert.match(js,/setIChingColors/);
- assert.match(js,/function renderAstroColors/);
- assert.match(js,/function renderSettings/);
+test('dice DOM IDs do not collide with card DOM IDs',()=>{
+ const html=file('table.html');
+ const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
+ assert.equal(new Set(ids).size,ids.length);
+ for(const id of ['felt','roll','collect','mix','status','preset','title','subtitle','description'])
+  assert.ok(ids.includes('dice-'+id));
 });
-
-test('returning to the same dice mode preserves its scene instead of recreating it',()=>{
- const engine=file('js/dice-engine.js');
- assert.match(engine,/current\.id!==id\)\{document\.getElementById\('preset'\)/);
-});
-test('tool groups separate cards and dice in one selector',()=>{
- const html=file('table.html'),control=file('js/dice-workspace.js');
+test('card-dice picker has a card/dice divider and no separate mode selector',()=>{
+ const html=file('table.html');
  assert.match(html,/<optgroup label="カード">/);
  assert.match(html,/<optgroup label="ダイス">/);
- assert.match(control,/MutationObserver\(syncAvailableCards\)/);
- assert.match(control,/source\.dispatchEvent\(new Event\('change'/);
+ assert.match(html,/value="dice:normal">ダイス/);
+ assert.match(html,/value="dice:astro"/);
+ assert.match(html,/value="dice:iching"/);
+ assert.doesNotMatch(html,/id="instrumentMode"/);
 });
