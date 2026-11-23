@@ -19,11 +19,14 @@ header{text-align:center}.eyebrow{font-size:10px;letter-spacing:.32em;color:#bca
 #throwGuide circle{fill:#e7ce9b44;stroke:#ead09a;stroke-width:2}
 #throwGuide polygon{fill:#ead09a}
 .status{text-align:center;color:#cabb95;font-size:11px;letter-spacing:.17em;min-height:16px}
-.control-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
-.control-row span{font-size:12px;color:#c2b495;margin-right:3px}
+.force-control{display:grid;grid-template-columns:auto minmax(130px,390px) auto;justify-content:center;align-items:center;gap:12px;padding:6px 10px}
+.force-control label{font-size:12px;color:#d5c39d;letter-spacing:.08em}
+#force{width:100%;height:28px;cursor:pointer;accent-color:#d4b67b;touch-action:pan-x}
+#force:focus-visible{outline:2px solid #e7cb92;outline-offset:2px}
+#forceValue{min-width:85px;font-size:12px;color:#e6d6b5;text-align:left;font-variant-numeric:tabular-nums}
+.force-range{display:flex;justify-content:space-between;font-size:10px;color:#a69c88;letter-spacing:.07em;margin-top:-6px;grid-column:2}
+@media(max-width:480px){.force-control{grid-template-columns:auto 1fr auto;gap:7px;padding:2px 4px}#forceValue{min-width:70px;font-size:11px}}
 button{font:inherit;cursor:pointer}
-.mode{border:1px solid #5c6d58;color:#d1c3a7;background:#21342d;border-radius:5px;padding:9px 15px;min-height:38px}
-.mode[aria-pressed=true]{background:#705d3a;color:#fff0c9;border-color:#d6ba81}
 #roll{margin:0;width:min(320px,100%);border:1px solid #dbc08a;color:#2b271b;background:linear-gradient(#e3cb99,#b99b62);min-height:54px;padding:12px 20px;border-radius:5px;font-size:17px;letter-spacing:.12em;box-shadow:0 3px 0 #6a5739,0 6px 16px #0006}
 #roll:hover{filter:brightness(1.08)}#roll:disabled{opacity:.45;cursor:not-allowed}
 .roll-actions{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
@@ -40,7 +43,7 @@ button{font:inherit;cursor:pointer}
 </head>
 <body>
 <main>
-<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 17</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
+<header><div class="eyebrow">TABULA SORTIUM / EXPERIMENT 18</div><h1>DICE LAB</h1><div class="subtitle">PHYSICS OF FORTUNE</div></header>
 <div class="frame">
  <div id="felt" tabindex="0" role="button" aria-label="ドラッグしてダイスを投げる"><div class="corner tl">TABULA · DICE</div><div class="corner br">RIGID BODY EXPERIMENT</div>
  
@@ -48,7 +51,12 @@ button{font:inherit;cursor:pointer}
  </div>
 </div>
 <div class="status" id="status" aria-live="polite">物理エンジンを読み込み中…</div>
-<div class="control-row" role="group" aria-label="投げ方"><span>投げ方</span><button type="button" class="mode" data-strength="gentle" aria-pressed="false">そっと</button><button type="button" class="mode" data-strength="normal" aria-pressed="true">普通</button><button type="button" class="mode" data-strength="strong" aria-pressed="false">勢いよく</button></div>
+<div class="force-control">
+ <label for="force">投げる強さ</label>
+ <input id="force" type="range" min="0" max="100" value="30" step="1" aria-label="投げる強さ">
+ <output id="forceValue" for="force">30 / 100</output>
+ <div class="force-range" aria-hidden="true"><span>そっと</span><span>強く</span><span>激しく</span></div>
+</div>
 <div class="roll-actions">
  <button type="button" id="collect" disabled>◇　ダイスを握る</button>
  <button type="button" id="mix" disabled>⟳　混ぜ始める</button>
@@ -70,8 +78,20 @@ const status=document.getElementById('status');
 const values=document.getElementById('values');
 const total=document.getElementById('total');
 const failure=document.getElementById('failure');
-const modes={gentle:.57,normal:1,strong:1.65};
-let strength='normal',world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
+const forceSlider=document.getElementById('force');
+const forceValue=document.getElementById('forceValue');
+// A continuous, slightly progressive curve: low values allow precision,
+// while the far end has substantially greater launch and spin energy.
+function forceMultiplier(value){return .43+3.27*Math.pow(value/100,1.34)}
+function currentForce(){return forceMultiplier(Number(forceSlider.value))}
+function updateForceLabel(){
+ const value=Number(forceSlider.value);
+ forceValue.textContent=value+' / 100';
+ forceSlider.style.background='linear-gradient(90deg,#cdb17b '+value+'%,#41594c '+value+'%)';
+}
+forceSlider.addEventListener('input',updateForceLabel);
+updateForceLabel();
+let world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
 let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
 const DICE_SIZE=.76,HALF=DICE_SIZE/2,FIXED_STEP=1/60;
 const up=new THREE.Vector3(0,1,0);
@@ -126,7 +146,7 @@ function buildWalls(){
  for(const col of wallColliders){world.removeCollider(col,true)}
  wallColliders=[];
  // Invisible high retaining walls: strong throws must not vault out of bounds.
- const wallHeight=5.0;
+ const wallHeight=6.5;
  const segments=[
  {x:0,z:depth/2+.19,hx:width/2+.3,hz:.22},
  {x:0,z:-depth/2-.19,hx:width/2+.3,hz:.22},
@@ -235,7 +255,7 @@ function releaseDice(options={}){
  const dir=options.direction||{x:0,y:-1};
  const length=Math.hypot(dir.x,dir.y)||1;
  const dx=dir.x/length,dz=dir.y/length;
- const power=options.power??modes[strength];
+ const power=currentForce()*(options.gestureBoost??1);
  // The launch is beyond the near/opposite table edge, then enters toward its centre.
  // In 3D, the edge is a low wall; spawn just inside the tabletop and above it,
  // with horizontal momentum aimed in the dragged direction.
@@ -322,10 +342,6 @@ async function init(){
   failure.textContent='3D描画または物理エンジンを読み込めませんでした。通信環境・WebGL対応を確認してください。'+(error?.message||'');
  }
 }
-document.querySelectorAll('.mode').forEach(mode=>mode.addEventListener('click',()=>{
- strength=mode.dataset.strength;
- document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-pressed',String(b===mode)));
-}));
 collectButton.addEventListener('click',collectDice);
 mixButton.addEventListener('click',mixDice);
 button.addEventListener('click',()=>releaseDice());
@@ -355,8 +371,10 @@ felt.addEventListener('pointerup',event=>{
  const distance=Math.hypot(dx,dy),elapsed=Math.max(1,performance.now()-gesture.time);
  gesture=null;guide.style.display='none';
  if(distance<25)return;
- const power=Math.max(.40,Math.min(2.2,.32+distance/165+(distance/elapsed)*.20));
- suppressClick=true;releaseDice({direction:{x:dx/distance,y:dy/distance},power});
+ // Gesture direction and speed still matter, but the analogue slider
+ // remains the primary strength control rather than being overridden.
+ const gestureBoost=Math.max(.72,Math.min(1.25,.8+distance/650+(distance/elapsed)*.08));
+ suppressClick=true;releaseDice({direction:{x:dx/distance,y:dy/distance},gestureBoost});
 });
 felt.addEventListener('pointercancel',()=>{gesture=null;guide.style.display='none'});
 felt.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}if(held)releaseDice();else collectDice()});
