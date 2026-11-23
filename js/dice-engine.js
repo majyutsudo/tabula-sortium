@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS} from './dice-presets.js?v=0717';
+import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0718';
 
 const felt=document.getElementById('felt');
 const button=document.getElementById('roll');
@@ -45,6 +45,7 @@ const pipGrid={
 const trigramNames=TRIGRAMS;
 let current=preset('normal');
 let diceSettings=current.dice;
+let ichingColorScheme='blackUpper';
 // King Wen numbers indexed [upper trigram][lower trigram] in order
 // 乾、兌、離、震、巽、坎、艮、坤.
 const kingWen=[
@@ -99,7 +100,8 @@ function showResults(results=null){
   reading.textContent='本卦 '+String.fromCodePoint(0x4dc0+h.primary-1)+' 第'+h.primary+'卦（'+trigramNames[results[0]-1]+'上'+trigramNames[results[1]-1]+'下） · '+diceSettings[2].faces[results[2]-1].name+' → 之卦 '+String.fromCodePoint(0x4dc0+h.changed-1)+' 第'+h.changed+'卦';
  }else reading.textContent='本卦 —　·　動爻 —　·　之卦 —';
 }
-function lockSettings(locked){document.getElementById('preset').disabled=locked;if(!locked&&current.id==='normal'){renderSettings();return;}document.querySelectorAll('#dice-settings input,#dice-settings select,#dice-settings button').forEach(el=>el.disabled=locked);}
+function lockSettings(locked){document.getElementById('preset').disabled=locked;if(!locked&&current.id==='normal'){document.getElementById('iching-color-scheme').disabled=false;renderSettings();return;}document.getElementById('iching-color-scheme').disabled=locked;
+ document.querySelectorAll('#dice-settings input,#dice-settings select,#dice-settings button').forEach(el=>el.disabled=locked);}
 const NORMAL_DICE_MAX=8;
 function rebuildNormalDice(){
  if(!ready)return;
@@ -151,9 +153,22 @@ function renderSettings(){
   refresh();row.append(label,sides,material,color,remove);host.append(row);
  });
 }
+function updateIChingColors(scheme){
+ if(current.id!=='iching'||!ready||rolling||mixing)return;
+ setIChingColors(diceSettings,scheme);ichingColorScheme=scheme;
+ for(let i=0;i<2;i++){
+  const visible=objects[i].mesh.visible;
+  destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=visible;
+ }
+ syncMeshes();showResults();
+ status.textContent=held?'IN HAND — 配色を変更しました':'READY TO COLLECT';
+}
 function switchPreset(id){
  if(!ready||rolling||mixing){document.getElementById('preset').value=current.id;return;}
  objects.forEach(destroyDie);objects=[];current=preset(id);diceSettings=current.dice;
+ if(id==='iching')setIChingColors(diceSettings,ichingColorScheme);
+ const colorSettings=document.getElementById('iching-colors');colorSettings.hidden=id!=='iching';
+ document.getElementById('iching-color-scheme').value=ichingColorScheme;
  held=false;mixing=false;mixCount=0;
  document.getElementById('title').textContent=current.title;
  document.getElementById('subtitle').textContent=current.subtitle;
@@ -164,6 +179,7 @@ function switchPreset(id){
  collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
 }
 document.getElementById('preset').addEventListener('change',e=>switchPreset(e.target.value));
+document.getElementById('iching-color-scheme').addEventListener('change',event=>updateIChingColors(event.target.value));
 renderSettings();showResults();
 function faceTexture(value,color){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
@@ -548,9 +564,10 @@ function ichingTexture(face,dieIndex,ink,ringRadius=null){
  // the ivory face. Keep the edge fine enough for small triangular faces.
  // On the moving-line die, only 初 is vermilion; 二・三・四・五・上
  // are black. The two trigram dice keep their respective red/black inks.
- const vermilion=dieIndex===0||(dieIndex===2&&face.glyph==='初');
+ const effectiveInk=face.ink||ink;
+ const vermilion=effectiveInk===ICHING_INKS.red;
  const dark=vermilion?'#69151b':'#141319';
- const pigment=vermilion?'#a0252b':'#29242a';
+ const pigment=effectiveInk;
  c.save();
  c.shadowColor='rgba(38,28,19,.68)';
  c.shadowBlur=Math.max(3,font*.032);
