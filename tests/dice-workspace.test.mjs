@@ -87,3 +87,14 @@ test('card-only controls are inert in dice mode without altering TABULA layout',
  assert.match(adapter,/setCardControlsInactive\(true\)/);
  assert.match(adapter,/setCardControlsInactive\(false\)/);
 });
+
+test('unavailable card buttons use muted inverted appearance only in dice mode',()=>{
+ const adapter=file('js/dice-workspace.js'),style=file('css/dice-workspace.css');
+ assert.match(adapter,/classList\.toggle\('dice-unavailable',inactive\)/);
+ assert.match(adapter,/element\.inert=inactive/);
+ assert.match(adapter,/element\.setAttribute\('aria-disabled','true'\)/);
+ assert.match(adapter,/delete element\.dataset\.dicePreviousAriaDisabled/);
+ assert.match(style,/body\.tabula-dice-mode \.dice-unavailable/);
+ assert.match(style,/filter:grayscale\(1\)!important/);
+ assert.match(style,/cursor:not-allowed!important/);
+});
