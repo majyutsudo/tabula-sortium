@@ -5629,35 +5629,36 @@ let independentDeckSelectionCustomized=false;
 function independentDeckChoices(){
  const p=$('independentDeckSelect');if(!p)return;
  const preferred=independentDeckSelectionCustomized?p.value:(settings.deckId||'builtin');
- p.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id));
+ p.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id),...DICE_TOOL_IDS.map((id,i)=>new Option(['ダイス','アストロダイス','易占ダイス'][i],id)));
  for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
  for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+'（'+TabulaDeckBlueprint.generate(d).length+'枚）',d.id));
  p.value=Array.from(p.options).some(o=>o.value===preferred)?preferred:'builtin';
  updateIndependentPool();
 }
 function updateIndependentPool(){
- const pool=$('independentDeckPool'),blueprint=blueprintFor($('independentDeckSelect').value);
- pool.disabled=!!blueprint;
- if(blueprint)pool.value='included';
+ const pool=$('independentDeckPool'),choice=$('independentDeckSelect').value,blueprint=isDiceTool(choice)?null:blueprintFor(choice);
+ pool.disabled=!!blueprint||isDiceTool(choice);
+ if(blueprint||isDiceTool(choice))pool.value='included';
 }
 $('independentDeckSelect').addEventListener('change',()=>{independentDeckSelectionCustomized=true;updateIndependentPool();});
 function independentTableWorkspace(){
- const deckId=$('independentDeckSelect').value,pool=$('independentDeckPool').value;
+ const selectedTool=$('independentDeckSelect').value,isDice=isDiceTool(selectedTool);
+  const deckId=isDice?'builtin':selectedTool,pool=$('independentDeckPool').value;
  const registered=deckLibrary.find(d=>d.id===deckId),blueprint=blueprintFor(deckId);
  const allowed=new Set(registered?registered.included:cards.map(c=>c.id));
- const idsB=blueprint?TabulaDeckBlueprint.generate(blueprint).map(c=>c.id)
+ const idsB=isDice?[]:blueprint?TabulaDeckBlueprint.generate(blueprint).map(c=>c.id)
   :TabulaCardRules.selectCards(cards,pool==='included'?'all':pool,cards.map(c=>c.id)).filter(c=>allowed.has(c.id)).map(c=>c.id);
  const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)],idsA=physical.map(c=>c.id);
- if(!idsB.length||!idsA.length||new Set(idsA).size!==idsA.length)throw Error('山札のカード構成を確認してください。');
+ if((!isDice&&!idsB.length)||!idsA.length||new Set(idsA).size!==idsA.length)throw Error('山札のカード構成を確認してください。');
  const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(idsA,idsB,{spread:settings.spread}),'table2','追加卓Ⅰ');
  const own=c=>({...c,instanceId:'A:'+c.id,sourceDeck:'A'});
  w.workspaceKind='independent';w.piles.A=state.deck.map(own);
- Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),tablePiles:(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)})),spread:settings.spread,cardSize:zoom,deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:dualClone(settings)});
+ Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),tablePiles:(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)})),spread:settings.spread,cardSize:zoom,toolId:activeToolId(),diceSnapshot:activeDiceSnapshot(),deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:dualClone(settings)});
  const extraSettings=dualClone(settings);
  extraSettings.deckId=deckId;extraSettings.pool=pool==='included'?'all':pool;
  extraSettings.reversals=reversalsForDeck(deckId,extraSettings);
- Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),deckId,pool:extraSettings.pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:extraSettings});
- w.piles.B=randomize(w.piles.B.map(c=>({...c,reversed:extraSettings.reversals?Math.random()<.5:false})));
+ Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),toolId:isDice?selectedTool:'card:'+deckId,diceSnapshot:null,deckId,pool:extraSettings.pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:extraSettings});
+ w.piles.B=isDice?[]:randomize(w.piles.B.map(c=>({...c,reversed:extraSettings.reversals?Math.random()<.5:false})));
  w.appearances={A:validAppearance(settings.deckAppearance),B:'standard'};
  w.backColors={A:settings.cardBackColor||'sepia',B:deckId===BUILTIN_PLAYING.id?playingBackPreference():registered?.backColor||'navy'};
  TabulaMultiWorkspace.validate(w);return w;
@@ -5668,7 +5669,7 @@ function beginIndependentTable(){
  try{
   const w=independentTableWorkspace();dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
   dualSession=w;dualRestoreView();dualSave();dualSwitchTable('table2');
-  setStatus('追加卓Ⅰを作成しました（山札'+w.piles.B.length+'枚）。');
+  setStatus('追加卓Ⅰを作成しました（'+(isDiceTool(w.tables.table2.toolId)?'ダイス':'山札'+w.piles.B.length+'枚')+'）。');
  }catch(e){setStatus('追加卓を作れませんでした：'+e.message)}
 }
 function isSharedTables(){return !!dualSession&&dualSession.workspaceKind==='single-shared'}
@@ -5994,7 +5995,7 @@ function dualSwitchTable(id){
  try{dualSession=TabulaMultiWorkspace.selectTable(dualSession,id);
   if(isIndependentTables())dualSession.activePile=id==='table2'?'B':'A';}
  catch(e){setStatus(e.message);dualRefreshControls();return}
- dualRestoreView();dualSave();setStatus((id==='table1'?'卓Ⅰ':'卓Ⅱ')+'へ切り替えました。');
+ dualRestoreView();dualSave();notifyTool();setStatus((id==='table1'?'メイン卓':'追加卓Ⅰ')+'へ切り替えました。');
 }
 function dualMixOrSeparate(separate){
  if(!dualSession||dualBusy())return;
