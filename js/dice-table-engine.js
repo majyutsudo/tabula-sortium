@@ -24,19 +24,14 @@ function positionFloatingLabels(){
  if(!ready||!camera||!objects.length)return;
  const rect=felt.getBoundingClientRect();
  if(!rect.width||!rect.height)return;
- // Use TABULA's existing toolbar label cycle, not another dice-only toggle.
- const mode=document.getElementById('toolbarLabelToggle')?.dataset.labelMode||
-  document.getElementById('tableLabelMode')?.value||'off';
- const position=document.getElementById('labelPlacement')?.value||'below';
+ // Use exactly the same rules as the diagram editor.
+ const {mode,position}=globalThis.TabulaDiceLabels.preferences(document);
+ const labelDice={mode:current.id,settings:diceSettings};
  objects.forEach(({body,mesh},i)=>{
   const label=diceLabelNodes[i];if(!label)return;
-  const name=String(diceSettings[i]?.userLabel||'').trim()||'ダイス'+(i+1);
-  const text=mode==='off'?'':mode==='number'?String(i+1):
-   mode==='position'?String(i+1)+' · '+name:
-   mode==='positionPlain'?name:
-   mode==='card'?name:'';
+  const text=globalThis.TabulaDiceLabels.labelFor(labelDice,i,mode);
   if(label.textContent!==text)label.textContent=text;
-  const show=current.id==='normal'&&!!text&&!held&&!rolling&&mesh.visible;
+  const show=!!text&&!held&&!rolling&&mesh.visible;
   label.hidden=!show;
   if(!show)return;
   const p=body.translation(),projected=new THREE.Vector3(p.x,p.y,p.z).project(camera);
@@ -952,7 +947,7 @@ function collectDice(){
  mixButton.disabled=false;
  button.disabled=false;
  mixCount=0;
- mixButton.textContent='⟳　混ぜ始める';
+ mixButton.textContent='⟳　混ぜる';
  mixButton.setAttribute('aria-pressed','false');
  showResults();
  status.textContent='IN HAND — 投げる準備ができました';
@@ -963,23 +958,61 @@ function collectDice(){
 // A free-running, user-controlled in-hand mixing action.
 // The full-size meshes represent dice tossed upward from an unseen palm;
 // Rapier is deliberately paused, and the final numbers are determined on throw.
-function mixDice(){
- if(!ready||rolling||!held)return;
- if(mixing){
-  mixing=false;
-  objects.forEach(({mesh})=>{mesh.visible=false;mesh.castShadow=true});
-  mixButton.textContent='⟳　もう一度混ぜる';
-  mixButton.setAttribute('aria-pressed','false');
-  button.disabled=false;
-  status.textContent='IN HAND — 混ぜ終わりました（'+mixCount+'回）';
-  emitDice();return;
- }
+function startMix(){
+ if(!ready||rolling||!held||mixing)return;
  mixing=true;mixCount++;mixTime=0;
  button.disabled=true;
- mixButton.textContent='■　混ぜるのを止める';
+ mixButton.textContent='⟳　混ぜる';
  mixButton.setAttribute('aria-pressed','true');
  objects.forEach(({mesh})=>{mesh.visible=true;mesh.castShadow=false});
- status.textContent='MIXING… — 好きなタイミングで止められます';
+ status.textContent='MIXING… — 押している間だけ混ぜます';
+}
+function stopMix(){
+ if(!mixing)return;
+ mixing=false;
+ objects.forEach(({mesh})=>{mesh.visible=false;mesh.castShadow=true});
+ mixButton.textContent='⟳　混ぜる';
+ mixButton.setAttribute('aria-pressed','false');
+ button.disabled=false;
+ status.textContent='IN HAND — 混ぜ終わりました（'+mixCount+'回）';
+ emitDice();
+}
+function bindMixHold(control){
+ if(!control)return;
+ let pointer=null,keyboard=null;
+ const endPointer=(event)=>{
+  if(pointer===null||event?.pointerId!==pointer)return;
+  pointer=null;stopMix();
+ };
+ control.addEventListener('pointerdown',event=>{
+  if(event.button!==0||!event.isPrimary||control.disabled)return;
+  event.preventDefault();
+  pointer=event.pointerId;
+  control.setPointerCapture?.(event.pointerId);
+  startMix();
+ });
+ control.addEventListener('pointerup',endPointer);
+ control.addEventListener('pointercancel',endPointer);
+ control.addEventListener('lostpointercapture',endPointer);
+ control.addEventListener('keydown',event=>{
+  if(event.key!==' '&&event.key!=='Enter')return;
+  event.preventDefault();
+  if(event.repeat||keyboard!==null||control.disabled)return;
+  keyboard=event.key;startMix();
+ });
+ control.addEventListener('keyup',event=>{
+  if(keyboard!==event.key)return;
+  event.preventDefault();keyboard=null;stopMix();
+ });
+ control.addEventListener('blur',()=>{pointer=null;keyboard=null;stopMix()});
+ // Accessibility-generated click alone cannot be held; it does not start a mix.
+ control.addEventListener('click',event=>event.preventDefault());
+ window.addEventListener('pointerup',event=>{if(pointer===event.pointerId){pointer=null;stopMix()}});
+ window.addEventListener('pointercancel',event=>{if(pointer===event.pointerId){pointer=null;stopMix()}});
+ window.addEventListener('blur',()=>{pointer=null;keyboard=null;stopMix()});
+ document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){pointer=null;keyboard=null;stopMix()}
+ });
 }
 function animateMix(dt){
  mixTime+=dt;
@@ -1106,7 +1139,8 @@ async function init(){
  }
 }
 collectButton.addEventListener('click',collectDice);
-mixButton.addEventListener('click',mixDice);
+bindMixHold(mixButton);
+bindMixHold(document.getElementById('diceQuickMix'));
 button.addEventListener('click',()=>releaseDice());
 const guide=diceDOM.getElementById('throwGuide'),startPoint=diceDOM.getElementById('startPoint'),line=diceDOM.getElementById('throwLine'),arrow=diceDOM.getElementById('throwArrow');
 let gesture=null,suppressClick=false;
