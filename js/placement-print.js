@@ -21,7 +21,7 @@ function dicePrintable(){
  svg.setAttribute('data-label-layer','front');
  svg.append(element('rect',{width:210,height:297,fill:'#ffffff'}));
  const mode=saved.mode||'normal',count=saved.results.length;
- const fields=mode==='astro'?['天体','十二宮','ハウス']:mode==='iching'?['上卦','下卦','動爻']:[];
+ const prefs=globalThis.TabulaDiceLabels.preferences(document);
  const bounds=saved.bounds||{},w=Number(bounds.width)>0?bounds.width:10,d=Number(bounds.depth)>0?bounds.depth:10;
  const poses=Array.isArray(saved.poses)?saved.poses:[];
  const shapeSize=Math.max(12,Math.min(20,120/Math.max(1,Math.ceil(Math.sqrt(count))))),half=shapeSize/2;
@@ -38,10 +38,11 @@ function dicePrintable(){
   const shown=mode==='normal'?String(result):(face?.glyph||String(result));
   const value=element('text',{x,y:y+2.2,'text-anchor':'middle','font-family':'Georgia, sans-serif','font-size':Math.min(8,shown.length>2?6:8),fill:'#201a18'},shown);
   svg.append(value);
-  const name=(mode==='normal'?(String(conf.userLabel||'').trim()||('ダイス'+(i+1))):fields[i]||('ダイス'+(i+1)));
-  svg.append(element('text',{x,y:y+half+6.6,'text-anchor':'middle','font-family':'sans-serif','font-size':4,fill:'#252525'},name));
-  const descriptor=mode==='normal'?'D'+(conf.sides||6):face?.name||'';
-  if(descriptor)svg.append(element('text',{x,y:y+half+11.2,'text-anchor':'middle','font-family':'sans-serif','font-size':3.15,fill:'#444444'},descriptor));
+  const label=globalThis.TabulaDiceLabels.labelFor(saved,i,prefs.mode);
+  if(label){
+   const labelY=prefs.position==='above'?y-half-4:prefs.position==='center'?y-half+4.2:y+half+6.6;
+   svg.append(element('text',{x,y:labelY,'text-anchor':'middle','font-family':'sans-serif','font-size':4,fill:'#252525'},label));
+  }
  }
  const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[mode]||'DICE';
  svg.append(element('text',{x:105,y:29,'text-anchor':'middle','font-family':'Georgia, serif','font-size':9,fill:'#282828'},heading));
