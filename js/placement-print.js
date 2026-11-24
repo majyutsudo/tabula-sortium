@@ -138,7 +138,8 @@ function printable(){
   const firstCard=[...svg.children].find(el=>el.localName==='g');
   for(const label of labelNodes)svg.insertBefore(label,firstCard||null);
  }else for(const label of labelNodes)svg.append(label);
- svg.append(placementHeading('CARDS'));
+ const spreadName=$('spread')?.selectedOptions[0]?.textContent.trim();
+ svg.append(placementHeading(spreadName||'CARDS'));
  return svg;
 }
 function download(svg){
