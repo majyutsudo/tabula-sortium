@@ -392,7 +392,6 @@ function faceTexture(value,color){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const c=canvas.getContext('2d');c.fillStyle=color;c.fillRect(0,0,256,256);
  const shade=c.createLinearGradient(0,0,256,256);shade.addColorStop(0,'#ffffff50');shade.addColorStop(.65,'#ffffff00');shade.addColorStop(1,'#0000003c');c.fillStyle=shade;c.fillRect(0,0,256,256);
- c.strokeStyle='#171a1990';c.lineWidth=6;c.strokeRect(7,7,242,242);
  let col=0;const hex=color.slice(1),rgb=parseInt(hex,16),r=rgb>>16&255,g=rgb>>8&255,b=rgb&255;
  col=r*.299+g*.587+b*.114;
  c.fillStyle=col<140?'#f8eed6':'#25221f';
@@ -911,8 +910,8 @@ function numberedMesh(sides,color,material='standard',astroDieIndex=0){
 function wornCubeGeometry(material){
  const segments=material==='standard'?24:6;
  const geometry=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE,segments,segments,segments);
- const pos=geometry.getAttribute('position'),half=DICE_SIZE/2;
- const radius=DICE_SIZE*(material==='wood'?.057:material==='standard'?.045:.09),inner=half-radius;
+ const pos=geometry.getAttribute('position'),normals=geometry.getAttribute('normal'),half=DICE_SIZE/2;
+ const radius=DICE_SIZE*(material==='wood'?.057:material==='standard'?.16:.09),inner=half-radius;
  for(let i=0;i<pos.count;i++){
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
   const cx=Math.max(-inner,Math.min(inner,x));
@@ -921,9 +920,12 @@ function wornCubeGeometry(material){
   let dx=x-cx,dy=y-cy,dz=z-cz;
   const len=Math.hypot(dx,dy,dz)||1;
   pos.setXYZ(i,cx+radius*dx/len,cy+radius*dy/len,cz+radius*dz/len);
+  // Smooth the transition across the separate textured faces.
+  if(material==='standard')normals.setXYZ(i,dx/len,dy/len,dz/len);
  }
  pos.needsUpdate=true;
- geometry.computeVertexNormals();
+ if(material==='standard')normals.needsUpdate=true;
+ else geometry.computeVertexNormals();
  return geometry;
 }
 function cubeFaceTexture(value,settings,dieIndex){
