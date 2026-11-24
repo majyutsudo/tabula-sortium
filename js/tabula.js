@@ -5842,6 +5842,17 @@ deckMoveHandleB.addEventListener('click',e=>{e.preventDefault();e.stopPropagatio
 function storedExtraWorkspace(){
  try{return !!localStorage.getItem(DUAL_SESSION_KEY)}catch(e){return false}
 }
+function toolLabelForTable(table){
+ const id=table?.toolId||'card:'+(table?.deckId||settings.deckId);
+ const diceNames={'dice:normal':'ダイス','dice:astro':'アストロダイス','dice:iching':'易占ダイス'};
+ if(diceNames[id])return diceNames[id];
+ const deckId=id.startsWith('card:')?id.slice(5):'builtin';
+ if(deckId==='builtin')return 'TABULA TAROT';
+ if(deckId==='simple')return 'シンプル・タロット';
+ if(deckId===BUILTIN_PLAYING.id)return 'プレイングカード';
+ if(deckId===BUILTIN_LENORMAND.id)return 'ルノルマン';
+ return deckLibrary.find(d=>d.id===deckId)?.name||TabulaDeckBlueprint.load().find(d=>d.id===deckId)?.name||'カード';
+}
 function refreshWorkspaceSwitcher(){
  const hasWorkspace=!!dualSession||storedExtraWorkspace();
  const switcher=$('workspaceSwitcher'),selector=$('workspaceTable');
@@ -5850,11 +5861,11 @@ function refreshWorkspaceSwitcher(){
  let w=dualSession;
  if(!w){try{w=JSON.parse(localStorage.getItem(DUAL_SESSION_KEY))}catch(e){}}
  const sharedOrIndependent=w?.workspaceKind==='single-shared'||w?.workspaceKind==='independent';
- const choices=[new Option(sharedOrIndependent?'メイン卓':'メイン卓（通常）','main')];
+ const choices=[new Option('メイン卓 · '+toolLabelForTable(w?.tables?.table1),'main')];
  // For ordinary additional tables, table1 *is* the main table:
  // never expose an indistinguishable duplicate native select option.
- if(!sharedOrIndependent)choices.push(new Option(w?.tables?.table1?.name||'卓Ⅰ','table1'));
- choices.push(new Option(w?.tables?.table2?.name||'追加卓Ⅰ','table2'));
+ if(!sharedOrIndependent)choices.push(new Option((w?.tables?.table1?.name||'卓Ⅰ')+' · '+toolLabelForTable(w?.tables?.table1),'table1'));
+ choices.push(new Option((w?.tables?.table2?.name||'追加卓Ⅰ')+' · '+toolLabelForTable(w?.tables?.table2),'table2'));
  const current=dualSession?(sharedOrIndependent&&dualSession.activeTable==='table1'?'main':dualSession.activeTable):'main';
  const signature=choices.map(o=>o.value+':'+o.textContent).join('|');
  if(selector.dataset.choices!==signature){
@@ -5880,7 +5891,7 @@ function refreshClothIndicators(){
  const current=dualSession?.tables?.[dualSession.activeTable];
  const currentName=current?.name||(dualSession?'現在の卓':'メイン卓');
  const tone=colors[settings.color]?.[1]||'#b69a65';
- $('tableMenuCurrent').textContent=currentName;
+ $('tableMenuCurrent').textContent=currentName+' · '+toolLabelForTable(current||{toolId:activeToolId(),deckId:settings.deckId});
  for(const id of ['tableMenuSwatch','dualClothSwatch','workspaceClothSwatch']){
   const el=$(id);if(el){el.style.backgroundColor=tone;el.title='クロス色：'+(colors[settings.color]?.[0]||'現在の色');}
  }
@@ -5939,7 +5950,7 @@ function dualRefreshControls(){
  const tableSelect=$('dualTable');
  for(const option of tableSelect.options){
   const t=dualSession.tables[option.value];
-  if(t)option.textContent=t.name||t.id;
+  if(t)option.textContent=(t.name||t.id)+' · '+toolLabelForTable(t);
  }
  tableSelect.value=dualSession.activeTable;
  const current=dualSession.tables[dualSession.activeTable];
