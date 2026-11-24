@@ -178,3 +178,40 @@ body.tabula-dice-mode #diceStrengthHolder .force-control output{
 }
 /* Remove inherited scale hints, including in case of older markup caches. */
 body.tabula-dice-mode #diceStrengthHolder .force-range{display:none!important}
+
+/* v0.730 — shared reading history now supports dice as well as cards.
+   Restore only the two applicable history buttons; retain card-only print hidden. */
+body.tabula-dice-mode .main>.table-record-actions{
+ display:flex!important;
+ align-items:center;
+ gap:10px;
+}
+body.tabula-dice-mode #quickSnapshotSave,
+body.tabula-dice-mode #quickSnapshotList{
+ display:inline-flex!important;
+ flex:1 1 0;
+ justify-content:center;
+ align-items:center;
+ opacity:1!important;
+ filter:none!important;
+ cursor:pointer!important;
+}
+body.tabula-dice-mode #printPlacement{display:none!important}
+.dice-record-board{
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ gap:9px;
+ min-height:175px;
+ color:#f2ddaf;
+ background:var(--record-cloth,#242a25);
+ text-align:center;
+}
+.dice-record-glyph{font-size:36px;line-height:1.2}
+.dice-record-name{font:14px Georgia,serif;letter-spacing:.13em}
+.dice-record-faces{font-size:22px;font-weight:600;letter-spacing:.1em}
+#registerSpreadA[hidden]{display:none!important}
+@media(max-width:600px){
+ body.tabula-dice-mode .main>.table-record-actions{gap:6px}
+}
