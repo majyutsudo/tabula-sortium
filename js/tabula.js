@@ -4820,7 +4820,8 @@ function resetLabelCyclePreferences(){
 }
 function syncToolbarLabelCycle(){
  const button=$('toolbarLabelToggle');if(!button)return;
- button.textContent=labelChoices.find(([id])=>id===labelMode)?.[1]||'カード名';
+ button.textContent=(isDiceTool(activeToolId())&&labelMode==='card'?'ダイス名':
+  labelChoices.find(([id])=>id===labelMode)?.[1])||'カード名';
  button.title='ラベル表示を切り替える（'+labelCycleModes.map(id=>labelChoices.find(x=>x[0]===id)?.[1]).join(' → ')+'）';
  button.setAttribute('aria-label',button.title);
  button.setAttribute('data-label-mode',labelMode);
