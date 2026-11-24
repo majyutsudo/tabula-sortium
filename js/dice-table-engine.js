@@ -437,11 +437,28 @@ function drawCarvedNumeral(c,value,x,y,size,maxWidth,{
  c.fillStyle=ink;c.fillText(text,0,2*scale,maxWidth);
  c.restore();
 }
-function drawIvoryGrain(c,size){
- for(let y=0;y<size;y++){
-  const wave=Math.sin(y*.075)+.45*Math.sin(y*.27);
-  c.fillStyle=wave>0?'rgba(255,247,224,'+wave*.045+')':'rgba(105,75,48,'+(-wave)*.035+')';
-  c.fillRect(0,y,size,1);
+function drawIvoryGrain(c,size,value){
+ const random=seededRandom(9307+value*137);
+ const glaze=c.createRadialGradient(size*.2,size*.16,0,size*.35,size*.32,size*.85);
+ glaze.addColorStop(0,'rgba(255,248,227,.20)');
+ glaze.addColorStop(.58,'rgba(255,241,208,.05)');
+ glaze.addColorStop(1,'rgba(118,82,48,.14)');
+ c.fillStyle=glaze;c.fillRect(0,0,size,size);
+
+ // Slightly curved layers show through the polished surface.
+ for(let layer=0;layer<10;layer++){
+  const y=(layer*.115-.10)*size;
+  const bend=(.13+random()*.08)*size;
+  for(const [offset,width,color] of [
+   [0,.032,'rgba(255,246,226,.12)'],
+   [.014,.005,'rgba(110,76,58,.19)'],
+   [.026,.003,'rgba(255,248,229,.18)']
+  ]){
+   const row=y+offset*size;
+   c.beginPath();c.moveTo(-.08*size,row+.17*size);
+   c.bezierCurveTo(size*.29,row-bend,size*.68,row-bend,size*1.08,row+.07*size);
+   c.lineWidth=size*width;c.strokeStyle=color;c.stroke();
+  }
  }
 }
 function finishTexture(value,color,material,dieIndex,numbered=false,surface=material){
@@ -473,7 +490,7 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
   }
  }
  c.putImageData(img,0,0);
- if(surface==='ivory')drawIvoryGrain(c,n);
+ if(surface==='ivory')drawIvoryGrain(c,n,value);
  // Fine directional fibres and a handful of irregular tool marks.
  c.lineCap='round';
  for(let k=0;k<(material==='wood'?240:90);k++){
@@ -691,7 +708,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
   img.data[i+3]=255;
  }
  c.putImageData(img,0,0);
- if(surface==='ivory')drawIvoryGrain(c,n);
+ if(surface==='ivory')drawIvoryGrain(c,n,value);
  // The mark must fit inside the actual polygon rather than the square
  // texture. Triangular D8/D20 faces use a narrower etched ring.
  const rad=Math.max(8,Math.min(190,ringRadius*(sides===8?.92:1)));
@@ -734,7 +751,7 @@ function numberTexture(value,color,sides,surface){
  const shade=c.createLinearGradient(0,0,256,256);
  shade.addColorStop(0,'#ffffff45');shade.addColorStop(.7,'#ffffff00');shade.addColorStop(1,'#00000039');
  c.fillStyle=shade;c.fillRect(0,0,256,256);
- if(surface==='ivory')drawIvoryGrain(c,256);
+ if(surface==='ivory')drawIvoryGrain(c,256,value);
  const rgb=parseInt(color.slice(1),16),lum=(rgb>>16&255)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
  const ink=lum<140?'#fff1d8':'#2c241f';
  const fontSize=sides===10?(value>=10?59:72):sides===20?(value>=10?76:98):(value>=10?86:112);
