@@ -5467,6 +5467,52 @@ const DECK_CAPABILITY_DEFAULTS=Object.freeze({
  simple:{appearances:['standard','pocket'],pipBackground:false,backColor:false},
  blueprint:{appearances:['standard','pocket'],pipBackground:false,backColor:false}
 });
+
+/* v0.727: the active TABLE owns one tool and its reading. */
+const TOOL_STORAGE_KEY='tabula_sortium_main_tool_v1';
+const DICE_TOOL_IDS=['dice:normal','dice:astro','dice:iching'];
+const isDiceTool=id=>DICE_TOOL_IDS.includes(id);
+let mainToolState=(()=>{try{return JSON.parse(localStorage.getItem(TOOL_STORAGE_KEY))||{id:'card:'+settings.deckId,dice:null}}catch(e){return{id:'card:'+settings.deckId,dice:null}}})();
+const activeToolTable=()=>dualSession?.tables?.[dualSession.activeTable]||null;
+const activeToolId=()=>activeToolTable()?.toolId||(!dualSession&&isDiceTool(mainToolState.id)?mainToolState.id:'card:'+settings.deckId);
+const activeDiceSnapshot=()=>activeToolTable()?.diceSnapshot||(!dualSession?mainToolState.dice:null);
+function storeMainTool(){try{localStorage.setItem(TOOL_STORAGE_KEY,JSON.stringify(mainToolState))}catch(e){setStatus('占具設定を保存できませんでした。')}}
+function notifyTool(){window.dispatchEvent(new CustomEvent('tabula:tool-context',{detail:{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}}))}
+function replaceIndependentTool(target){
+ const source=dualSession.activeTable==='table1'?'A':'B',table=activeToolTable();
+ const deckId=target.startsWith('card:')?target.slice(5):null;
+ const deck=deckId?deckLibrary.find(d=>d.id===deckId):null;
+ const blueprint=deckId?blueprintFor(deckId):null;
+ const ids=deckId?(blueprint?TabulaDeckBlueprint.generate(blueprint).map(c=>c.id):deck?deck.included.slice():cards.map(c=>c.id)):[];
+ const stock=ids.map(id=>({instanceId:source+':'+id,id,sourceDeck:source,reversed:false}));
+ dualSession.instances=[...dualSession.instances.filter(c=>c.sourceDeck!==source),...stock];
+ dualSession.piles[source]=stock;
+ Object.assign(table,{toolId:target,diceSnapshot:null,deckId:deckId||'builtin',pool:'all',placed:[],removed:[],tablePiles:[],cutStage:null,selected:null,dealCheckpoint:null,spreadDealProgress:null});
+ if(deckId)table.savedSettings={...dualClone(table.savedSettings||settings),deckId,pool:'all'};
+ TabulaMultiWorkspace.validate(dualSession);dualRestoreView();dualSave();
+}
+window.TabulaTableTools={
+ context(){return{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}},
+ saveDice(snapshot){if(!isDiceTool(activeToolId()))return;const t=activeToolTable();if(t){t.diceSnapshot=snapshot;dualSave()}else{mainToolState.dice=snapshot;storeMainTool()}},
+ updateCard(id){if(isDiceTool(activeToolId()))return;const t=activeToolTable();if(t)t.toolId='card:'+id;else{mainToolState.id='card:'+id;storeMainTool()}},
+ switchTool(target){
+  if(!(isDiceTool(target)||target.startsWith('card:')))return false;
+  const previous=activeToolId();if(previous===target)return true;
+  if(dualBusy())return false;
+  if(dualSession&&!isIndependentTables()){setStatus('共有山札・ダブルデッキはカード専用です。独立追加卓を利用してください。');return false}
+  if(isDiceTool(previous)&&window.TabulaDiceTable?.busy?.()){setStatus('投擲・混合が終了してから切り替えてください。');return false}
+  const occupied=isDiceTool(previous)?!!activeDiceSnapshot()?.results:!!(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards?.length));
+  if(occupied&&!confirm('現在の卓の配札・出目を片付けて道具を変更します。残す場合は追加卓を使用してください。続けますか？'))return false;
+  if(dualSession){try{replaceIndependentTool(target)}catch(e){setStatus('占具を変更できませんでした：'+e.message);return false}}
+  else{
+   if(target.startsWith('card:')){if(!activateDeck(target.slice(5),false))return false}
+   else initialize();
+   mainToolState={id:target,dice:null};storeMainTool();
+  }
+  notifyTool();return true;
+ },refresh:notifyTool
+};
+
 function independentTableForSource(source){
  if(!isIndependentTables())return null;
  const table=source==='B'?'table2':source==='A'?'table1':dualSession.activeTable;
