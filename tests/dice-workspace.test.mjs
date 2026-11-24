@@ -219,3 +219,44 @@ test('dice strength control is a single slider row without verbal intensity labe
  assert.doesNotMatch(html,/そっと<\/span>/);
  assert.doesNotMatch(html,/激しく<\/span>/);
 });
+
+test('dice reading data validates normal, astrological and I Ching snapshots',()=>{
+ const source=file('js/storage-format.js'),mod={};
+ new Function('globalThis',source)(mod);
+ const validate=mod.TabulaStorage.validateReading;
+ const settings=n=>({sides:n,color:'#c7b48d',surface:'ring',label:'D'+n});
+ const pose=()=>({p:{x:0,y:1,z:0},q:{x:0,y:0,z:0,w:1},visible:true});
+ const make=(mode,sides,results)=>({kind:'dice',id:'s_1',name:'テスト',time:'2026-11-24T13:00:00+09:00',
+  dice:{schema:1,mode,settings:sides.map(settings),poses:sides.map(pose),results,held:false},
+  placed:[],deck:[],removed:[],tablePiles:[]});
+ assert.equal(validate(make('normal',[6,12],[2,11])),true);
+ assert.equal(validate(make('astro',[12,12,12],[1,7,10])),true);
+ assert.equal(validate(make('iching',[8,8,6],[3,6,1])),true);
+ const invalid=make('normal',[6],[7]);assert.equal(validate(invalid),false);
+ const missing=make('astro',[12,12,12],[1,7,10]);delete missing.dice.poses;assert.equal(validate(missing),false);
+ assert.equal(validate({placed:[],deck:[]}),true);
+});
+test('history still supports both card and dice snapshot types',()=>{
+ const format={},history={};
+ new Function('globalThis',file('js/ui-format.js'))(format);
+ new Function('globalThis',file('js/reading-history.js'))(history);
+ const dice={kind:'dice',placed:[],dice:{mode:'astro',results:[1,5,10]}};
+ const card={placed:[{id:'major_00'}],spread:'one'};
+ assert.match(format.TabulaUiFormat.snapshotSummary(dice),/アストロダイス/);
+ assert.match(format.TabulaUiFormat.snapshotSummary(card),/1枚/);
+ const store={value:null,getItem(){return this.value},setItem(_,val){this.value=val}};
+ history.TabulaReadingHistory.write(store,'test',[dice,card]);
+ assert.equal(history.TabulaReadingHistory.read(store,'test').length,2);
+});
+test('dice history actions are active while card-only placement printing stays hidden',()=>{
+ const js=file('js/dice-workspace.js'),css=file('css/dice-workspace.css'),tab=file('js/tabula.js');
+ assert.doesNotMatch(js,/quickRevealAll','presetSnapToggle','quickSnapshotSave'/);
+ assert.match(css,/body\.tabula-dice-mode \.main>\.table-record-actions\{/);
+ assert.match(css,/body\.tabula-dice-mode #quickSnapshotSave,/);
+ assert.match(css,/body\.tabula-dice-mode #printPlacement\{display:none!important\}/);
+ assert.match(tab,/function diceReadingSnapshot\(/);
+ assert.match(tab,/function diceSnapshotPanel\(/);
+ assert.match(tab,/if\(v.kind==='dice'\)return diceSnapshotPanel\(v\)/);
+ assert.match(tab,/if\(v.kind==='dice'\)\{/);
+ assert.match(tab,/registerSpreadA'\)\.hidden=a\?\.kind==='dice'/);
+});
