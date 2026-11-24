@@ -416,6 +416,10 @@ function seededRandom(seed){
  let v=(seed>>>0)||1;
  return ()=>{v=(Math.imul(1664525,v)+1013904223)>>>0;return v/4294967296};
 }
+function isDarkDiceColor(color){
+ const rgb=parseInt(color.slice(1),16);
+ return ((rgb>>16&255)*.299+(rgb>>8&255)*.587+(rgb&255)*.114)<140;
+}
 function ringInk(color,lightness,alpha=1){
  const rgb=parseInt(color.slice(1),16);
  const target=lightness>0?255:0,amount=Math.abs(lightness);
@@ -741,7 +745,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  const twoDigits=value>=10;
  const fontSize=rad*(twoDigits?(sides===20?1.32:1.14):(sides===20?1.68:1.56));
  const maxWidth=rad*(twoDigits?(sides===20?1.53:1.36):1.00);
- const ink=ringInk(color,-.83);
+ const ink=isDarkDiceColor(color)?ringInk(color,.78):ringInk(color,-.83);
  drawCarvedNumeral(c,value,cx,cy,fontSize,maxWidth,{
   ink,highlight:ringInk(color,-.22,.35),shadow:ringInk(color,-.69,.72)
  });
@@ -763,8 +767,7 @@ function numberTexture(value,color,sides,surface){
  c.fillStyle=shade;c.fillRect(0,0,256,256);
  if(surface==='ivory')drawIvoryGrain(c,256,value);
  if(surface==='brass')drawBrassPatina(c,256,value);
- const rgb=parseInt(color.slice(1),16),lum=(rgb>>16&255)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
- const ink=lum<140?'#fff1d8':'#2c241f';
+ const ink=isDarkDiceColor(color)?'#fff1d8':'#2c241f';
  const fontSize=sides===10?(value>=10?59:72):sides===20?(value>=10?76:98):(value>=10?86:112);
  drawCarvedNumeral(c,value,128,128,fontSize,112,{ink});
  c.fillStyle=ink;
