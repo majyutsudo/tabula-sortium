@@ -73,7 +73,9 @@
    }
    const heading=document.getElementById('diceSetDraftTitle');
    heading.focus({preventScroll:true});
-   heading.scrollIntoView({block:'nearest',inline:'nearest'});
+   const top=setDialog.scrollTop+heading.getBoundingClientRect().top-setDialog.getBoundingClientRect().top-18;
+   const behavior=window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth';
+   setDialog.scrollTo({top,behavior});
   }catch{if(setDialog.open&&request===draftRequest)setMessage('ダイスの設定を読み込めませんでした。')}
  }
  function openSetDialog(callback=null){
