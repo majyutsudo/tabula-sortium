@@ -561,20 +561,14 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
    if(ring){
     // Strong ring-and-dot stamp; kept to a compact 56px outer radius
     // so neighboring stamps do not collide on faces 5 or 6.
-    c.beginPath();c.arc(x+1,y+1,pipR+2,0,Math.PI*2);
-    c.fillStyle=ringInk(color,-.52,.47);c.fill();
-    c.beginPath();c.arc(x,y,pipR-3,Math.PI*.06,Math.PI*.94);
-    c.strokeStyle=ringInk(color,.55,.78);c.lineWidth=6;c.stroke();
-    c.beginPath();c.arc(x,y,pipR-7,0,Math.PI*2);
-    c.strokeStyle=ringInk(color,-.69);c.lineWidth=8;c.stroke();
-    c.beginPath();c.arc(x,y,pipR-16,0,Math.PI*2);
-    c.fillStyle=ringInk(color,-.17);c.fill();
-    c.beginPath();c.arc(x,y,pipR-20,0,Math.PI*2);
-    c.strokeStyle=ringInk(color,-.62,.64);c.lineWidth=3;c.stroke();
-    c.beginPath();c.arc(x,y,12,0,Math.PI*2);
-    c.fillStyle=ringInk(color,-.88);c.fill();
-    c.beginPath();c.arc(x,y,12,Math.PI*.12,Math.PI*.88);
-    c.strokeStyle=ringInk(color,.5,.72);c.lineWidth=2.5;c.stroke();
+    c.beginPath();c.arc(x,y,pipR-6,0,Math.PI*2);
+    c.strokeStyle=ringInk(color,-.76,.94);c.lineWidth=9;c.stroke();
+    c.beginPath();c.arc(x,y,pipR-2,Math.PI*.06,Math.PI*.94);
+    c.strokeStyle=ringInk(color,.55,.82);c.lineWidth=5;c.stroke();
+    c.beginPath();c.arc(x,y,pipR-15,0,Math.PI*2);
+    c.strokeStyle=ringInk(color,.38,.75);c.lineWidth=3;c.stroke();
+    c.beginPath();c.arc(x,y,13,0,Math.PI*2);
+    c.fillStyle=ringInk(color,-.91);c.fill();
    }else{
     c.beginPath();c.arc(x+2,y+3,pipR+12,0,Math.PI*2);
     c.fillStyle=wood?'rgba(24,12,7,.8)':'rgba(52,39,23,.47)';c.fill();
