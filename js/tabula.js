@@ -3003,7 +3003,11 @@ function diceSnapshotPanel(v){
  let hex='';
  if(m==='iching'){
   const names=['乾','兌','離','震','巽','坎','艮','坤'];
+  const h=d.hexagram;
   hex='<div class="snapshot-row"><b>卦の構成</b><span>'+names[d.results[0]-1]+'上・'+names[d.results[1]-1]+'下 ／ '+['初','二','三','四','五','上'][d.results[2]-1]+'爻変</span></div>';
+  if(Number.isInteger(h?.primary)&&h.primary>=1&&h.primary<=64&&Number.isInteger(h?.changed)&&h.changed>=1&&h.changed<=64){
+   hex+='<div class="snapshot-row"><b>本卦 → 之卦</b><span>'+String.fromCodePoint(0x4dc0+h.primary-1)+' 第'+h.primary+'卦 → '+String.fromCodePoint(0x4dc0+h.changed-1)+' 第'+h.changed+'卦</span></div>';
+  }
  }
  const cloth=colors[Number.isInteger(v.settings?.color)?v.settings.color:0]?.[1]||'#171719';
  const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[m];
@@ -3051,7 +3055,7 @@ function saveSnapshotModal(){if(isDiceTool(activeToolId())){
  if(window.TabulaDiceTable?.busy?.()){setStatus('投擲が完了してから保存してください。');return}
  if(!window.TabulaDiceTable?.snapshot?.()?.results&&!activeDiceSnapshot()?.results){setStatus('保存する出目がありません。まずダイスを振ってください。');return}
  }else if(!state.placed.length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('保存する占例がありません。');return}modal('<h2>占例を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">占例を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
-function saveAndAgain(){if(captureSnapshot('')){initialize();setStatus('占例を保存し、同じ設定で新しい占いを開始しました。')}}
+function saveAndAgain(){if(captureSnapshot('')){if(isDiceTool(activeToolId())){window.TabulaDiceTable?.reset?.(activeToolId().slice(5));setStatus('ダイスの占例を保存し、新しい投擲の準備ができました。')}else{initialize();setStatus('占例を保存し、同じ設定で新しい占いを開始しました。')}}}
 const snapshotSummary=TabulaUiFormat.snapshotSummary;
 const snapshotFace=(v,p)=>v.cardNames?.[p.originalIndex]??TabulaUiFormat.snapshotFace(p,cards);
 function snapshotPanel(v){
