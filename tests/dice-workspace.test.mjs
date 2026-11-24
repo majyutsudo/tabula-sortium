@@ -260,3 +260,10 @@ test('dice history actions are active while card-only placement printing stays h
  assert.match(tab,/if\(v.kind==='dice'\)\{/);
  assert.match(tab,/registerSpreadA'\)\.hidden=a\?\.kind==='dice'/);
 });
+
+test('I Ching history preserves the original engine King Wen result',()=>{
+ const engine=file('js/dice-table-engine.js'),model=file('js/tabula.js');
+ assert.match(engine,/hexagram:current\.id==='iching'&&recordedResults\?hexagramSummary/);
+ assert.match(model,/本卦 → 之卦/);
+ assert.match(model,/String\.fromCodePoint\(0x4dc0\+h\.primary-1\)/);
+});
