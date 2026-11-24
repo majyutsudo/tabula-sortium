@@ -92,7 +92,9 @@ function showResults(results=null){
   const tile=document.createElement('div');tile.className='result-die';
   const kind=document.createElement('span');kind.className='result-kind';
   const dot=document.createElement('span');dot.className='result-swatch';dot.style.background=d.ink||d.color;
-  const label=document.createElement('span');label.textContent=d.label;kind.append(dot,label);
+  const label=document.createElement('span');
+  label.textContent=current.id==='normal'&&d.userLabel?d.userLabel+' · D'+d.sides:d.label;
+  kind.append(dot,label);
   const symbol=document.createElement('span');symbol.className='result-number';
   const face=results?d.faces?.[results[i]-1]:null;
   symbol.textContent=results?(face?.glyph===undefined?String(results[i]):current.id==='astro'&&i===1?face.glyph+'\uFE0E':face.glyph):'—';
@@ -137,6 +139,14 @@ function renderSettings(){
  diceSettings.forEach((d,i)=>{
   const row=document.createElement('div');row.className='die-setting';
   const label=document.createElement('label');label.textContent='ダイス'+(i+1);
+  const name=document.createElement('input');name.type='text';name.className='dice-custom-label';
+  name.maxLength=36;name.value=d.userLabel||'';name.placeholder='ラベル（例：過去）';
+  name.setAttribute('aria-label','ダイス'+(i+1)+'のラベル');
+  name.addEventListener('change',()=>{
+   if(rolling||mixing){name.value=d.userLabel||'';return}
+   d.userLabel=name.value.trim().slice(0,36);
+   showResults(recordedResults);emitDice();
+  });
   const sides=document.createElement('select');sides.setAttribute('aria-label','ダイス'+(i+1)+'の面数');
   for(const n of [6,8,10,12,20])sides.add(new Option('D'+n,String(n)));sides.value=String(d.sides);
   const material=document.createElement('select');material.className='material';material.setAttribute('aria-label','ダイス'+(i+1)+'の仕上げ');
@@ -160,7 +170,7 @@ function renderSettings(){
    if(!ready||rolling||mixing||diceSettings.length===1)return;
    diceSettings.splice(i,1);rebuildNormalDice();renderSettings();
   });
-  refresh();row.append(label,sides,material,color,remove);host.append(row);
+  refresh();row.append(label,name,sides,material,color,remove);host.append(row);
  });
 }
 function renderAstroColors(){
@@ -221,7 +231,11 @@ let pendingParentMode=null;
 function captureDice(){
  if(!ready)return null;
  return {schema:1,mode:current.id,
-  settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label})),
+  settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label,
+   userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''})),
+  bounds:{width,depth},displayFaces:recordedResults?diceSettings.map((d,i)=>{
+   const face=d.faces?.[recordedResults[i]-1];return face?{glyph:face.glyph,name:face.name}:null;
+  }):null,
   scheme:ichingColorScheme,colors:astroDiceColors?.slice()||null,
   poses:objects.map(({body,mesh})=>{const p=body.translation(),q=body.rotation();return {
    p:{x:p.x,y:p.y,z:p.z},q:{x:q.x,y:q.y,z:q.z,w:q.w},visible:mesh.visible
@@ -243,7 +257,7 @@ function restoreDice(saved,id){
    diceSettings=saved.settings.map(d=>({sides:[6,8,10,12,20].includes(d.sides)?d.sides:6,
     color:/^#[0-9a-f]{6}$/i.test(d.color)?d.color:'#c7b48d',
     surface:['standard','ring','ivory'].includes(d.surface)?d.surface:'standard',
-    markings:'number',label:'D'+d.sides}));
+    markings:'number',label:'D'+d.sides,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''}));
   }
   if(id==='astro'&&Array.isArray(saved.colors)&&saved.colors.length===3){
    astroDiceColors=saved.colors.slice();diceSettings.forEach((d,i)=>{if(/^#[0-9a-f]{6}$/i.test(astroDiceColors[i]))d.color=astroDiceColors[i]});
