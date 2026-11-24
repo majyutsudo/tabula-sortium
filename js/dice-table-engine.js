@@ -71,6 +71,7 @@ const faceNormals=[
  new THREE.Vector3(0,0,1),new THREE.Vector3(0,0,-1)
 ];
 const faceValues=[3,4,1,6,2,5]; // Three.js box material ordering: +X -X +Y -Y +Z -Z
+const PLAIN_PIP_SPACING=.20;
 const pipGrid={
  1:[[0,0]],2:[[-1,-1],[1,1]],3:[[-1,-1],[0,0],[1,1]],
  4:[[-1,-1],[-1,1],[1,-1],[1,1]],
@@ -404,7 +405,7 @@ function faceTexture(value,color,surface){
  col=r*.299+g*.587+b*.114;
  c.fillStyle=col<140?'#f8eed6':'#25221f';
  for(const [x,y] of pipGrid[value]){
-  c.beginPath();c.arc(128+x*68,128+y*68,16,0,Math.PI*2);c.fill();
+  c.beginPath();c.arc(128+x*256*PLAIN_PIP_SPACING,128+y*256*PLAIN_PIP_SPACING,16,0,Math.PI*2);c.fill();
  }
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
  return texture;
@@ -558,8 +559,8 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
   // For D6, the middle row shares the same large rings: keep full
   // vertical separation to prevent adjacent circles overlapping, but
   // bring both columns closer to the centre.
-  const spacingX=ring?(value===6?82:86):101;
-  const spacingY=ring?(value===6?118:86):101;
+  const spacingX=ring?(value===6?82:86):n*PLAIN_PIP_SPACING;
+  const spacingY=ring?(value===6?118:86):n*PLAIN_PIP_SPACING;
   for(const [px,py] of pipGrid[value]){
    const x=n/2+px*spacingX,y=n/2+py*spacingY;
    if(ring){
