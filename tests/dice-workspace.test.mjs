@@ -298,3 +298,14 @@ test('custom die labels are editable and retained in results, snapshots, and 2D 
  assert.match(printer,/conf\.userLabel/);
  assert.match(model,/d\.settings\[i\]\?\.userLabel/);
 });
+
+test('dice tabletop labels are driven by TABULA existing label mode and placement',()=>{
+ const engine=file('js/dice-table-engine.js'),model=file('js/tabula.js');
+ assert.match(engine,/getElementById\('toolbarLabelToggle'\)\?\.dataset\.labelMode/);
+ assert.match(engine,/getElementById\('tableLabelMode'\)\?\.value/);
+ assert.match(engine,/getElementById\('labelPlacement'\)\?\.value/);
+ assert.match(engine,/mode==='off'/);
+ assert.match(engine,/mode==='positionPlain'/);
+ assert.match(engine,/mode==='number'/);
+ assert.match(model,/isDiceTool\(activeToolId\(\)\)&&labelMode==='card'\?'ダイス名'/);
+});
