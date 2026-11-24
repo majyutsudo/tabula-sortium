@@ -739,18 +739,11 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  // texture. Triangular D8/D20 faces use a narrower etched ring.
  const rad=Math.max(8,Math.min(190,ringRadius*(sides===8?.92:1)));
  const cx=256,cy=256;
- c.beginPath();c.arc(cx+2,cy+3,rad+4,0,Math.PI*2);
- c.fillStyle=ringInk(color,-.52,.5);c.fill();
- c.beginPath();c.arc(cx,cy,rad,Math.PI*.05,Math.PI*.95);
- c.strokeStyle=ringInk(color,.58,.8);c.lineWidth=Math.max(3,rad*.085);c.stroke();
- // Keep the ring as a framing device rather than competing with
- // the numeral. A quiet pale centre gives the carved black digit contrast.
- c.beginPath();c.arc(cx,cy,rad*.80,0,Math.PI*2);
- c.strokeStyle=ringInk(color,-.69);c.lineWidth=Math.max(3,rad*.095);c.stroke();
- c.beginPath();c.arc(cx,cy,rad*.68,0,Math.PI*2);
- c.fillStyle=ringInk(color,-.14);c.fill();
- c.beginPath();c.arc(cx,cy,rad*.67,0,Math.PI*2);
- c.strokeStyle=ringInk(color,-.62,.35);c.lineWidth=Math.max(1.5,rad*.025);c.stroke();
+ // Shade only the carved groove so the face texture remains visible inside it.
+ c.beginPath();c.arc(cx,cy,rad*.82,0,Math.PI*2);
+ c.strokeStyle=ringInk(color,-.69,.84);c.lineWidth=Math.max(3,rad*.095);c.stroke();
+ c.beginPath();c.arc(cx,cy,rad*.86,Math.PI*.08,Math.PI*.92);
+ c.strokeStyle=ringInk(color,.5,.68);c.lineWidth=Math.max(1.5,rad*.042);c.stroke();
  // Previous glyphs used only 0.74–0.92 of the ring radius in font
  // size and vanished at actual tabletop scale. Give the digit most of
  // the central field, including 10, 11 and 12 on D12.
