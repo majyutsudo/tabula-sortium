@@ -79,10 +79,13 @@
  function syncActionStates(){
   proxyButtons.forEach((btn,i)=>{btn.disabled=sourceButtons[i].disabled});
   const mixing=sourceButtons[1].getAttribute('aria-pressed')==='true';
-  document.getElementById('diceQuickMixLabel').textContent=mixing?'止める':'混ぜる';
+  document.getElementById('diceQuickMixLabel').textContent='混ぜる';
+  proxyButtons[1].setAttribute('aria-pressed',String(mixing));
  }
  sourceButtons.forEach(button=>new MutationObserver(syncActionStates).observe(button,{attributes:true,attributeFilter:['disabled','aria-pressed']}));
- proxyButtons.forEach((button,i)=>button.addEventListener('click',()=>sourceButtons[i].click()));
+ proxyButtons.forEach((button,i)=>{
+  if(i!==1)button.addEventListener('click',()=>sourceButtons[i].click());
+ });
  syncActionStates();
  const settingsButton=document.getElementById('diceQuickSettings');
  settingsButton.addEventListener('click',()=>{
@@ -112,7 +115,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0731').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0732').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-failure').hidden=false;
    document.getElementById('dice-failure').textContent='ダイスの読み込みに失敗しました：'+err.message;
