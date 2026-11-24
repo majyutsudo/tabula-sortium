@@ -5479,17 +5479,18 @@ const activeDiceSnapshot=()=>activeToolTable()?.diceSnapshot||(!dualSession?main
 function storeMainTool(){try{localStorage.setItem(TOOL_STORAGE_KEY,JSON.stringify(mainToolState))}catch(e){setStatus('占具設定を保存できませんでした。')}}
 function notifyTool(){window.dispatchEvent(new CustomEvent('tabula:tool-context',{detail:{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}}))}
 function replaceIndependentTool(target){
- const source=dualSession.activeTable==='table1'?'A':'B',table=activeToolTable();
+ const candidate=dualClone(dualSession);
+ const source=candidate.activeTable==='table1'?'A':'B',table=candidate.tables[candidate.activeTable];
  const deckId=target.startsWith('card:')?target.slice(5):null;
  const deck=deckId?deckLibrary.find(d=>d.id===deckId):null;
  const blueprint=deckId?blueprintFor(deckId):null;
  const ids=deckId?(blueprint?TabulaDeckBlueprint.generate(blueprint).map(c=>c.id):deck?deck.included.slice():cards.map(c=>c.id)):[];
  const stock=ids.map(id=>({instanceId:source+':'+id,id,sourceDeck:source,reversed:false}));
- dualSession.instances=[...dualSession.instances.filter(c=>c.sourceDeck!==source),...stock];
- dualSession.piles[source]=stock;
+ candidate.instances=[...candidate.instances.filter(c=>c.sourceDeck!==source),...stock];
+ candidate.piles[source]=stock;
  Object.assign(table,{toolId:target,diceSnapshot:null,deckId:deckId||'builtin',pool:'all',placed:[],removed:[],tablePiles:[],cutStage:null,selected:null,dealCheckpoint:null,spreadDealProgress:null});
  if(deckId)table.savedSettings={...dualClone(table.savedSettings||settings),deckId,pool:'all'};
- TabulaMultiWorkspace.validate(dualSession);dualRestoreView();dualSave();
+ TabulaMultiWorkspace.validate(candidate);dualSession=candidate;dualRestoreView();dualSave();
 }
 window.TabulaTableTools={
  context(){return{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}},
@@ -5991,6 +5992,8 @@ function dualSwitchPile(id){
 }
 function dualSwitchTable(id){
  if(!dualSession||dualBusy()||id===dualSession.activeTable)return;
+ if(isDiceTool(activeToolId())&&window.TabulaDiceTable?.busy?.()){setStatus('ダイスの投擲・混合が終わってから卓を切り替えてください。');return}
+ if(isDiceTool(activeToolId()))window.TabulaTableTools?.saveDice(window.TabulaDiceTable?.snapshot?.());
  dualSave();
  try{dualSession=TabulaMultiWorkspace.selectTable(dualSession,id);
   if(isIndependentTables())dualSession.activePile=id==='table2'?'B':'A';}
@@ -6048,7 +6051,7 @@ function dualToggle(){
   dualSession.backColors={...DUAL_BACK_DEFAULTS,...(dualSession.backColors||{})};
   dualSession.appearances={A:'standard',B:'standard',...(dualSession.appearances||{})};
   TabulaMultiWorkspace.validate(dualSession);
-  dualRestoreView();dualSave();
+  dualRestoreView();dualSave();notifyTool();
   setStatus('ダブルデッキモードを開始しました。');
  }catch(e){dualSession=null;dualSingleBackup=null;setStatus('ダブルデッキの開始に失敗しました：'+e.message)}
 }
@@ -6107,10 +6110,13 @@ $('dualClear').onclick=()=>{
    const old=dualSingleBackup;
    if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
   }
+  if(isSharedTables()||isIndependentTables()){
+   mainToolState={id:dualSession.tables.table1.toolId||'card:'+settings.deckId,dice:dualSession.tables.table1.diceSnapshot||null};storeMainTool();
+  }
   dualSession=null;dualSingleBackup=null;
  }
  try{localStorage.removeItem(DUAL_SESSION_KEY)}catch(e){setStatus('追加卓を片付けられませんでした：'+e.message);return}
- sync();render();saveLocal();dualRefreshControls();
+ sync();render();saveLocal();dualRefreshControls();notifyTool();
  setStatus('追加卓を片付けました。');
 };
 $('workspaceTable').onchange=e=>{
