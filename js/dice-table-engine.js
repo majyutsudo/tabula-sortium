@@ -65,7 +65,7 @@ updateForceLabel();
 let world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
 let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
 const BASE_DICE_SCALE=0.56,FIXED_STEP=1/60;
-const MIN_DICE_SIZE=100,MAX_DICE_SIZE=200,DEFAULT_DICE_SIZE=200;
+const MIN_DICE_SIZE=100,MAX_DICE_SIZE=200,DEFAULT_DICE_SIZE=160;
 const STANDARD_DICE_SCALE=BASE_DICE_SCALE*DEFAULT_DICE_SIZE/100;
 let diceScale=STANDARD_DICE_SCALE;
 const diceSizePercent=()=>Math.round(diceScale/BASE_DICE_SCALE*100);

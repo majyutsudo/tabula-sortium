@@ -31,7 +31,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0783'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0784'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -448,11 +448,11 @@ test('dice size changes retain the current snapshot and respect limits and lock 
  const change=(size,delta,reset=false,rolling=false)=>build(true,rolling,false,false,()=>size,()=>saved,(snapshot,id,next)=>{
   assert.equal(snapshot,saved);
   calls.push([id,next]);
- },()=>{}, {id:'normal'},{},100,200,200)(delta,reset);
+ },()=>{}, {id:'normal'},{},100,200,160)(delta,reset);
  change(200,-20);
  change(110,-20);
  change(100,-20);
  change(120,0,true);
  change(160,-20,false,true);
- assert.deepEqual(calls,[['normal',180],['normal',100],['normal',200]]);
+ assert.deepEqual(calls,[['normal',180],['normal',100],['normal',160]]);
 });
