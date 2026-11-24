@@ -1,5 +1,5 @@
-import {numberNotes, astroPrompts} from './dice-reading-notes.js?v=0766';
-import {numbers, astro, trigrams, hexagramGuides} from './dice-meanings.js?v=0764';
+import {numberNotes, astroKeywords} from './dice-reading-notes.js?v=0767';
+import {astro, trigrams, hexagramGuides} from './dice-meanings.js?v=0767';
 import {lineGuides} from './zhouyi-line-guides.js?v=0764';
 import {statementGuides} from './zhouyi-statement-guides.js?v=0764';
 import {hexagrams} from './zhouyi-text.js?v=0764';
@@ -100,12 +100,9 @@ export function faceDetail(mode, index, value, die, figure, primary, changed, li
  if(mode==='normal'){
   const label=die.userLabel?die.userLabel+' · D'+die.sides:'D'+die.sides;
   const node=detail(label,String(value),figure);
-  const [history,symbolism]=numbers[value-1];
-  section(node,'歴史・文化の用例',history);
-  section(node,'象徴・思想との関わり',symbolism);
   const [symbols,light,shadow]=numberNotes[value-1];
-  section(node,'数の象徴',symbols);
-  section(node,'占いのキーワード','光 · '+light);
+  node.append(element('p',symbols));
+  section(node,'キーワード','光 · '+light);
   node.append(element('p','闇 · '+shadow));
   const citation=numberReferences[value];
   if(citation)reference(node,...citation);
@@ -113,9 +110,8 @@ export function faceDetail(mode, index, value, die, figure, primary, changed, li
  }
  if(mode==='astro'){
   const node=detail('アストロダイス · '+die.label,face.name,figure);
-  section(node,'基本の意味（現代西洋占星術）',astro[index][value-1]);
-  const roles=['何が働くか','どのように表れるか','どの領域に表れるか'];
-  section(node,'読みの手がかり · '+roles[index],astroPrompts[index][value-1]);
+  section(node,'象意（現代西洋占星術）',astro[index][value-1]);
+  section(node,'キーワード',astroKeywords[index][value-1]);
   return node;
  }
  if(index<2){
