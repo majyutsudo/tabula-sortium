@@ -79,6 +79,9 @@ body.tabula-dice-mode .main>.table-shortcuts.dice-quick-actions{display:grid!imp
 #diceResultsHolder .results{display:flex;align-items:center;gap:8px;box-sizing:border-box;min-height:104px}
 #diceResultsHolder #dice-values{display:flex;flex:1;justify-content:space-around;flex-wrap:wrap;gap:5px}
 #diceResultsHolder .result-die{display:flex;flex-direction:column;align-items:center;gap:3px}
+#diceResultsHolder .hexagram-reading:not([hidden]) + .results .result-die{
+ box-sizing:border-box;width:94px;
+}
 #diceResultsHolder .result-kind{font-size:11px;display:flex;align-items:center;gap:4px}
 #diceResultsHolder .result-swatch{display:block;width:9px;height:9px;border-radius:50%}
 #diceResultsHolder .result-number{font-size:25px;font-weight:bold}
