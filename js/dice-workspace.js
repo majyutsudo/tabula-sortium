@@ -89,13 +89,13 @@
  });
  let cardResultsOpen=false;
  const resultsButton=document.getElementById('diceQuickResults');
- function toggleDiceResults(){
-  cardResults.hidden=!cardResults.hidden;
-  const opened=!cardResults.hidden;
-  resultToggle.setAttribute('aria-expanded',String(opened));
-  resultToggle.textContent=opened?'結果を閉じる ▴':'結果を表示 ▾';
-  resultsButton.setAttribute('aria-pressed',String(opened));
+ function setDiceResultsOpen(open){
+  cardResults.hidden=!open;
+  resultToggle.setAttribute('aria-expanded',String(open));
+  resultToggle.textContent=open?'結果を閉じる ▴':'結果を表示 ▾';
+  resultsButton.setAttribute('aria-pressed',String(open));
  }
+ function toggleDiceResults(){setDiceResultsOpen(cardResults.hidden)}
  resultsButton.addEventListener('click',toggleDiceResults);
  resultToggle.addEventListener('click',event=>{
   if(!document.body.classList.contains('tabula-dice-mode'))return;
@@ -144,10 +144,9 @@
   document.body.classList.add('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=true;diceActions.hidden=false;
   setCardControlsInactive(true);
-  cardResults.hidden=true;
-  resultsButton.setAttribute('aria-pressed','false');
-  resultToggle.setAttribute('aria-expanded','false');
-  resultToggle.textContent='結果を表示 ▾';
+  // Dice outcomes are primary information: open immediately on entering
+  // a dice table; the five-button RESULTS action still toggles the panel.
+  setDiceResultsOpen(true);
   section.classList.remove('is-collapsed');
   const toggle=section.querySelector('.section-toggle');
   if(toggle)toggle.setAttribute('aria-expanded','true');
