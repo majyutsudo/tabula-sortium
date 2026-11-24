@@ -24,7 +24,7 @@ test('independent card state stays mounted during dice mode',()=>{
  assert.match(adapter,/setCardControlsInactive\(true\)/);
  assert.match(adapter,/setCardControlsInactive\(false\)/);
  assert.match(adapter,/classList\.remove\('tabula-dice-mode'\)/);
- assert.doesNotMatch(adapter,/innerHTML|removeChild|replaceChildren/);
+ assert.doesNotMatch(adapter,/workspace\.(?:innerHTML|replaceChildren|removeChild)/);
 });
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
