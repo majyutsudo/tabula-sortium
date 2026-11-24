@@ -98,7 +98,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0725').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0727').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-failure').hidden=false;
    document.getElementById('dice-failure').textContent='ダイスの読み込みに失敗しました：'+err.message;
@@ -128,7 +128,7 @@
   lastCardId=source.value;
   requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));
  }
- function switchToDice(id){
+ function switchToDice(id,snapshot=null){
   if(!document.body.classList.contains('tabula-dice-mode'))cardResultsOpen=!cardResults.hidden;
   document.body.classList.add('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=true;diceActions.hidden=false;
@@ -142,22 +142,38 @@
   if(toggle)toggle.setAttribute('aria-expanded','true');
   diceSelect.value=id;
   loadEngine().then(()=>{
-   window.TabulaDiceTable?.setMode(id);
+   window.TabulaDiceTable?.restore(snapshot,id);
    requestAnimationFrame(()=>window.TabulaDiceTable?.resize());
    syncActionStates();
   }).catch(()=>{});
  }
+ function applyCurrentTable(detail){
+  const current=detail||window.TabulaTableTools?.context?.();
+  if(!current)return;
+  if(![...picker.options].some(option=>option.value===current.id))syncAvailableCards();
+  picker.value=current.id;
+  if(current.id.startsWith('dice:'))switchToDice(current.id.slice(5),current.dice);
+  else switchToCard(current.id.slice(5));
+ }
  picker.addEventListener('change',()=>{
-  const [kind,id]=picker.value.split(':');
-  if(kind==='dice'&&diceModes.has(id))switchToDice(id);
-  else if(kind==='card')switchToCard(id);
+  const selected=picker.value;
+  const bridge=window.TabulaTableTools;
+  if(!bridge?.switchTool(selected)){
+   picker.value=bridge?.context()?.id||'card:'+source.value;
+   return;
+  }
+  // The table model emits tabula:tool-context after the transition.
  });
+ window.addEventListener('tabula:tool-context',event=>applyCurrentTable(event.detail));
  source.addEventListener('change',()=>{
-  lastCardId=source.value;
-  if(!document.body.classList.contains('tabula-dice-mode'))picker.value='card:'+lastCardId;
+  if(!document.body.classList.contains('tabula-dice-mode')){
+   window.TabulaTableTools?.updateCard(source.value);
+   picker.value='card:'+source.value;
+  }
  });
  window.addEventListener('resize',()=>{
   if(document.body.classList.contains('tabula-dice-mode'))window.TabulaDiceTable?.resize();
  });
  syncAvailableCards();
+ applyCurrentTable();
 })();
