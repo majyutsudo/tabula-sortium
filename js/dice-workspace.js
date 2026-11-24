@@ -24,7 +24,7 @@
  // Leave card-only functions in their usual positions, but prevent editing
  // the preserved card session while the user is working with dice.
  const cardOnlyControls=[
-  ...['tableUndo','zoomOut','zoomReset','zoomIn','newSessionStandalone','cardGalleryOpen','spreadNotebook','toolbarDeckPicker','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle','quickSnapshotSave','quickSnapshotList','printPlacement'].map(id=>document.getElementById(id)).filter(Boolean)
+  ...['tableUndo','zoomOut','zoomReset','zoomIn','newSessionStandalone','cardGalleryOpen','spreadNotebook','toolbarDeckPicker','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle','printPlacement'].map(id=>document.getElementById(id)).filter(Boolean)
  ];
  function setCardControlsInactive(inactive){
   cardOnlyControls.forEach(element=>{
