@@ -181,7 +181,7 @@ function renderAstroColors(){
    const wasVisible=objects[i].mesh.visible;
    destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=wasVisible;
    syncMeshes();showResults();
-   status.textContent=held?'IN HAND — 色を変更しました':'READY TO COLLECT';
+   status.textContent=held?'IN HAND — 色を変更しました':'READY TO COLLECT';emitDice();
   });
   label.append(text,input);host.append(label);
  });
@@ -194,7 +194,7 @@ function updateIChingColors(scheme){
   destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=visible;
  }
  syncMeshes();showResults();
- status.textContent=held?'IN HAND — 配色を変更しました':'READY TO COLLECT';
+ status.textContent=held?'IN HAND — 配色を変更しました':'READY TO COLLECT';emitDice();
 }
 function switchPreset(id){
  if(!ready||rolling||mixing){diceDOM.getElementById('preset').value=current.id;return;}
@@ -901,6 +901,7 @@ function collectDice(){
  mixButton.setAttribute('aria-pressed','false');
  showResults();
  status.textContent='IN HAND — 投げる準備ができました';
+ emitDice();
 }
 // Mix the very same 3D meshes used for the physical throw, at full size.
 // Rapier is not stepped while the dice are held; these are visual poses only.
@@ -916,7 +917,7 @@ function mixDice(){
   mixButton.setAttribute('aria-pressed','false');
   button.disabled=false;
   status.textContent='IN HAND — 混ぜ終わりました（'+mixCount+'回）';
-  return;
+  emitDice();return;
  }
  mixing=true;mixCount++;mixTime=0;
  button.disabled=true;
