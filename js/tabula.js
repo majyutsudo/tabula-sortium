@@ -5640,6 +5640,7 @@ function updateIndependentPool(){
  const pool=$('independentDeckPool'),choice=$('independentDeckSelect').value,blueprint=isDiceTool(choice)?null:blueprintFor(choice);
  pool.disabled=!!blueprint||isDiceTool(choice);
  if(blueprint||isDiceTool(choice))pool.value='included';
+ pool.closest('label').hidden=isDiceTool(choice);
 }
 $('independentDeckSelect').addEventListener('change',()=>{independentDeckSelectionCustomized=true;updateIndependentPool();});
 function independentTableWorkspace(){
