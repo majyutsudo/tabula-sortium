@@ -150,3 +150,11 @@ test('full backup includes main tool identity and saved dice snapshots',()=>{
  assert.match(js,/JSON\.stringify\(data\.mainToolState/);
  assert.match(js,/localStorage\.removeItem\(TOOL_STORAGE_KEY\)/);
 });
+
+test('main and additional table selectors identify each table tool explicitly',()=>{
+ const code=file('js/tabula.js');
+ assert.match(code,/function toolLabelForTable\(/);
+ assert.match(code,/メイン卓 · /);
+ assert.match(code,/追加卓Ⅰ'\)\+' · '\+toolLabelForTable/);
+ assert.match(code,/tableMenuCurrent'\)\.textContent=currentName\+' · '/);
+});
