@@ -31,7 +31,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0770'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0780'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -275,7 +275,7 @@ test('I Ching history preserves the original engine King Wen result',()=>{
 test('save-and-new dice clears the previous outcome before the next reading',()=>{
  const tab=file('js/tabula.js'),engine=file('js/dice-table-engine.js');
  assert.match(tab,/if\(isDiceTool\(activeToolId\(\)\)\)\{window\.TabulaDiceTable\?\.reset\?\./);
- assert.match(engine,/reset\(id\)\{restoreDice\(null,id\);emitDice\(\)\}/);
+ assert.match(engine,/restoreDice\(\{\.\.\.saved,poses:null,results:null,held:false\},id\)/);
 });
 
 test('2D dice placement uses original card placement editor and export paths',()=>{

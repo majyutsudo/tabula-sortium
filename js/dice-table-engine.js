@@ -423,7 +423,14 @@ window.TabulaDiceTable={
  editNormalDraft(host,settings){renderNormalEditor(host,settings,apply=>apply())},
  defaultNormalDie,
  restore:restoreDice,
- reset(id){restoreDice(null,id);emitDice()},
+ reset(id){
+  if(!ready||rolling||mixing||current.id!==id)return false;
+  const saved=captureDice();
+  setDiceInspection(false);
+  restoreDice({...saved,poses:null,results:null,held:false},id);
+  emitDice();
+  return true;
+ },
  busy(){return rolling||mixing},
  setMode(id){
   if(!['normal','astro','iching'].includes(id))return;

@@ -119,7 +119,7 @@
  // Leave card-only functions in their usual positions, but prevent editing
  // the preserved card session while the user is working with dice.
  const cardOnlyControls=[
-  ...['tableUndo','zoomOut','zoomReset','zoomIn','newSessionStandalone','cardGalleryOpen','spreadNotebook','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle'].map(id=>document.getElementById(id)).filter(Boolean)
+  ...['tableUndo','zoomOut','zoomReset','zoomIn','cardGalleryOpen','spreadNotebook','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle'].map(id=>document.getElementById(id)).filter(Boolean)
  ];
  const cardOperationsToggle=document.querySelector("#operations .section-toggle");
  function setCardControlsInactive(inactive){
@@ -167,8 +167,20 @@
   document.getElementById('diceQuickMix'),
   document.getElementById('diceQuickRoll')
  ];
+ const newReading=document.getElementById('newSessionStandalone');
+ const startCardReading=newReading.onclick;
+ newReading.onclick=event=>{
+  if(!document.body.classList.contains('tabula-dice-mode')){
+   startCardReading.call(newReading,event);return;
+  }
+  const engine=window.TabulaDiceTable;
+  if(!engine?.isReady()||engine.busy()||engine.inspectionActive())return;
+  if(engine.snapshot()?.results?.some(Number.isInteger)&&!confirm('現在の出目を消して、新しい占いを始めますか？'))return;
+  engine.reset(diceSelect.value);
+ };
  function syncActionStates(){
   const inspecting=window.TabulaDiceTable?.inspectionActive()===true;
+  if(document.body.classList.contains('tabula-dice-mode'))newReading.disabled=inspecting||!window.TabulaDiceTable?.isReady()||window.TabulaDiceTable.busy();
   proxyButtons.forEach((btn,i)=>{btn.disabled=inspecting||sourceButtons[i].disabled});
   document.getElementById('diceQuickSettings').disabled=inspecting;
   changeSet.disabled=inspecting;
@@ -211,7 +223,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0770').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0780').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;
@@ -235,6 +247,7 @@
  function switchToCard(id){
   activationToken++;
   if(document.body.classList.contains('tabula-dice-mode'))configureInspector(false);
+  if(document.body.classList.contains('tabula-dice-mode'))newReading.disabled=false;
   document.body.classList.remove('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=false;diceActions.hidden=true;
   setCardControlsInactive(false);
@@ -256,6 +269,7 @@
   configureInspector(true);
   cardActions.hidden=true;diceActions.hidden=false;
   setCardControlsInactive(true);
+  syncActionStates();
   changeSet.hidden=false;
   const placementTools=document.getElementById('placementToolsContent');
   if(placementTools){placementTools.hidden=true;placementTools.style.display='none';}
