@@ -737,7 +737,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  const ink=isDarkDiceColor(color)?ringInk(color,.78):ringInk(color,-.83);
  // Shade only the carved groove so the face texture remains visible inside it.
  c.beginPath();c.arc(cx,cy,rad*.82,0,Math.PI*2);
- c.strokeStyle=ink;c.lineWidth=Math.max(3,rad*.095);c.stroke();
+ c.strokeStyle=ringInk(color,-.69,.52);c.lineWidth=Math.max(3,rad*.095);c.stroke();
  c.beginPath();c.arc(cx,cy,rad*.86,Math.PI*.08,Math.PI*.92);
  c.strokeStyle=ringInk(color,.5,.68);c.lineWidth=Math.max(1.5,rad*.042);c.stroke();
  // Previous glyphs used only 0.74–0.92 of the ring radius in font
