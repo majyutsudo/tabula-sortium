@@ -28,7 +28,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0725'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0727'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.setMode\(id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -97,4 +97,33 @@ test('unavailable card buttons use muted inverted appearance only in dice mode',
  assert.match(style,/body\.tabula-dice-mode \.dice-unavailable/);
  assert.match(style,/filter:grayscale\(1\)!important/);
  assert.match(style,/cursor:not-allowed!important/);
+});
+
+test('table tool transitions share the deck replacement and preserve independent tables',()=>{
+ const js=file('js/tabula.js');
+ assert.match(js,/window.TabulaTableTools=/);
+ assert.match(js,/const DICE_TOOL_IDS=/);
+ assert.match(js,/function replaceIndependentTool/);
+ assert.match(js,/TabulaMultiWorkspace\.validate\(candidate\)/);
+ assert.match(js,/function notifyTool\(/);
+ assert.match(js,/notifyTool\(\);setStatus\(/);
+ assert.match(js,/toolId:isDice\?selectedTool/);
+ assert.match(js,/diceSnapshot:activeDiceSnapshot\(\)/);
+ assert.match(js,/mainToolState=\{id:dualSession\.tables\.table1\.toolId/);
+});
+test('dice state is serialized with actual physics poses and restored',()=>{
+ const engine=file('js/dice-table-engine.js');
+ assert.match(engine,/function captureDice\(/);
+ assert.match(engine,/poses:objects\.map/);
+ assert.match(engine,/function restoreDice\(saved,id\)/);
+ assert.match(engine,/body\.setTranslation\(p,true\)/);
+ assert.match(engine,/body\.setRotation\(q,true\)/);
+ assert.match(engine,/status\.textContent='THE DICE HAVE FALLEN';emitDice\(\)/);
+});
+test('asynchronous dice initialization cannot overwrite a newer selected table',()=>{
+ const adapter=file('js/dice-workspace.js');
+ assert.match(adapter,/activationToken/);
+ assert.match(adapter,/token!==activationToken/);
+ assert.match(adapter,/TabulaTableTools\?\.context/);
+ assert.match(adapter,/tabula:tool-context/);
 });
