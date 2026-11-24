@@ -16,8 +16,7 @@ function refreshFloatingLabels(){
  floatingLabels.replaceChildren();
  diceLabelNodes=diceSettings.map((d,i)=>{
   const span=document.createElement('span');span.className='dice-floating-label';
-  span.textContent=current.id==='normal'?String(d.userLabel||'').trim():'';
-  span.hidden=!span.textContent;span.dataset.dieIndex=String(i);
+  span.textContent='';span.hidden=true;span.dataset.dieIndex=String(i);
   floatingLabels.append(span);return span;
  });
 }
@@ -25,14 +24,24 @@ function positionFloatingLabels(){
  if(!ready||!camera||!objects.length)return;
  const rect=felt.getBoundingClientRect();
  if(!rect.width||!rect.height)return;
+ // Use TABULA's existing toolbar label cycle, not another dice-only toggle.
+ const mode=document.getElementById('toolbarLabelToggle')?.dataset.labelMode||
+  document.getElementById('tableLabelMode')?.value||'off';
+ const position=document.getElementById('labelPlacement')?.value||'below';
  objects.forEach(({body,mesh},i)=>{
   const label=diceLabelNodes[i];if(!label)return;
-  const show=current.id==='normal'&&!!label.textContent&&!held&&!rolling&&mesh.visible;
+  const name=String(diceSettings[i]?.userLabel||'').trim()||'ダイス'+(i+1);
+  const text=mode==='off'?'':mode==='number'?String(i+1):
+   mode==='position'?String(i+1)+' · '+name:
+   mode==='positionPlain'?name:
+   mode==='card'?name:'';
+  if(label.textContent!==text)label.textContent=text;
+  const show=current.id==='normal'&&!!text&&!held&&!rolling&&mesh.visible;
   label.hidden=!show;
   if(!show)return;
   const p=body.translation(),projected=new THREE.Vector3(p.x,p.y,p.z).project(camera);
   label.style.left=((projected.x+1)*rect.width/2)+'px';
-  label.style.top=((1-projected.y)*rect.height/2+22)+'px';
+  label.style.top=((1-projected.y)*rect.height/2+(position==='above'?-32:position==='center'?-8:22))+'px';
  });
 }
 const button=diceDOM.getElementById('roll');
