@@ -3895,7 +3895,7 @@ $('addTablePile').onclick=()=>{
 };
 $('surface').addEventListener('click',e=>{
  if(!pilePlacementArmed||dualSession||spreadWorkbench)return;
- if(e.target.closest('.table-pile,.deck,.candle,button'))return;
+ if(e.target.closest('.table-pile,.deck,button'))return;
  const bounds=$('zone').getBoundingClientRect();
  if(e.clientX<bounds.left||e.clientX>bounds.right||e.clientY<bounds.top||e.clientY>bounds.bottom)return;
  e.preventDefault();e.stopImmediatePropagation();

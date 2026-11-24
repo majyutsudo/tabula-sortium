@@ -8,7 +8,9 @@ test('native dice render surface belongs to the TABULA table and shares altar',(
  const page=file('table.html'),style=file('css/dice-workspace.css');
  assert.match(page,/id="surface"/);
  assert.match(page,/id="cloth"[^>]*><\/div><div id="dice-felt"/);
- assert.match(page,/id="altar"/);
+ assert.match(page,/<div class="altar" id="altar" hidden><\/div>/);
+ assert.doesNotMatch(file('css/tabula.css'),/\.candle(?:[.:]|\{)/);
+ assert.match(file('js/tabula.js'),/function renderCandles\(\)\{const host=\$\('altar'\);host\.replaceChildren\(\)/);
  assert.match(page,/id="diceWorkspace"/);
  assert.doesNotMatch(page,/id="diceWorkspaceFrame"/);
  assert.match(style,/#dice-felt\{display:none;position:absolute/);
