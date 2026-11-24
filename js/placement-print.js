@@ -54,8 +54,6 @@ function dicePrintable(){
    svg.append(element('text',{x,y:labelY,'text-anchor':'middle','font-family':'sans-serif','font-size':4,fill:prefs.position==='center'?ink:'#252525'},label));
   }
  }
- const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[mode]||'DICE';
- svg.append(element('text',{x:105,y:29,'text-anchor':'middle','font-family':'Georgia, serif','font-size':9,fill:'#282828'},heading));
  const line=mode==='normal'?'合計 '+saved.results.reduce((a,b)=>a+b,0):
   mode==='iching'&&saved.hexagram?'本卦 第'+saved.hexagram.primary+'卦  →  之卦 第'+saved.hexagram.changed+'卦':'';
  if(line)svg.append(element('text',{x:105,y:252,'text-anchor':'middle','font-family':'sans-serif','font-size':5,fill:'#242424'},line));
