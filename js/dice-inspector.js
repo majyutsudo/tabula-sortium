@@ -2,7 +2,7 @@ import {numberNotes, astroKeywords} from './dice-reading-notes.js?v=0767';
 import {astro, trigrams, hexagramGuides} from './dice-meanings.js?v=0767';
 import {lineGuides} from './zhouyi-line-guides.js?v=0764';
 import {statementGuides} from './zhouyi-statement-guides.js?v=0764';
-import {hexagrams} from './zhouyi-text.js?v=0764';
+import {hexagrams} from './zhouyi-text.js?v=0769';
 
 const numberReferences = {
  8:['『周易』 · 維基文庫','https://zh.wikisource.org/wiki/周易'],
