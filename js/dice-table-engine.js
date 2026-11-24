@@ -291,7 +291,7 @@ function switchPreset(id){
  diceDOM.getElementById('title').textContent=current.title;
  diceDOM.getElementById('subtitle').textContent=current.subtitle;
  diceDOM.getElementById('description').textContent=current.description;
- diceDOM.getElementById('table-corner-top').textContent='TABULA · '+(id==='normal'?'DICE':id==='astro'?'ASTRO':'I CHING');
+ diceDOM.getElementById('table-corner-top').textContent='TABULA · '+(id==='normal'?'DICE':id==='astro'?'ASTRO':'I CHING')+(felt.dataset.diceRenderer==='2d'?' · 2D':'');
  diceDOM.getElementById('table-corner-bottom').textContent=id==='normal'?'RIGID BODY EXPERIMENT':id==='astro'?'ASTROLOGICAL DICE':'THE BOOK OF CHANGES';
  renderSettings();renderAstroColors();createDice();syncMeshes();showResults();
  collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
@@ -587,6 +587,7 @@ function updateDimensions(){
  camera.position.set(0,13,3.3);
  camera.lookAt(0,0,0);
  camera.updateProjectionMatrix();
+ camera.updateMatrixWorld();
  // PlaneGeometry lies in local XY. After rotation.x=-PI/2, local Y
  // becomes the tabletop's world-Z axis. Scaling local Z only changed
  // the normal, leaving a narrow shadow-receiving strip in world space.
@@ -1212,6 +1213,62 @@ function render(time){
  positionFloatingLabels();
  renderer.render(scene,camera);
 }
+function createCanvasDiceRenderer(){
+ const canvas=document.createElement('canvas');
+ const ctx=canvas.getContext('2d');
+ if(!ctx)throw new Error('2Dキャンバスを開始できませんでした。');
+ let w=0,h=0,ratio=1;
+ function resize(){
+  canvas.width=Math.round(w*ratio);
+  canvas.height=Math.round(h*ratio);
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+ }
+ const projected=new THREE.Vector3();
+ return {
+  domElement:canvas,
+  setSize(width,height){w=width;h=height;resize()},
+  setPixelRatio(value){if(ratio!==value){ratio=value;resize()}},
+  render(_scene,camera){
+   ctx.clearRect(0,0,w,h);
+   for(const [i,object] of objects.entries()){
+    const {mesh,sides,radius,faceNumbers}=object;
+    if(!mesh.visible)continue;
+    const value=recordedResults?.[i]??topFace(object);
+    projected.copy(mesh.position).project(camera);
+    const size=radius*w/(camera.right-camera.left)*1.35;
+    ctx.save();
+    ctx.translate((projected.x+1)*w/2,(1-projected.y)*h/2);
+    ctx.shadowColor='#0009';ctx.shadowBlur=7;ctx.shadowOffsetY=4;
+    ctx.beginPath();
+    if(sides===6)ctx.roundRect(-size/2,-size/2,size,size,size*.12);
+    else {
+     const corners=sides===8||sides===20?3:sides===12?5:4;
+     for(let corner=0;corner<corners;corner++){
+      const angle=corner*Math.PI*2/corners-Math.PI/2;
+      ctx.lineTo(Math.cos(angle)*size*.65,Math.sin(angle)*size*.65);
+     }
+     ctx.closePath();
+    }
+    const die=diceSettings[i];
+    ctx.fillStyle=die.color;ctx.fill();
+    ctx.shadowColor='transparent';
+    const texture=mesh.material[faceNumbers.indexOf(value)]?.map?.image;
+    if(sides===6&&texture){
+     ctx.clip();ctx.drawImage(texture,-size/2,-size/2,size,size);
+    }else{
+     ctx.strokeStyle='#0006';ctx.lineWidth=1;ctx.stroke();
+     const rgb=parseInt(die.color.slice(1),16);
+     const luminance=(rgb>>16)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
+     ctx.fillStyle=die.ink||(luminance<140?'#fff1d8':'#241d17');
+     ctx.font='bold '+Math.max(10,size*.42)+'px Georgia, serif';
+     ctx.textAlign='center';ctx.textBaseline='middle';
+     ctx.fillText(die.faces?.[value-1]?.glyph??String(value),0,sides===8||sides===20?size*.12:0);
+    }
+    ctx.restore();
+   }
+  }
+ };
+}
 function createDiceRenderer(){
  for(const antialias of [true,false]){
   const canvas=document.createElement('canvas');
@@ -1230,11 +1287,19 @@ async function init(){
   stage='3D描画（WebGL 2）';
   scene=new THREE.Scene();
   camera=new THREE.OrthographicCamera(-5,5,3,-3,.1,100);
-  renderer=createDiceRenderer();
-  renderer.setClearColor(0,0);
-  renderer.shadowMap.enabled=true;
-  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  try{
+   renderer=createDiceRenderer();
+   renderer.setClearColor(0,0);
+   renderer.shadowMap.enabled=true;
+   renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+   renderer.outputColorSpace=THREE.SRGBColorSpace;
+  }catch(error){
+   console.warn('ダイスの表示を2Dに切り替えました。',error);
+   stage='2D描画';
+   renderer=createCanvasDiceRenderer();
+   diceDOM.getElementById('table-corner-top').append(' · 2D');
+   felt.setAttribute('data-dice-renderer','2d');
+  }
   felt.prepend(renderer.domElement);
   scene.add(new THREE.HemisphereLight(0xe1efe8,0x1a3427,2.3));
   const key=new THREE.DirectionalLight(0xffe9c5,2.8);key.position.set(-4,17,-6);
