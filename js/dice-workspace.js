@@ -19,7 +19,25 @@
   ...['tableUndo','zoomOut','zoomReset','zoomIn','newSessionStandalone','cardGalleryOpen','spreadNotebook','toolbarDeckPicker','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','quickSnapshotSave','quickSnapshotList','printPlacement'].map(id=>document.getElementById(id)).filter(Boolean)
  ];
  function setCardControlsInactive(inactive){
-  cardOnlyControls.forEach(element=>{element.inert=inactive});
+  cardOnlyControls.forEach(element=>{
+   element.inert=inactive;
+   // Preserve the button's original disabled state. An unavailable tool
+   // is visually distinct from a currently disabled card action.
+   element.classList.toggle('dice-unavailable',inactive);
+   if(inactive){
+    if(!element.hasAttribute('data-dice-previous-aria-disabled')){
+     element.dataset.dicePreviousAriaDisabled=element.getAttribute('aria-disabled')??'__absent__';
+    }
+    element.setAttribute('aria-disabled','true');
+   }else{
+    const previous=element.dataset.dicePreviousAriaDisabled;
+    if(previous!==undefined){
+     if(previous==='__absent__')element.removeAttribute('aria-disabled');
+     else element.setAttribute('aria-disabled',previous);
+     delete element.dataset.dicePreviousAriaDisabled;
+    }
+   }
+  });
  }
  // Attach existing dice UI fragments to TABULA's permanent interface.
  const addHolder=(parent,id,cls='')=>{
