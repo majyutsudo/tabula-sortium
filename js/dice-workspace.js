@@ -24,7 +24,7 @@
  // Leave card-only functions in their usual positions, but prevent editing
  // the preserved card session while the user is working with dice.
  const cardOnlyControls=[
-  ...['tableUndo','zoomOut','zoomReset','zoomIn','newSessionStandalone','cardGalleryOpen','spreadNotebook','toolbarDeckPicker','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle','printPlacement'].map(id=>document.getElementById(id)).filter(Boolean)
+  ...['tableUndo','zoomOut','zoomReset','zoomIn','newSessionStandalone','cardGalleryOpen','spreadNotebook','toolbarDeckPicker','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle'].map(id=>document.getElementById(id)).filter(Boolean)
  ];
  function setCardControlsInactive(inactive){
   cardOnlyControls.forEach(element=>{
@@ -106,7 +106,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0727').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0731').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-failure').hidden=false;
    document.getElementById('dice-failure').textContent='ダイスの読み込みに失敗しました：'+err.message;
