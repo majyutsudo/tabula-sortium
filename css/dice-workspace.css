@@ -141,3 +141,14 @@ body.tabula-dice-mode .dice-unavailable:is(:hover,:active,:focus){
  color:#969b97!important;
  box-shadow:none!important;
 }
+
+/* v0.728: tool-specific choices are not presented as applicable to dice. */
+#independentDeckPoolField[hidden],#independentDeckHelp[hidden],
+#dualDeckSettings[hidden],#dualDeckFieldsA[hidden],#dualDeckFieldsB[hidden],
+#crossLabelLayerField[hidden]{display:none!important}
+body.tabula-dice-mode #crossLabelLayerField{display:none!important}
+body.tabula-dice-mode #presetSnapToggle{
+ opacity:.34!important;filter:grayscale(1)!important;pointer-events:none!important;
+ cursor:not-allowed!important;background:#252726!important;color:#969b97!important;
+}
+#tableAddMode option:disabled{color:#858585}
