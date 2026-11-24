@@ -211,27 +211,33 @@ function renderNormalEditor(host,settings,change){
   for(const n of [6,8,10,12,20])sides.add(new Option('D'+n,String(n)));sides.value=String(d.sides);
   const material=document.createElement('select');material.className='material';material.setAttribute('aria-label','ダイス'+(i+1)+'の仕上げ');
   for(const [key,name] of [['standard','標準'],['ivory','象牙'],['ring','環状刻印']])material.add(new Option(name,key));material.value=d.surface;
+  const faceStyle=document.createElement('select');faceStyle.setAttribute('aria-label','ダイス'+(i+1)+'の目の表記');
+  faceStyle.add(new Option('点','pips'));faceStyle.add(new Option('数字','numerals'));
+  let preferredCubeStyle=d.faceStyle==='numerals'?'numerals':'pips';
   const color=document.createElement('input');color.type='color';color.value=d.color;color.setAttribute('aria-label','ダイス'+(i+1)+'の色');
   const remove=document.createElement('button');remove.type='button';remove.className='dice-remove';remove.textContent='×';remove.setAttribute('aria-label','ダイス'+(i+1)+'を削除');remove.disabled=settings.length===1;
   function refresh(){
+   faceStyle.disabled=Number(sides.value)!==6;
+   faceStyle.value=faceStyle.disabled?'numerals':preferredCubeStyle;
    for(const option of material.options)option.disabled=Number(sides.value)!==6&&option.value==='ivory';
    if(material.selectedOptions[0]?.disabled)material.value='standard';
   }
   function update(){
    const nextSides=Number(sides.value);
    change(()=>{
-    d.sides=nextSides;d.surface=material.value;d.color=color.value;d.label='D'+nextSides;
+    d.sides=nextSides;d.surface=material.value;d.color=color.value;d.label='D'+nextSides;d.faceStyle=preferredCubeStyle;
    },nextSides!==d.sides?'shape':'appearance',i);
   }
   sides.addEventListener('change',()=>{refresh();update();});
   material.addEventListener('change',()=>{const defaults={ivory:'#ead9ae',ring:'#c7b48d'};if(defaults[material.value])color.value=defaults[material.value];update();});
+  faceStyle.addEventListener('change',()=>{preferredCubeStyle=faceStyle.value;update();});
   color.addEventListener('change',update);
   remove.addEventListener('click',()=>{
    if(settings.length===1)return;
    change(()=>settings.splice(i,1),'remove',i);
    redraw();
   });
-  refresh();row.append(label,name,sides,material,color,remove);host.append(row);
+  refresh();row.append(label,name,sides,faceStyle,material,color,remove);host.append(row);
  });
 }
 function renderAstroColors(){
@@ -290,6 +296,7 @@ function captureDice(){
  if(!ready)return null;
  return {schema:1,mode:current.id,
   settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label,
+   ...(current.id==='normal'&&d.faceStyle==='numerals'?{faceStyle:'numerals'}:{}),
    userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''})),
   bounds:{width,depth},displayFaces:recordedResults?diceSettings.map((d,i)=>{
    const face=d.faces?.[recordedResults[i]-1];return face?{glyph:face.glyph,name:face.name}:null;
@@ -315,6 +322,7 @@ function restoreDice(saved,id){
    diceSettings=saved.settings.map(d=>({sides:[6,8,10,12,20].includes(d.sides)?d.sides:6,
     color:/^#[0-9a-f]{6}$/i.test(d.color)?d.color:'#c7b48d',
     surface:['standard','ring','ivory'].includes(d.surface)?d.surface:'standard',
+    faceStyle:d.faceStyle==='numerals'?'numerals':'pips',
     markings:'number',label:'D'+d.sides,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''}));
   }
   if(id==='astro'&&Array.isArray(saved.colors)&&saved.colors.length===3){
@@ -407,7 +415,7 @@ function ringInk(color,lightness,alpha=1){
  const channels=[rgb>>16&255,rgb>>8&255,rgb&255].map(value=>Math.round(value+(target-value)*amount));
  return 'rgba('+channels.join(',')+','+alpha+')';
 }
-function finishTexture(value,color,material,dieIndex){
+function finishTexture(value,color,material,dieIndex,numbered=false){
  const n=384,canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
  const c=canvas.getContext('2d'),img=c.createImageData(n,n);
  const raw=parseInt(color.slice(1),16),r=raw>>16&255,g=raw>>8&255,b=raw&255;
@@ -455,7 +463,7 @@ function finishTexture(value,color,material,dieIndex){
  // The two historic-inspired patterns are intentionally distinct:
  // concentric ring-and-dot (archaeological motif) versus bold recessed
  // numerals (an openly imaginative archaic style).
- if(material==='archaic'){
+ if(material==='archaic'||numbered){
   c.save();
   c.translate(n/2,n/2);
   // A very slight individual tilt suggests hand-cut rather than printed.
@@ -913,13 +921,22 @@ function wornCubeGeometry(material){
  geometry.computeVertexNormals();
  return geometry;
 }
+function cubeFaceTexture(value,settings,dieIndex){
+ const {color,surface,markings,faces,ink,faceStyle}=settings;
+ if(markings==='engraved')return ichingTexture(faces[value-1],dieIndex,ink);
+ if(markings==='astro')return astroTexture(faces[value-1],dieIndex,color,160);
+ const numbered=faceStyle==='numerals';
+ if(surface==='standard')return numbered?numberTexture(value,color,6):faceTexture(value,color);
+ if(surface==='ring'&&numbered)return ringNumberTexture(value,color,6,172,value-1+dieIndex*6);
+ return finishTexture(value,color,surface,dieIndex,numbered);
+}
 function makeDie(i){
  const settings=diceSettings[i],sides=settings.sides;
  let mesh,solid=null,normals,faceNumbers;
  if(sides===6){
   const geometry=settings.surface==='standard'?new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE):wornCubeGeometry(settings.surface);
   const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({
-   map:settings.markings==='engraved'?ichingTexture(settings.faces[n-1],i,settings.ink):settings.markings==='astro'?astroTexture(settings.faces[n-1],i,settings.color,160):settings.surface==='standard'?faceTexture(n,settings.color):finishTexture(n,settings.color,settings.surface,i),
+   map:cubeFaceTexture(n,settings,i),
    roughness:settings.markings==='engraved'?.42:settings.surface==='wood'?.94:settings.surface==='standard'?.47:.88,metalness:0
   }));
   mesh=new THREE.Mesh(geometry,materials);normals=faceNormals;faceNumbers=faceValues;

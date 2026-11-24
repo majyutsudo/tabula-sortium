@@ -29,7 +29,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0734'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0735'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -379,4 +379,26 @@ test('ring grooves and highlights share the selected ground color',()=>{
  assert.equal(ink('#476f83',-.69),'rgba(22,34,41,1)');
  assert.equal(ink('#476f83',.34),'rgba(134,160,173,1)');
  assert.notEqual(ink('#476f83',-.69),ink('#914c4c',-.69));
+});
+
+test('D6 numerals route through the chosen finish and keep the point defaults',()=>{
+ const engine=file('js/dice-table-engine.js');
+ const source=engine.slice(engine.indexOf('function cubeFaceTexture('),engine.indexOf('function makeDie('));
+ const texture=new Function(`
+  const numberTexture=(...args)=>['number',...args];
+  const faceTexture=(...args)=>['points',...args];
+  const ringNumberTexture=(...args)=>['ring number',...args];
+  const finishTexture=(...args)=>['finish',...args];
+  const ichingTexture=(...args)=>['I Ching',...args];
+  ${source}
+  return cubeFaceTexture;
+ `)();
+ const color='#c7b48d';
+ assert.deepEqual(texture(4,{color,surface:'standard'},0),['points',4,color]);
+ assert.deepEqual(texture(4,{color,surface:'standard',faceStyle:'numerals'},0),['number',4,color,6]);
+ assert.deepEqual(texture(4,{color,surface:'ring'},0),['finish',4,color,'ring',0,false]);
+ assert.deepEqual(texture(4,{color,surface:'ring',faceStyle:'numerals'},0),['ring number',4,color,6,172,3]);
+ assert.deepEqual(texture(4,{color,surface:'ivory',faceStyle:'numerals'},0),['finish',4,color,'ivory',0,true]);
+ assert.deepEqual(texture(1,{markings:'engraved',faces:['初'],ink:'#000000'},0),['I Ching','初',0,'#000000']);
+ assert.match(engine,/faceStyle:d\.faceStyle==='numerals'\?'numerals':'pips'/);
 });
