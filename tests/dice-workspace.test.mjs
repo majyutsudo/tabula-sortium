@@ -31,7 +31,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0735'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0737'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -376,7 +376,7 @@ test('normal dice edits preserve the other outcomes and keep cosmetic edits in p
 });
 test('ring grooves and highlights share the selected ground color',()=>{
  const engine=file('js/dice-table-engine.js');
- const helper=engine.slice(engine.indexOf('function ringInk('),engine.indexOf('function finishTexture('));
+ const helper=engine.slice(engine.indexOf('function ringInk('),engine.indexOf('function drawCarvedNumeral('));
  const ink=new Function(helper+'return ringInk')();
  assert.equal(ink('#476f83',-.69),'rgba(22,34,41,1)');
  assert.equal(ink('#476f83',.34),'rgba(134,160,173,1)');

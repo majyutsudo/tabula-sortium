@@ -415,6 +415,23 @@ function ringInk(color,lightness,alpha=1){
  const channels=[rgb>>16&255,rgb>>8&255,rgb&255].map(value=>Math.round(value+(target-value)*amount));
  return 'rgba('+channels.join(',')+','+alpha+')';
 }
+function drawCarvedNumeral(c,value,x,y,size,maxWidth,{
+ ink='#2c241f',highlight='rgba(251,216,153,.7)',shadow='rgba(43,27,22,.72)',tilt=0
+}={}){
+ const scale=size/205,text=String(value);
+ c.save();
+ c.translate(x,y);
+ c.rotate(tilt);
+ c.textAlign='center';c.textBaseline='middle';
+ c.font='900 '+size+'px Georgia,serif';
+ c.lineJoin='round';
+ c.strokeStyle=highlight;c.lineWidth=16*scale;
+ c.strokeText(text,5*scale,10*scale,maxWidth);
+ c.strokeStyle=shadow;c.lineWidth=9*scale;
+ c.strokeText(text,-2*scale,-2*scale,maxWidth);
+ c.fillStyle=ink;c.fillText(text,0,2*scale,maxWidth);
+ c.restore();
+}
 function finishTexture(value,color,material,dieIndex,numbered=false){
  const n=384,canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
  const c=canvas.getContext('2d'),img=c.createImageData(n,n);
@@ -464,19 +481,7 @@ function finishTexture(value,color,material,dieIndex,numbered=false){
  // concentric ring-and-dot (archaeological motif) versus bold recessed
  // numerals (an openly imaginative archaic style).
  if(material==='archaic'||numbered){
-  c.save();
-  c.translate(n/2,n/2);
-  // A very slight individual tilt suggests hand-cut rather than printed.
-  c.rotate((random()-.5)*.12);
-  c.textAlign='center';c.textBaseline='middle';
-  c.font='900 205px Georgia,serif';
-  c.lineJoin='round';
-  c.strokeStyle='rgba(251,216,153,.7)';c.lineWidth=16;
-  c.strokeText(String(value),5,10,280);
-  c.strokeStyle='rgba(43,27,22,.72)';c.lineWidth=9;
-  c.strokeText(String(value),-2,-2,280);
-  c.fillStyle='#2c241f';c.fillText(String(value),0,2,280);
-  c.restore();
+  drawCarvedNumeral(c,value,n/2,n/2,205,280,{tilt:(random()-.5)*.12});
   // Time-worn pigment surrounding the carved number.
   for(let k=0;k<140;k++){
    const x=25+random()*(n-50),y=25+random()*(n-50);
@@ -695,12 +700,11 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
  const twoDigits=value>=10;
  const fontSize=rad*(twoDigits?(sides===20?1.32:1.14):(sides===20?1.68:1.56));
  const maxWidth=rad*(twoDigits?(sides===20?1.53:1.36):1.00);
- c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
- c.font='900 '+fontSize+'px Georgia,serif';
- c.strokeStyle=ringInk(color,.39,.88);
- c.lineWidth=Math.max(2,rad*.085);
- c.strokeText(String(value),cx+1,cy+2,maxWidth);
- c.fillStyle=ringInk(color,-.83);c.fillText(String(value),cx,cy,maxWidth);
+ const ink=ringInk(color,-.83);
+ drawCarvedNumeral(c,value,cx,cy,fontSize,maxWidth,{
+  ink,highlight:ringInk(color,.39,.88),shadow:ringInk(color,-.69,.72)
+ });
+ c.fillStyle=ink;
  if(value===6||value===9){
   const w=rad*.31;
   c.fillRect(cx-w/2,cy+fontSize*.34,w,Math.max(2,rad*.06));
@@ -717,9 +721,10 @@ function numberTexture(value,color,sides){
  shade.addColorStop(0,'#ffffff45');shade.addColorStop(.7,'#ffffff00');shade.addColorStop(1,'#00000039');
  c.fillStyle=shade;c.fillRect(0,0,256,256);
  const rgb=parseInt(color.slice(1),16),lum=(rgb>>16&255)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
- c.textAlign='center';c.textBaseline='middle';c.fillStyle=lum<140?'#fff1d8':'#24231e';
+ const ink=lum<140?'#fff1d8':'#2c241f';
  const fontSize=sides===10?(value>=10?59:72):sides===20?(value>=10?76:98):(value>=10?86:112);
- c.font='bold '+fontSize+'px Georgia,serif';c.fillText(String(value),128,128,112);
+ drawCarvedNumeral(c,value,128,128,fontSize,112,{ink});
+ c.fillStyle=ink;
  if(value===6||value===9){
   const w=Math.min(42,fontSize*.33);
   c.fillRect(128-w/2,128+fontSize*.43,w,Math.max(3,fontSize*.045));
