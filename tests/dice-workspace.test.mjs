@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import '../js/multi-workspace.js';
 const file=(name)=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 
 test('native dice render surface belongs to the TABULA table and shares altar',()=>{
@@ -126,4 +127,26 @@ test('asynchronous dice initialization cannot overwrite a newer selected table',
  assert.match(adapter,/token!==activationToken/);
  assert.match(adapter,/TabulaTableTools\?\.context/);
  assert.match(adapter,/tabula:tool-context/);
+});
+
+test('dice-only independent table preserves the physical cards in the main table',()=>{
+ const M=globalThis.TabulaMultiWorkspace;
+ const w=M.table(M.create(['first','second'],[]),'table2','追加卓Ⅰ');
+ w.workspaceKind='independent';
+ w.tables.table1.toolId='card:builtin';
+ w.tables.table2.toolId='dice:astro';
+ w.tables.table2.diceSnapshot={schema:1,mode:'astro',results:[1,4,7]};
+ assert.equal(M.validate(w),true);
+ const next=M.selectTable(w,'table2');
+ assert.equal(next.activeTable,'table2');
+ assert.equal(next.piles.A.length,2);
+ assert.equal(next.piles.B.length,0);
+ assert.deepEqual(next.tables.table2.diceSnapshot.results,[1,4,7]);
+});
+test('full backup includes main tool identity and saved dice snapshots',()=>{
+ const js=file('js/tabula.js');
+ assert.match(js,/mainToolState,activeMultiWorkspace/);
+ assert.match(js,/TOOL_STORAGE_KEY\]/);
+ assert.match(js,/JSON\.stringify\(data\.mainToolState/);
+ assert.match(js,/localStorage\.removeItem\(TOOL_STORAGE_KEY\)/);
 });
