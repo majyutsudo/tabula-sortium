@@ -41,7 +41,8 @@
  function applySet(mode,dice){
   const bridge=window.TabulaTableTools,current=bridge?.context();
   if(!chooseFor||current?.tableId!==chooseFor.tableId||current?.id!==chooseFor.id)return;
-  const snapshot=dice?{schema:1,mode,settings:cloneDice(dice),force:current.dice?.force}:null;
+  const size=!onChoose?current.dice?.scale:undefined;
+  const snapshot=dice||size?{schema:1,mode,settings:dice?cloneDice(dice):[],force:current.dice?.force,scale:size}:null;
   const accepted=onChoose?onChoose('dice:'+mode,snapshot):bridge.switchTool('dice:'+mode,{replaceDice:true,snapshot});
   if(accepted)setDialog.close();
   else setMessage('セットを変更できませんでした。');
@@ -119,7 +120,7 @@
  // Leave card-only functions in their usual positions, but prevent editing
  // the preserved card session while the user is working with dice.
  const cardOnlyControls=[
-  ...['spreadQuickSelect','spreadInfoButton','tableUndo','zoomOut','zoomReset','zoomIn','cardGalleryOpen','spreadNotebook','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle'].map(id=>document.getElementById(id)).filter(Boolean)
+  ...['spreadQuickSelect','spreadInfoButton','tableUndo','cardGalleryOpen','spreadNotebook','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle'].map(id=>document.getElementById(id)).filter(Boolean)
  ];
  const cardOperationsToggle=document.querySelector("#operations .section-toggle");
  function setCardControlsInactive(inactive){
@@ -178,7 +179,34 @@
   if(engine.snapshot()?.results?.some(Number.isInteger)&&!confirm('現在の出目を消して、新しい占いを始めますか？'))return;
   engine.reset(diceSelect.value);
  };
+ const sizeControls=document.querySelector('.toolbar-card-size');
+ const sizeLabel=sizeControls.querySelector('.toolbar-size-label');
+ const sizeValue=document.getElementById('cardSizeQuickValue');
+ const sizeButtons=['zoomOut','zoomIn','zoomReset'].map(id=>document.getElementById(id));
+ const sizeElements=[sizeControls,sizeValue,...sizeButtons];
+ const cardSizeTitles=sizeElements.map(element=>element.title);
+ function configureSizeControls(dice){
+  sizeLabel.textContent=dice?'ダイス':'札';
+  const titles=dice?['ダイスそのものの大きさを調整','ダイスサイズ倍率','ダイスサイズを小さくする','ダイスサイズを大きくする','ダイスを標準サイズに戻す']:cardSizeTitles;
+  sizeElements.forEach((element,i)=>{
+   element.title=titles[i];
+   if(i)element.setAttribute('aria-label',titles[i]);
+  });
+ }
+ function syncDiceSize(){
+  if(!document.body.classList.contains('tabula-dice-mode'))return;
+  const engine=window.TabulaDiceTable;
+  const ready=engine?.isReady()&&engine.getMode()===diceSelect.value;
+  const blocked=!ready||engine.busy()||engine.inspectionActive();
+  const size=ready?engine.sizePercent():null;
+  sizeValue.textContent=size===null?'—':size+'%';
+  sizeButtons[0].disabled=blocked||size<=50;
+  sizeButtons[1].disabled=blocked||size>=100;
+  sizeButtons[2].disabled=blocked||size===100;
+ }
+ window.addEventListener('tabula:dice-size',syncDiceSize);
  function syncActionStates(){
+  syncDiceSize();
   const inspecting=window.TabulaDiceTable?.inspectionActive()===true;
   if(document.body.classList.contains('tabula-dice-mode'))newReading.disabled=inspecting||!window.TabulaDiceTable?.isReady()||window.TabulaDiceTable.busy();
   proxyButtons.forEach((btn,i)=>{btn.disabled=inspecting||sourceButtons[i].disabled});
@@ -223,7 +251,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0780').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0782').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;
@@ -248,7 +276,9 @@
   activationToken++;
   if(document.body.classList.contains('tabula-dice-mode'))configureInspector(false);
   if(document.body.classList.contains('tabula-dice-mode'))newReading.disabled=false;
+  const wasDice=document.body.classList.contains('tabula-dice-mode');
   document.body.classList.remove('tabula-dice-mode');workspace.hidden=true;
+  if(wasDice){configureSizeControls(false);window.dispatchEvent(new Event('tabula:card-size'));}
   cardActions.hidden=false;diceActions.hidden=true;
   setCardControlsInactive(false);
   changeSet.hidden=true;
@@ -266,6 +296,7 @@
   const token=++activationToken;
   if(!document.body.classList.contains('tabula-dice-mode'))cardResultsOpen=!cardResults.hidden;
   document.body.classList.add('tabula-dice-mode');workspace.hidden=true;
+  configureSizeControls(true);
   configureInspector(true);
   cardActions.hidden=true;diceActions.hidden=false;
   setCardControlsInactive(true);

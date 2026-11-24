@@ -64,8 +64,11 @@ forceSlider.addEventListener('change',()=>emitDice());
 updateForceLabel();
 let world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
 let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
-const DICE_SCALE=1.12,DICE_SIZE=1.05*DICE_SCALE,HALF=DICE_SIZE/2,FIXED_STEP=1/60;
-const DIE_SPACING=1.65*DICE_SCALE;
+const STANDARD_DICE_SCALE=1.12,FIXED_STEP=1/60;
+const MIN_DICE_SIZE=50,MAX_DICE_SIZE=100;
+let diceScale=STANDARD_DICE_SCALE;
+const diceSizePercent=()=>Math.round(diceScale/STANDARD_DICE_SCALE*100);
+const cubeSize=()=>1.05*diceScale;
 const up=new THREE.Vector3(0,1,0);
 const faceNormals=[
  new THREE.Vector3(1,0,0),new THREE.Vector3(-1,0,0),
@@ -201,7 +204,7 @@ function addNormalObject(index){
  const die=makeDie(index);
  const initial=die.body.translation();
  const clearance=die.radius+.1;
- const step=1.7*DICE_SCALE;
+ const step=1.7*diceScale;
  const columns=Math.floor((width/2-clearance)/step),rows=Math.floor((depth/2-clearance)/step);
  for(let row=-rows;row<=rows;row++)for(let column=-columns;column<=columns;column++){
   const x=column*step,z=row*step;
@@ -351,7 +354,7 @@ let pendingParentMode=null;
 
 function captureDice(){
  if(!ready)return null;
- return {schema:1,mode:current.id,scale:DICE_SCALE,
+ return {schema:1,mode:current.id,scale:diceScale,
   settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label,
    ...(current.id==='normal'?{faceStyle:normalFaceStyle(d)}:{}),
    userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''})),
@@ -366,10 +369,14 @@ function captureDice(){
   force:Number(forceSlider.value)};
 }
 let pendingRestore=null;
-function restoreDice(saved,id){
+function restoreDice(saved,id,sizePercent){
  if(!ready){pendingRestore={saved,id};return}
  if(rolling||mixing)return;
  const valid=saved&&saved.schema===1&&saved.mode===id&&Array.isArray(saved.settings);
+ const savedScale=valid&&Number.isFinite(saved.scale)&&saved.scale>0?saved.scale:STANDARD_DICE_SCALE;
+ const percent=sizePercent??Math.round(savedScale/STANDARD_DICE_SCALE*100);
+ diceScale=STANDARD_DICE_SCALE*Math.max(MIN_DICE_SIZE,Math.min(MAX_DICE_SIZE,percent))/100;
+ const growing=sizePercent!==undefined&&diceScale>savedScale;
  // Table changes must not leak another table's customized astrological palette.
  astroDiceColors=valid&&id==='astro'&&Array.isArray(saved.colors)?saved.colors.slice():null;
  ichingColorScheme=valid&&id==='iching'&&saved.scheme==='redUpper'?'redUpper':'blackUpper';
@@ -396,7 +403,8 @@ function restoreDice(saved,id){
    objects.forEach(({body,mesh},i)=>{
     const {p,q,visible}=saved.poses[i]||{};
     if(p&&q&&[p.x,p.y,p.z,q.x,q.y,q.z,q.w].every(Number.isFinite)){
-     body.setTranslation({...p,y:p.y*DICE_SCALE/(saved.scale>0?saved.scale:1)},true);body.setRotation(q,true);
+     const {x,z}=growing?body.translation():p;
+     body.setTranslation({x,y:p.y*diceScale/savedScale,z},true);body.setRotation(q,true);
      body.setLinvel({x:0,y:0,z:0},true);body.setAngvel({x:0,y:0,z:0},true);
     }
     mesh.visible=visible!==false;
@@ -413,11 +421,23 @@ function restoreDice(saved,id){
   collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;
  }
  syncMeshes();updateDimensions();
+ window.dispatchEvent(new Event('tabula:dice-size'));
+}
+function changeDiceSize(delta,reset){
+ if(!ready||rolling||mixing||inspectingDice)return;
+ const currentSize=diceSizePercent();
+ const next=reset?100:Math.max(MIN_DICE_SIZE,Math.min(MAX_DICE_SIZE,currentSize+delta));
+ if(next===currentSize)return;
+ restoreDice(captureDice(),current.id,next);
+ status.textContent='ダイスサイズを'+next+'%に変更しました。';
+ emitDice();
 }
 function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice(v)}
 
 window.TabulaDiceTable={
  snapshot:captureDice,
+ sizePercent:diceSizePercent,
+ changeSize:changeDiceSize,
  setInspection:setDiceInspection,
  inspectionActive:()=>inspectingDice,
  editNormalDraft(host,settings){renderNormalEditor(host,settings,apply=>apply())},
@@ -842,7 +862,7 @@ function numberTexture(value,color,sides,surface){
 // circumscribed diameters. A many-sided die needs a larger body so
 // its smaller triangular faces can carry comparably legible numerals.
 // The D6's finished ring-and-dot design retains its established size.
-function polyScale(sides){return DICE_SCALE*(({8:1.17,10:1.24,12:1.14,20:1.50})[sides]||1)}
+function polyScale(sides){return diceScale*(({8:1.17,10:1.24,12:1.14,20:1.50})[sides]||1)}
 // For this twelve-sided set, opposing faces carry complementary
 // indices 1+12, 2+11, ... 6+7 = 13. This is checked geometrically.
 function complementaryFaceValues(normals){
@@ -1015,9 +1035,10 @@ function numberedMesh(sides,color,material='standard',astroDieIndex=0){
 // numbers on their own cube faces. The collision cuboid stays unchanged.
 function wornCubeGeometry(material){
  const segments=material==='standard'?24:6;
- const geometry=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE,segments,segments,segments);
- const pos=geometry.getAttribute('position'),normals=geometry.getAttribute('normal'),half=DICE_SIZE/2;
- const radius=DICE_SIZE*(material==='wood'?.057:material==='standard'?.16:.09),inner=half-radius;
+ const size=cubeSize();
+ const geometry=new THREE.BoxGeometry(size,size,size,segments,segments,segments);
+ const pos=geometry.getAttribute('position'),normals=geometry.getAttribute('normal'),half=size/2;
+ const radius=size*(material==='wood'?.057:material==='standard'?.16:.09),inner=half-radius;
  for(let i=0;i<pos.count;i++){
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
   const cx=Math.max(-inner,Math.min(inner,x));
@@ -1047,6 +1068,7 @@ function cubeFaceTexture(value,settings,dieIndex){
 }
 function makeDie(i){
  const settings=diceSettings[i],sides=settings.sides;
+ const half=cubeSize()/2,dieSpacing=1.65*diceScale;
  let mesh,solid=null,normals,faceNumbers;
  if(sides===6){
   const geometry=wornCubeGeometry(settings.markings==='number'?'standard':settings.surface);
@@ -1061,22 +1083,22 @@ function makeDie(i){
  }
  mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
  const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
-  .setTranslation((i-(diceSettings.length-1)/2)*DIE_SPACING,Math.max(1.15,HALF+.4),0)
+  .setTranslation((i-(diceSettings.length-1)/2)*dieSpacing,Math.max(1.15,half+.4),0)
   .setLinearDamping(.13).setAngularDamping(.23).setCanSleep(true).setCcdEnabled(true));
  const collider=sides===6?
-  RAPIER.ColliderDesc.cuboid(HALF,HALF,HALF):
+  RAPIER.ColliderDesc.cuboid(half,half,half):
   RAPIER.ColliderDesc.convexHull(new Float32Array(solid.vertices.flat()));
  if(!collider)throw Error('Convex collider failed for D'+sides);
  world.createCollider(collider.setRestitution(.38).setFriction(.76).setDensity(1),body);
  // max radial extent, including cube vertices, for wall clearance.
- const radius=sides===6?Math.sqrt(3)*HALF:
+ const radius=sides===6?Math.sqrt(3)*half:
   Math.max(...solid.vertices.map(v=>Math.hypot(...v)));
  // Present the five dice on the cloth before the first throw.
  // Rapier is paused until rolling starts, so the initial pose should
  // place each solid exactly on the surface instead of floating.
- const lowest=sides===6?-HALF:Math.min(...solid.vertices.map(v=>v[1]));
+ const lowest=sides===6?-half:Math.min(...solid.vertices.map(v=>v[1]));
  const columns=Math.min(4,diceSettings.length),col=i%columns,row=Math.floor(i/columns),rows=Math.ceil(diceSettings.length/columns);
-  body.setTranslation({x:(col-(columns-1)/2)*DIE_SPACING,y:-lowest+.02,z:(row-(rows-1)/2)*DIE_SPACING},true);
+  body.setTranslation({x:(col-(columns-1)/2)*dieSpacing,y:-lowest+.02,z:(row-(rows-1)/2)*dieSpacing},true);
  return {mesh,body,normals,faceNumbers,sides,radius};
 }
 function replaceDieAppearance(index,keepPose=true){

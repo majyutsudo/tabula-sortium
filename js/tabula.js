@@ -4061,17 +4061,22 @@ $('quickOpen').onclick=openWithSelectedMode;$('shuffle').onclick=()=>runRecipe(f
 const validCardSize=TabulaStorage.validCardSize;
 const {builtinSpreadCardSizes}=TabulaCatalog;function spreadCardSize(id){const stored=spreadLibrary.find(v=>v.id===id);if(validCardSize(stored?.cardSize))return stored.cardSize;const built=builtinSpreadCardSizes[id];if(built)return window.innerWidth<=780?built.mobile:built.desktop;return defaultCardSize()}
 function syncCardSizeButtonState(){
+ if(document.body.classList.contains("tabula-dice-mode"))return;
  const minus=$('zoomOut'),plus=$('zoomIn'),reset=$('zoomReset');
  if(minus)minus.disabled=zoom<=.800001;
  if(plus)plus.disabled=zoom>=2.299999;
  if(reset)reset.disabled=false;
 }
-function updateCardSizeQuickValue(){const label=$('cardSizeQuickValue');if(label)label.textContent=Math.round(zoom*100)+'%';}function setCardSize(value,persist=true){zoom=validCardSize(value)?value:defaultCardSize();updateCardSizeQuickValue();syncCardSizeButtonState();for(const id of ['cardSizeScale','spreadCardSize']){const input=$(id);if(input)input.value=zoom;}if(persist){settings.cardSize=zoom;try{localStorage.setItem('tabula_card_size_v2',String(zoom))}catch(e){}}}
+function updateCardSizeQuickValue(){if(document.body.classList.contains('tabula-dice-mode'))return;const label=$('cardSizeQuickValue');if(label)label.textContent=Math.round(zoom*100)+'%';}function setCardSize(value,persist=true){zoom=validCardSize(value)?value:defaultCardSize();updateCardSizeQuickValue();syncCardSizeButtonState();for(const id of ['cardSizeScale','spreadCardSize']){const input=$(id);if(input)input.value=zoom;}if(persist){settings.cardSize=zoom;try{localStorage.setItem('tabula_card_size_v2',String(zoom))}catch(e){}}}
 function applySpreadCardSize(id,persist=true){setCardSize(spreadCardSize(id),persist)}
 
 /* Card magnification is distinct from the table-camera zoom. One shared entry
    handles desktop controls and applies the same value with or without tables. */
 function changeDesktopCardSize(delta,reset=false){
+ if(document.body.classList.contains('tabula-dice-mode')){
+  window.TabulaDiceTable?.changeSize(Math.round(delta*100),reset);
+  return;
+ }
  const before=zoom;
  const next=reset?spreadCardSize(settings.spread):
   Math.max(.8,Math.min(2.3,Math.round((zoom+delta)*100)/100));
@@ -4093,6 +4098,7 @@ function bindCardSizeControls(){
  }
  syncCardSizeButtonState();
 }
+window.addEventListener('tabula:card-size',()=>{updateCardSizeQuickValue();syncCardSizeButtonState()});
 bindCardSizeControls();const deck=$('deck');
 const deckB=document.createElement('div');deckB.id='deckB';deckB.className='deck dual-second-deck';deckB.title='デッキB：クリックで配札、ドラッグで配札';deckB.hidden=true;
 const labelA=document.createElement('span');labelA.className='dual-deck-identity';labelA.textContent='A';deck.append(labelA);
