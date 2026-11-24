@@ -213,7 +213,7 @@ body.tabula-dice-mode #quickSnapshotList{
 }
 #diceSettingsHolder .die-setting .dice-custom-label::placeholder{color:#afaa9d}
 body.tabula-dice-mode .main>.table-record-actions{flex-wrap:wrap}
-body.tabula-dice-mode #printPlacement{flex:1 1 100%}
+body.tabula-dice-mode #printPlacement{display:inline-flex!important;align-items:center;justify-content:center;flex:1 1 100%}
 
 /* 3D tabletop labels track their own die after a roll, but never intercept a throw. */
 #diceFloatingLabels{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
