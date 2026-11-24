@@ -432,3 +432,9 @@ test('tabletop clicks inspect the frontmost die or leave the table unchanged in 
  click({inspecting:false,held:true});
  assert.deepEqual(calls,['die 2','collect','roll']);
 });
+
+test('dice messages share the under-table status position',()=>{
+ const page=file('table.html'),adapter=file('js/dice-workspace.js');
+ assert.match(page,/class="status table-status" id="dice-status" role="status"/);
+ assert.match(adapter,/getElementById\('status'\)\.after\(document\.getElementById\('dice-status'\)\)/);
+});

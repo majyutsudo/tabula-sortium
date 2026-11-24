@@ -154,7 +154,7 @@
  for(const element of configChildren)settingsHolder.append(element);
  strengthHolder.append(workspace.querySelector('.force-control'));
  resultsHolder.append(workspace.querySelector('.iching-outcome'));
- document.querySelector('.toolbar').prepend(document.getElementById('dice-status'));
+ document.getElementById('status').after(document.getElementById('dice-status'));
  const sourceButtons=[
   document.getElementById('dice-collect'),
   document.getElementById('dice-mix'),
