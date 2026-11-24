@@ -1212,15 +1212,25 @@ function render(time){
  positionFloatingLabels();
  renderer.render(scene,camera);
 }
+function createDiceRenderer(){
+ for(const antialias of [true,false]){
+  const canvas=document.createElement('canvas');
+  const context=canvas.getContext('webgl2',{alpha:true,antialias});
+  if(context)return new THREE.WebGLRenderer({canvas,context,alpha:true,antialias});
+ }
+ throw new Error('WebGL 2 を開始できませんでした。');
+}
 async function init(){
+ let stage='物理エンジン';
  try{
   await RAPIER.init();
   world=new RAPIER.World({x:0,y:-15,z:0});
   world.timestep=FIXED_STEP;
   world.createCollider(RAPIER.ColliderDesc.cuboid(100,.2,100).setTranslation(0,-.2,0).setFriction(.86).setRestitution(.28));
+  stage='3D描画（WebGL 2）';
   scene=new THREE.Scene();
   camera=new THREE.OrthographicCamera(-5,5,3,-3,.1,100);
-  renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'high-performance'});
+  renderer=createDiceRenderer();
   renderer.setClearColor(0,0);
   renderer.shadowMap.enabled=true;
   renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -1233,6 +1243,7 @@ async function init(){
   key.shadow.normalBias=.018;key.shadow.bias=-.0002;key.shadow.radius=3;scene.add(key);
   ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShadowMaterial({opacity:.24}));
   ground.rotation.x=-Math.PI/2;ground.position.y=.007;ground.receiveShadow=true;scene.add(ground);
+  stage='ダイスの生成';
   updateDimensions();
   createDice();syncMeshes();
   ready=true;collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
@@ -1242,9 +1253,10 @@ async function init(){
   if(pendingRestore){const request=pendingRestore;pendingRestore=null;restoreDice(request.saved,request.id)}
  }catch(error){
   console.error(error);
-  status.textContent='読み込みに失敗しました';
+  status.textContent=stage+'の初期化に失敗しました';
+  status.title=error?.message||'';
   failure.hidden=false;
-  failure.textContent='3D描画または物理エンジンを読み込めませんでした。通信環境・WebGL対応を確認してください。'+(error?.message||'');
+  failure.textContent=status.textContent+'。'+status.title;
  }
 }
 collectButton.addEventListener('click',collectDice);
