@@ -282,7 +282,7 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 window.TabulaDiceTable={
  snapshot:captureDice,
  restore:restoreDice,
- reset(id){restoreDice(null,id)},
+ reset(id){restoreDice(null,id);forceSlider.value='30';updateForceLabel();emitDice()},
  busy(){return rolling||mixing},
  setMode(id){
   if(!['normal','astro','iching'].includes(id))return;
