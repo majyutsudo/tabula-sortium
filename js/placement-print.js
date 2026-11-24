@@ -9,7 +9,50 @@ function element(tag,attrs={},text){
  if(text!==undefined)e.textContent=text;
  return e;
 }
+
+/* TABULA dice: schematic 2D diagram, shared with the card placement editor.
+   The diagram is a document: positions and labels are editable, outcomes aren't rerolled. */
+function dicePrintable(){
+ const context=globalThis.TabulaTableTools?.context?.(),saved=globalThis.TabulaDiceTable?.snapshot?.()||context?.dice;
+ if(!context?.id?.startsWith('dice:')||!saved||!Array.isArray(saved.results)||!saved.results.length)
+  throw Error('配置図に記録する出目がありません。ダイスを振ってください。');
+ if(globalThis.TabulaDiceTable?.busy?.())throw Error('投擲が終わってから配置図を作成してください。');
+ const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm','data-instrument':'dice'});
+ svg.setAttribute('data-label-layer','front');
+ svg.append(element('rect',{width:210,height:297,fill:'#ffffff'}));
+ const mode=saved.mode||'normal',count=saved.results.length;
+ const fields=mode==='astro'?['天体','十二宮','ハウス']:mode==='iching'?['上卦','下卦','動爻']:[];
+ const bounds=saved.bounds||{},w=Number(bounds.width)>0?bounds.width:10,d=Number(bounds.depth)>0?bounds.depth:10;
+ const poses=Array.isArray(saved.poses)?saved.poses:[];
+ const shapeSize=Math.max(12,Math.min(20,120/Math.max(1,Math.ceil(Math.sqrt(count))))),half=shapeSize/2;
+ const centerX=105,centerY=127;
+ for(let i=0;i<count;i++){
+  const conf=saved.settings?.[i]||{},pos=poses[i]?.p,valid=pos&&Number.isFinite(pos.x)&&Number.isFinite(pos.z);
+  const x=valid?Math.max(25,Math.min(185,centerX+(pos.x/w)*160)):centerX+(i-(count-1)/2)*Math.min(26,150/Math.max(1,count));
+  const y=valid?Math.max(55,Math.min(205,centerY+(pos.z/d)*155)):centerY;
+  const fill=/^#[0-9a-f]{6}$/i.test(conf.color)?conf.color:'#c7b48d';
+  const box=element('g',{transform:'translate('+x.toFixed(2)+' '+y.toFixed(2)+')'});
+  box.append(element('rect',{x:-half,y:-half,width:shapeSize,height:shapeSize,rx:2.4,fill,stroke:'#45382b','stroke-width':.48}));
+  svg.append(box);
+  const result=saved.results[i],face=saved.displayFaces?.[i];
+  const shown=mode==='normal'?String(result):(face?.glyph||String(result));
+  const value=element('text',{x,y:y+2.2,'text-anchor':'middle','font-family':'Georgia, sans-serif','font-size':Math.min(8,shown.length>2?6:8),fill:'#201a18'},shown);
+  svg.append(value);
+  const name=(mode==='normal'?(String(conf.userLabel||'').trim()||('ダイス'+(i+1))):fields[i]||('ダイス'+(i+1)));
+  svg.append(element('text',{x,y:y+half+6.6,'text-anchor':'middle','font-family':'sans-serif','font-size':4,fill:'#252525'},name));
+  const descriptor=mode==='normal'?'D'+(conf.sides||6):face?.name||'';
+  if(descriptor)svg.append(element('text',{x,y:y+half+11.2,'text-anchor':'middle','font-family':'sans-serif','font-size':3.15,fill:'#444444'},descriptor));
+ }
+ const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[mode]||'DICE';
+ svg.append(element('text',{x:105,y:29,'text-anchor':'middle','font-family':'Georgia, serif','font-size':9,fill:'#282828'},heading));
+ const line=mode==='normal'?'合計 '+saved.results.reduce((a,b)=>a+b,0):
+  mode==='iching'&&saved.hexagram?'本卦 第'+saved.hexagram.primary+'卦  →  之卦 第'+saved.hexagram.changed+'卦':'';
+ if(line)svg.append(element('text',{x:105,y:252,'text-anchor':'middle','font-family':'sans-serif','font-size':5,fill:'#242424'},line));
+ svg.append(element('text',{x:105,y:272,'text-anchor':'middle','font-family':'Georgia, serif','font-size':3.6,fill:'#666666'},'TABULA SORTIUM · PLACEMENT DIAGRAM'));
+ return svg;
+}
 function printable(){
+ if(document.body.classList.contains('tabula-dice-mode'))return dicePrintable();
  const zone=$('zone');if(!zone)throw Error('卓が見つかりません。');
  const zr=zone.getBoundingClientRect();
  if(!zr.width||!zr.height)throw Error('卓の寸法を取得できません。');
@@ -223,6 +266,7 @@ function documentFromSvg(svg,transparent=false,dpi=300){
  const cards=[...svg.children].filter(el=>el.localName==='g'&&!el.hasAttribute('data-editor-overlay')&&el.querySelector(':scope > rect'));
  const labels=[...svg.children].filter(el=>el.localName==='text');
  return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,labelLayer:svg.getAttribute('data-label-layer')==='behind'?'behind':'front',backgroundColor:normalizedBackgroundColor(svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff'),
+  instrument:svg.getAttribute('data-instrument')==='dice'?'dice':'card',
   cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
   labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
 }
@@ -231,6 +275,7 @@ function svgFromDocument(doc){
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
  const labelLayer=doc.labelLayer==='behind'?'behind':'front';
  svg.setAttribute('data-label-layer',labelLayer);
+ if(doc.instrument==='dice')svg.setAttribute('data-instrument','dice');
  const backgroundColor=normalizedBackgroundColor(doc.backgroundColor??'#ffffff');
  svg.append(element('rect',{width:210,height:297,fill:backgroundColor}));
  for(const data of doc.cards){
@@ -267,6 +312,7 @@ function chooseDiagramFile(){
 
 function editor(source,options={}){
  const svg=source.cloneNode(true),root=document.createElement('div');
+ const diceDiagram=svg.getAttribute('data-instrument')==='dice';
  root.id='tabulaPrintEditor';root.tabIndex=-1;
  const css=document.createElement('style');
  css.textContent='#tabulaPrintEditor{position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;background:#211d19;color:#e9deca;font:13px Georgia,"Yu Mincho",serif}#tabulaPrintEditor *{box-sizing:border-box}#tabulaPrintEditor button,#tabulaPrintEditor input,#tabulaPrintEditor select{font:inherit;border:1px solid #827357;border-radius:4px;background:#302f29;color:#f3e8d3;padding:6px 9px;min-height:32px}#tabulaPrintEditor button{cursor:pointer}#tabulaPrintEditor button:hover{background:#4b4b3d}#tabulaPrintEditor button:disabled{opacity:.4;cursor:default}#tabulaPrintEditor .tp-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 15px;background:#242823;border-bottom:1px solid #806e4d}#tabulaPrintEditor .tp-head strong{font-size:17px;letter-spacing:.09em;color:#e8d09c;margin-right:12px}#tabulaPrintEditor .tp-spacer{flex:1}#tabulaPrintEditor .tp-head .tp-export{border-color:#c3a46a;color:#ffebbf}#tabulaPrintEditor .tp-intro{margin:0;padding:8px 15px;background:#242823;border-bottom:1px solid #514c3d;color:#d2c8b6;font:12px/1.6 sans-serif}#tabulaPrintEditor .tp-main{display:flex;flex:1;min-height:0}#tabulaPrintEditor .tp-work{flex:1;min-width:0;overflow:auto;padding:22px;background:radial-gradient(ellipse,#393027,#211b17)}#tabulaPrintEditor .tp-sheet{width:min(650px,100%);margin:0 auto}#tabulaPrintEditor .tp-sheet svg{display:block;width:100%;height:auto;background:white;box-shadow:0 8px 30px #0009;touch-action:none;user-select:none}#tabulaPrintEditor .tp-side{width:275px;flex:none;overflow:auto;padding:16px;background:#242823;border-left:1px solid #655743}#tabulaPrintEditor .tp-section{border-bottom:1px solid #514c3d;padding-bottom:15px;margin-bottom:16px}#tabulaPrintEditor .tp-section h3{font-size:13px;font-weight:normal;letter-spacing:.1em;color:#e1c58d;margin:0 0 12px}#tabulaPrintEditor .tp-field{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}#tabulaPrintEditor .tp-field label{font:12px sans-serif;color:#d2c8b6}#tabulaPrintEditor .tp-field input,#tabulaPrintEditor .tp-field select{width:127px;min-width:0}#tabulaPrintEditor .tp-field input[type=checkbox]{width:auto;min-height:0;accent-color:#c3a46a}#tabulaPrintEditor .tp-actions{display:flex;gap:6px;flex-wrap:wrap}#tabulaPrintEditor .tp-note{color:#bcb19d;font:12px/1.6 sans-serif}#tabulaPrintEditor .tp-status{padding:7px 14px;background:#242823;border-top:1px solid #655743;color:#cbbd9e;font:12px sans-serif}#tabulaPrintEditor .tp-selected{stroke:#447dbb!important;stroke-width:.55!important;stroke-dasharray:2 1}#tabulaPrintEditor .tp-head select{max-width:120px}@media(max-width:760px){#tabulaPrintEditor{overflow-y:auto;overflow-x:hidden}#tabulaPrintEditor .tp-head{gap:6px;padding:8px 10px}#tabulaPrintEditor .tp-head strong{flex:1 1 100%;margin-right:0}#tabulaPrintEditor .tp-intro{padding:7px 10px}#tabulaPrintEditor .tp-main{flex:none;flex-direction:column;min-height:0;overflow:visible}#tabulaPrintEditor .tp-work{flex:none;min-height:0;height:auto;padding:12px;overflow:visible}#tabulaPrintEditor .tp-work.tp-zoomed{max-height:70vh;max-height:70dvh;overflow:auto;overscroll-behavior:contain}#tabulaPrintEditor .tp-sheet{width:min(650px,100%)}#tabulaPrintEditor .tp-side{width:100%;max-height:none;overflow:visible;border-left:0;border-top:1px solid #655743}#tabulaPrintEditor .tp-status{flex:none}}';
@@ -277,9 +323,9 @@ function editor(source,options={}){
  make('strong',head,'TABULA · 配置図');
  make('span',head,'選択対象','tp-note');
  const mode=make('select',head);
- [['all','すべて'],['card','カード枠'],['label','ラベル']].forEach(pair=>{const opt=make('option',mode,pair[1]);opt.value=pair[0];});
+ [['all','すべて'],['card',diceDiagram?'ダイス枠':'カード枠'],['label','ラベル']].forEach(pair=>{const opt=make('option',mode,pair[1]);opt.value=pair[0];});
  const undoBtn=button(head,'↶ 元に戻す',undo),redoBtn=button(head,'↷ やり直す',redo);
- button(head,'初期配置に戻す',()=>{if(!confirm('カード枠・ラベル・背景色の編集をすべて破棄し、最初の配置に戻します。よろしいですか？'))return;restore(initial);bg.setAttribute('fill',initialBackground);history=[];future=[];refresh();});
+ button(head,'初期配置に戻す',()=>{if(!confirm((diceDiagram?'ダイス枠':'カード枠')+'・ラベル・背景色の編集をすべて破棄し、最初の配置に戻します。よろしいですか？'))return;restore(initial);bg.setAttribute('fill',initialBackground);history=[];future=[];refresh();});
  make('span',head,undefined,'tp-spacer');
  button(head,'SVG保存',()=>download(exportSvg()),'tp-export');
  button(head,'PNG保存',()=>savePng(),'tp-export');
@@ -289,7 +335,7 @@ function editor(source,options={}){
  const fileInput=make('input',head);fileInput.type='file';fileInput.accept='.json,application/json';fileInput.style.display='none';
  fileInput.onchange=async()=>{const file=fileInput.files?.[0];fileInput.value='';if(file)await loadProject(file);};
  button(head,'閉じる',()=>closeEditor());
- const intro=make('p',root,'卓上のカード配置をもとに、カードの枠線とラベルの位置・書式・色などを編集し、配置図として保存・印刷できます。','tp-intro');
+ const intro=make('p',root,diceDiagram?'ダイスの位置と出目を2Dで記録します。枠とラベルの位置・文字を編集し、SVG・PNG・PDFで保存できます。':'卓上のカード配置をもとに、カードの枠線とラベルの位置・書式・色などを編集し、配置図として保存・印刷できます。','tp-intro');
  const main=make('div',root,undefined,'tp-main'),work=make('div',main,undefined,'tp-work'),sheet=make('div',work,undefined,'tp-sheet'),side=make('div',main,undefined,'tp-side'),status=make('div',root,undefined,'tp-status');
  sheet.append(svg);document.body.append(root);
  const cards=[...svg.children].filter(el=>el.localName==='g'&&el.querySelector(':scope > rect'));
