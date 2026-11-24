@@ -10,6 +10,10 @@ function element(tag,attrs={},text){
  return e;
 }
 
+function placementHeading(text){
+ return element('text',{x:105,y:29,'text-anchor':'middle','font-family':'Georgia, serif','font-size':9,fill:'#282828'},text);
+}
+
 function diceInk(fill){
  const channels=fill.slice(1).match(/../g).map(hex=>{
   const value=parseInt(hex,16)/255;
@@ -54,6 +58,8 @@ function dicePrintable(){
    svg.append(element('text',{x,y:labelY,'text-anchor':'middle','font-family':'sans-serif','font-size':4,fill:prefs.position==='center'?ink:'#252525'},label));
   }
  }
+ const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[mode]||'DICE';
+ svg.append(placementHeading(heading));
  const line=mode==='normal'?'合計 '+saved.results.reduce((a,b)=>a+b,0):
   mode==='iching'&&saved.hexagram?'本卦 第'+saved.hexagram.primary+'卦  →  之卦 第'+saved.hexagram.changed+'卦':'';
  if(line)svg.append(element('text',{x:105,y:252,'text-anchor':'middle','font-family':'sans-serif','font-size':5,fill:'#242424'},line));
@@ -77,9 +83,9 @@ function printable(){
  // Use actual on-screen geometry for BOTH cards and labels. The labels are
  // independent DOM elements; their positions must never be inferred from cards.
  const zw=zone.offsetWidth,zh=zone.offsetHeight;
- const pageW=210,pageH=297,margin=12;
- const scale=Math.min((pageW-2*margin)/zw,(pageH-2*margin)/zh);
- const ox=(pageW-zw*scale)/2,oy=(pageH-zh*scale)/2;
+ const pageW=210,pageH=297,margin=12,topMargin=40;
+ const scale=Math.min((pageW-2*margin)/zw,(pageH-topMargin-margin)/zh);
+ const ox=(pageW-zw*scale)/2,oy=Math.max(topMargin,(pageH-zh*scale)/2);
  const toX=px=>ox+(px-zr.left)*zw/zr.width*scale;
  const toY=px=>oy+(px-zr.top)*zh/zr.height*scale;
  const sx=zw/zr.width,sy=zh/zr.height;
@@ -132,6 +138,7 @@ function printable(){
   const firstCard=[...svg.children].find(el=>el.localName==='g');
   for(const label of labelNodes)svg.insertBefore(label,firstCard||null);
  }else for(const label of labelNodes)svg.append(label);
+ svg.append(placementHeading('CARDS'));
  return svg;
 }
 function download(svg){
