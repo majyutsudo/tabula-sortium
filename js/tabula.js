@@ -2848,7 +2848,7 @@ function exportAllData(){
   downloadJSON({
    format:EXPORT_FORMAT,version:3,kind:'backup',exportedAt:new Date().toISOString(),
    workspace:base,multiWorkspace,
-   activeMultiWorkspace:!!dualSession,
+   mainToolState,activeMultiWorkspace:!!dualSession,
    snapshots,spreadLibrary,deckLibrary,blueprintLibrary:TabulaDeckBlueprint.load(),
    cardTextOverrides:cardTexts,deckIntroOverrides
   },'TABULA_BACKUP_'+new Date().toISOString().slice(0,10)+'.json');
@@ -2925,7 +2925,10 @@ function readExternalFile(file){
   const intros=data.deckIntroOverrides??{};
   const validIntros=intros&&typeof intros==='object'&&!Array.isArray(intros)&&Object.keys(intros).length<=100
    &&Object.entries(intros).every(([id,value])=>Object.hasOwn(BUILTIN_DECK_INTROS,id)&&typeof value==='string'&&value.length<=20000);
-  const valid=validIntros&&(data.cardTextOverrides===undefined||validTextMap(data.cardTextOverrides))
+  const validTool=data.mainToolState===undefined||(data.mainToolState&&typeof data.mainToolState==='object'&&!Array.isArray(data.mainToolState)
+   &&typeof data.mainToolState.id==='string'&&(data.mainToolState.id.startsWith('card:')||DICE_TOOL_IDS.includes(data.mainToolState.id))
+   &&(data.mainToolState.dice==null||data.mainToolState.dice.schema===1));
+  const valid=validTool&&validIntros&&(data.cardTextOverrides===undefined||validTextMap(data.cardTextOverrides))
    &&validBlueprintLibrary(blueprints)&&validBackupWorkspace(w,blueprints)
    &&Array.isArray(data.snapshots)&&data.snapshots.length<=1000&&data.snapshots.every(validateReading)
    &&Array.isArray(data.spreadLibrary)&&data.spreadLibrary.length<=100
@@ -2938,7 +2941,7 @@ function readExternalFile(file){
   // Stage all serialized values before touching storage. If any write fails,
   // roll back every affected key rather than keeping half an import.
   const keys=[KEY,HISTORY_KEY,SPREAD_LIBRARY_KEY,TabulaDeckStore.KEY,TabulaDeckBlueprint.KEY,DUAL_SESSION_KEY,DUAL_RESTORE_ONCE_KEY,
-   'tabula_card_texts_v1',DECK_INTRO_OVERRIDES_KEY];
+   'tabula_card_texts_v1',DECK_INTRO_OVERRIDES_KEY,TOOL_STORAGE_KEY];
   const previous=new Map();
   try{
    const values=[
@@ -2947,7 +2950,8 @@ function readExternalFile(file){
     extra?JSON.stringify(extra):null,
     extra&&data.activeMultiWorkspace&&extra.workspaceKind===undefined?'1':null,
     data.cardTextOverrides===undefined?localStorage.getItem('tabula_card_texts_v1'):JSON.stringify(data.cardTextOverrides),
-    data.deckIntroOverrides===undefined?localStorage.getItem(DECK_INTRO_OVERRIDES_KEY):JSON.stringify(data.deckIntroOverrides)
+    data.deckIntroOverrides===undefined?localStorage.getItem(DECK_INTRO_OVERRIDES_KEY):JSON.stringify(data.deckIntroOverrides),
+    JSON.stringify(data.mainToolState||{id:'card:'+(w.settings?.deckId||'builtin'),dice:null})
    ];
    for(const key of keys)previous.set(key,localStorage.getItem(key));
    keys.forEach((key,i)=>values[i]===null?localStorage.removeItem(key):localStorage.setItem(key,values[i]));
@@ -3125,7 +3129,7 @@ function compareModal(){
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
 function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定を初期化しました。配札と記録は残ります。')}
-function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();setStatus('全データを初期化しました。')}
+function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(TOOL_STORAGE_KEY);mainToolState={id:'card:builtin',dice:null};localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();notifyTool();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false,workflowOptions=null){
  if(!workflowOptions&&spreadDealPreparing){setStatus('ディール手順の実行中はカット操作を変更できません。');return}
  if(!workflowOptions&&Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
@@ -5494,7 +5498,7 @@ function replaceIndependentTool(target){
 }
 window.TabulaTableTools={
  context(){return{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}},
- saveDice(snapshot){if(!isDiceTool(activeToolId()))return;const t=activeToolTable();if(t){t.diceSnapshot=snapshot;dualSave()}else{mainToolState.dice=snapshot;storeMainTool()}},
+ saveDice(snapshot){if(!snapshot||!isDiceTool(activeToolId())||snapshot.mode!==activeToolId().slice(5))return;const t=activeToolTable();if(t){t.diceSnapshot=snapshot;dualSave()}else{mainToolState.dice=snapshot;storeMainTool()}},
  updateCard(id){if(isDiceTool(activeToolId()))return;const t=activeToolTable();if(t)t.toolId='card:'+id;else{mainToolState.id='card:'+id;storeMainTool()}},
  switchTool(target){
   if(!(isDiceTool(target)||target.startsWith('card:')))return false;
