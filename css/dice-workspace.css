@@ -77,12 +77,13 @@ body.tabula-dice-mode .main>.table-shortcuts.dice-quick-actions{display:grid!imp
 #diceResultsHolder #dice-total[hidden]{display:none!important}
 #diceResultsHolder .iching-outcome{display:flex;flex-direction:column;gap:8px}
 #diceResultsHolder .hexagram-reading,#diceResultsHolder .results{padding:8px 10px;border:1px solid #baa77a70;border-radius:6px;background:#162b23;color:#e9d7b0}
-#diceResultsHolder .results{display:flex;align-items:center;gap:8px}
+#diceResultsHolder .results{display:flex;align-items:center;gap:8px;box-sizing:border-box;min-height:104px}
 #diceResultsHolder #dice-values{display:flex;flex:1;justify-content:space-around;flex-wrap:wrap;gap:5px}
 #diceResultsHolder .result-die{display:flex;flex-direction:column;align-items:center;gap:3px}
 #diceResultsHolder .result-kind{font-size:11px;display:flex;align-items:center;gap:4px}
 #diceResultsHolder .result-swatch{display:block;width:9px;height:9px;border-radius:50%}
 #diceResultsHolder .result-number{font-size:25px;font-weight:bold}
+#diceResultsHolder .results:not(.astro-results) .result-number{font-size:36px;line-height:1.1}
 #diceResultsHolder .astro-name{font-size:11px}
 #diceResultsHolder #dice-total{border-left:1px solid #baa77a70;padding-left:10px}
 #diceStrengthHolder{width:100%;grid-column:1/-1;box-sizing:border-box;padding:5px 10px}
@@ -101,6 +102,7 @@ body.tabula-dice-mode .main>.table-shortcuts.dice-quick-actions{display:grid!imp
 @media(max-width:780px){
  #diceStrengthHolder .force-control{gap:5px}
  #diceResultsHolder .result-number{font-size:21px}
+ #diceResultsHolder .results:not(.astro-results) .result-number{font-size:32px}
 }
 
 /* The left-hand menus retain their positions; only section II switches its settings. */
