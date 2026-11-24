@@ -200,3 +200,22 @@ test('when an additional table uses dice, its card-only deck B settings stay hid
  assert.match(model,/backBLabel\.hidden=activeDice\|\|diceB/);
  assert.match(adapter,/presetSnapToggle/);
 });
+
+test('dice shows results by default and hides the card-only auxiliary panels',()=>{
+ const adapter=file('js/dice-workspace.js');
+ const style=file('css/dice-workspace.css');
+ assert.match(adapter,/setDiceResultsOpen\(true\)/);
+ assert.match(adapter,/function toggleDiceResults\(\)\{setDiceResultsOpen\(cardResults.hidden\)\}/);
+ assert.match(adapter,/cardResults.hidden=!cardResultsOpen/);
+ for(const klass of ['table-utility-actions','table-record-actions','results-toggle-bar','info'])
+  assert.match(style,new RegExp('body\\.tabula-dice-mode \\.main>\\.'+klass));
+ assert.match(style,/body\.tabula-dice-mode \.main>\.live-results:not\(\[hidden\]\)/);
+});
+test('dice strength control is a single slider row without verbal intensity labels',()=>{
+ const html=file('table.html');
+ assert.match(html,/id="dice-force" type="range"/);
+ assert.match(html,/id="dice-forceValue"/);
+ assert.doesNotMatch(html,/class="force-range"/);
+ assert.doesNotMatch(html,/そっと<\/span>/);
+ assert.doesNotMatch(html,/激しく<\/span>/);
+});
