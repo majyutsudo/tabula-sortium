@@ -106,8 +106,11 @@ const bottomToTopTrigrams=[
 function trigramIndex(lines){
  return bottomToTopTrigrams.findIndex(t=>t.every((v,i)=>v===lines[i]));
 }
+function ichingLines(upper,lower){
+ return [...bottomToTopTrigrams[lower-1],...bottomToTopTrigrams[upper-1]];
+}
 function hexagramSummary(upper,lower,line){
- const lines=[...bottomToTopTrigrams[lower-1],...bottomToTopTrigrams[upper-1]];
+ const lines=ichingLines(upper,lower);
  const changed=lines.slice();changed[line-1]=1-changed[line-1];
  const nextLower=trigramIndex(changed.slice(0,3));
  const nextUpper=trigramIndex(changed.slice(3,6));
@@ -128,6 +131,7 @@ function syncDiceInspection() {
  button.setAttribute('aria-pressed',String(inspectingDice));
  const holder=document.getElementById('diceResultsHolder');
  holder.classList.toggle('dice-inspecting',inspectingDice);
+ felt.classList.toggle('dice-inspecting',inspectingDice);
  holder.querySelectorAll('.dice-inspection-target').forEach(target=>{target.tabIndex=inspectingDice?0:-1});
 }
 function setDiceInspection(enabled) {
@@ -142,11 +146,17 @@ function resultButton(node, label, open) {
   if(inspectingDice)window.TabulaTableTools?.openDiceDetail(open(),node);
  });
 }
+function dieDetail(index) {
+ const value=recordedResults[index];
+ const hexagram=current.id==='iching'?hexagramSummary(...recordedResults):null;
+ const lines=hexagram?ichingLines(...recordedResults):null;
+ return faceDetail(current.id,index,value,diceSettings[index],faceFigure(objects[index],value),hexagram?.primary,hexagram?.changed,lines);
+}
 function showResults(results=null){
  recordedResults=Array.isArray(results)?results.slice():null;
  values.replaceChildren();
  const h=current.id==='iching'&&results?hexagramSummary(...results):null;
- const lines=h?[...bottomToTopTrigrams[results[1]-1],...bottomToTopTrigrams[results[0]-1]]:null;
+ const lines=h?ichingLines(...results):null;
  const symbolic=current.result!=='sum';
  diceDOM.getElementById('result-tiles').classList.toggle('astro-results',symbolic);
  diceSettings.forEach((d,i)=>{
@@ -162,8 +172,7 @@ function showResults(results=null){
   symbol.textContent=result!=null?(face?.glyph===undefined?String(result):current.id==='astro'&&i===1?face.glyph+'\uFE0E':face.glyph):'—';
   tile.append(kind,symbol);
   if(symbolic){const desc=document.createElement('span');desc.className='astro-name';desc.textContent=face?.name||'未投擲';tile.append(desc);}
-  if(result!=null)resultButton(tile,label.textContent+' '+(face?.name||result),()=>
-   faceDetail(current.id,i,result,d,faceFigure(objects[i],result),h?.primary,h?.changed,lines));
+  if(result!=null)resultButton(tile,label.textContent+' '+(face?.name||result),()=>dieDetail(i));
   values.append(tile);
  });
  total.hidden=symbolic;
@@ -1105,7 +1114,7 @@ function topFace(object){
 }
 function random(min,max){return min+Math.random()*(max-min)}
 function collectDice(){
- if(!ready||rolling||held)return;
+ if(inspectingDice||!ready||rolling||held)return;
  // Leave physical dice untouched until the next throw; merely remove
  // them from the visible table. This preserves genuine physics on release.
  held=true;
@@ -1126,7 +1135,7 @@ function collectDice(){
 // The full-size meshes represent dice tossed upward from an unseen palm;
 // Rapier is deliberately paused, and the final numbers are determined on throw.
 function startMix(){
- if(!ready||rolling||!held||mixing)return;
+ if(inspectingDice||!ready||rolling||!held||mixing)return;
  mixing=true;mixCount++;mixTime=0;
  button.disabled=true;
  mixButton.textContent='⟳　混ぜる';
@@ -1202,7 +1211,7 @@ function animateMix(dt){
  });
 }
 function releaseDice(options={}){
- if(!ready||rolling||!held||mixing)return;
+ if(inspectingDice||!ready||rolling||!held||mixing)return;
  held=false;
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
  lockSettings(true);
@@ -1281,12 +1290,20 @@ function createCanvasDiceRenderer(){
   ctx.setTransform(ratio,0,0,ratio,0,0);
  }
  const projected=new THREE.Vector3();
+ const hitAreas=[];
  return {
   domElement:canvas,
+  pickDie(x,y){
+   ctx.save();ctx.setTransform(1,0,0,1,0,0);
+   const hit=hitAreas.findLast(area=>ctx.isPointInPath(area.shape,x*w-area.x,y*h-area.y));
+   ctx.restore();
+   return hit?.index ?? -1;
+  },
   setSize(width,height){w=width;h=height;resize()},
   setPixelRatio(value){if(ratio!==value){ratio=value;resize()}},
   render(_scene,camera){
    ctx.clearRect(0,0,w,h);
+   hitAreas.length=0;
    for(const [i,object] of objects.entries()){
     const {mesh,sides,radius,faceNumbers}=object;
     if(!mesh.visible)continue;
@@ -1294,26 +1311,28 @@ function createCanvasDiceRenderer(){
     projected.copy(mesh.position).project(camera);
     const size=radius*w/(camera.right-camera.left)*1.35;
     ctx.save();
-    ctx.translate((projected.x+1)*w/2,(1-projected.y)*h/2);
+    const x=(projected.x+1)*w/2,y=(1-projected.y)*h/2;
+    ctx.translate(x,y);
     ctx.shadowColor='#0009';ctx.shadowBlur=7;ctx.shadowOffsetY=4;
-    ctx.beginPath();
-    if(sides===6)ctx.roundRect(-size/2,-size/2,size,size,size*.12);
+    const shape=new Path2D();
+    if(sides===6)shape.roundRect(-size/2,-size/2,size,size,size*.12);
     else {
      const corners=sides===8||sides===20?3:sides===12?5:4;
      for(let corner=0;corner<corners;corner++){
       const angle=corner*Math.PI*2/corners-Math.PI/2;
-      ctx.lineTo(Math.cos(angle)*size*.65,Math.sin(angle)*size*.65);
+      shape.lineTo(Math.cos(angle)*size*.65,Math.sin(angle)*size*.65);
      }
-     ctx.closePath();
+     shape.closePath();
     }
+    hitAreas.push({shape,x,y,index:i});
     const die=diceSettings[i];
-    ctx.fillStyle=die.color;ctx.fill();
+    ctx.fillStyle=die.color;ctx.fill(shape);
     ctx.shadowColor='transparent';
     const texture=mesh.material[faceNumbers.indexOf(value)]?.map?.image;
     if(sides===6&&texture){
-     ctx.clip();ctx.drawImage(texture,-size/2,-size/2,size,size);
+     ctx.clip(shape);ctx.drawImage(texture,-size/2,-size/2,size,size);
     }else{
-     ctx.strokeStyle='#0006';ctx.lineWidth=1;ctx.stroke();
+     ctx.strokeStyle='#0006';ctx.lineWidth=1;ctx.stroke(shape);
      const rgb=parseInt(die.color.slice(1),16);
      const luminance=(rgb>>16)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
      ctx.fillStyle=die.ink||(luminance<140?'#fff1d8':'#241d17');
@@ -1387,6 +1406,17 @@ bindMixHold(document.getElementById('diceQuickMix'));
 button.addEventListener('click',()=>releaseDice());
 const guide=diceDOM.getElementById('throwGuide'),startPoint=diceDOM.getElementById('startPoint'),line=diceDOM.getElementById('throwLine'),arrow=diceDOM.getElementById('throwArrow');
 let gesture=null,suppressClick=false;
+const diceRaycaster=new THREE.Raycaster();
+function pickTableDie(event) {
+ const rect=renderer.domElement.getBoundingClientRect();
+ if(!rect.width||!rect.height)return -1;
+ const x=(event.clientX-rect.left)/rect.width,y=(event.clientY-rect.top)/rect.height;
+ if(renderer.pickDie)return renderer.pickDie(x,y);
+ diceRaycaster.setFromCamera({x:2*x-1,y:1-2*y},camera);
+ const meshes=objects.filter(object=>object.mesh.visible).map(object=>object.mesh);
+ const hit=diceRaycaster.intersectObjects(meshes,false)[0];
+ return hit?objects.findIndex(object=>object.mesh===hit.object):-1;
+}
 function local(event){const r=felt.getBoundingClientRect();return{x:event.clientX-r.left,y:event.clientY-r.top}}
 function drawGuide(x,y,dx,dy){
  const size=Math.hypot(dx,dy),scale=Math.min(1,170/(size||1));
@@ -1397,7 +1427,8 @@ function drawGuide(x,y,dx,dy){
  arrow.setAttribute('transform','translate('+X+' '+Y+') rotate('+(Math.atan2(dy,dx)*180/Math.PI)+')');
 }
 felt.addEventListener('pointerdown',event=>{
- if(!ready||rolling||!held||mixing||!event.isPrimary||event.button!==0)return;
+ if(event.isPrimary)suppressClick=false;
+ if(inspectingDice||!ready||rolling||!held||mixing||!event.isPrimary||event.button!==0)return;
  const p=local(event);gesture={id:event.pointerId,x:event.clientX,y:event.clientY,localX:p.x,localY:p.y,time:performance.now()};
  felt.setPointerCapture(event.pointerId);drawGuide(p.x,p.y,0,0);
 });
@@ -1417,6 +1448,14 @@ felt.addEventListener('pointerup',event=>{
  suppressClick=true;releaseDice({direction:{x:dx/distance,y:dy/distance},gestureBoost});
 });
 felt.addEventListener('pointercancel',()=>{gesture=null;guide.style.display='none'});
-felt.addEventListener('click',()=>{if(suppressClick){suppressClick=false;return}if(held)releaseDice();else collectDice()});
-felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();if(held)releaseDice();else collectDice()}});
+felt.addEventListener('click',event=>{
+ if(suppressClick){suppressClick=false;return}
+ if(inspectingDice){
+  const index=pickTableDie(event);
+  if(Number.isInteger(recordedResults?.[index]))window.TabulaTableTools?.openDiceDetail(dieDetail(index),felt);
+  return;
+ }
+ if(held)releaseDice();else collectDice();
+});
+felt.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();if(inspectingDice)return;if(held)releaseDice();else collectDice()}});
 init();

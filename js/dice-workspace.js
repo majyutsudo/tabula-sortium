@@ -166,7 +166,11 @@
   document.getElementById('diceQuickRoll')
  ];
  function syncActionStates(){
-  proxyButtons.forEach((btn,i)=>{btn.disabled=sourceButtons[i].disabled});
+  const inspecting=window.TabulaDiceTable?.inspectionActive()===true;
+  proxyButtons.forEach((btn,i)=>{btn.disabled=inspecting||sourceButtons[i].disabled});
+  document.getElementById('diceQuickSettings').disabled=inspecting;
+  changeSet.disabled=inspecting;
+  document.getElementById('dice-force').disabled=inspecting;
   const mixing=sourceButtons[1].getAttribute('aria-pressed')==='true';
   document.getElementById('diceQuickMixLabel').textContent='混ぜる';
   proxyButtons[1].setAttribute('aria-pressed',String(mixing));
@@ -205,7 +209,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0764').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0765').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;
@@ -214,6 +218,7 @@
  }
  const inspector=document.getElementById('inspectCards');
  const cardInspectorTitle=inspector?.title;
+ if(inspector)new MutationObserver(syncActionStates).observe(inspector,{attributes:true,attributeFilter:['aria-pressed']});
  inspector?.addEventListener('click',()=>{
   if(window.TabulaDiceTable?.inspectionActive())setDiceResultsOpen(true);
  });
@@ -221,7 +226,7 @@
   if(!inspector)return;
   window.TabulaDiceTable?.setInspection(false);
   inspector.disabled=dice;
-  inspector.title=dice?'虫眼鏡を押してから、結果欄の出目を選びます。':cardInspectorTitle;
+  inspector.title=dice?'虫眼鏡を押してから、卓上のダイスか結果欄の出目を選びます。':cardInspectorTitle;
   inspector.setAttribute('aria-label',dice?'ダイスの出目を見る':'カードを見る');
   inspector.dataset.toolLabel=dice?'ダイスの出目を見る':'カードを見る';
  }

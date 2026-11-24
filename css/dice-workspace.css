@@ -266,3 +266,5 @@ body.tabula-dice-mode #placementTools{display:none!important}
 .dice-detail-hexagram span{height:5px;color:#eadfc8;background:currentColor}
 .dice-detail-hexagram .yin{background:linear-gradient(to right,currentColor 0 43%,transparent 43% 57%,currentColor 57% 100%)}
 .dice-detail-hexagram .moving{color:#e09762}
+
+#dice-felt.dice-inspecting{cursor:zoom-in}

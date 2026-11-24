@@ -31,7 +31,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0764'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0765'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -405,4 +405,30 @@ test('D6 numerals route through the chosen finish and keep the point defaults',(
  assert.deepEqual(texture(1,{markings:'engraved',faces:['初'],ink:'#000000'},0),['I Ching','初',0,'#000000']);
  assert.match(engine,/faceStyle:normalFaceStyle\(d\)/);
  assert.deepEqual(texture(4,{color,surface:'ivory',faceStyle:'ring-numerals'},0),['ring number',4,color,6,142,3,'ivory']);
+});
+
+test('tabletop clicks inspect the frontmost die or leave the table unchanged in inspection mode',()=>{
+ const source=file('js/dice-table-engine.js');
+ const start=source.indexOf('felt.addEventListener(\'click\',event=>{');
+ const end=source.indexOf('felt.addEventListener(\'keydown\'',start);
+ assert.ok(start>=0&&end>start);
+ const calls=[];
+ function click({inspecting,hit=0,held=false,results=[4,2],suppressed=false}){
+  const felt={addEventListener(_event,callback){callback({})}};
+  const window={TabulaTableTools:{openDiceDetail(detail,origin){
+   assert.equal(origin,felt);calls.push(detail);
+  }}};
+  Function('felt','window','inspectingDice','recordedResults','pickTableDie','dieDetail',
+   'held','collectDice','releaseDice','suppressClick',source.slice(start,end))(
+    felt,window,inspecting,results,()=>hit,i=>'die '+results[i],
+    held,()=>calls.push('collect'),()=>calls.push('roll'),suppressed);
+ }
+ click({inspecting:true,hit:1});
+ click({inspecting:true,hit:-1});
+ click({inspecting:true,results:[null]});
+ click({inspecting:true,held:true,hit:-1});
+ click({inspecting:true,suppressed:true});
+ click({inspecting:false});
+ click({inspecting:false,held:true});
+ assert.deepEqual(calls,['die 2','collect','roll']);
 });
