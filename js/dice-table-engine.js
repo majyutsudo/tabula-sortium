@@ -555,18 +555,15 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
   // vertical separation to prevent adjacent circles overlapping, but
   // bring both columns closer to the centre.
   const spacingX=ring?(value===6?82:86):101;
-  const spacingY=ring?(value===6?112:86):101;
+  const spacingY=ring?(value===6?118:86):101;
   for(const [px,py] of pipGrid[value]){
    const x=n/2+px*spacingX,y=n/2+py*spacingY;
    if(ring){
-    // Strong ring-and-dot stamp; kept to a compact 56px outer radius
-    // so neighboring stamps do not collide on faces 5 or 6.
-    c.beginPath();c.arc(x,y,pipR-6,0,Math.PI*2);
-    c.strokeStyle=ringInk(color,-.76,.94);c.lineWidth=9;c.stroke();
-    c.beginPath();c.arc(x,y,pipR-2,Math.PI*.06,Math.PI*.94);
-    c.strokeStyle=ringInk(color,.55,.82);c.lineWidth=5;c.stroke();
-    c.beginPath();c.arc(x,y,pipR-15,0,Math.PI*2);
-    c.strokeStyle=ringInk(color,.38,.75);c.lineWidth=3;c.stroke();
+    // Alternate light and dark strokes without covering the face between them.
+    for(const [inset,width,tone] of [[0,6,.72],[8,9,-.78],[17,5,.66],[24,5,-.68]]){
+     c.beginPath();c.arc(x,y,pipR-inset,0,Math.PI*2);
+     c.strokeStyle=ringInk(color,tone,.94);c.lineWidth=width;c.stroke();
+    }
     c.beginPath();c.arc(x,y,13,0,Math.PI*2);
     c.fillStyle=ringInk(color,-.91);c.fill();
    }else{
