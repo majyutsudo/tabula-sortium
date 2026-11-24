@@ -188,6 +188,7 @@ function renderSettings(){
   emitDice();
  });
 }
+function normalSurface(surface){return surface==='ivory'||surface==='brass'?surface:'standard'}
 function normalFaceStyle(d){
  if(d.faceStyle==='ring-numerals'||d.faceStyle==='ring-pips')return d.sides===6?d.faceStyle:'ring-numerals';
  if(d.surface==='ring')return d.sides===6&&d.faceStyle!=='numerals'?'ring-pips':'ring-numerals';
@@ -216,7 +217,7 @@ function renderNormalEditor(host,settings,change){
   const sides=document.createElement('select');sides.setAttribute('aria-label','ダイス'+(i+1)+'の面数');
   for(const n of [6,8,10,12,20])sides.add(new Option('D'+n,String(n)));sides.value=String(d.sides);
   const material=document.createElement('select');material.className='material';material.setAttribute('aria-label','ダイス'+(i+1)+'の素材');
-  for(const [key,name] of [['standard','標準'],['ivory','象牙風']])material.add(new Option(name,key));material.value=d.surface==='ivory'?'ivory':'standard';
+  for(const [key,name] of [['standard','標準'],['ivory','象牙風'],['brass','古真鍮']])material.add(new Option(name,key));material.value=normalSurface(d.surface);
   const faceStyle=document.createElement('select');faceStyle.setAttribute('aria-label','ダイス'+(i+1)+'の目の表記');
   for(const [key,label] of [['numerals','数字（標準）'],['ring-numerals','数字（環状刻印）'],['pips','点'],['ring-pips','点（環状刻印）']])faceStyle.add(new Option(label,key));
   faceStyle.value=normalFaceStyle(d);
@@ -327,7 +328,7 @@ function restoreDice(saved,id){
   if(id==='normal'&&saved.settings.length>=1&&saved.settings.length<=8){
    diceSettings=saved.settings.map(d=>({sides:[6,8,10,12,20].includes(d.sides)?d.sides:6,
     color:/^#[0-9a-f]{6}$/i.test(d.color)?d.color:'#c7b48d',
-    surface:d.surface==='ivory'?'ivory':'standard',
+    surface:normalSurface(d.surface),
     faceStyle:normalFaceStyle(d),
     markings:'number',label:'D'+d.sides,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''}));
   }
@@ -394,10 +395,11 @@ window.addEventListener('message',event=>{
 diceDOM.getElementById('preset').addEventListener('change',e=>switchPreset(e.target.value));
 diceDOM.getElementById('iching-color-scheme').addEventListener('change',event=>updateIChingColors(event.target.value));
 renderSettings();renderAstroColors();showResults();
-function faceTexture(value,color){
+function faceTexture(value,color,surface){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const c=canvas.getContext('2d');c.fillStyle=color;c.fillRect(0,0,256,256);
  const shade=c.createLinearGradient(0,0,256,256);shade.addColorStop(0,'#ffffff50');shade.addColorStop(.65,'#ffffff00');shade.addColorStop(1,'#0000003c');c.fillStyle=shade;c.fillRect(0,0,256,256);
+ if(surface==='brass')drawBrassPatina(c,256,value);
  let col=0;const hex=color.slice(1),rgb=parseInt(hex,16),r=rgb>>16&255,g=rgb>>8&255,b=rgb&255;
  col=r*.299+g*.587+b*.114;
  c.fillStyle=col<140?'#f8eed6':'#25221f';
@@ -461,6 +463,25 @@ function drawIvoryGrain(c,size,value){
   }
  }
 }
+function drawBrassPatina(c,size,value){
+ const random=seededRandom(18713+value*193);
+ const shade=c.createLinearGradient(0,0,size,size);
+ shade.addColorStop(0,'#402b1d55');shade.addColorStop(.38,'#edd49b35');
+ shade.addColorStop(.56,'#fff0bb55');shade.addColorStop(1,'#372a226b');
+ c.fillStyle=shade;c.fillRect(0,0,size,size);
+ for(let i=0;i<42;i++){
+  const x=random()*size,y=random()*size,r=(.025+random()*.085)*size;
+  const spot=c.createRadialGradient(x,y,0,x,y,r);
+  spot.addColorStop(0,i%3===0?'#3d56463b':'#33261e35');
+  spot.addColorStop(1,'#33261e00');
+  c.fillStyle=spot;c.fillRect(x-r,y-r,r*2,r*2);
+ }
+ for(let i=0;i<110;i++){
+  const x=random()*size,y=random()*size;
+  c.strokeStyle=i%2?'#fff0ba45':'#37271c38';c.lineWidth=.6+random();
+  c.beginPath();c.moveTo(x,y);c.lineTo(x+(2+random()*24)*size/384,y-2);c.stroke();
+ }
+}
 function finishTexture(value,color,material,dieIndex,numbered=false,surface=material){
  const n=384,canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
  const c=canvas.getContext('2d'),img=c.createImageData(n,n);
@@ -491,6 +512,7 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
  }
  c.putImageData(img,0,0);
  if(surface==='ivory')drawIvoryGrain(c,n,value);
+ if(surface==='brass')drawBrassPatina(c,n,value);
  // Fine directional fibres and a handful of irregular tool marks.
  c.lineCap='round';
  for(let k=0;k<(material==='wood'?240:90);k++){
@@ -710,6 +732,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  }
  c.putImageData(img,0,0);
  if(surface==='ivory')drawIvoryGrain(c,n,value);
+ if(surface==='brass')drawBrassPatina(c,n,value);
  // The mark must fit inside the actual polygon rather than the square
  // texture. Triangular D8/D20 faces use a narrower etched ring.
  const rad=Math.max(8,Math.min(190,ringRadius*(sides===8?.92:1)));
@@ -753,6 +776,7 @@ function numberTexture(value,color,sides,surface){
  shade.addColorStop(0,'#ffffff45');shade.addColorStop(.7,'#ffffff00');shade.addColorStop(1,'#00000039');
  c.fillStyle=shade;c.fillRect(0,0,256,256);
  if(surface==='ivory')drawIvoryGrain(c,256,value);
+ if(surface==='brass')drawBrassPatina(c,256,value);
  const rgb=parseInt(color.slice(1),16),lum=(rgb>>16&255)*.299+(rgb>>8&255)*.587+(rgb&255)*.114;
  const ink=lum<140?'#fff1d8':'#2c241f';
  const fontSize=sides===10?(value>=10?59:72):sides===20?(value>=10?76:98):(value>=10?86:112);
@@ -933,7 +957,7 @@ function numberedMesh(sides,color,material='standard',astroDieIndex=0){
   map:die.markings==='astro'?astroTexture(die.faces[mappedValues[i]-1],astroDieIndex,die.color,rings[i]):
       die.markings==='engraved'?ichingTexture(die.faces[mappedValues[i]-1],astroDieIndex,die.ink,rings[i]):
       isRing?ringNumberTexture(mappedValues[i],color,sides,rings[i],i,die.surface):numberTexture(mappedValues[i],color,sides,die.surface),
-  roughness:die.markings==='engraved'?.42:die.markings==='astro'?.84:die.surface==='ivory'?.31:isRing?.88:.49,metalness:0,side:THREE.DoubleSide
+  roughness:die.markings==='engraved'?.42:die.markings==='astro'?.84:die.surface==='brass'?.34:die.surface==='ivory'?.31:isRing?.88:.49,metalness:die.surface==='brass'?.5:0,side:THREE.DoubleSide
  }));
  const mesh=new THREE.Mesh(geometry,materials);
  return {mesh,solid,normals:faceNormals,values:mappedValues};
@@ -970,6 +994,7 @@ function cubeFaceTexture(value,settings,dieIndex){
  if(style==='ring-numerals')return ringNumberTexture(value,color,6,172,value-1+dieIndex*6,surface);
  if(style==='ring-pips')return finishTexture(value,color,'ring',dieIndex,false,surface);
  if(surface==='ivory')return finishTexture(value,color,surface,dieIndex,style==='numerals');
+ if(surface==='brass')return style==='numerals'?numberTexture(value,color,6,surface):faceTexture(value,color,surface);
  return style==='numerals'?numberTexture(value,color,6):faceTexture(value,color);
 }
 function makeDie(i){
@@ -979,7 +1004,7 @@ function makeDie(i){
   const geometry=wornCubeGeometry(settings.markings==='number'?'standard':settings.surface);
   const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({
    map:cubeFaceTexture(n,settings,i),
-   roughness:settings.markings==='engraved'?.42:settings.surface==='ivory'?.31:settings.surface==='wood'?.94:settings.surface==='standard'?.47:.88,metalness:0
+   roughness:settings.markings==='engraved'?.42:settings.surface==='brass'?.34:settings.surface==='ivory'?.31:settings.surface==='wood'?.94:settings.surface==='standard'?.47:.88,metalness:settings.surface==='brass'?.5:0
   }));
   mesh=new THREE.Mesh(geometry,materials);normals=faceNormals;faceNumbers=faceValues;
  }else{

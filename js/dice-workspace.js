@@ -28,7 +28,7 @@
  function savedSets(){
   try {
    const sets=JSON.parse(localStorage.getItem(PRESET_STORAGE));
-   return Array.isArray(sets)?sets.filter(set=>typeof set?.name==='string'&&Array.isArray(set.dice)&&set.dice.length>=1&&set.dice.length<=8&&set.dice.every(d=>d&&[6,8,10,12,20].includes(d.sides)&&/^#[0-9a-f]{6}$/i.test(d.color)&&['standard','ring','ivory'].includes(d.surface))):[];
+   return Array.isArray(sets)?sets.filter(set=>typeof set?.name==='string'&&Array.isArray(set.dice)&&set.dice.length>=1&&set.dice.length<=8&&set.dice.every(d=>d&&[6,8,10,12,20].includes(d.sides)&&/^#[0-9a-f]{6}$/i.test(d.color)&&['standard','ring','ivory','brass'].includes(d.surface))):[];
   }catch{return []}
  }
  function setMessage(text){
@@ -201,7 +201,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0744').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0745').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;
