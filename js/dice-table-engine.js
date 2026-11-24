@@ -423,7 +423,7 @@ function ringInk(color,lightness,alpha=1){
  return 'rgba('+channels.join(',')+','+alpha+')';
 }
 function drawCarvedNumeral(c,value,x,y,size,maxWidth,{
- ink='#2c241f',highlight='rgba(251,216,153,.7)',shadow='rgba(43,27,22,.72)',tilt=0
+ ink='#2c241f',highlight='rgba(251,216,153,.7)',shadow='rgba(43,27,22,.72)',tilt=0,outline=null
 }={}){
  const scale=size/205,text=String(value);
  c.save();
@@ -436,6 +436,10 @@ function drawCarvedNumeral(c,value,x,y,size,maxWidth,{
  c.strokeText(text,5*scale,10*scale,maxWidth);
  c.strokeStyle=shadow;c.lineWidth=9*scale;
  c.strokeText(text,-2*scale,-2*scale,maxWidth);
+ if(outline){
+  c.strokeStyle=outline;c.lineWidth=13*scale;
+  c.strokeText(text,0,2*scale,maxWidth);
+ }
  c.fillStyle=ink;c.fillText(text,0,2*scale,maxWidth);
  c.restore();
 }
@@ -563,8 +567,8 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
     // so neighboring stamps do not collide on faces 5 or 6.
     c.beginPath();c.arc(x+1,y+1,pipR+2,0,Math.PI*2);
     c.fillStyle=ringInk(color,-.52,.47);c.fill();
-    c.beginPath();c.arc(x-1,y-2,pipR-1,0,Math.PI*2);
-    c.strokeStyle=ringInk(color,.34);c.lineWidth=6;c.stroke();
+    c.beginPath();c.arc(x-1,y-2,pipR-2,0,Math.PI*2);
+    c.strokeStyle=ringInk(color,.82);c.lineWidth=9;c.stroke();
     c.beginPath();c.arc(x,y,pipR-7,0,Math.PI*2);
     c.strokeStyle=ringInk(color,-.69);c.lineWidth=8;c.stroke();
     c.beginPath();c.arc(x,y,pipR-16,0,Math.PI*2);
@@ -572,7 +576,8 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
     c.beginPath();c.arc(x,y,pipR-20,0,Math.PI*2);
     c.strokeStyle=ringInk(color,-.62,.64);c.lineWidth=3;c.stroke();
     c.beginPath();c.arc(x,y,12,0,Math.PI*2);
-    c.fillStyle=ringInk(color,-.77);c.fill();
+    c.fillStyle=ringInk(color,-.88);c.fill();
+    c.strokeStyle=ringInk(color,.76);c.lineWidth=3;c.stroke();
    }else{
     c.beginPath();c.arc(x+2,y+3,pipR+12,0,Math.PI*2);
     c.fillStyle=wood?'rgba(24,12,7,.8)':'rgba(52,39,23,.47)';c.fill();
@@ -740,7 +745,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  c.beginPath();c.arc(cx+2,cy+3,rad+4,0,Math.PI*2);
  c.fillStyle=ringInk(color,-.52,.5);c.fill();
  c.beginPath();c.arc(cx-2,cy-3,rad,0,Math.PI*2);
- c.strokeStyle=ringInk(color,.34);c.lineWidth=Math.max(3,rad*.12);c.stroke();
+ c.strokeStyle=ringInk(color,.82);c.lineWidth=Math.max(4,rad*.15);c.stroke();
  // Keep the ring as a framing device rather than competing with
  // the numeral. A quiet pale centre gives the carved black digit contrast.
  c.beginPath();c.arc(cx,cy,rad*.80,0,Math.PI*2);
@@ -757,7 +762,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  const maxWidth=rad*(twoDigits?(sides===20?1.53:1.36):1.00);
  const ink=ringInk(color,-.83);
  drawCarvedNumeral(c,value,cx,cy,fontSize,maxWidth,{
-  ink,highlight:ringInk(color,.39,.88),shadow:ringInk(color,-.69,.72)
+  ink,highlight:ringInk(color,.65),shadow:ringInk(color,-.69,.72),outline:ringInk(color,.91)
  });
  c.fillStyle=ink;
  if(value===6||value===9){
