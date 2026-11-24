@@ -85,7 +85,7 @@ body.tabula-dice-mode .main>.table-shortcuts.dice-quick-actions{display:grid!imp
 #diceResultsHolder .result-number{font-size:25px;font-weight:bold}
 #diceResultsHolder .results:not(.astro-results) .result-number{font:700 36px/1.1 system-ui,sans-serif;font-variant-numeric:lining-nums tabular-nums}
 #diceResultsHolder .astro-name{font-size:11px}
-#diceResultsHolder #dice-total{display:flex;flex:none;flex-direction:column;align-items:center;gap:3px;min-width:4.5rem;border-left:1px solid #baa77a70;padding-inline:clamp(14px,3vw,30px);font-size:11px;line-height:1.2;color:#f1c779}
+#diceResultsHolder #dice-total{display:flex;box-sizing:border-box;flex:0 0 clamp(5.5rem,25%,14rem);flex-direction:column;align-items:center;gap:3px;min-width:4.5rem;border-left:1px solid #baa77a70;padding-inline:12px;font-size:11px;line-height:1.2;color:#f1c779}
 #diceResultsHolder #dice-total strong{font:700 42px/1.1 system-ui,sans-serif;font-variant-numeric:lining-nums tabular-nums}
 #diceStrengthHolder{width:100%;grid-column:1/-1;box-sizing:border-box;padding:5px 10px}
 #diceStrengthHolder .force-control{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:12px}
