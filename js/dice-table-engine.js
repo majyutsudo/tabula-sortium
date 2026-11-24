@@ -225,7 +225,9 @@ function captureDice(){
   scheme:ichingColorScheme,colors:astroDiceColors?.slice()||null,
   poses:objects.map(({body,mesh})=>{const p=body.translation(),q=body.rotation();return {
    p:{x:p.x,y:p.y,z:p.z},q:{x:q.x,y:q.y,z:q.z,w:q.w},visible:mesh.visible
-  }}),held,results:recordedResults?.slice()||null,force:Number(forceSlider.value)};
+  }}),held,results:recordedResults?.slice()||null,
+  hexagram:current.id==='iching'&&recordedResults?hexagramSummary(...recordedResults):null,
+  force:Number(forceSlider.value)};
 }
 let pendingRestore=null;
 function restoreDice(saved,id){
