@@ -264,6 +264,8 @@ body.tabula-dice-mode #placementTools{display:none!important}
 .dice-detail h2{margin:.2rem 0 .8rem}
 .dice-detail h3{font-size:.95rem;margin:1rem 0 .2rem;color:#e7cc91}
 .dice-detail h3 + p{margin:.2rem 0 .75rem}
+.dice-detail a,.dice-detail a:visited{color:#e7cc91;text-decoration:underline}
+.dice-detail a:hover,.dice-detail a:focus-visible{color:#fff1ce}
 .dice-detail-hexagram{display:grid;gap:5px;width:5rem;margin:.75rem auto}
 .dice-detail-hexagram span{height:5px;color:#eadfc8;background:currentColor}
 .dice-detail-hexagram .yin{background:linear-gradient(to right,currentColor 0 43%,transparent 43% 57%,currentColor 57% 100%)}
