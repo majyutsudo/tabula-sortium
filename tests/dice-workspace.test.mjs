@@ -301,11 +301,39 @@ test('custom die labels are editable and retained in results, snapshots, and 2D 
 
 test('dice tabletop labels are driven by TABULA existing label mode and placement',()=>{
  const engine=file('js/dice-table-engine.js'),model=file('js/tabula.js');
- assert.match(engine,/getElementById\('toolbarLabelToggle'\)\?\.dataset\.labelMode/);
- assert.match(engine,/getElementById\('tableLabelMode'\)\?\.value/);
- assert.match(engine,/getElementById\('labelPlacement'\)\?\.value/);
- assert.match(engine,/mode==='off'/);
- assert.match(engine,/mode==='positionPlain'/);
- assert.match(engine,/mode==='number'/);
+ assert.match(engine,/TabulaDiceLabels\.preferences\(document\)/);
+ assert.match(engine,/TabulaDiceLabels\.labelFor/);
+ assert.match(file('js/dice-labels.js'),/getElementById\('labelPlacement'\)/);
+ assert.match(file('js/dice-labels.js'),/mode==='off'/);
+ assert.match(file('js/dice-labels.js'),/mode==='positionPlain'/);
+ assert.match(file('js/dice-labels.js'),/mode==='number'/);
  assert.match(model,/isDiceTool\(activeToolId\(\)\)&&labelMode==='card'\?'ダイス名'/);
+});
+
+test('mixing is momentary hold-to-mix on both physical and quick action buttons',()=>{
+ const engine=file('js/dice-table-engine.js'),adapter=file('js/dice-workspace.js');
+ assert.match(engine,/function startMix\(/);
+ assert.match(engine,/function stopMix\(/);
+ assert.match(engine,/pointerdown/);
+ assert.match(engine,/pointerup/);
+ assert.match(engine,/pointercancel/);
+ assert.match(engine,/lostpointercapture/);
+ assert.match(engine,/visibilitychange/);
+ assert.match(engine,/bindMixHold\(mixButton\)/);
+ assert.match(engine,/bindMixHold\(document\.getElementById\('diceQuickMix'\)\)/);
+ assert.doesNotMatch(engine,/mixButton\.addEventListener\('click',mixDice\)/);
+ assert.match(adapter,/if\(i!==1\)button\.addEventListener/);
+});
+test('dice placement names match the existing toolbar label mode and placement',()=>{
+ const labels={},code=file('js/dice-labels.js');
+ new Function('globalThis',code)(labels);
+ const dice={mode:'normal',settings:[{userLabel:'過去'},{userLabel:'現在'}]};
+ assert.equal(labels.TabulaDiceLabels.labelFor(dice,0,'off'),'');
+ assert.equal(labels.TabulaDiceLabels.labelFor(dice,0,'card'),'過去');
+ assert.equal(labels.TabulaDiceLabels.labelFor(dice,0,'position'),'1 · 過去');
+ assert.equal(labels.TabulaDiceLabels.labelFor(dice,1,'number'),'2');
+ assert.equal(labels.TabulaDiceLabels.labelFor({mode:'astro',settings:[]},1,'card'),'十二宮');
+ assert.match(file('js/placement-print.js'),/TabulaDiceLabels\.preferences\(document\)/);
+ assert.match(file('js/placement-print.js'),/TabulaDiceLabels\.labelFor\(saved,i,prefs\.mode\)/);
+ assert.match(file('table.html'),/js\/dice-labels\.js\?v=0732/);
 });
