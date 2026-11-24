@@ -2979,7 +2979,7 @@ function diceReadingSnapshot(id,name){
  if(window.TabulaDiceTable?.busy?.()){setStatus('ダイスが止まってから記録してください。');return null}
  const live=window.TabulaDiceTable?.snapshot?.();
  const dice=live?.mode===mode?live:context?.dice;
- if(!dice?.results){setStatus('まだ出目がありません。ダイスを振ってください。');return null}
+ if(!dice?.results?.every(Number.isInteger)){setStatus('すべてのダイスを振ってから占例を保存してください。');return null}
  const v={kind:'dice',id,name,time:new Date().toISOString(),settings:dualClone(settings),
   dice:dualClone(dice),tableName:dualSession?.tables?.[dualSession.activeTable]?.name||'メイン卓',
   placed:[],deck:[],removed:[],tablePiles:[],slots:[],spread:'free'};
@@ -5555,7 +5555,7 @@ const activeToolId=()=>activeToolTable()?.toolId||(!dualSession&&isDiceTool(main
 const activeDiceSnapshot=()=>activeToolTable()?.diceSnapshot||(!dualSession?mainToolState.dice:null);
 function storeMainTool(){try{localStorage.setItem(TOOL_STORAGE_KEY,JSON.stringify(mainToolState))}catch(e){setStatus('占具設定を保存できませんでした。')}}
 function notifyTool(){window.dispatchEvent(new CustomEvent('tabula:tool-context',{detail:{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}}))}
-function replaceIndependentTool(target){
+function replaceIndependentTool(target,snapshot=null){
  const candidate=dualClone(dualSession);
  const source=candidate.activeTable==='table1'?'A':'B',table=candidate.tables[candidate.activeTable];
  const deckId=target.startsWith('card:')?target.slice(5):null;
@@ -5565,7 +5565,7 @@ function replaceIndependentTool(target){
  const stock=ids.map(id=>({instanceId:source+':'+id,id,sourceDeck:source,reversed:false}));
  candidate.instances=[...candidate.instances.filter(c=>c.sourceDeck!==source),...stock];
  candidate.piles[source]=stock;
- Object.assign(table,{toolId:target,diceSnapshot:null,deckId:deckId||'builtin',pool:'all',placed:[],removed:[],tablePiles:[],cutStage:null,selected:null,dealCheckpoint:null,spreadDealProgress:null});
+ Object.assign(table,{toolId:target,diceSnapshot:snapshot,deckId:deckId||'builtin',pool:'all',placed:[],removed:[],tablePiles:[],cutStage:null,selected:null,dealCheckpoint:null,spreadDealProgress:null});
  if(deckId)table.savedSettings={...dualClone(table.savedSettings||settings),deckId,pool:'all'};
  TabulaMultiWorkspace.validate(candidate);dualSession=candidate;dualRestoreView();dualSave();
 }
@@ -5573,19 +5573,23 @@ window.TabulaTableTools={
  context(){return{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}},
  saveDice(snapshot){if(!snapshot||!isDiceTool(activeToolId())||snapshot.mode!==activeToolId().slice(5))return;const t=activeToolTable();if(t){t.diceSnapshot=snapshot;dualSave()}else{mainToolState.dice=snapshot;storeMainTool()}},
  updateCard(id){if(isDiceTool(activeToolId()))return;const t=activeToolTable();if(t)t.toolId='card:'+id;else{mainToolState.id='card:'+id;storeMainTool()}},
- switchTool(target){
+ switchTool(target,{replaceDice=false,snapshot=null}={}){
   if(!(isDiceTool(target)||target.startsWith('card:')))return false;
-  const previous=activeToolId();if(previous===target)return true;
+  const previous=activeToolId();if(previous===target&&!replaceDice)return true;
   if(dualBusy())return false;
   if(dualSession&&!isIndependentTables()){setStatus('共有山札・ダブルデッキはカード専用です。独立追加卓を利用してください。');return false}
   if(isDiceTool(previous)&&window.TabulaDiceTable?.busy?.()){setStatus('投擲・混合が終了してから切り替えてください。');return false}
   const occupied=isDiceTool(previous)?!!activeDiceSnapshot()?.results:!!(state.placed.length||(state.removed||[]).length||(state.tablePiles||[]).some(p=>p.cards?.length));
   if(occupied&&!confirm('現在の卓の配札・出目を片付けて道具を変更します。残す場合は追加卓を使用してください。続けますか？'))return false;
-  if(dualSession){try{replaceIndependentTool(target)}catch(e){setStatus('占具を変更できませんでした：'+e.message);return false}}
+  if(previous===target){
+   const table=activeToolTable();
+   if(table){table.diceSnapshot=snapshot;dualSave()}
+   else{mainToolState.dice=snapshot;storeMainTool()}
+  }else if(dualSession){try{replaceIndependentTool(target,snapshot)}catch(e){setStatus('占具を変更できませんでした：'+e.message);return false}}
   else{
    if(target.startsWith('card:')){if(!activateDeck(target.slice(5),false))return false}
    else initialize();
-   mainToolState={id:target,dice:null};storeMainTool();
+   mainToolState={id:target,dice:snapshot};storeMainTool();
   }
   notifyTool();return true;
  },refresh:notifyTool
@@ -5707,7 +5711,7 @@ let independentDeckSelectionCustomized=false;
 function independentDeckChoices(){
  const p=$('independentDeckSelect');if(!p)return;
  const preferred=independentDeckSelectionCustomized?p.value:(settings.deckId||'builtin');
- p.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id),...DICE_TOOL_IDS.map((id,i)=>new Option(['ダイス','アストロダイス','易占ダイス'][i],id)));
+ p.replaceChildren(new Option('シンプル・タロット（78枚）','simple'),new Option('TABULA TAROT（78枚）','builtin'),new Option(BUILTIN_PLAYING.name+'（54枚）',BUILTIN_PLAYING.id),new Option(BUILTIN_LENORMAND.name,BUILTIN_LENORMAND.id),new Option('ダイス','dice:normal'));
  for(const d of deckLibrary)p.add(new Option(d.name+'（'+d.included.length+'枚）',d.id));
  for(const d of TabulaDeckBlueprint.load())p.add(new Option(d.name+'（'+TabulaDeckBlueprint.generate(d).length+'枚）',d.id));
  p.value=Array.from(p.options).some(o=>o.value===preferred)?preferred:'builtin';
@@ -5723,8 +5727,8 @@ function updateIndependentPool(){
  $('independentDeckHelp').hidden=dice;
 }
 $('independentDeckSelect').addEventListener('change',()=>{independentDeckSelectionCustomized=true;updateIndependentPool();});
-function independentTableWorkspace(){
- const selectedTool=$('independentDeckSelect').value,isDice=isDiceTool(selectedTool);
+function independentTableWorkspace(selectedTool=$('independentDeckSelect').value,snapshot=null){
+ const isDice=isDiceTool(selectedTool);
   const deckId=isDice?'builtin':selectedTool,pool=$('independentDeckPool').value;
  const registered=deckLibrary.find(d=>d.id===deckId),blueprint=blueprintFor(deckId);
  const allowed=new Set(registered?registered.included:cards.map(c=>c.id));
@@ -5739,7 +5743,7 @@ function independentTableWorkspace(){
  const extraSettings=dualClone(settings);
  extraSettings.deckId=deckId;extraSettings.pool=pool==='included'?'all':pool;
  extraSettings.reversals=reversalsForDeck(deckId,extraSettings);
- Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),toolId:isDice?selectedTool:'card:'+deckId,diceSnapshot:null,deckId,pool:extraSettings.pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:extraSettings});
+ Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),toolId:isDice?selectedTool:'card:'+deckId,diceSnapshot:snapshot,deckId,pool:extraSettings.pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:extraSettings});
  w.piles.B=isDice?[]:randomize(w.piles.B.map(c=>({...c,reversed:extraSettings.reversals?Math.random()<.5:false})));
  w.appearances={A:validAppearance(settings.deckAppearance),B:'standard'};
  w.backColors={A:settings.cardBackColor||'sepia',B:deckId===BUILTIN_PLAYING.id?playingBackPreference():registered?.backColor||'navy'};
@@ -5748,11 +5752,19 @@ function independentTableWorkspace(){
 function beginIndependentTable(){
  if(dualBusy()||(isDiceTool(activeToolId())&&window.TabulaDiceTable?.busy?.())){setStatus('ダイスの投擲・混合が終了してから追加卓を作成してください。');return}
  if(dualSession||storedExtraWorkspace()){setStatus('保存済みの追加卓を片付けてから操作してください。');return}
+ if(isDiceTool($('independentDeckSelect').value)){
+  window.dispatchEvent(new CustomEvent('tabula:choose-dice-set',{detail:createIndependentTable}));
+  return;
+ }
+ createIndependentTable();
+}
+function createIndependentTable(tool,snapshot){
  try{
-  const w=independentTableWorkspace();dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
+  const w=independentTableWorkspace(tool,snapshot);dualSingleBackup={state:dualClone(state),settings:dualClone(settings),zoom};
   dualSession=w;dualRestoreView();dualSave();dualSwitchTable('table2');
   setStatus('追加卓Ⅰを作成しました（'+(isDiceTool(w.tables.table2.toolId)?'ダイス':'山札'+w.piles.B.length+'枚')+'）。');
- }catch(e){setStatus('追加卓を作れませんでした：'+e.message)}
+  return true;
+ }catch(e){setStatus('追加卓を作れませんでした：'+e.message);return false}
 }
 function isSharedTables(){return !!dualSession&&dualSession.workspaceKind==='single-shared'}
 function sharedTableWorkspace(){

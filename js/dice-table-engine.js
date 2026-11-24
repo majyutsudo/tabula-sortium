@@ -127,14 +127,15 @@ function showResults(results=null){
   label.textContent=current.id==='normal'&&d.userLabel?d.userLabel+' · D'+d.sides:d.label;
   kind.append(dot,label);
   const symbol=document.createElement('span');symbol.className='result-number';
-  const face=results?d.faces?.[results[i]-1]:null;
-  symbol.textContent=results?(face?.glyph===undefined?String(results[i]):current.id==='astro'&&i===1?face.glyph+'\uFE0E':face.glyph):'—';
+  const result=results?.[i];
+  const face=result==null?null:d.faces?.[result-1];
+  symbol.textContent=result!=null?(face?.glyph===undefined?String(result):current.id==='astro'&&i===1?face.glyph+'\uFE0E':face.glyph):'—';
   tile.append(kind,symbol);
   if(symbolic){const desc=document.createElement('span');desc.className='astro-name';desc.textContent=face?.name||'未投擲';tile.append(desc);}
   values.append(tile);
  });
  total.hidden=symbolic;
- if(!symbolic){total.replaceChildren();const t=document.createElement('span');t.textContent='合計';const sum=document.createElement('strong');sum.textContent=results?String(results.reduce((a,b)=>a+b,0)):'—';total.append(t,sum);}
+ if(!symbolic){total.replaceChildren();const t=document.createElement('span');t.textContent='合計';const sum=document.createElement('strong');sum.textContent=results?.every(Number.isInteger)?String(results.reduce((a,b)=>a+b,0)):'—';total.append(t,sum);}
  const reading=diceDOM.getElementById('hexagram-reading');reading.hidden=current.result!=='hexagram';
  if(current.result==='hexagram'&&results){
   const h=hexagramSummary(...results);
@@ -145,61 +146,90 @@ function lockSettings(locked){diceDOM.getElementById('preset').disabled=locked;i
  diceDOM.querySelectorAll('#astro-colors input').forEach(input=>input.disabled=locked);
  diceDOM.querySelectorAll('#dice-settings input,#dice-settings select,#dice-settings button').forEach(el=>el.disabled=locked);}
 const NORMAL_DICE_MAX=8;
-function rebuildNormalDice(){
- if(!ready)return;
- objects.forEach(destroyDie);objects=[];
- createDice();syncMeshes();showResults();
- held=false;mixing=false;mixCount=0;
- collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;
- status.textContent='READY TO COLLECT';
+function addNormalObject(index){
+ const die=makeDie(index);
+ const initial=die.body.translation();
+ const clearance=die.radius+.1;
+ const step=1.7;
+ const columns=Math.floor((width/2-clearance)/step),rows=Math.floor((depth/2-clearance)/step);
+ for(let row=-rows;row<=rows;row++)for(let column=-columns;column<=columns;column++){
+  const x=column*step,z=row*step;
+  const fits=objects.every(other=>{
+   const p=other.body.translation();
+   return Math.hypot(p.x-x,p.z-z)>=other.radius+clearance;
+  });
+  if(fits){die.body.setTranslation({x,y:initial.y,z},true);die.mesh.visible=!held;return die}
+ }
+ die.mesh.visible=!held;
+ return die;
 }
+function defaultNormalDie(){return {sides:6,color:'#c7b48d',surface:'ring',markings:'number',label:'D6'}}
 function renderSettings(){
- const host=diceDOM.getElementById('dice-settings');host.replaceChildren();
- const panel=diceDOM.getElementById('normal-dice-panel');panel.hidden=current.id!=='normal';
- host.hidden=current.id!=='normal';refreshFloatingLabels();if(host.hidden)return;
+ const host=diceDOM.getElementById('dice-settings');
+ const panel=diceDOM.getElementById('normal-dice-panel');
+ panel.hidden=current.id!=='normal';
+ host.hidden=panel.hidden;refreshFloatingLabels();
+ if(host.hidden){host.replaceChildren();return}
+ renderNormalEditor(host,diceSettings,(apply,action,index)=>{
+  if(!ready||rolling||mixing)return;
+  const results=recordedResults?.slice();
+  apply();
+  if(action==='add'){
+   objects.push(addNormalObject(index));results?.push(null);
+  }else if(action==='remove'){
+   destroyDie(objects[index]);objects.splice(index,1);results?.splice(index,1);
+  }else if(action==='shape'||action==='appearance'){
+   replaceDieAppearance(index,action==='appearance');
+   if(action==='shape'&&results)results[index]=null;
+  }
+  refreshFloatingLabels();syncMeshes();
+  showResults(results?.some(Number.isInteger)?results:null);
+  emitDice();
+ });
+}
+function renderNormalEditor(host,settings,change){
+ host.replaceChildren();
+ const redraw=()=>renderNormalEditor(host,settings,change);
  const toolbar=document.createElement('div');toolbar.className='dice-config-toolbar';
- const count=document.createElement('span');count.textContent='使用数：'+diceSettings.length+'個';
+ const count=document.createElement('span');count.textContent='使用数：'+settings.length+'個';
  const add=document.createElement('button');add.type='button';add.textContent='＋ ダイスを追加';
- add.disabled=diceSettings.length>=NORMAL_DICE_MAX;
+ add.disabled=settings.length>=NORMAL_DICE_MAX;
  add.addEventListener('click',()=>{
-  if(!ready||rolling||mixing||diceSettings.length>=NORMAL_DICE_MAX)return;
-  diceSettings.push({sides:6,color:'#c7b48d',surface:'ring',markings:'number',label:'D6'});
-  rebuildNormalDice();renderSettings();emitDice();
+  if(settings.length>=NORMAL_DICE_MAX)return;
+  change(()=>settings.push(defaultNormalDie()),'add',settings.length);
+  redraw();
  });
  toolbar.append(count,add);host.append(toolbar);
- diceSettings.forEach((d,i)=>{
+ settings.forEach((d,i)=>{
   const row=document.createElement('div');row.className='die-setting';
   const label=document.createElement('label');label.textContent='ダイス'+(i+1);
   const name=document.createElement('input');name.type='text';name.className='dice-custom-label';
   name.maxLength=36;name.value=d.userLabel||'';name.placeholder='ラベル（例：過去）';
   name.setAttribute('aria-label','ダイス'+(i+1)+'のラベル');
-  name.addEventListener('change',()=>{
-   if(rolling||mixing){name.value=d.userLabel||'';return}
-   d.userLabel=name.value.trim().slice(0,36);
-   showResults(recordedResults);refreshFloatingLabels();emitDice();
-  });
+  name.addEventListener('change',()=>change(()=>{d.userLabel=name.value.trim().slice(0,36)},'label'));
   const sides=document.createElement('select');sides.setAttribute('aria-label','ダイス'+(i+1)+'の面数');
   for(const n of [6,8,10,12,20])sides.add(new Option('D'+n,String(n)));sides.value=String(d.sides);
   const material=document.createElement('select');material.className='material';material.setAttribute('aria-label','ダイス'+(i+1)+'の仕上げ');
   for(const [key,name] of [['standard','標準'],['ivory','象牙'],['ring','環状刻印']])material.add(new Option(name,key));material.value=d.surface;
   const color=document.createElement('input');color.type='color';color.value=d.color;color.setAttribute('aria-label','ダイス'+(i+1)+'の色');
-  const remove=document.createElement('button');remove.type='button';remove.className='dice-remove';remove.textContent='×';remove.setAttribute('aria-label','ダイス'+(i+1)+'を削除');remove.disabled=diceSettings.length===1;
+  const remove=document.createElement('button');remove.type='button';remove.className='dice-remove';remove.textContent='×';remove.setAttribute('aria-label','ダイス'+(i+1)+'を削除');remove.disabled=settings.length===1;
   function refresh(){
    for(const option of material.options)option.disabled=Number(sides.value)!==6&&option.value==='ivory';
    if(material.selectedOptions[0]?.disabled)material.value='standard';
   }
   function update(){
-   if(!ready||rolling||mixing)return;
-   d.sides=Number(sides.value);d.surface=material.value;d.color=color.value;d.label='D'+d.sides;
-   const visible=!held;destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=visible;
-   syncMeshes();showResults();
+   const nextSides=Number(sides.value);
+   change(()=>{
+    d.sides=nextSides;d.surface=material.value;d.color=color.value;d.label='D'+nextSides;
+   },nextSides!==d.sides?'shape':'appearance',i);
   }
   sides.addEventListener('change',()=>{refresh();update();});
   material.addEventListener('change',()=>{const defaults={ivory:'#ead9ae',ring:'#c7b48d'};if(defaults[material.value])color.value=defaults[material.value];update();});
   color.addEventListener('change',update);
   remove.addEventListener('click',()=>{
-   if(!ready||rolling||mixing||diceSettings.length===1)return;
-   diceSettings.splice(i,1);rebuildNormalDice();renderSettings();
+   if(settings.length===1)return;
+   change(()=>settings.splice(i,1),'remove',i);
+   redraw();
   });
   refresh();row.append(label,name,sides,material,color,remove);host.append(row);
  });
@@ -219,9 +249,7 @@ function renderAstroColors(){
    const color=input.value;
    if(die.color===color)return;
    die.color=color;astroDiceColors=diceSettings.map(d=>d.color);
-   const wasVisible=objects[i].mesh.visible;
-   destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=wasVisible;
-   syncMeshes();showResults();
+   replaceDieAppearance(i);syncMeshes();showResults(recordedResults);
    status.textContent=held?'IN HAND — 色を変更しました':'READY TO COLLECT';emitDice();
   });
   label.append(text,input);host.append(label);
@@ -231,10 +259,9 @@ function updateIChingColors(scheme){
  if(current.id!=='iching'||!ready||rolling||mixing)return;
  setIChingColors(diceSettings,scheme);ichingColorScheme=scheme;
  for(let i=0;i<2;i++){
-  const visible=objects[i].mesh.visible;
-  destroyDie(objects[i]);objects[i]=makeDie(i);objects[i].mesh.visible=visible;
+  replaceDieAppearance(i);
  }
- syncMeshes();showResults();
+ syncMeshes();showResults(recordedResults);
  status.textContent=held?'IN HAND — 配色を変更しました':'READY TO COLLECT';emitDice();
 }
 function switchPreset(id){
@@ -326,6 +353,8 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 
 window.TabulaDiceTable={
  snapshot:captureDice,
+ editNormalDraft(host,settings){renderNormalEditor(host,settings,apply=>apply())},
+ defaultNormalDie,
  restore:restoreDice,
  reset(id){restoreDice(null,id);forceSlider.value='30';updateForceLabel();emitDice()},
  busy(){return rolling||mixing},
@@ -338,6 +367,7 @@ window.TabulaDiceTable={
   }
  },
  resize(){if(renderer&&felt.clientWidth>0&&felt.clientHeight>0)updateDimensions()},
+ isReady(){return ready},
  getMode(){return current.id}
 };
 window.addEventListener('message',event=>{
@@ -370,6 +400,12 @@ function faceTexture(value,color){
 function seededRandom(seed){
  let v=(seed>>>0)||1;
  return ()=>{v=(Math.imul(1664525,v)+1013904223)>>>0;return v/4294967296};
+}
+function ringInk(color,lightness,alpha=1){
+ const rgb=parseInt(color.slice(1),16);
+ const target=lightness>0?255:0,amount=Math.abs(lightness);
+ const channels=[rgb>>16&255,rgb>>8&255,rgb&255].map(value=>Math.round(value+(target-value)*amount));
+ return 'rgba('+channels.join(',')+','+alpha+')';
 }
 function finishTexture(value,color,material,dieIndex){
  const n=384,canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
@@ -461,17 +497,17 @@ function finishTexture(value,color,material,dieIndex){
     // Strong ring-and-dot stamp; kept to a compact 56px outer radius
     // so neighboring stamps do not collide on faces 5 or 6.
     c.beginPath();c.arc(x+1,y+1,pipR+2,0,Math.PI*2);
-    c.fillStyle='rgba(56,41,26,.47)';c.fill();
+    c.fillStyle=ringInk(color,-.52,.47);c.fill();
     c.beginPath();c.arc(x-1,y-2,pipR-1,0,Math.PI*2);
-    c.strokeStyle='#d8c398';c.lineWidth=6;c.stroke();
+    c.strokeStyle=ringInk(color,.34);c.lineWidth=6;c.stroke();
     c.beginPath();c.arc(x,y,pipR-7,0,Math.PI*2);
-    c.strokeStyle='#403326';c.lineWidth=8;c.stroke();
+    c.strokeStyle=ringInk(color,-.69);c.lineWidth=8;c.stroke();
     c.beginPath();c.arc(x,y,pipR-16,0,Math.PI*2);
-    c.fillStyle='#b69a6c';c.fill();
+    c.fillStyle=ringInk(color,-.17);c.fill();
     c.beginPath();c.arc(x,y,pipR-20,0,Math.PI*2);
-    c.strokeStyle='rgba(62,44,27,.64)';c.lineWidth=3;c.stroke();
+    c.strokeStyle=ringInk(color,-.62,.64);c.lineWidth=3;c.stroke();
     c.beginPath();c.arc(x,y,12,0,Math.PI*2);
-    c.fillStyle='#372a21';c.fill();
+    c.fillStyle=ringInk(color,-.77);c.fill();
    }else{
     c.beginPath();c.arc(x+2,y+3,pipR+12,0,Math.PI*2);
     c.fillStyle=wood?'rgba(24,12,7,.8)':'rgba(52,39,23,.47)';c.fill();
@@ -634,17 +670,17 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
  const rad=Math.max(8,Math.min(190,ringRadius*(sides===8?.92:1)));
  const cx=256,cy=256;
  c.beginPath();c.arc(cx+2,cy+3,rad+4,0,Math.PI*2);
- c.fillStyle='rgba(55,39,24,.5)';c.fill();
+ c.fillStyle=ringInk(color,-.52,.5);c.fill();
  c.beginPath();c.arc(cx-2,cy-3,rad,0,Math.PI*2);
- c.strokeStyle='#e2ce9e';c.lineWidth=Math.max(3,rad*.12);c.stroke();
+ c.strokeStyle=ringInk(color,.34);c.lineWidth=Math.max(3,rad*.12);c.stroke();
  // Keep the ring as a framing device rather than competing with
  // the numeral. A quiet pale centre gives the carved black digit contrast.
  c.beginPath();c.arc(cx,cy,rad*.80,0,Math.PI*2);
- c.strokeStyle='#423325';c.lineWidth=Math.max(3,rad*.095);c.stroke();
+ c.strokeStyle=ringInk(color,-.69);c.lineWidth=Math.max(3,rad*.095);c.stroke();
  c.beginPath();c.arc(cx,cy,rad*.68,0,Math.PI*2);
- c.fillStyle='#d5bd8f';c.fill();
+ c.fillStyle=ringInk(color,-.14);c.fill();
  c.beginPath();c.arc(cx,cy,rad*.67,0,Math.PI*2);
- c.strokeStyle='rgba(72,50,32,.35)';c.lineWidth=Math.max(1.5,rad*.025);c.stroke();
+ c.strokeStyle=ringInk(color,-.62,.35);c.lineWidth=Math.max(1.5,rad*.025);c.stroke();
  // Previous glyphs used only 0.74–0.92 of the ring radius in font
  // size and vanished at actual tabletop scale. Give the digit most of
  // the central field, including 10, 11 and 12 on D12.
@@ -653,10 +689,10 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex){
  const maxWidth=rad*(twoDigits?(sides===20?1.53:1.36):1.00);
  c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
  c.font='900 '+fontSize+'px Georgia,serif';
- c.strokeStyle='rgba(247,224,177,.88)';
+ c.strokeStyle=ringInk(color,.39,.88);
  c.lineWidth=Math.max(2,rad*.085);
  c.strokeText(String(value),cx+1,cy+2,maxWidth);
- c.fillStyle='#211a14';c.fillText(String(value),cx,cy,maxWidth);
+ c.fillStyle=ringInk(color,-.83);c.fillText(String(value),cx,cy,maxWidth);
  if(value===6||value===9){
   const w=rad*.31;
   c.fillRect(cx-w/2,cy+fontSize*.34,w,Math.max(2,rad*.06));
@@ -910,6 +946,21 @@ function makeDie(i){
  const columns=Math.min(4,diceSettings.length),col=i%columns,row=Math.floor(i/columns),rows=Math.ceil(diceSettings.length/columns);
   body.setTranslation({x:(col-(columns-1)/2)*1.65,y:-lowest+.02,z:(row-(rows-1)/2)*1.65},true);
  return {mesh,body,normals,faceNumbers,sides,radius};
+}
+function replaceDieAppearance(index,keepPose=true){
+ const previous=objects[index];
+ const position=previous.body.translation(),rotation=previous.body.rotation();
+ const visible=previous.mesh.visible;
+ destroyDie(previous);
+ const next=makeDie(index);
+ if(keepPose){
+  next.body.setTranslation(position,true);
+  next.body.setRotation(rotation,true);
+ }else{
+  next.body.setTranslation({x:position.x,y:next.body.translation().y,z:position.z},true);
+ }
+ next.mesh.visible=visible;
+ objects[index]=next;
 }
 function destroyDie(obj){
  if(!obj)return;

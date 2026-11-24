@@ -14,7 +14,7 @@ function element(tag,attrs={},text){
    The diagram is a document: positions and labels are editable, outcomes aren't rerolled. */
 function dicePrintable(){
  const context=globalThis.TabulaTableTools?.context?.(),saved=globalThis.TabulaDiceTable?.snapshot?.()||context?.dice;
- if(!context?.id?.startsWith('dice:')||!saved||!Array.isArray(saved.results)||!saved.results.length)
+ if(!context?.id?.startsWith('dice:')||!saved||!Array.isArray(saved.results)||!saved.results.length||!saved.results.every(Number.isInteger))
   throw Error('配置図に記録する出目がありません。ダイスを振ってください。');
  if(globalThis.TabulaDiceTable?.busy?.())throw Error('投擲が終わってから配置図を作成してください。');
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm','data-instrument':'dice'});

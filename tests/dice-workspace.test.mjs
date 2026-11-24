@@ -29,7 +29,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0732'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0734'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -46,14 +46,17 @@ test('dice DOM IDs do not collide with card DOM IDs',()=>{
  for(const id of ['felt','roll','collect','mix','status','preset','title','subtitle','description'])
   assert.ok(ids.includes('dice-'+id));
 });
-test('card-dice picker uses native card and dice groups without a redundant divider',()=>{
- const html=file('table.html');
- assert.match(html,/<optgroup label="カード">/);
- assert.match(html,/<\/optgroup><optgroup label="ダイス">/);
- assert.match(html,/value="dice:normal">ダイス/);
- assert.match(html,/value="dice:astro"/);
- assert.match(html,/value="dice:iching"/);
- assert.doesNotMatch(html,/id="instrumentMode"/);
+test('one dice entry opens a set chooser with both fixed-role sets',()=>{
+ const html=file('table.html'),adapter=file('js/dice-workspace.js');
+ const picker=html.match(/<select id="instrumentItem"[^>]*>(.*?)<\/select>/)[1];
+ assert.match(picker,/<optgroup label="カード">/);
+ assert.deepEqual([...picker.matchAll(/value="(dice[^"]*)"/g)].map(match=>match[1]),['dice']);
+ assert.match(html,/<dialog id="diceSetDialog"/);
+ assert.match(html,/<dialog id="diceSettingsDialog"/);
+ for(const preset of ['アルケミーダイス','アストロダイス','易占ダイス'])assert.ok(adapter.includes(preset));
+ assert.match(adapter,/setDialog\.showModal\(\)/);
+ assert.match(adapter,/settingsDialog\.showModal\(\)/);
+ assert.match(file('css/dice-workspace.css'),/body\.tabula-dice-mode #placementTools\{display:none!important\}/);
 });
 
 test('the renderer skips zero-size resize while cards are active',()=>{
@@ -72,7 +75,7 @@ test('same TABULA toolbar and layout are kept, only five shortcut buttons swap',
  assert.match(html,/id="tableActionSettings"/);
  assert.match(html,/id="liveResults"/);
 });
-test('dice results/settings and force move into existing TABULA slots',()=>{
+test('dice results and force use TABULA slots and settings use a modal',()=>{
  const adapter=file('js/dice-workspace.js');
  assert.match(adapter,/resultsHolder\.append\(workspace\.querySelector\('\.iching-outcome'\)\)/);
  assert.match(adapter,/strengthHolder\.append\(workspace\.querySelector\('\.force-control'\)\)/);
@@ -336,4 +339,44 @@ test('dice placement names match the existing toolbar label mode and placement',
  assert.match(file('js/placement-print.js'),/TabulaDiceLabels\.preferences\(document\)/);
  assert.match(file('js/placement-print.js'),/TabulaDiceLabels\.labelFor\(saved,i,prefs\.mode\)/);
  assert.match(file('table.html'),/js\/dice-labels\.js\?v=0732/);
+});
+
+test('normal dice edits preserve the other outcomes and keep cosmetic edits in place',()=>{
+ const engine=file('js/dice-table-engine.js');
+ const render=engine.slice(engine.indexOf('function renderSettings()'),engine.indexOf('function renderNormalEditor('));
+ const run=new Function(`
+  let ready=true,rolling=false,mixing=false,current={id:'normal'};
+  const host={};
+  let recordedResults=[4,5],diceSettings=[{sides:6},{sides:6}],objects=[{},{}];
+  let edit, replacement;
+  const diceDOM={getElementById:()=>host};
+  const refreshFloatingLabels=()=>{},syncMeshes=()=>{},emitDice=()=>{},destroyDie=()=>{};
+  const addNormalObject=()=>({});
+  const renderNormalEditor=(host,settings,change)=>{edit=change};
+  const showResults=results=>{recordedResults=results};
+  const replaceDieAppearance=(i,keepPose)=>{replacement=[i,keepPose]};
+  ${render}
+  renderSettings();
+  edit(()=>{},'appearance',0);
+  const appearance={results:recordedResults.slice(),replacement};
+  edit(()=>{diceSettings[1].sides=12},'shape',1);
+  const shape={results:recordedResults.slice(),replacement};
+  edit(()=>diceSettings.push({sides:6}),'add',2);
+  const added=recordedResults.slice();
+  edit(()=>diceSettings.splice(1,1),'remove',1);
+  return {appearance,shape,added,removed:recordedResults,objects:objects.length};
+ `);
+ assert.deepEqual(run(),{
+  appearance:{results:[4,5],replacement:[0,true]},
+  shape:{results:[4,null],replacement:[1,false]},
+  added:[4,null,null],removed:[4,null],objects:2
+ });
+});
+test('ring grooves and highlights share the selected ground color',()=>{
+ const engine=file('js/dice-table-engine.js');
+ const helper=engine.slice(engine.indexOf('function ringInk('),engine.indexOf('function finishTexture('));
+ const ink=new Function(helper+'return ringInk')();
+ assert.equal(ink('#476f83',-.69),'rgba(22,34,41,1)');
+ assert.equal(ink('#476f83',.34),'rgba(134,160,173,1)');
+ assert.notEqual(ink('#476f83',-.69),ink('#914c4c',-.69));
 });
