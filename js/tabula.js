@@ -5917,6 +5917,8 @@ function dualRefreshControls(){
  if(!controls||!bar)return;
  const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables(),independent=isIndependentTables();
  const activeDice=isDiceTool(activeToolId());
+ const diceA=isDiceTool(dualSession?.tables?.table1?.toolId);
+ const diceB=isDiceTool(dualSession?.tables?.table2?.toolId);
  updateTableAddPanel();
  refreshClothIndicators();
  controls.hidden=!active;
@@ -5945,17 +5947,17 @@ function dualRefreshControls(){
  }
  const appearanceALabel=$('dualAppearanceA').closest('label');
  const backALabel=$('dualBackA').closest('label');
- appearanceALabel.hidden=activeDice;
+ appearanceALabel.hidden=activeDice||diceA;
  // Simple decks have a fixed back: don't offer a color picker that cannot
  // change their appearance. Keep full choices for TABULA TAROT decks.
- backALabel.hidden=activeDice||!deckCapabilities('A').backColor;
+ backALabel.hidden=activeDice||diceA||!deckCapabilities('A').backColor;
  const backBLabel=$('dualBackB').closest('label');
- if(backBLabel&&!shared)backBLabel.hidden=activeDice||!deckCapabilities('B').backColor;
+ if(backBLabel&&!shared)backBLabel.hidden=activeDice||diceB||!deckCapabilities('B').backColor;
  $('dualDeckHeadingA').textContent=shared?'共有デッキ':independent?'メインデッキ':'デッキA';
  $('dualDeckHeadingB').textContent=independent?'追加デッキ':'デッキB';
- $('dualDeckFieldsA').hidden=activeDice;
- $('dualDeckFieldsB').hidden=shared||activeDice;
- $('dualDeckSettings').hidden=activeDice;
+ $('dualDeckFieldsA').hidden=activeDice||diceA;
+ $('dualDeckFieldsB').hidden=shared||activeDice||diceB;
+ $('dualDeckSettings').hidden=activeDice||(diceA&&(shared||diceB));
  $('dualNew').hidden=shared||independent;
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
@@ -5980,7 +5982,7 @@ function dualRefreshControls(){
   ?(dualSession.tables[dualSession.activeTable]?.name||'現在の卓')+' · '+toolLabelForTable(dualSession.tables[dualSession.activeTable])+' / ダイスの設定は「Ⅱ. 使用する道具」で変更'
   :shared
  ?'共有山札 '+dualSession.piles.A.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓Ⅰ '+dualSession.tables.table2.placed.length+'枚'
- :independent?'メイン山札 '+dualSession.piles.A.length+'枚 / 追加山札 '+dualSession.piles.B.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓 '+dualSession.tables.table2.placed.length+'枚'
+ :independent?'メイン卓 '+toolLabelForTable(dualSession.tables.table1)+' / 追加卓Ⅰ '+(diceB?toolLabelForTable(dualSession.tables.table2):'山札 '+dualSession.piles.B.length+'枚')
  :'山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
  refreshWorkspaceSwitcher();
 }
