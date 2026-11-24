@@ -158,3 +158,18 @@ test('main and additional table selectors identify each table tool explicitly',(
  assert.match(code,/追加卓Ⅰ'\)\+' · '\+toolLabelForTable/);
  assert.match(code,/tableMenuCurrent'\)\.textContent=currentName\+' · '/);
 });
+
+test('table changes are blocked during active dice physics and palette state is isolated',()=>{
+ const model=file('js/tabula.js'),engine=file('js/dice-table-engine.js');
+ assert.match(model,/ダイスの投擲・混合が終わってから卓を切り替えてください/);
+ assert.match(model,/追加卓を片付けてください/);
+ assert.match(model,/window\.TabulaDiceTable\?\.busy\?\.\(\)/);
+ assert.match(engine,/astroDiceColors=valid&&id==='astro'/);
+ assert.match(engine,/ichingColorScheme=valid&&id==='iching'/);
+});
+test('common TABULA toolbar identifies the active instrument',()=>{
+ const code=file('js/dice-workspace.js');
+ assert.match(code,/function updateToolbarTool\(id\)/);
+ assert.match(code,/toolbarToolName\.textContent=label/);
+ assert.match(code,/updateToolbarTool\('dice:'\+id\)/);
+});
