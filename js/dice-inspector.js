@@ -90,7 +90,7 @@ export function hexagramDetail(number, role, lines, changing, context) {
  node.append(element('p',context,'dice-detail-context'));
  section(node,'卦辞 · 原文',entry.statement,'zh-Hant');
  section(node,'現代語での大意',statementGuides[number-1]);
- section(node,'TABULAの解説',hexagramGuides[number-1]);
+ section(node,'解釈例',hexagramGuides[number-1]);
  reference(node,'原文参照 · 維基文庫『周易』',entry.source);
  return node;
 }

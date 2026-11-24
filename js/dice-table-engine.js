@@ -3,7 +3,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.m
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
 import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0725';
 
-import {faceFigure, faceDetail, hexagramDetail} from './dice-inspector.js?v=0769';
+import {faceFigure, faceDetail, hexagramDetail} from './dice-inspector.js?v=0770';
 
 const diceDOM={
  getElementById(id){return window.document.getElementById('dice-'+id)},
