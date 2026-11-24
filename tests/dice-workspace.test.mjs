@@ -267,3 +267,9 @@ test('I Ching history preserves the original engine King Wen result',()=>{
  assert.match(model,/本卦 → 之卦/);
  assert.match(model,/String\.fromCodePoint\(0x4dc0\+h\.primary-1\)/);
 });
+
+test('save-and-new dice clears the previous outcome before the next reading',()=>{
+ const tab=file('js/tabula.js'),engine=file('js/dice-table-engine.js');
+ assert.match(tab,/if\(isDiceTool\(activeToolId\(\)\)\)\{window\.TabulaDiceTable\?\.reset\?\./);
+ assert.match(engine,/reset\(id\)\{restoreDice\(null,id\);forceSlider\.value='30';updateForceLabel\(\);emitDice\(\)\}/);
+});
