@@ -456,9 +456,9 @@ function drawIvoryGrain(c,size,value){
   const y=(layer*.115-.10)*size;
   const bend=(.13+random()*.08)*size;
   for(const [offset,width,color] of [
-   [0,.032,'rgba(255,246,226,.12)'],
-   [.014,.005,'rgba(110,76,58,.19)'],
-   [.026,.003,'rgba(255,248,229,.18)']
+   [0,.032,'rgba(255,246,226,.055)'],
+   [.014,.005,'rgba(110,76,58,.085)'],
+   [.026,.003,'rgba(255,248,229,.08)']
   ]){
    const row=y+offset*size;
    c.beginPath();c.moveTo(-.08*size,row+.17*size);
