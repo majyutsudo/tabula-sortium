@@ -6,7 +6,7 @@
  const workspace=document.getElementById('diceWorkspace');
  if(!picker||!source||!section||!workspace)return;
  const diceModes=new Set(['normal','astro','iching']);
- let loadPromise=null,lastCardId=source.value||'builtin';
+ let loadPromise=null,lastCardId=source.value||'builtin',activationToken=0;
  const diceSelect=document.getElementById('dice-preset');
  const cardActions=document.querySelector('.table-shortcuts:not(.dice-quick-actions)');
  const diceActions=document.getElementById('diceQuickActions');
@@ -115,6 +115,7 @@
  }
  new MutationObserver(syncAvailableCards).observe(source,{childList:true,subtree:true,characterData:true});
  function switchToCard(id){
+  activationToken++;
   document.body.classList.remove('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=false;diceActions.hidden=true;
   setCardControlsInactive(false);
@@ -129,6 +130,7 @@
   requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));
  }
  function switchToDice(id,snapshot=null){
+  const token=++activationToken;
   if(!document.body.classList.contains('tabula-dice-mode'))cardResultsOpen=!cardResults.hidden;
   document.body.classList.add('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=true;diceActions.hidden=false;
@@ -142,6 +144,7 @@
   if(toggle)toggle.setAttribute('aria-expanded','true');
   diceSelect.value=id;
   loadEngine().then(()=>{
+   if(token!==activationToken||!document.body.classList.contains('tabula-dice-mode'))return;
    window.TabulaDiceTable?.restore(snapshot,id);
    requestAnimationFrame(()=>window.TabulaDiceTable?.resize());
    syncActionStates();
