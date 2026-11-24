@@ -29,7 +29,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0731'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0732'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -295,7 +295,7 @@ test('custom die labels are editable and retained in results, snapshots, and 2D 
  assert.match(engine,/function positionFloatingLabels\(/);
  assert.match(engine,/positionFloatingLabels\(\);/);
  assert.match(engine,/d\.userLabel\+' · D'/);
- assert.match(printer,/conf\.userLabel/);
+ assert.match(printer,/TabulaDiceLabels\.labelFor\(saved,i,prefs\.mode\)/);
  assert.match(model,/d\.settings\[i\]\?\.userLabel/);
 });
 
