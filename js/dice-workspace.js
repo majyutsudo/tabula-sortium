@@ -5,7 +5,7 @@
  const section=document.getElementById('instrumentChoiceSection');
  const workspace=document.getElementById('diceWorkspace');
  if(!picker||!source||!section||!workspace)return;
- let loadPromise=null,lastCardId=source.value||'builtin',activationToken=0;
+ let loadPromise=null,activationToken=0;
  const diceSelect=document.getElementById('dice-preset');
  const settingsDialog=document.getElementById('diceSettingsDialog');
  const setDialog=document.getElementById('diceSetDialog');
@@ -212,14 +212,6 @@
   });
   return loadPromise;
  }
- function syncAvailableCards(){
-  const group=picker.querySelector('optgroup[label="カード"]');
-  group.replaceChildren();
-  for(const item of source.options)group.append(new Option(item.text,'card:'+item.value));
-  const desired=document.body.classList.contains('tabula-dice-mode')?'dice':'card:'+source.value;
-  picker.value=[...picker.options].some(o=>o.value===desired)?desired:'card:'+source.value;
- }
- new MutationObserver(syncAvailableCards).observe(source,{childList:true,subtree:true,characterData:true});
  function switchToCard(id){
   activationToken++;
   document.body.classList.remove('tabula-dice-mode');workspace.hidden=true;
@@ -233,8 +225,7 @@
   if(id&&source.value!==id&&[...source.options].some(o=>o.value===id)){
    source.value=id;source.dispatchEvent(new Event('change',{bubbles:true}));
   }
-  lastCardId=source.value;
-  updateToolbarTool('card:'+lastCardId);
+  updateToolbarTool('card:'+source.value);
   requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));
  }
  function switchToDice(id,snapshot=null){
@@ -265,9 +256,7 @@
   const current=detail||window.TabulaTableTools?.context?.();
   if(!current)return;
   if(settingsDialog.open)settingsDialog.close();
-  const choice=current.id.startsWith('dice:')?'dice':current.id;
-  if(![...picker.options].some(option=>option.value===choice))syncAvailableCards();
-  picker.value=choice;
+  picker.value=current.id.startsWith('dice:')?'dice':'card';
   if(current.id.startsWith('dice:'))switchToDice(current.id.slice(5),current.dice);
   else switchToCard(current.id.slice(5));
  }
@@ -276,11 +265,11 @@
   const bridge=window.TabulaTableTools;
   const previous=bridge?.context()?.id||'card:'+source.value;
   if(selected==='dice'){
-   picker.value=previous.startsWith('dice:')?'dice':previous;
+   picker.value=previous.startsWith('dice:')?'dice':'card';
    openSetDialog();return;
   }
-  if(!bridge?.switchTool(selected)){
-   picker.value=previous.startsWith('dice:')?'dice':previous;
+  if(!bridge?.switchTool('card:'+(source.value||'builtin'))){
+   picker.value=previous.startsWith('dice:')?'dice':'card';
    return;
   }
   // The table model emits tabula:tool-context after the transition.
@@ -289,12 +278,11 @@
  source.addEventListener('change',()=>{
   if(!document.body.classList.contains('tabula-dice-mode')){
    window.TabulaTableTools?.updateCard(source.value);
-   picker.value='card:'+source.value;
+   picker.value='card';
   }
  });
  window.addEventListener('resize',()=>{
   if(document.body.classList.contains('tabula-dice-mode'))window.TabulaDiceTable?.resize();
  });
- syncAvailableCards();
  applyCurrentTable();
 })();

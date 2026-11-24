@@ -51,8 +51,7 @@ test('dice DOM IDs do not collide with card DOM IDs',()=>{
 test('one dice entry opens a set chooser with both fixed-role sets',()=>{
  const html=file('table.html'),adapter=file('js/dice-workspace.js');
  const picker=html.match(/<select id="instrumentItem"[^>]*>(.*?)<\/select>/)[1];
- assert.match(picker,/<optgroup label="カード">/);
- assert.deepEqual([...picker.matchAll(/value="(dice[^"]*)"/g)].map(match=>match[1]),['dice']);
+ assert.deepEqual([...picker.matchAll(/value="([^"]+)"/g)].map(match=>match[1]),['card','dice']);
  assert.match(html,/<dialog id="diceSetDialog"/);
  assert.match(html,/<dialog id="diceSettingsDialog"/);
  for(const preset of ['アルケミーダイス','アストロダイス','易占ダイス'])assert.ok(adapter.includes(preset));
