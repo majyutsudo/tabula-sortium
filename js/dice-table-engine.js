@@ -3,6 +3,8 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.m
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
 import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0725';
 
+import {faceFigure, faceDetail, hexagramDetail} from './dice-inspector.js?v=0764';
+
 const diceDOM={
  getElementById(id){return window.document.getElementById('dice-'+id)},
  querySelectorAll(selector){return window.document.querySelectorAll(selector.replace(/#([\w-]+)/g,(_,id)=>'#dice-'+id))}
@@ -116,33 +118,71 @@ function hexagramSummary(upper,lower,line){
 // large numeral is the outcome. Duplicate die types remain distinguishable
 // by order and their corresponding coloured dots.
 let recordedResults=null;
+let inspectingDice=false;
+function syncDiceInspection() {
+ const button=document.getElementById('inspectCards');
+ if(!button||!document.body.classList.contains('tabula-dice-mode'))return;
+ const available=recordedResults?.some(Number.isInteger)===true;
+ if(!available)inspectingDice=false;
+ button.disabled=!available;
+ button.setAttribute('aria-pressed',String(inspectingDice));
+ const holder=document.getElementById('diceResultsHolder');
+ holder.classList.toggle('dice-inspecting',inspectingDice);
+ holder.querySelectorAll('.dice-inspection-target').forEach(target=>{target.tabIndex=inspectingDice?0:-1});
+}
+function setDiceInspection(enabled) {
+ inspectingDice=enabled&&recordedResults?.some(Number.isInteger)===true;
+ syncDiceInspection();
+}
+function resultButton(node, label, open) {
+ node.type='button';
+ node.classList.add('dice-inspection-target');
+ node.setAttribute('aria-label',label+'の解説');
+ node.addEventListener('click',()=>{
+  if(inspectingDice)window.TabulaTableTools?.openDiceDetail(open(),node);
+ });
+}
 function showResults(results=null){
  recordedResults=Array.isArray(results)?results.slice():null;
  values.replaceChildren();
+ const h=current.id==='iching'&&results?hexagramSummary(...results):null;
+ const lines=h?[...bottomToTopTrigrams[results[1]-1],...bottomToTopTrigrams[results[0]-1]]:null;
  const symbolic=current.result!=='sum';
  diceDOM.getElementById('result-tiles').classList.toggle('astro-results',symbolic);
  diceSettings.forEach((d,i)=>{
-  const tile=document.createElement('div');tile.className='result-die';
+  const result=results?.[i];
+  const tile=document.createElement(result==null?'div':'button');tile.className='result-die';
   const kind=document.createElement('span');kind.className='result-kind';
   const dot=document.createElement('span');dot.className='result-swatch';dot.style.background=d.ink||d.color;
   const label=document.createElement('span');
   label.textContent=current.id==='normal'&&d.userLabel?d.userLabel+' · D'+d.sides:d.label;
   kind.append(dot,label);
   const symbol=document.createElement('span');symbol.className='result-number';
-  const result=results?.[i];
   const face=result==null?null:d.faces?.[result-1];
   symbol.textContent=result!=null?(face?.glyph===undefined?String(result):current.id==='astro'&&i===1?face.glyph+'\uFE0E':face.glyph):'—';
   tile.append(kind,symbol);
   if(symbolic){const desc=document.createElement('span');desc.className='astro-name';desc.textContent=face?.name||'未投擲';tile.append(desc);}
+  if(result!=null)resultButton(tile,label.textContent+' '+(face?.name||result),()=>
+   faceDetail(current.id,i,result,d,faceFigure(objects[i],result),h?.primary,h?.changed,lines));
   values.append(tile);
  });
  total.hidden=symbolic;
  if(!symbolic){total.replaceChildren();const t=document.createElement('span');t.textContent='合計';const sum=document.createElement('strong');sum.textContent=results?.every(Number.isInteger)?String(results.reduce((a,b)=>a+b,0)):'—';total.append(t,sum);}
  const reading=diceDOM.getElementById('hexagram-reading');reading.hidden=current.result!=='hexagram';
- if(current.result==='hexagram'&&results){
-  const h=hexagramSummary(...results);
-  reading.textContent='本卦 '+String.fromCodePoint(0x4dc0+h.primary-1)+' 第'+h.primary+'卦（'+trigramNames[results[0]-1]+'上'+trigramNames[results[1]-1]+'下） · '+diceSettings[2].faces[results[2]-1].name+' → 之卦 '+String.fromCodePoint(0x4dc0+h.changed-1)+' 第'+h.changed+'卦';
+ if(h){
+  const changing=results[2], moved=diceSettings[2].faces[changing-1].name;
+  const changedLines=lines.map((yang,i)=>i+1===changing?1-yang:yang);
+  const primary=document.createElement('button'),changed=document.createElement('button');
+  const primaryContext=trigramNames[results[0]-1]+'上'+trigramNames[results[1]-1]+'下';
+  const changedContext=trigramNames[h.nextUpper]+'上'+trigramNames[h.nextLower]+'下';
+  const title=(role,n)=>role+' '+String.fromCodePoint(0x4dc0+n-1)+' 第'+n+'卦';
+  primary.textContent=title('本卦',h.primary)+'（'+primaryContext+'）';
+  changed.textContent=title('之卦',h.changed);
+  resultButton(primary,'本卦',()=>hexagramDetail(h.primary,'本卦',lines,changing,primaryContext+' · '+moved+'が変化'));
+  resultButton(changed,'之卦',()=>hexagramDetail(h.changed,'之卦',changedLines,changing,changedContext+' · 本卦の'+moved+'が変化'));
+  reading.replaceChildren(primary,' · '+moved+' → ',changed);
  }else reading.textContent='本卦 —　·　動爻 —　·　之卦 —';
+ syncDiceInspection();
 }
 function lockSettings(locked){diceDOM.getElementById('preset').disabled=locked;if(!locked&&current.id==='normal'){diceDOM.getElementById('iching-color-scheme').disabled=false;renderSettings();return;}diceDOM.getElementById('iching-color-scheme').disabled=locked;
  diceDOM.querySelectorAll('#astro-colors input').forEach(input=>input.disabled=locked);
@@ -369,6 +409,8 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 
 window.TabulaDiceTable={
  snapshot:captureDice,
+ setInspection:setDiceInspection,
+ inspectionActive:()=>inspectingDice,
  editNormalDraft(host,settings){renderNormalEditor(host,settings,apply=>apply())},
  defaultNormalDie,
  restore:restoreDice,

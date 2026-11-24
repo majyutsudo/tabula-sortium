@@ -5127,7 +5127,23 @@ function setInspectionMode(enabled){
  render();
  setStatus(inspectMode?'閲覧モード：表向きのカードをクリック（Escで終了）。':'通常操作に戻りました。');
 }
-inspectionButton.onclick=()=>setInspectionMode(!inspectMode);
+inspectionButton.onclick=()=>{
+ if(document.body.classList.contains('tabula-dice-mode')){
+  const dice=window.TabulaDiceTable;
+  dice?.setInspection(!dice.inspectionActive());
+  return;
+ }
+ setInspectionMode(!inspectMode);
+};
+window.addEventListener('tabula:tool-context',event=>{
+ if(event.detail?.id?.startsWith('dice:')&&inspectMode)setInspectionMode(false);
+});
+function openDiceDetail(content, origin){
+ tableDetailFocus=origin;
+ modal('');
+ $('modalContent').append(content);
+ $('modalClose').focus();
+}
 function inspectTableCard(index,origin){
  if(!inspectionEnabled())return;
  const item=state.placed[index];if(!item)return;
@@ -5149,7 +5165,8 @@ document.addEventListener('keydown',e=>{
  if(GALLERY.visible||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)||e.target.isContentEditable)return;
  const viewing=$('modalBg').classList.contains('open')&&!!$('tableCardLarge');
  if(e.key==='Escape'){
-  if(viewing){e.preventDefault();closeModal();}
+  if(viewing||$('modalContent').querySelector('.dice-detail')&&$('modalBg').classList.contains('open')){e.preventDefault();closeModal();}
+  else if(document.body.classList.contains('tabula-dice-mode')&&window.TabulaDiceTable?.inspectionActive()&&!$('modalBg').classList.contains('open')){e.preventDefault();window.TabulaDiceTable.setInspection(false);inspectionButton.focus();}
   else if(inspectMode&&!$('modalBg').classList.contains('open')){e.preventDefault();setInspectionMode(false);inspectionButton.focus();}
  }else if(viewing&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
   e.preventDefault();$('tableCard'+(e.key==='ArrowLeft'?'Prev':'Next')).click();
@@ -5586,7 +5603,7 @@ function replaceIndependentTool(target,snapshot=null){
  if(deckId)table.savedSettings={...dualClone(table.savedSettings||settings),deckId,pool:'all'};
  TabulaMultiWorkspace.validate(candidate);dualSession=candidate;dualRestoreView();dualSave();
 }
-window.TabulaTableTools={
+window.TabulaTableTools={openDiceDetail,
  context(){return{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}},
  saveDice(snapshot){if(!snapshot||!isDiceTool(activeToolId())||snapshot.mode!==activeToolId().slice(5))return;const t=activeToolTable();if(t){t.diceSnapshot=snapshot;dualSave()}else{mainToolState.dice=snapshot;storeMainTool()}},
  updateCard(id){if(isDiceTool(activeToolId()))return;const t=activeToolTable();if(t)t.toolId='card:'+id;else{mainToolState.id='card:'+id;storeMainTool()}},

@@ -242,3 +242,27 @@ body.tabula-dice-mode #placementTools{display:none!important}
 .dice-dialog-actions input{max-width:100%;color:inherit;background:#253a31;border:1px solid #85785f;padding:5px}
 #diceSetDraft{margin-top:14px}
 #diceChangeSet{margin-top:8px}
+
+#diceResultsHolder .dice-inspection-target{
+ appearance:none;background:none;color:inherit;border:1px solid transparent;border-radius:5px;
+ font:inherit;padding:3px 6px;pointer-events:none;
+}
+#diceResultsHolder .dice-inspection-target:not(:focus){outline:none}
+#diceResultsHolder.dice-inspecting .dice-inspection-target{
+ cursor:pointer;pointer-events:auto;border-color:#baa77a80;
+}
+#diceResultsHolder.dice-inspecting .dice-inspection-target:hover,
+#diceResultsHolder.dice-inspecting .dice-inspection-target:focus-visible{
+ border-color:#f1c779;background:#baa77a20;
+}
+.dice-detail{max-width:32rem;margin:auto;line-height:1.65}
+.dice-detail-face{display:block;width:min(10rem,44vw);height:auto;margin:0 auto;filter:drop-shadow(0 5px 5px #0008)}
+.dice-detail-category,.dice-detail h2,.dice-detail-context{text-align:center}
+.dice-detail-category{color:#d5bf91;margin:.3rem 0 0}
+.dice-detail h2{margin:.2rem 0 .8rem}
+.dice-detail h3{font-size:.95rem;margin:1rem 0 .2rem;color:#e7cc91}
+.dice-detail h3 + p{margin:.2rem 0 .75rem}
+.dice-detail-hexagram{display:grid;gap:5px;width:5rem;margin:.75rem auto}
+.dice-detail-hexagram span{height:5px;color:#eadfc8;background:currentColor}
+.dice-detail-hexagram .yin{background:linear-gradient(to right,currentColor 0 43%,transparent 43% 57%,currentColor 57% 100%)}
+.dice-detail-hexagram .moving{color:#e09762}

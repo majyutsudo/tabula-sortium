@@ -205,15 +205,29 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0761').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0764').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;
   });
   return loadPromise;
  }
+ const inspector=document.getElementById('inspectCards');
+ const cardInspectorTitle=inspector?.title;
+ inspector?.addEventListener('click',()=>{
+  if(window.TabulaDiceTable?.inspectionActive())setDiceResultsOpen(true);
+ });
+ function configureInspector(dice){
+  if(!inspector)return;
+  window.TabulaDiceTable?.setInspection(false);
+  inspector.disabled=dice;
+  inspector.title=dice?'虫眼鏡を押してから、結果欄の出目を選びます。':cardInspectorTitle;
+  inspector.setAttribute('aria-label',dice?'ダイスの出目を見る':'カードを見る');
+  inspector.dataset.toolLabel=dice?'ダイスの出目を見る':'カードを見る';
+ }
  function switchToCard(id){
   activationToken++;
+  if(document.body.classList.contains('tabula-dice-mode'))configureInspector(false);
   document.body.classList.remove('tabula-dice-mode');workspace.hidden=true;
   cardActions.hidden=false;diceActions.hidden=true;
   setCardControlsInactive(false);
@@ -232,6 +246,7 @@
   const token=++activationToken;
   if(!document.body.classList.contains('tabula-dice-mode'))cardResultsOpen=!cardResults.hidden;
   document.body.classList.add('tabula-dice-mode');workspace.hidden=true;
+  configureInspector(true);
   cardActions.hidden=true;diceActions.hidden=false;
   setCardControlsInactive(true);
   changeSet.hidden=false;
