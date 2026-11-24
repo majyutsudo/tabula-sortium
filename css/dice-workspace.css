@@ -33,7 +33,6 @@ body.tabula-dice-mode #instrumentChoiceSection.is-collapsed .instrument-picker{d
 .dice-workspace .status{text-align:center;min-height:18px;font-size:11px;letter-spacing:.15em}
 .dice-workspace .force-control{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;font-size:12px}
 .dice-workspace #dice-force{width:100%;accent-color:#d1b273}
-.dice-workspace .force-range{grid-column:2;display:flex;justify-content:space-between;color:#bcae92;font-size:10px}
 .dice-workspace .roll-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 .dice-workspace .roll-actions button{border:1px solid #9b8762;border-radius:5px;background:#263d31;color:#eddbba;padding:13px;min-width:120px;cursor:pointer}
 .dice-workspace .roll-actions button:disabled{opacity:.4;cursor:default}
@@ -60,11 +59,6 @@ body.tabula-dice-mode #instrumentChoiceSection.is-collapsed .instrument-picker{d
 body.tabula-dice-mode .table-shortcuts:not(.dice-quick-actions){display:none!important}
 body.tabula-dice-mode #diceQuickActions{display:grid!important}
 #diceWorkspace{display:none!important}
-body.tabula-dice-mode .main>.toolbar,
-body.tabula-dice-mode .main>.table-utility-actions,
-body.tabula-dice-mode .main>.table-record-actions,
-body.tabula-dice-mode .main>.results-toggle-bar,
-body.tabula-dice-mode .main>.info{display:flex}
 body.tabula-dice-mode #tableActionSettings>*:not(#diceStrengthHolder){display:none!important}
 body.tabula-dice-mode #tableActionSettings #diceStrengthHolder{display:block!important}
 body:not(.tabula-dice-mode) #diceStrengthHolder,
@@ -98,7 +92,6 @@ body.tabula-dice-mode #diceSettingsHolder{margin-top:10px}
 #diceStrengthHolder{width:100%;grid-column:1/-1;box-sizing:border-box;padding:5px 10px}
 #diceStrengthHolder .force-control{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:12px}
 #diceStrengthHolder #dice-force{width:100%;accent-color:#c8a76e}
-#diceStrengthHolder .force-range{grid-column:2;display:flex;justify-content:space-between;font-size:10px}
 #diceSettingsHolder .normal-config{background:#1d332a;border:1px solid #647462;border-radius:5px}
 #diceSettingsHolder .normal-config summary{cursor:pointer;padding:10px;font-size:12px}
 #diceSettingsHolder .normal-config-summary{font-size:10px;color:#b9ae90}
@@ -156,7 +149,6 @@ body.tabula-dice-mode #presetSnapToggle{
 /* v0.729 — dice results take priority over disabled card-only actions.
    The card tool keeps its original auxiliary buttons and record controls. */
 body.tabula-dice-mode .main>.table-utility-actions,
-body.tabula-dice-mode .main>.table-record-actions,
 body.tabula-dice-mode .main>.results-toggle-bar,
 body.tabula-dice-mode .main>.info{
  display:none!important;
@@ -176,8 +168,6 @@ body.tabula-dice-mode #diceStrengthHolder .force-control output{
 @media(max-width:600px){
  body.tabula-dice-mode #diceStrengthHolder .force-control{gap:6px}
 }
-/* Remove inherited scale hints, including in case of older markup caches. */
-body.tabula-dice-mode #diceStrengthHolder .force-range{display:none!important}
 
 /* v0.730 — shared reading history now supports dice as well as cards.
    Restore only the two applicable history buttons; retain card-only print hidden. */
@@ -196,7 +186,6 @@ body.tabula-dice-mode #quickSnapshotList{
  filter:none!important;
  cursor:pointer!important;
 }
-body.tabula-dice-mode #printPlacement{display:inline-flex!important;align-items:center;justify-content:center;opacity:1!important;filter:none!important;cursor:pointer!important}
 .dice-record-board{
  display:flex;
  flex-direction:column;
