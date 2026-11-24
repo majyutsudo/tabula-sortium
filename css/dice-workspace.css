@@ -118,3 +118,26 @@ body.tabula-dice-mode #diceSettingsHolder{margin-top:10px}
 
 /* The left-hand menus retain their positions; only section II switches its settings. */
 body.tabula-dice-mode #instrumentChoiceSection>:not(h2):not(.instrument-picker){display:none!important}
+
+/* v0.726 — keep card-only controls visible but unmistakably unavailable
+   during dice use; normal colours and interactivity return in card mode. */
+body.tabula-dice-mode .dice-unavailable{
+ opacity:.32!important;
+ filter:grayscale(1)!important;
+ background-color:#252726!important;
+ border-color:#555854!important;
+ color:#969b97!important;
+ box-shadow:none!important;
+ text-shadow:none!important;
+ cursor:not-allowed!important;
+ transition:none!important;
+}
+body.tabula-dice-mode .dice-unavailable :is(button,svg,.quick-symbol){
+ filter:grayscale(1)!important;
+ color:inherit!important;
+}
+body.tabula-dice-mode .dice-unavailable:is(:hover,:active,:focus){
+ background-color:#252726!important;
+ color:#969b97!important;
+ box-shadow:none!important;
+}
