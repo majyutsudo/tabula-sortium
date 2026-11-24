@@ -232,6 +232,9 @@ function restoreDice(saved,id){
  if(!ready){pendingRestore={saved,id};return}
  if(rolling||mixing)return;
  const valid=saved&&saved.schema===1&&saved.mode===id&&Array.isArray(saved.settings);
+ // Table changes must not leak another table's customized astrological palette.
+ astroDiceColors=valid&&id==='astro'&&Array.isArray(saved.colors)?saved.colors.slice():null;
+ ichingColorScheme=valid&&id==='iching'&&saved.scheme==='redUpper'?'redUpper':'blackUpper';
  switchPreset(id);
  if(valid){
   if(id==='normal'&&saved.settings.length>=1&&saved.settings.length<=8){
