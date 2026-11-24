@@ -14,11 +14,17 @@
  const resultToggle=document.getElementById('toggleResults');
  const cardStatus=document.getElementById('status');
  const toolbarToolName=document.getElementById('toolbarDeckName');
+ function updateSharedLabelCaption(id){
+  const button=document.getElementById('toolbarLabelToggle');
+  if(!button||button.dataset.labelMode!=='card')return;
+  button.textContent=id.startsWith('dice:')?'ダイス名':'カード名';
+ }
  function updateToolbarTool(id){
   if(!toolbarToolName)return;
   const names={'dice:normal':'ダイス','dice:astro':'アストロダイス','dice:iching':'易占ダイス'};
   const label=names[id]||source.selectedOptions[0]?.textContent||'カード';
   toolbarToolName.textContent=label.replace(/（.*?枚）/g,'').trim();
+  updateSharedLabelCaption(id);
   const button=document.getElementById('toolbarDeckButton');if(button)button.title='使用する道具：'+label;
  }
  // Leave card-only functions in their usual positions, but prevent editing
