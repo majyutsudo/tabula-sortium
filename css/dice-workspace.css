@@ -236,3 +236,7 @@ body.tabula-dice-mode #printPlacement{flex:1 1 100%}
  text-shadow:0 1px 2px #000;
 }
 #diceFloatingLabels .dice-floating-label[hidden]{display:none!important}
+
+/* Holding MIX is deliberate; mobile scrolling must not steal its pointer. */
+#diceQuickMix,#dice-mix{touch-action:none;user-select:none;-webkit-user-select:none}
+#diceQuickMix[aria-pressed="true"]{filter:brightness(1.14);border-color:#d5b978}
