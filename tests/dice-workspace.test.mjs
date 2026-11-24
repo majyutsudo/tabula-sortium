@@ -186,9 +186,17 @@ test('dice extra table creation omits card composition and uses dice wording',()
 test('active dice table omits irrelevant card deck appearance/back settings',()=>{
  const model=file('js/tabula.js'),style=file('css/dice-workspace.css');
  assert.match(model,/const activeDice=isDiceTool\(activeToolId\(\)\)/);
- assert.match(model,/dualDeckFieldsA'\)\.hidden=activeDice/);
- assert.match(model,/dualDeckFieldsB'\)\.hidden=shared\|\|activeDice/);
+ assert.match(model,/dualDeckFieldsA'\)\.hidden=activeDice\|\|diceA/);
+ assert.match(model,/dualDeckFieldsB'\)\.hidden=shared\|\|activeDice\|\|diceB/);
  assert.match(model,/dualDeckSettings'\)\.hidden=activeDice/);
  assert.match(model,/dualSummary'\)\.textContent=activeDice/);
  assert.match(style,/#dualDeckSettings\[hidden\]/);
+});
+
+test('when an additional table uses dice, its card-only deck B settings stay hidden even if the main table has cards',()=>{
+ const model=file('js/tabula.js'),adapter=file('js/dice-workspace.js');
+ assert.match(model,/const diceB=isDiceTool\(dualSession\?\.tables\?\.table2\?\.toolId\)/);
+ assert.match(model,/dualDeckFieldsB'\)\.hidden=shared\|\|activeDice\|\|diceB/);
+ assert.match(model,/backBLabel\.hidden=activeDice\|\|diceB/);
+ assert.match(adapter,/presetSnapToggle/);
 });
