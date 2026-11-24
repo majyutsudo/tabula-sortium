@@ -5181,7 +5181,7 @@ function installTableToolLayout(){
    // Keep undo in the mobile action grid without changing its desktop home.
    // Moving the existing button preserves its click handler and disabled state.
    if(window.innerWidth<=780)mobileActions.insertBefore(undo,$('newSessionStandalone'));
-   else toolbar.insertBefore(undo,$('zoomOut'));
+   else sizeControls.before(undo);
   };window.addEventListener('resize',onResize);onResize();
  applyTableCamera();
 }
