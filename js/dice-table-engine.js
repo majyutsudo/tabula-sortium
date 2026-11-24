@@ -8,6 +8,33 @@ const diceDOM={
  querySelectorAll(selector){return window.document.querySelectorAll(selector.replace(/#([\w-]+)/g,(_,id)=>'#dice-'+id))}
 };
 const felt=diceDOM.getElementById('felt');
+const floatingLabels=document.createElement('div');
+floatingLabels.id='diceFloatingLabels';floatingLabels.setAttribute('aria-hidden','true');
+felt.append(floatingLabels);
+let diceLabelNodes=[];
+function refreshFloatingLabels(){
+ floatingLabels.replaceChildren();
+ diceLabelNodes=diceSettings.map((d,i)=>{
+  const span=document.createElement('span');span.className='dice-floating-label';
+  span.textContent=current.id==='normal'?String(d.userLabel||'').trim():'';
+  span.hidden=!span.textContent;span.dataset.dieIndex=String(i);
+  floatingLabels.append(span);return span;
+ });
+}
+function positionFloatingLabels(){
+ if(!ready||!camera||!objects.length)return;
+ const rect=felt.getBoundingClientRect();
+ if(!rect.width||!rect.height)return;
+ objects.forEach(({body,mesh},i)=>{
+  const label=diceLabelNodes[i];if(!label)return;
+  const show=current.id==='normal'&&!!label.textContent&&!held&&!rolling&&mesh.visible;
+  label.hidden=!show;
+  if(!show)return;
+  const p=body.translation(),projected=new THREE.Vector3(p.x,p.y,p.z).project(camera);
+  label.style.left=((projected.x+1)*rect.width/2)+'px';
+  label.style.top=((1-projected.y)*rect.height/2+22)+'px';
+ });
+}
 const button=diceDOM.getElementById('roll');
 const collectButton=diceDOM.getElementById('collect');
 const mixButton=diceDOM.getElementById('mix');
@@ -125,7 +152,7 @@ function rebuildNormalDice(){
 function renderSettings(){
  const host=diceDOM.getElementById('dice-settings');host.replaceChildren();
  const panel=diceDOM.getElementById('normal-dice-panel');panel.hidden=current.id!=='normal';
- host.hidden=current.id!=='normal';if(host.hidden)return;
+ host.hidden=current.id!=='normal';refreshFloatingLabels();if(host.hidden)return;
  const toolbar=document.createElement('div');toolbar.className='dice-config-toolbar';
  const count=document.createElement('span');count.textContent='使用数：'+diceSettings.length+'個';
  const add=document.createElement('button');add.type='button';add.textContent='＋ ダイスを追加';
@@ -145,7 +172,7 @@ function renderSettings(){
   name.addEventListener('change',()=>{
    if(rolling||mixing){name.value=d.userLabel||'';return}
    d.userLabel=name.value.trim().slice(0,36);
-   showResults(recordedResults);emitDice();
+   showResults(recordedResults);refreshFloatingLabels();emitDice();
   });
   const sides=document.createElement('select');sides.setAttribute('aria-label','ダイス'+(i+1)+'の面数');
   for(const n of [6,8,10,12,20])sides.add(new Option('D'+n,String(n)));sides.value=String(d.sides);
@@ -1031,6 +1058,7 @@ function render(time){
    }
   }
  }
+ positionFloatingLabels();
  renderer.render(scene,camera);
 }
 async function init(){
