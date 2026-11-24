@@ -173,3 +173,22 @@ test('common TABULA toolbar identifies the active instrument',()=>{
  assert.match(code,/toolbarToolName\.textContent=label/);
  assert.match(code,/updateToolbarTool\('dice:'\+id\)/);
 });
+
+test('dice extra table creation omits card composition and uses dice wording',()=>{
+ const html=file('table.html'),model=file('js/tabula.js'),style=file('css/dice-workspace.css');
+ assert.match(html,/id="independentDeckPoolField"/);
+ assert.match(html,/id="independentDeckHelp"/);
+ assert.match(model,/independentDeckPoolField'\)\.hidden=dice/);
+ assert.match(model,/independentDeckHelp'\)\.hidden=dice/);
+ assert.match(model,/ダイス用の卓を追加/);
+ assert.match(style,/#independentDeckPoolField\[hidden\]/);
+});
+test('active dice table omits irrelevant card deck appearance/back settings',()=>{
+ const model=file('js/tabula.js'),style=file('css/dice-workspace.css');
+ assert.match(model,/const activeDice=isDiceTool\(activeToolId\(\)\)/);
+ assert.match(model,/dualDeckFieldsA'\)\.hidden=activeDice/);
+ assert.match(model,/dualDeckFieldsB'\)\.hidden=shared\|\|activeDice/);
+ assert.match(model,/dualDeckSettings'\)\.hidden=activeDice/);
+ assert.match(model,/dualSummary'\)\.textContent=activeDice/);
+ assert.match(style,/#dualDeckSettings\[hidden\]/);
+});
