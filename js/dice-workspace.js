@@ -17,7 +17,7 @@
  const message=document.getElementById('diceSetMessage');
  const PRESET_STORAGE='tabula_normal_dice_presets_v1';
  let draft=[],chooseFor=null,draftRequest=0,onChoose=null;
- const normalDie=(color='#c7b48d')=>({sides:6,color,surface:'ring'});
+ const normalDie=(color='#c7b48d')=>({sides:6,color,surface:'standard',faceStyle:'ring-pips'});
  const cloneDice=dice=>dice.map(die=>({...die}));
  const builtInSets=[
   ...[1,2,3].map(count=>({name:count+'ダイス',description:'砂色のD6 × '+count,mode:'normal',dice:Array.from({length:count},()=>normalDie())})),
@@ -52,7 +52,7 @@
   setChoices.replaceChildren();
   for(const set of builtInSets)addChoice(set.name,set.description,()=>applySet(set.mode,set.dice));
   for(const set of savedSets())addChoice(set.name,set.dice.map(die=>'D'+die.sides).join('・'),()=>applySet('normal',set.dice));
-  addChoice('新しく組む','個数・面数・色・仕上げ・ラベルを指定。',openDraft);
+  addChoice('新しく組む','個数・面数・素材・目の意匠・色・ラベルを指定。',openDraft);
  }
  async function openDraft(){
   const request=++draftRequest;
@@ -201,7 +201,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0740').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0741').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;

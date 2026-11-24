@@ -31,7 +31,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0740'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0741'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -122,7 +122,7 @@ test('dice state is serialized with actual physics poses and restored',()=>{
  assert.match(engine,/function captureDice\(/);
  assert.match(engine,/poses:objects\.map/);
  assert.match(engine,/function restoreDice\(saved,id\)/);
- assert.match(engine,/body\.setTranslation\(p,true\)/);
+ assert.match(engine,/body\.setTranslation\(\{\.\.\.p,y:p\.y\*DICE_SCALE/);
  assert.match(engine,/body\.setRotation\(q,true\)/);
  assert.match(engine,/status\.textContent='THE DICE HAVE FALLEN';emitDice\(\)/);
 });
@@ -386,21 +386,24 @@ test('ring grooves and highlights share the selected ground color',()=>{
 test('D6 numerals route through the chosen finish and keep the point defaults',()=>{
  const engine=file('js/dice-table-engine.js');
  const source=engine.slice(engine.indexOf('function cubeFaceTexture('),engine.indexOf('function makeDie('));
+ const styles=engine.slice(engine.indexOf('function normalFaceStyle('),engine.indexOf('function renderNormalEditor('));
  const texture=new Function(`
   const numberTexture=(...args)=>['number',...args];
   const faceTexture=(...args)=>['points',...args];
   const ringNumberTexture=(...args)=>['ring number',...args];
   const finishTexture=(...args)=>['finish',...args];
   const ichingTexture=(...args)=>['I Ching',...args];
+  ${styles}
   ${source}
   return cubeFaceTexture;
  `)();
  const color='#c7b48d';
  assert.deepEqual(texture(4,{color,surface:'standard'},0),['points',4,color]);
  assert.deepEqual(texture(4,{color,surface:'standard',faceStyle:'numerals'},0),['number',4,color,6]);
- assert.deepEqual(texture(4,{color,surface:'ring'},0),['finish',4,color,'ring',0,false]);
- assert.deepEqual(texture(4,{color,surface:'ring',faceStyle:'numerals'},0),['ring number',4,color,6,172,3]);
+ assert.deepEqual(texture(4,{color,surface:'ring'},0),['finish',4,color,'ring',0,false,'ring']);
+ assert.deepEqual(texture(4,{color,surface:'ring',faceStyle:'numerals'},0),['ring number',4,color,6,172,3,'ring']);
  assert.deepEqual(texture(4,{color,surface:'ivory',faceStyle:'numerals'},0),['finish',4,color,'ivory',0,true]);
  assert.deepEqual(texture(1,{markings:'engraved',faces:['初'],ink:'#000000'},0),['I Ching','初',0,'#000000']);
- assert.match(engine,/faceStyle:d\.faceStyle==='numerals'\?'numerals':'pips'/);
+ assert.match(engine,/faceStyle:normalFaceStyle\(d\)/);
+ assert.deepEqual(texture(4,{color,surface:'ivory',faceStyle:'ring-numerals'},0),['ring number',4,color,6,172,3,'ivory']);
 });
