@@ -4074,7 +4074,7 @@ function applySpreadCardSize(id,persist=true){setCardSize(spreadCardSize(id),per
    handles desktop controls and applies the same value with or without tables. */
 function changeDesktopCardSize(delta,reset=false){
  if(document.body.classList.contains('tabula-dice-mode')){
-  window.TabulaDiceTable?.changeSize(Math.round(delta*100),reset);
+  window.TabulaDiceTable?.changeSize(Math.round(delta*200),reset);
   return;
  }
  const before=zoom;

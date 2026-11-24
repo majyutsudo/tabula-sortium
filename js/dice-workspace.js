@@ -200,9 +200,9 @@
   const blocked=!ready||engine.busy()||engine.inspectionActive();
   const size=ready?engine.sizePercent():null;
   sizeValue.textContent=size===null?'—':size+'%';
-  sizeButtons[0].disabled=blocked||size<=50;
-  sizeButtons[1].disabled=blocked||size>=100;
-  sizeButtons[2].disabled=blocked||size===100;
+  sizeButtons[0].disabled=blocked||size<=engine.sizeLimits.min;
+  sizeButtons[1].disabled=blocked||size>=engine.sizeLimits.max;
+  sizeButtons[2].disabled=blocked||size===engine.sizeLimits.standard;
  }
  window.addEventListener('tabula:dice-size',syncDiceSize);
  function syncActionStates(){
@@ -251,7 +251,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0782').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0783').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;

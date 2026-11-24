@@ -31,7 +31,7 @@ test('independent card state stays mounted during dice mode',()=>{
 test('native physics module is imported once and shares the selector',()=>{
  const adapter=file('js/dice-workspace.js');
  const engine=file('js/dice-table-engine.js');
- assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0782'\)/);
+ assert.match(adapter,/import\('\.\/dice-table-engine\.js\?v=0783'\)/);
  assert.match(adapter,/window\.TabulaDiceTable\?\.restore\(snapshot,id\)/);
  assert.match(engine,/window\.TabulaDiceTable=/);
  assert.match(engine,/new THREE\.WebGLRenderer/);
@@ -444,15 +444,15 @@ test('dice size changes retain the current snapshot and respect limits and lock 
  const source=engine.slice(engine.indexOf('function changeDiceSize('),engine.indexOf('function emitDice('));
  const saved={settings:[{sides:6}],results:[4],held:false};
  const calls=[];
- const build=Function('ready','rolling','mixing','inspectingDice','diceSizePercent','captureDice','restoreDice','emitDice','current','status','MIN_DICE_SIZE','MAX_DICE_SIZE',source+'return changeDiceSize');
+ const build=Function('ready','rolling','mixing','inspectingDice','diceSizePercent','captureDice','restoreDice','emitDice','current','status','MIN_DICE_SIZE','MAX_DICE_SIZE','DEFAULT_DICE_SIZE',source+'return changeDiceSize');
  const change=(size,delta,reset=false,rolling=false)=>build(true,rolling,false,false,()=>size,()=>saved,(snapshot,id,next)=>{
   assert.equal(snapshot,saved);
   calls.push([id,next]);
- },()=>{}, {id:'normal'},{},50,100)(delta,reset);
- change(100,-10);
- change(55,-10);
- change(50,-10);
- change(60,0,true);
- change(80,-10,false,true);
- assert.deepEqual(calls,[['normal',90],['normal',50],['normal',100]]);
+ },()=>{}, {id:'normal'},{},100,200,200)(delta,reset);
+ change(200,-20);
+ change(110,-20);
+ change(100,-20);
+ change(120,0,true);
+ change(160,-20,false,true);
+ assert.deepEqual(calls,[['normal',180],['normal',100],['normal',200]]);
 });

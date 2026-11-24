@@ -64,10 +64,11 @@ forceSlider.addEventListener('change',()=>emitDice());
 updateForceLabel();
 let world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
 let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
-const STANDARD_DICE_SCALE=1.12,FIXED_STEP=1/60;
-const MIN_DICE_SIZE=50,MAX_DICE_SIZE=100;
+const BASE_DICE_SCALE=0.56,FIXED_STEP=1/60;
+const MIN_DICE_SIZE=100,MAX_DICE_SIZE=200,DEFAULT_DICE_SIZE=200;
+const STANDARD_DICE_SCALE=BASE_DICE_SCALE*DEFAULT_DICE_SIZE/100;
 let diceScale=STANDARD_DICE_SCALE;
-const diceSizePercent=()=>Math.round(diceScale/STANDARD_DICE_SCALE*100);
+const diceSizePercent=()=>Math.round(diceScale/BASE_DICE_SCALE*100);
 const cubeSize=()=>1.05*diceScale;
 const up=new THREE.Vector3(0,1,0);
 const faceNormals=[
@@ -374,8 +375,8 @@ function restoreDice(saved,id,sizePercent){
  if(rolling||mixing)return;
  const valid=saved&&saved.schema===1&&saved.mode===id&&Array.isArray(saved.settings);
  const savedScale=valid&&Number.isFinite(saved.scale)&&saved.scale>0?saved.scale:STANDARD_DICE_SCALE;
- const percent=sizePercent??Math.round(savedScale/STANDARD_DICE_SCALE*100);
- diceScale=STANDARD_DICE_SCALE*Math.max(MIN_DICE_SIZE,Math.min(MAX_DICE_SIZE,percent))/100;
+ const percent=sizePercent??Math.round(savedScale/BASE_DICE_SCALE*100);
+ diceScale=BASE_DICE_SCALE*Math.max(MIN_DICE_SIZE,Math.min(MAX_DICE_SIZE,percent))/100;
  const growing=sizePercent!==undefined&&diceScale>savedScale;
  // Table changes must not leak another table's customized astrological palette.
  astroDiceColors=valid&&id==='astro'&&Array.isArray(saved.colors)?saved.colors.slice():null;
@@ -426,7 +427,7 @@ function restoreDice(saved,id,sizePercent){
 function changeDiceSize(delta,reset){
  if(!ready||rolling||mixing||inspectingDice)return;
  const currentSize=diceSizePercent();
- const next=reset?100:Math.max(MIN_DICE_SIZE,Math.min(MAX_DICE_SIZE,currentSize+delta));
+ const next=reset?DEFAULT_DICE_SIZE:Math.max(MIN_DICE_SIZE,Math.min(MAX_DICE_SIZE,currentSize+delta));
  if(next===currentSize)return;
  restoreDice(captureDice(),current.id,next);
  status.textContent='ダイスサイズを'+next+'%に変更しました。';
@@ -437,6 +438,7 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 window.TabulaDiceTable={
  snapshot:captureDice,
  sizePercent:diceSizePercent,
+ sizeLimits:{min:MIN_DICE_SIZE,max:MAX_DICE_SIZE,standard:DEFAULT_DICE_SIZE},
  changeSize:changeDiceSize,
  setInspection:setDiceInspection,
  inspectionActive:()=>inspectingDice,
