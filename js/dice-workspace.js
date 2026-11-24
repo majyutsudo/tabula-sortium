@@ -71,7 +71,9 @@
     engine.editNormalDraft(draftRows,draft);
     draftPanel.hidden=false;
    }
-   draftRows.querySelector('select')?.focus();
+   const heading=document.getElementById('diceSetDraftTitle');
+   heading.focus({preventScroll:true});
+   heading.scrollIntoView({block:'nearest',inline:'nearest'});
   }catch{if(setDialog.open&&request===draftRequest)setMessage('ダイスの設定を読み込めませんでした。')}
  }
  function openSetDialog(callback=null){

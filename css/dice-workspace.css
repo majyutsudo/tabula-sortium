@@ -279,3 +279,11 @@ body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:defa
 
 /* Let touch scrolling stay inside the dice detail window. */
 #modalBg .modal:has(.dice-detail){overscroll-behavior:contain;touch-action:pan-y pinch-zoom}
+
+/* Keep native form controls readable without triggering focus zoom on touch screens. */
+@media (max-width:780px), (pointer:coarse){
+ .dice-dialog .die-setting .dice-custom-label,
+ .dice-dialog input,
+ .dice-dialog select{box-sizing:border-box;font-size:16px}
+ .dice-dialog .dice-dialog-actions label{min-width:0;max-width:100%}
+}
