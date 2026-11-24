@@ -734,9 +734,10 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  // texture. Triangular D8/D20 faces use a narrower etched ring.
  const rad=Math.max(8,Math.min(190,ringRadius*(sides===8?.92:1)));
  const cx=256,cy=256;
+ const ink=isDarkDiceColor(color)?ringInk(color,.78):ringInk(color,-.83);
  // Shade only the carved groove so the face texture remains visible inside it.
  c.beginPath();c.arc(cx,cy,rad*.82,0,Math.PI*2);
- c.strokeStyle=ringInk(color,-.69,.84);c.lineWidth=Math.max(3,rad*.095);c.stroke();
+ c.strokeStyle=ink;c.lineWidth=Math.max(3,rad*.095);c.stroke();
  c.beginPath();c.arc(cx,cy,rad*.86,Math.PI*.08,Math.PI*.92);
  c.strokeStyle=ringInk(color,.5,.68);c.lineWidth=Math.max(1.5,rad*.042);c.stroke();
  // Previous glyphs used only 0.74–0.92 of the ring radius in font
@@ -745,7 +746,6 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  const twoDigits=value>=10;
  const fontSize=rad*(twoDigits?(sides===20?1.32:1.14):(sides===20?1.68:1.56));
  const maxWidth=rad*(twoDigits?(sides===20?1.53:1.36):1.00);
- const ink=isDarkDiceColor(color)?ringInk(color,.78):ringInk(color,-.83);
  drawCarvedNumeral(c,value,cx,cy,fontSize,maxWidth,{
   ink,highlight:ringInk(color,-.22,.35),shadow:ringInk(color,-.69,.72)
  });
