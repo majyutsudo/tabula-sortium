@@ -253,7 +253,7 @@ test('dice history actions are active while card-only placement printing stays h
  assert.doesNotMatch(js,/quickRevealAll','presetSnapToggle','quickSnapshotSave'/);
  assert.match(css,/body\.tabula-dice-mode \.main>\.table-record-actions\{/);
  assert.match(css,/body\.tabula-dice-mode #quickSnapshotSave,/);
- assert.match(css,/body\.tabula-dice-mode #printPlacement\{display:none!important\}/);
+ assert.match(css,/body\.tabula-dice-mode #printPlacement\{display:inline-flex!important/);
  assert.match(tab,/function diceReadingSnapshot\(/);
  assert.match(tab,/function diceSnapshotPanel\(/);
  assert.match(tab,/if\(v.kind==='dice'\)return diceSnapshotPanel\(v\)/);
@@ -272,4 +272,29 @@ test('save-and-new dice clears the previous outcome before the next reading',()=
  const tab=file('js/tabula.js'),engine=file('js/dice-table-engine.js');
  assert.match(tab,/if\(isDiceTool\(activeToolId\(\)\)\)\{window\.TabulaDiceTable\?\.reset\?\./);
  assert.match(engine,/reset\(id\)\{restoreDice\(null,id\);forceSlider\.value='30';updateForceLabel\(\);emitDice\(\)\}/);
+});
+
+test('2D dice placement uses original card placement editor and export paths',()=>{
+ const printer=file('js/placement-print.js'),adapter=file('js/dice-workspace.js'),style=file('css/dice-workspace.css');
+ assert.match(printer,/function dicePrintable\(/);
+ assert.match(printer,/return dicePrintable\(\)/);
+ assert.match(printer,/data-instrument':'dice'/);
+ assert.match(printer,/svg\.getAttribute\('data-instrument'\)==='dice'/);
+ assert.match(printer,/const diceDiagram=svg\.getAttribute\('data-instrument'\)==='dice'/);
+ assert.match(printer,/function createPlacementPdf\(/);
+ assert.match(printer,/SVG保存/);assert.match(printer,/PNG保存/);
+ assert.doesNotMatch(adapter,/'presetSnapToggle','printPlacement'/);
+ assert.match(style,/body\.tabula-dice-mode #printPlacement\{display:inline-flex!important/);
+});
+test('custom die labels are editable and retained in results, snapshots, and 2D diagram',()=>{
+ const engine=file('js/dice-table-engine.js'),printer=file('js/placement-print.js'),model=file('js/tabula.js');
+ assert.match(engine,/name\.className='dice-custom-label'/);
+ assert.match(engine,/maxLength=36/);
+ assert.match(engine,/userLabel:typeof d\.userLabel==='string'/);
+ assert.match(engine,/function refreshFloatingLabels\(/);
+ assert.match(engine,/function positionFloatingLabels\(/);
+ assert.match(engine,/positionFloatingLabels\(\);/);
+ assert.match(engine,/d\.userLabel\+' · D'/);
+ assert.match(printer,/conf\.userLabel/);
+ assert.match(model,/d\.settings\[i\]\?\.userLabel/);
 });
