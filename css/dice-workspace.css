@@ -234,8 +234,10 @@ body.tabula-dice-mode #placementTools{display:none!important}
 .dice-dialog h2,.dice-dialog h3{margin:0 0 12px}
 .dice-dialog [hidden]{display:none!important}
 .dice-set-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px}
-.dice-set-choices button{text-align:left;padding:10px}
-.dice-set-choices small{display:block;margin-top:3px;color:#d6c6a5}
+.dice-set-choices button{text-align:left;padding:12px;font-size:16px;line-height:1.4;white-space:normal;min-width:0}
+.dice-set-choices small{display:block;margin-top:4px;color:#eadfc8;font-size:14px;overflow-wrap:anywhere}
+.dice-set-choices .dice-set-custom{grid-column:1/-1;padding:14px 16px;font-size:20px;background:#34453a;border-color:#c2a570}
+#diceSetDialog h2{font-size:19px}
 .dice-dialog-actions{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px}
 .dice-dialog-actions input{max-width:100%;color:inherit;background:#253a31;border:1px solid #85785f;padding:5px}
 #diceSetDraft{margin-top:14px}

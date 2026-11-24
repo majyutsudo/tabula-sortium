@@ -325,6 +325,8 @@ function restoreDice(saved,id){
  astroDiceColors=valid&&id==='astro'&&Array.isArray(saved.colors)?saved.colors.slice():null;
  ichingColorScheme=valid&&id==='iching'&&saved.scheme==='redUpper'?'redUpper':'blackUpper';
  switchPreset(id);
+ forceSlider.value=valid&&Number.isFinite(saved.force)?String(Math.max(0,Math.min(100,saved.force))):forceSlider.defaultValue;
+ updateForceLabel();
  if(valid){
   if(id==='normal'&&saved.settings.length>=1&&saved.settings.length<=8){
    diceSettings=saved.settings.map(d=>({sides:[6,8,10,12,20].includes(d.sides)?d.sides:6,
@@ -354,8 +356,6 @@ function restoreDice(saved,id){
   held=!!saved.held;rolling=false;mixing=false;
   if(held)objects.forEach(({mesh})=>mesh.visible=false);
   collectButton.disabled=held;mixButton.disabled=!held;button.disabled=!held;
-  forceSlider.value=String(Number.isFinite(saved.force)?Math.max(0,Math.min(100,saved.force)):30);
-  updateForceLabel();
   showResults(Array.isArray(saved.results)&&saved.results.length===objects.length?saved.results:null);
   status.textContent=held?'IN HAND — 投げる準備ができました':'READY TO COLLECT';
   renderSettings();renderAstroColors();
@@ -372,7 +372,7 @@ window.TabulaDiceTable={
  editNormalDraft(host,settings){renderNormalEditor(host,settings,apply=>apply())},
  defaultNormalDie,
  restore:restoreDice,
- reset(id){restoreDice(null,id);forceSlider.value='30';updateForceLabel();emitDice()},
+ reset(id){restoreDice(null,id);emitDice()},
  busy(){return rolling||mixing},
  setMode(id){
   if(!['normal','astro','iching'].includes(id))return;
