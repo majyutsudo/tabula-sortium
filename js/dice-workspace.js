@@ -13,6 +13,14 @@
  const cardResults=document.getElementById('liveResults');
  const resultToggle=document.getElementById('toggleResults');
  const cardStatus=document.getElementById('status');
+ const toolbarToolName=document.getElementById('toolbarDeckName');
+ function updateToolbarTool(id){
+  if(!toolbarToolName)return;
+  const names={'dice:normal':'ダイス','dice:astro':'アストロダイス','dice:iching':'易占ダイス'};
+  const label=names[id]||source.selectedOptions[0]?.textContent||'カード';
+  toolbarToolName.textContent=label.replace(/（.*?枚）/g,'').trim();
+  const button=document.getElementById('toolbarDeckButton');if(button)button.title='使用する道具：'+label;
+ }
  // Leave card-only functions in their usual positions, but prevent editing
  // the preserved card session while the user is working with dice.
  const cardOnlyControls=[
@@ -127,6 +135,7 @@
    source.value=id;source.dispatchEvent(new Event('change',{bubbles:true}));
   }
   lastCardId=source.value;
+  updateToolbarTool('card:'+lastCardId);
   requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));
  }
  function switchToDice(id,snapshot=null){
@@ -143,6 +152,7 @@
   const toggle=section.querySelector('.section-toggle');
   if(toggle)toggle.setAttribute('aria-expanded','true');
   diceSelect.value=id;
+  updateToolbarTool('dice:'+id);
   loadEngine().then(()=>{
    if(token!==activationToken||!document.body.classList.contains('tabula-dice-mode'))return;
    window.TabulaDiceTable?.restore(snapshot,id);
