@@ -152,3 +152,29 @@ body.tabula-dice-mode #presetSnapToggle{
  cursor:not-allowed!important;background:#252726!important;color:#969b97!important;
 }
 #tableAddMode option:disabled{color:#858585}
+
+/* v0.729 — dice results take priority over disabled card-only actions.
+   The card tool keeps its original auxiliary buttons and record controls. */
+body.tabula-dice-mode .main>.table-utility-actions,
+body.tabula-dice-mode .main>.table-record-actions,
+body.tabula-dice-mode .main>.results-toggle-bar,
+body.tabula-dice-mode .main>.info{
+ display:none!important;
+}
+body.tabula-dice-mode .main>.live-results:not([hidden]){
+ display:block!important;
+}
+body.tabula-dice-mode #diceStrengthHolder .force-control{
+ grid-template-columns:auto minmax(0,1fr) auto;
+ align-items:center;
+ gap:8px;
+}
+body.tabula-dice-mode #diceStrengthHolder .force-control label,
+body.tabula-dice-mode #diceStrengthHolder .force-control output{
+ white-space:nowrap;
+}
+@media(max-width:600px){
+ body.tabula-dice-mode #diceStrengthHolder .force-control{gap:6px}
+}
+/* Remove inherited scale hints, including in case of older markup caches. */
+body.tabula-dice-mode #diceStrengthHolder .force-range{display:none!important}
