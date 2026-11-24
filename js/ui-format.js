@@ -1,7 +1,12 @@
 /* TABULA SORTIUM — presentational formatting helpers.
    Pure functions; no live DOM or application-state dependency. */
 (function(root){'use strict';
-function snapshotSummary(v){return `${v.placed.length}枚 ／ ${v.spread==='celtic'?'ケルト十字':v.spread==='three'?'3枚引き':v.spread==='one'?'1枚引き':'自由配置'}`}
+function snapshotSummary(v){
+ if(v?.kind==='dice'){
+  const label={normal:'ダイス',astro:'アストロダイス',iching:'易占ダイス'}[v.dice?.mode]||'ダイス';
+  return label+' ／ '+(Array.isArray(v.dice?.results)?v.dice.results.join('・'):'出目なし');
+ }
+ return `${v.placed.length}枚 ／ ${v.spread==='celtic'?'ケルト十字':v.spread==='three'?'3枚引き':v.spread==='one'?'1枚引き':'自由配置'}`}
 
 function snapshotFace(p,cards){const c=cards.find(v=>v.id===p.id);if(!c)return '不明';const rank=c.number<=10?String(c.number):['P','N','Q','K'][c.number-11];return c.group==='major'?`${c.number} ${c.name}`:`${c.suit==='wands'?'杖':c.suit==='cups'?'杯':c.suit==='swords'?'剣':'金貨'} ${rank}`}
 
