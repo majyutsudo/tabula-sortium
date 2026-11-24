@@ -2972,6 +2972,44 @@ function readExternalFile(file){
 }
 
 function freshName(){let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+
+function diceReadingSnapshot(id,name){
+ const context=window.TabulaTableTools?.context?.(),mode=context?.id?.startsWith('dice:')?context.id.slice(5):null;
+ if(!mode)return null;
+ if(window.TabulaDiceTable?.busy?.()){setStatus('ダイスが止まってから記録してください。');return null}
+ const live=window.TabulaDiceTable?.snapshot?.();
+ const dice=live?.mode===mode?live:context?.dice;
+ if(!dice?.results){setStatus('まだ出目がありません。ダイスを振ってください。');return null}
+ const v={kind:'dice',id,name,time:new Date().toISOString(),settings:dualClone(settings),
+  dice:dualClone(dice),tableName:dualSession?.tables?.[dualSession.activeTable]?.name||'メイン卓',
+  placed:[],deck:[],removed:[],tablePiles:[],slots:[],spread:'free'};
+ if(!TabulaStorage.validateReading(v)){setStatus('ダイスの占例を検証できませんでした。');return null}
+ return v;
+}
+function diceSnapshotPanel(v){
+ const d=v.dice,m=d.mode;
+ const names=m==='astro'?['天体','十二宮','ハウス']:m==='iching'?['上卦','下卦','動爻']:[];
+ const astro=[
+  ['☉ 太陽','☽ 月','☿ 水星','♀ 金星','♂ 火星','♃ 木星','♄ 土星','♅ 天王星','♆ 海王星','♇ 冥王星','☊ ドラゴンヘッド','☋ ドラゴンテイル'],
+  ['♈ 牡羊座','♉ 牡牛座','♊ 双子座','♋ 蟹座','♌ 獅子座','♍ 乙女座','♎ 天秤座','♏ 蠍座','♐ 射手座','♑ 山羊座','♒ 水瓶座','♓ 魚座'],
+  Array.from({length:12},(_,i)=>'第'+(i+1)+'ハウス')
+ ];
+ const iching=[['乾','兌','離','震','巽','坎','艮','坤'],['乾','兌','離','震','巽','坎','艮','坤'],['初','二','三','四','五','上']];
+ const details=d.results.map((value,i)=>{
+  const name=names[i]||'ダイス'+(i+1),label=m==='astro'?astro[i]?.[value-1]:m==='iching'?iching[i]?.[value-1]:'D'+d.settings[i].sides+' · '+value;
+  return '<div class="snapshot-row"><b>'+escapeHTML(name)+'</b><span>'+escapeHTML(label||String(value))+'</span></div>';
+ }).join('');
+ const total=m==='normal'?'<div class="snapshot-row"><b>合計</b><span>'+d.results.reduce((a,b)=>a+b,0)+'</span></div>':'';
+ let hex='';
+ if(m==='iching'){
+  const names=['乾','兌','離','震','巽','坎','艮','坤'];
+  hex='<div class="snapshot-row"><b>卦の構成</b><span>'+names[d.results[0]-1]+'上・'+names[d.results[1]-1]+'下 ／ '+['初','二','三','四','五','上'][d.results[2]-1]+'爻変</span></div>';
+ }
+ const cloth=colors[Number.isInteger(v.settings?.color)?v.settings.color:0]?.[1]||'#171719';
+ const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[m];
+ return '<div class="snapshot-board dice-record-board" style="--record-cloth:'+escapeHTML(cloth)+'"><div class="dice-record-glyph">⚄</div><div class="dice-record-name">'+heading+'</div><div class="dice-record-faces">'+d.results.map(String).join(' · ')+'</div></div><div class="snapshot-details">'+details+total+hex+'</div>';
+}
+
 function currentReadingSnapshot(id,name){
  const names=new Map(workingCards().map(c=>[c.id,c]));
  const cardNames=state.placed.map(p=>names.has(p.id)?tableCardName(names.get(p.id)):'不明');
@@ -2993,6 +3031,15 @@ function currentReadingSnapshot(id,name){
  return obj;
 }
 function captureSnapshot(name){
+ if(isDiceTool(activeToolId())){
+  const id='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const reading=diceReadingSnapshot(id,name||freshName());
+  if(!reading)return false;
+  if(snapshots.length>=1000){setStatus('保存上限の1000件に達しました。');return false}
+  snapshots.unshift(reading);
+  if(!storeSnapshots()){snapshots.shift();return false}
+  setStatus('ダイスの占例を保存しました。');return true;
+ }
  if(!state.placed.length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('結果がありません。まずカードを配ってください。');return false}
  if(dualBusy())return false;
  const id='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
@@ -3000,12 +3047,16 @@ function captureSnapshot(name){
  if(!storeSnapshots()){snapshots.shift();return false}
  setStatus('占例を保存しました。');return true;
 }
-function saveSnapshotModal(){if(!state.placed.length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('保存する占例がありません。');return}modal('<h2>占例を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">占例を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
+function saveSnapshotModal(){if(isDiceTool(activeToolId())){
+ if(window.TabulaDiceTable?.busy?.()){setStatus('投擲が完了してから保存してください。');return}
+ if(!window.TabulaDiceTable?.snapshot?.()?.results&&!activeDiceSnapshot()?.results){setStatus('保存する出目がありません。まずダイスを振ってください。');return}
+ }else if(!state.placed.length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('保存する占例がありません。');return}modal('<h2>占例を保存</h2><p class="note">現在の配置を固定して記録します。続けて占いをしても上書きされません。</p><label class="field">記録名（省略すると日時）<input id="snapshotName" maxlength="100" placeholder="'+freshName()+'"></label><div class="row"><button type="button" id="snapCancel">キャンセル</button><button type="button" id="snapConfirm" class="primary">占例を保存</button></div>');$('snapCancel').onclick=closeModal;$('snapConfirm').onclick=()=>{if(captureSnapshot($('snapshotName').value.trim()))closeModal()}}
 function saveAndAgain(){if(captureSnapshot('')){initialize();setStatus('占例を保存し、同じ設定で新しい占いを開始しました。')}}
 const snapshotSummary=TabulaUiFormat.snapshotSummary;
 const snapshotFace=(v,p)=>v.cardNames?.[p.originalIndex]??TabulaUiFormat.snapshotFace(p,cards);
 function snapshotPanel(v){
  if(!v)return '<p class="note">記録を選択してください。</p>';
+ if(v.kind==='dice')return diceSnapshotPanel(v);
  const ordered=v.placed.map((p,i)=>({...p,originalIndex:i}));
  const piles=(Array.isArray(v.tablePiles)?v.tablePiles:[]).filter(p=>p&&Array.isArray(p.cards)&&p.cards.length);
  const cloth=colors[Number.isInteger(v.settings?.color)?v.settings.color:0]?.[1]||'#171719';
@@ -3060,6 +3111,17 @@ function restoreIndependentTableSnapshot(v){
 }
 function restoreSnapshot(v){
  if(!v||dualBusy())return;
+ if(v.kind==='dice'){
+  if(dualSession&&!isIndependentTables()){alert('ダイス占例はメイン卓か独立追加卓に復元してください。');return}
+  const target='dice:'+v.dice.mode;
+  if(activeToolId()===target&&window.TabulaDiceTable?.busy?.()){setStatus('ダイスの投擲が終わってから復元してください。');return}
+  if(!confirm('記録「'+v.name+'」をこの卓へ復元しますか？ 現在の配札・出目は置き換わります。'))return;
+  if(activeToolId()!==target&&!window.TabulaTableTools?.switchTool(target))return;
+  window.TabulaTableTools?.saveDice(dualClone(v.dice));
+  notifyTool();closeModal();setStatus('「'+v.name+'」のダイス占例を復元しました。');
+  window.scrollTo({top:0,behavior:'instant'});return;
+ }
+ if(isDiceTool(activeToolId())){alert('カード占例はカードを使用する卓に切り替えてから復元してください。');return}
  if((dualSession&&!isIndependentTables())||(v.multiTableReading&&!v.independentTable)){
   alert('共有卓・ダブルデッキモードの占例は記録一覧で閲覧できます。卓への直接復元には対応していません。');return;
  }
@@ -3080,6 +3142,7 @@ function restoreSnapshot(v){
 
 function registerSpreadFromReading(v){
  if(!v)return;
+ if(v.kind==='dice'){setStatus('ダイス占例にはカードのスプレッド登録を使用できません。');return}
  if(spreadLibrary.length>=100){alert('スプレッド手帖には100件まで登録できます。');return}
  const suggested=String(v.name||'読み込んだ占例').slice(0,80)+' のスプレッド';
  const entered=prompt('この占例の配置をスプレッド手帖に登録します。登録名を入力してください。',suggested);
@@ -3106,7 +3169,7 @@ function registerSpreadFromReading(v){
 function compareModal(){
  if(!snapshots.length){modal('<h2>記録一覧</h2><p>保存した占い結果はまだありません。</p>');return}
  const checked=new Set();
- let rows=snapshots.map(v=>`<div class="history-row"><label class="choice" title="書き出す占例を選択"><input type="checkbox" data-reading-check="${escapeHTML(v.id)}" aria-label="${escapeHTML(v.name)}を選択"></label><div><b>${escapeHTML(v.name)}</b><div class="mini">${escapeHTML(snapshotSummary(v))} · ${new Date(v.time).toLocaleString('ja-JP')}</div></div><button type="button" data-export="${v.id}">書き出す</button><button type="button" data-register-spread="${v.id}">スプレッド登録</button><button type="button" data-rename="${v.id}">名称変更</button><button type="button" data-delete="${v.id}">削除</button></div>`).join('');
+ let rows=snapshots.map(v=>`<div class="history-row"><label class="choice" title="書き出す占例を選択"><input type="checkbox" data-reading-check="${escapeHTML(v.id)}" aria-label="${escapeHTML(v.name)}を選択"></label><div><b>${escapeHTML(v.name)}</b><div class="mini">${escapeHTML(snapshotSummary(v))} · ${new Date(v.time).toLocaleString('ja-JP')}</div></div><button type="button" data-export="${v.id}">書き出す</button>${v.kind==='dice'?'':'<button type="button" data-register-spread="'+v.id+'">スプレッド登録</button>'}<button type="button" data-rename="${v.id}">名称変更</button><button type="button" data-delete="${v.id}">削除</button></div>`).join('');
  let options=snapshots.map(v=>`<option value="${v.id}">${escapeHTML(v.name)}</option>`).join('');
  modal(`<h2>占例の記録一覧</h2><p class="note">まず1件を大きく表示します。比較を有効にすると2件を横に並べます。</p><div class="records-toolbar"><label class="choice"><input type="checkbox" id="compareEnabled"> 2件を比較する</label><span class="mini" id="compareHint">保存した記録を単独表示中</span></div><div class="record-viewport"><div class="snapshot-compare" id="snapshotCompare"><div class="record-a"><label class="field">表示する記録<select id="compareA">${options}</select></label><div id="snapViewA"></div><div class="record-restore"><button type="button" class="primary" id="restoreA">卓に復元</button><button type="button" id="exportA">書き出す</button><button type="button" id="registerSpreadA">スプレッド登録</button></div></div><div class="record-b"><label class="field">比較する記録<select id="compareB">${options}</select></label><div id="snapViewB"></div><div class="record-restore"><button type="button" class="primary" id="restoreB">卓に復元</button></div></div></div></div><h3>保存済みの占例（${snapshots.length}件）</h3><div class="reading-batch-actions"><button type="button" id="readingSelectAll">全件選択</button><button type="button" id="readingSelectNone">選択解除</button><button type="button" id="readingExportSelected">選択分を書き出し</button><button type="button" id="readingExportAll">全件書き出し</button><button type="button" id="readingImportBatch">追加読み込み</button></div><div id="readingSelectedCount" class="reading-batch-status" role="status">0件選択中</div><div>${rows}</div>`);
  $('modalBg').classList.add('records-active');
@@ -3124,6 +3187,7 @@ function compareModal(){
   let comparing=$('compareEnabled').checked;
   $('snapshotCompare').classList.toggle('is-comparing',comparing);
   $('compareHint').textContent=comparing?'左・右の復元ボタンで対象を選べます':'保存した記録を単独表示中';$('restoreA').textContent=comparing?'左を復元':'卓に復元';
+  $('registerSpreadA').hidden=a?.kind==='dice';
   $('snapViewA').innerHTML=snapshotPanel(a);
   $('snapViewB').innerHTML=comparing?snapshotPanel(b):'';
  };
