@@ -743,7 +743,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  const maxWidth=rad*(twoDigits?(sides===20?1.53:1.36):1.00);
  const ink=ringInk(color,-.83);
  drawCarvedNumeral(c,value,cx,cy,fontSize,maxWidth,{
-  ink,highlight:ringInk(color,.58,.82),shadow:ringInk(color,-.69,.72)
+  ink,highlight:ringInk(color,-.22,.35),shadow:ringInk(color,-.69,.72)
  });
  c.fillStyle=ink;
  if(value===6||value===9){
