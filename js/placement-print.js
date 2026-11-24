@@ -10,6 +10,15 @@ function element(tag,attrs={},text){
  return e;
 }
 
+function diceInk(fill){
+ const channels=fill.slice(1).match(/../g).map(hex=>{
+  const value=parseInt(hex,16)/255;
+  return value<=0.04045?value/12.92:((value+0.055)/1.055)**2.4;
+ });
+ const luminance=channels[0]*0.2126+channels[1]*0.7152+channels[2]*0.0722;
+ return luminance<Math.sqrt(0.05*1.05)-0.05?'#ffffff':'#000000';
+}
+
 /* TABULA dice: schematic 2D diagram, shared with the card placement editor.
    The diagram is a document: positions and labels are editable, outcomes aren't rerolled. */
 function dicePrintable(){
@@ -31,17 +40,18 @@ function dicePrintable(){
   const x=valid?Math.max(25,Math.min(185,centerX+(pos.x/w)*160)):centerX+(i-(count-1)/2)*Math.min(26,150/Math.max(1,count));
   const y=valid?Math.max(55,Math.min(205,centerY+(pos.z/d)*155)):centerY;
   const fill=/^#[0-9a-f]{6}$/i.test(conf.color)?conf.color:'#c7b48d';
+  const ink=diceInk(fill);
   const box=element('g',{transform:'translate('+x.toFixed(2)+' '+y.toFixed(2)+')'});
   box.append(element('rect',{x:-half,y:-half,width:shapeSize,height:shapeSize,rx:2.4,fill,stroke:'#45382b','stroke-width':.48}));
   svg.append(box);
   const result=saved.results[i],face=saved.displayFaces?.[i];
   const shown=mode==='normal'?String(result):(face?.glyph||String(result));
-  const value=element('text',{x,y:y+2.2,'text-anchor':'middle','font-family':'Georgia, sans-serif','font-size':Math.min(8,shown.length>2?6:8),fill:'#201a18'},shown);
+  const value=element('text',{x,y:y+2.2,'text-anchor':'middle','font-family':'Georgia, sans-serif','font-size':Math.min(8,shown.length>2?6:8),fill:ink},shown);
   svg.append(value);
   const label=globalThis.TabulaDiceLabels.labelFor(saved,i,prefs.mode);
   if(label){
    const labelY=prefs.position==='above'?y-half-4:prefs.position==='center'?y-half+4.2:y+half+6.6;
-   svg.append(element('text',{x,y:labelY,'text-anchor':'middle','font-family':'sans-serif','font-size':4,fill:'#252525'},label));
+   svg.append(element('text',{x,y:labelY,'text-anchor':'middle','font-family':'sans-serif','font-size':4,fill:prefs.position==='center'?ink:'#252525'},label));
   }
  }
  const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[mode]||'DICE';
