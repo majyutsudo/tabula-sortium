@@ -2996,7 +2996,7 @@ function diceSnapshotPanel(v){
  ];
  const iching=[['乾','兌','離','震','巽','坎','艮','坤'],['乾','兌','離','震','巽','坎','艮','坤'],['初','二','三','四','五','上']];
  const details=d.results.map((value,i)=>{
-  const name=names[i]||'ダイス'+(i+1),label=m==='astro'?astro[i]?.[value-1]:m==='iching'?iching[i]?.[value-1]:'D'+d.settings[i].sides+' · '+value;
+  const name=names[i]||(d.settings[i]?.userLabel||'ダイス'+(i+1)),label=m==='astro'?astro[i]?.[value-1]:m==='iching'?iching[i]?.[value-1]:'D'+d.settings[i].sides+' · '+value;
   return '<div class="snapshot-row"><b>'+escapeHTML(name)+'</b><span>'+escapeHTML(label||String(value))+'</span></div>';
  }).join('');
  const total=m==='normal'?'<div class="snapshot-row"><b>合計</b><span>'+d.results.reduce((a,b)=>a+b,0)+'</span></div>':'';
