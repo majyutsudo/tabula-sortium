@@ -909,10 +909,10 @@ function numberedMesh(sides,color,material='standard',astroDieIndex=0){
 // face groups and UV maps. This avoids a new dependency and keeps the
 // numbers on their own cube faces. The collision cuboid stays unchanged.
 function wornCubeGeometry(material){
- const segments=6;
+ const segments=material==='standard'?24:6;
  const geometry=new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE,segments,segments,segments);
  const pos=geometry.getAttribute('position'),half=DICE_SIZE/2;
- const radius=DICE_SIZE*(material==='wood'?.057:material==='standard'?.0:.09),inner=half-radius;
+ const radius=DICE_SIZE*(material==='wood'?.057:material==='standard'?.045:.09),inner=half-radius;
  for(let i=0;i<pos.count;i++){
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
   const cx=Math.max(-inner,Math.min(inner,x));
@@ -939,7 +939,7 @@ function makeDie(i){
  const settings=diceSettings[i],sides=settings.sides;
  let mesh,solid=null,normals,faceNumbers;
  if(sides===6){
-  const geometry=settings.surface==='standard'?new THREE.BoxGeometry(DICE_SIZE,DICE_SIZE,DICE_SIZE):wornCubeGeometry(settings.surface);
+  const geometry=wornCubeGeometry(settings.surface);
   const materials=faceValues.map(n=>new THREE.MeshStandardMaterial({
    map:cubeFaceTexture(n,settings,i),
    roughness:settings.markings==='engraved'?.42:settings.surface==='wood'?.94:settings.surface==='standard'?.47:.88,metalness:0
