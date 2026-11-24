@@ -27,6 +27,7 @@ function updateForceLabel(){
  forceSlider.style.background='linear-gradient(90deg,#cdb17b '+value+'%,#41594c '+value+'%)';
 }
 forceSlider.addEventListener('input',updateForceLabel);
+forceSlider.addEventListener('change',()=>emitDice());
 updateForceLabel();
 let world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
 let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
@@ -81,7 +82,9 @@ function hexagramSummary(upper,lower,line){
 // numeric die indices. The D-label denotes the number of faces, and the
 // large numeral is the outcome. Duplicate die types remain distinguishable
 // by order and their corresponding coloured dots.
+let recordedResults=null;
 function showResults(results=null){
+ recordedResults=Array.isArray(results)?results.slice():null;
  values.replaceChildren();
  const symbolic=current.result!=='sum';
  diceDOM.getElementById('result-tiles').classList.toggle('astro-results',symbolic);
@@ -128,7 +131,7 @@ function renderSettings(){
  add.addEventListener('click',()=>{
   if(!ready||rolling||mixing||diceSettings.length>=NORMAL_DICE_MAX)return;
   diceSettings.push({sides:6,color:'#c7b48d',surface:'ring',markings:'number',label:'D6'});
-  rebuildNormalDice();renderSettings();
+  rebuildNormalDice();renderSettings();emitDice();
  });
  toolbar.append(count,add);host.append(toolbar);
  diceSettings.forEach((d,i)=>{
@@ -214,7 +217,68 @@ function switchPreset(id){
  collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
 }
 let pendingParentMode=null;
+
+function captureDice(){
+ if(!ready)return null;
+ return {schema:1,mode:current.id,
+  settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label})),
+  scheme:ichingColorScheme,colors:astroDiceColors?.slice()||null,
+  poses:objects.map(({body,mesh})=>{const p=body.translation(),q=body.rotation();return {
+   p:{x:p.x,y:p.y,z:p.z},q:{x:q.x,y:q.y,z:q.z,w:q.w},visible:mesh.visible
+  }}),held,results:recordedResults?.slice()||null,force:Number(forceSlider.value)};
+}
+let pendingRestore=null;
+function restoreDice(saved,id){
+ if(!ready){pendingRestore={saved,id};return}
+ if(rolling||mixing)return;
+ const valid=saved&&saved.schema===1&&saved.mode===id&&Array.isArray(saved.settings);
+ switchPreset(id);
+ if(valid){
+  if(id==='normal'&&saved.settings.length>=1&&saved.settings.length<=8){
+   diceSettings=saved.settings.map(d=>({sides:[6,8,10,12,20].includes(d.sides)?d.sides:6,
+    color:/^#[0-9a-f]{6}$/i.test(d.color)?d.color:'#c7b48d',
+    surface:['standard','ring','ivory'].includes(d.surface)?d.surface:'standard',
+    markings:'number',label:'D'+d.sides}));
+  }
+  if(id==='astro'&&Array.isArray(saved.colors)&&saved.colors.length===3){
+   astroDiceColors=saved.colors.slice();diceSettings.forEach((d,i)=>{if(/^#[0-9a-f]{6}$/i.test(astroDiceColors[i]))d.color=astroDiceColors[i]});
+  }
+  if(id==='iching'&&['blackUpper','redUpper'].includes(saved.scheme)){
+   ichingColorScheme=saved.scheme;setIChingColors(diceSettings,ichingColorScheme);
+   diceDOM.getElementById('iching-color-scheme').value=ichingColorScheme;
+  }
+  objects.forEach(destroyDie);objects=[];createDice();
+  if(Array.isArray(saved.poses)&&saved.poses.length===objects.length){
+   objects.forEach(({body,mesh},i)=>{
+    const {p,q,visible}=saved.poses[i]||{};
+    if(p&&q&&[p.x,p.y,p.z,q.x,q.y,q.z,q.w].every(Number.isFinite)){
+     body.setTranslation(p,true);body.setRotation(q,true);
+     body.setLinvel({x:0,y:0,z:0},true);body.setAngvel({x:0,y:0,z:0},true);
+    }
+    mesh.visible=visible!==false;
+   });
+  }
+  held=!!saved.held;rolling=false;mixing=false;
+  if(held)objects.forEach(({mesh})=>mesh.visible=false);
+  collectButton.disabled=held;mixButton.disabled=!held;button.disabled=!held;
+  forceSlider.value=String(Number.isFinite(saved.force)?Math.max(0,Math.min(100,saved.force)):30);
+  updateForceLabel();
+  showResults(Array.isArray(saved.results)&&saved.results.length===objects.length?saved.results:null);
+  status.textContent=held?'IN HAND — 投げる準備ができました':'READY TO COLLECT';
+  renderSettings();renderAstroColors();
+ }else{
+  recordedResults=null;held=false;rolling=false;mixing=false;
+  collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;
+ }
+ syncMeshes();updateDimensions();
+}
+function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice(v)}
+
 window.TabulaDiceTable={
+ snapshot:captureDice,
+ restore:restoreDice,
+ reset(id){restoreDice(null,id)},
+ busy(){return rolling||mixing},
  setMode(id){
   if(!['normal','astro','iching'].includes(id))return;
   pendingParentMode=id;
@@ -943,7 +1007,7 @@ function render(time){
     lockSettings(false);
     const results=objects.map(topFace);
     showResults(results);
-    status.textContent='THE DICE HAVE FALLEN';
+    status.textContent='THE DICE HAVE FALLEN';emitDice();
    }
   }
  }
@@ -976,6 +1040,7 @@ async function init(){
   frame=requestAnimationFrame(render);
   if(pendingParentMode&&current.id!==pendingParentMode){diceDOM.getElementById('preset').value=pendingParentMode;switchPreset(pendingParentMode)}
   new ResizeObserver(updateDimensions).observe(felt);
+  if(pendingRestore){const request=pendingRestore;pendingRestore=null;restoreDice(request.saved,request.id)}
  }catch(error){
   console.error(error);
   status.textContent='読み込みに失敗しました';
