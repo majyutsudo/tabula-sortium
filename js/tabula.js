@@ -5645,10 +5645,13 @@ function independentDeckChoices(){
  updateIndependentPool();
 }
 function updateIndependentPool(){
- const pool=$('independentDeckPool'),choice=$('independentDeckSelect').value,blueprint=isDiceTool(choice)?null:blueprintFor(choice);
- pool.disabled=!!blueprint||isDiceTool(choice);
- if(blueprint||isDiceTool(choice))pool.value='included';
- pool.closest('label').hidden=isDiceTool(choice);
+ const pool=$('independentDeckPool'),choice=$('independentDeckSelect').value,dice=isDiceTool(choice);
+ const blueprint=dice?null:blueprintFor(choice);
+ pool.disabled=!!blueprint||dice;
+ if(blueprint||dice)pool.value='included';
+ $('independentDeckPoolField').hidden=dice;
+ $('independentTableAdd').textContent=dice?'ダイス用の卓を追加':'独立したデッキで卓を追加';
+ $('independentDeckHelp').hidden=dice;
 }
 $('independentDeckSelect').addEventListener('change',()=>{independentDeckSelectionCustomized=true;updateIndependentPool();});
 function independentTableWorkspace(){
@@ -5881,13 +5884,17 @@ function refreshWorkspaceSwitcher(){
 let tableAddExpanded=false;
 function updateTableAddPanel(){
  const active=!!dualSession,stored=!active&&storedExtraWorkspace(),available=!active&&!stored;
- const mode=$('tableAddMode').value;
+ const dice=isDiceTool(activeToolId()),modeSelect=$('tableAddMode');
+ for(const option of modeSelect.options)option.disabled=dice&&option.value!=='independent';
+ if(dice&&modeSelect.value!=='independent')modeSelect.value='independent';
+ const mode=modeSelect.value;
  $('tableAddOpen').hidden=!available;
  $('tableAddOpen').setAttribute('aria-expanded',String(available&&tableAddExpanded));
  $('tableAddPanel').hidden=!available||!tableAddExpanded;
  document.querySelector('.table-shared-setup').hidden=mode!=='shared';
  document.querySelector('.independent-deck-setup').hidden=mode!=='independent';
  document.querySelector('.table-double-setup').hidden=mode!=='double';
+ updateIndependentPool();
 }
 $('tableAddOpen').onclick=()=>{tableAddExpanded=!tableAddExpanded;updateTableAddPanel();};
 $('tableAddMode').onchange=updateTableAddPanel;
@@ -5909,6 +5916,7 @@ function dualRefreshControls(){
  const controls=$('dualControls'),bar=$('dualModeBar');
  if(!controls||!bar)return;
  const active=!!dualSession,stored=!active&&storedExtraWorkspace(),shared=isSharedTables(),independent=isIndependentTables();
+ const activeDice=isDiceTool(activeToolId());
  updateTableAddPanel();
  refreshClothIndicators();
  controls.hidden=!active;
@@ -5937,15 +5945,17 @@ function dualRefreshControls(){
  }
  const appearanceALabel=$('dualAppearanceA').closest('label');
  const backALabel=$('dualBackA').closest('label');
- appearanceALabel.hidden=false;
+ appearanceALabel.hidden=activeDice;
  // Simple decks have a fixed back: don't offer a color picker that cannot
  // change their appearance. Keep full choices for TABULA TAROT decks.
- backALabel.hidden=!deckCapabilities('A').backColor;
+ backALabel.hidden=activeDice||!deckCapabilities('A').backColor;
  const backBLabel=$('dualBackB').closest('label');
- if(backBLabel&&!shared)backBLabel.hidden=!deckCapabilities('B').backColor;
+ if(backBLabel&&!shared)backBLabel.hidden=activeDice||!deckCapabilities('B').backColor;
  $('dualDeckHeadingA').textContent=shared?'共有デッキ':independent?'メインデッキ':'デッキA';
  $('dualDeckHeadingB').textContent=independent?'追加デッキ':'デッキB';
- $('dualDeckFieldsB').hidden=shared;
+ $('dualDeckFieldsA').hidden=activeDice;
+ $('dualDeckFieldsB').hidden=shared||activeDice;
+ $('dualDeckSettings').hidden=activeDice;
  $('dualNew').hidden=shared||independent;
  const selected=$('dualPile');
  selected.value=dualSession.activePile;
@@ -5966,7 +5976,9 @@ function dualRefreshControls(){
  if(nameField)nameField.value=current?.name||'';
  $('dualMix').hidden=shared||independent||dualSession.mixed;
  $('dualSeparate').hidden=shared||independent||!dualSession.mixed;
- $('dualSummary').textContent=shared
+ $('dualSummary').textContent=activeDice
+  ?(dualSession.tables[dualSession.activeTable]?.name||'現在の卓')+' · '+toolLabelForTable(dualSession.tables[dualSession.activeTable])+' / ダイスの設定は「Ⅱ. 使用する道具」で変更'
+  :shared
  ?'共有山札 '+dualSession.piles.A.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓Ⅰ '+dualSession.tables.table2.placed.length+'枚'
  :independent?'メイン山札 '+dualSession.piles.A.length+'枚 / 追加山札 '+dualSession.piles.B.length+'枚 / メイン卓 '+dualSession.tables.table1.placed.length+'枚 / 追加卓 '+dualSession.tables.table2.placed.length+'枚'
  :'山札A '+dualSession.piles.A.length+'枚 / 山札B '+dualSession.piles.B.length+'枚 / 混合 '+dualSession.piles.mixed.length+'枚 / 卓Ⅰ '+dualSession.tables.table1.placed.length+'枚 / 卓Ⅱ '+dualSession.tables.table2.placed.length+'枚';
