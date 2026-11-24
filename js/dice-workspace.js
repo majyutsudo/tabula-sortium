@@ -5,14 +5,12 @@
  const section=document.getElementById('instrumentChoiceSection');
  const workspace=document.getElementById('diceWorkspace');
  if(!picker||!source||!section||!workspace)return;
- const diceModes=new Set(['normal','astro','iching']);
  let loadPromise=null,lastCardId=source.value||'builtin',activationToken=0;
  const diceSelect=document.getElementById('dice-preset');
  const cardActions=document.querySelector('.table-shortcuts:not(.dice-quick-actions)');
  const diceActions=document.getElementById('diceQuickActions');
  const cardResults=document.getElementById('liveResults');
  const resultToggle=document.getElementById('toggleResults');
- const cardStatus=document.getElementById('status');
  const toolbarToolName=document.getElementById('toolbarDeckName');
  function updateSharedLabelCaption(id){
   const button=document.getElementById('toolbarLabelToggle');
