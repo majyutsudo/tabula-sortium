@@ -4,7 +4,22 @@
 const schemaVersion=1;
 function fileNamePart(s){return String(s||'reading').normalize('NFKC').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').replace(/\s+/g,'_').slice(0,65)||'reading'}
 function validCardSize(v){return typeof v==='number'&&Number.isFinite(v)&&v>=.8&&v<=2.3}
+function validDiceSnapshot(v){
+ if(!v||v.kind!=='dice'||!['normal','astro','iching'].includes(v.dice?.mode))return false;
+ const d=v.dice,number=n=>typeof n==='number'&&Number.isFinite(n);
+ const count=d.mode==='normal'?d.settings?.length:3;
+ if(!Array.isArray(d.settings)||count<1||count>8||d.settings.length!==count)return false;
+ if(d.settings.some(x=>!x||![6,8,10,12,20].includes(x.sides)||typeof x.color!=='string'||!/^#[0-9a-f]{6}$/i.test(x.color)))return false;
+ if(!Array.isArray(d.results)||d.results.length!==count||d.results.some((r,i)=>!Number.isInteger(r)||r<1||r>d.settings[i].sides))return false;
+ if(!Array.isArray(d.poses)||d.poses.length!==count||d.poses.some(x=>
+  !x||!x.p||!x.q||![x.p.x,x.p.y,x.p.z,x.q.x,x.q.y,x.q.z,x.q.w].every(number)||typeof x.visible!=='boolean'))return false;
+ return typeof v.id==='string'&&v.id.length>0&&v.id.length<=160
+  &&typeof v.name==='string'&&v.name.length<=100
+  &&typeof v.time==='string'&&Number.isFinite(Date.parse(v.time))
+  &&(!v.settings||typeof v.settings==='object'&&!Array.isArray(v.settings));
+}
 function validateReading(v,cards){
+ if(v?.kind==='dice')return validDiceSnapshot(v);
  const allowed=cards&&new Set(cards.map(c=>c.id));
  const validCard=p=>p&&typeof p.id==='string'&&p.id.trim()&&(!allowed||allowed.has(p.id));
  const validList=list=>Array.isArray(list)&&list.length<=800&&list.every(validCard);
