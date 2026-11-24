@@ -686,12 +686,15 @@ function storeDeckLibrary(){try{TabulaDeckStore.write(localStorage,deckLibrary,c
 function refreshToolbarDeckPicker(){
  const root=$('toolbarDeckPicker'),menu=$('toolbarDeckMenu'),button=$('toolbarDeckButton'),name=$('toolbarDeckName'),source=$('deckLibrarySelect');
  if(!root||!menu||!button||!name||!source)return;
- const selected=source.value;
+ const diceActive=document.body.classList.contains('tabula-dice-mode');
+ const selected=diceActive?null:source.value;
  const entries=[...source.options];
  const chosen=entries.find(o=>o.value===selected);
- name.textContent=chosen?chosen.text.replace(/（.*?枚）/g,'').trim():'デッキを選択';
- button.title='使用デッキ：'+(chosen?.text||'')+'（クリックして変更）';
- button.disabled=!!dualSession;
+ if(!diceActive){
+  name.textContent=chosen?chosen.text.replace(/（.*?枚）/g,'').trim():'デッキを選択';
+  button.title='使用デッキ：'+(chosen?.text||'')+'（クリックして変更）';
+ }
+ button.disabled=!!dualSession&&!isIndependentTables();
  menu.replaceChildren();
  const groups=[
   ['TABULA DECKS',entries.filter(o=>['builtin',BUILTIN_PLAYING.id,BUILTIN_LENORMAND.id].includes(o.value))],
@@ -708,7 +711,11 @@ function refreshToolbarDeckPicker(){
    if(option.value===selected)choice.classList.add('selected');
    if(option.value==='simple')choice.classList.add('secondary');
    choice.addEventListener('click',()=>{
-    closeToolbarDeckMenu();
+    closeToolbarDeckMenu(true);
+    if(diceActive||isIndependentTables()){
+     window.TabulaTableTools?.switchTool('card:'+option.value);
+     return;
+    }
     if(option.value===source.value)return;
     source.value=option.value;
     source.dispatchEvent(new Event('change',{bubbles:true}));
@@ -716,6 +723,16 @@ function refreshToolbarDeckPicker(){
    });
    menu.append(choice);
   }
+ }
+ if(!button.disabled){
+  const dice=document.createElement('button');dice.type='button';dice.className='toolbar-deck-option';
+  dice.setAttribute('role','menuitem');dice.tabIndex=-1;
+  dice.textContent=diceActive?'ダイスセットを変更…':'ダイスを選択…';
+  dice.addEventListener('click',()=>{
+   closeToolbarDeckMenu(true);
+   window.dispatchEvent(new CustomEvent('tabula:choose-dice-set'));
+  });
+  menu.append(dice);
  }
 }
 function closeToolbarDeckMenu(restoreFocus=false){
@@ -725,7 +742,7 @@ function closeToolbarDeckMenu(restoreFocus=false){
 }
 function installToolbarDeckPicker(){
  const root=document.createElement('div');root.id='toolbarDeckPicker';root.className='toolbar-deck-picker';
- root.innerHTML='<button type="button" id="toolbarDeckButton" aria-haspopup="menu" aria-expanded="false" aria-controls="toolbarDeckMenu" aria-label="使用デッキを選択"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="12" height="16" rx="2"/><rect x="7" y="2" width="12" height="16" rx="2"/></svg><span id="toolbarDeckName"></span><span class="toolbar-deck-chevron" aria-hidden="true">▾</span></button><div id="toolbarDeckMenu" class="toolbar-deck-menu" role="menu" aria-label="使用デッキ" hidden></div>';
+ root.innerHTML='<button type="button" id="toolbarDeckButton" aria-haspopup="menu" aria-expanded="false" aria-controls="toolbarDeckMenu" aria-label="使用する道具を選択"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="12" height="16" rx="2"/><rect x="7" y="2" width="12" height="16" rx="2"/></svg><span id="toolbarDeckName"></span><span class="toolbar-deck-chevron" aria-hidden="true">▾</span></button><div id="toolbarDeckMenu" class="toolbar-deck-menu" role="menu" aria-label="使用する道具" hidden></div>';
  const button=root.querySelector('button'),menu=root.querySelector('[role="menu"]');
  button.addEventListener('click',()=>{if(button.disabled)return;const opening=menu.hidden;closeToolbarDeckMenu();if(opening){refreshToolbarDeckPicker();menu.hidden=false;button.setAttribute('aria-expanded','true');(menu.querySelector('.selected')||menu.querySelector('button'))?.focus();}});
  root.addEventListener('keydown',e=>{if(menu.hidden)return;const options=[...menu.querySelectorAll('button')];const index=options.indexOf(document.activeElement);
