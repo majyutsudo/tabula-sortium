@@ -46,10 +46,10 @@ test('dice DOM IDs do not collide with card DOM IDs',()=>{
  for(const id of ['felt','roll','collect','mix','status','preset','title','subtitle','description'])
   assert.ok(ids.includes('dice-'+id));
 });
-test('card-dice picker has a card/dice divider and no separate mode selector',()=>{
+test('card-dice picker uses native card and dice groups without a redundant divider',()=>{
  const html=file('table.html');
  assert.match(html,/<optgroup label="カード">/);
- assert.match(html,/<optgroup label="ダイス">/);
+ assert.match(html,/<\/optgroup><optgroup label="ダイス">/);
  assert.match(html,/value="dice:normal">ダイス/);
  assert.match(html,/value="dice:astro"/);
  assert.match(html,/value="dice:iching"/);
