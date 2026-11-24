@@ -276,3 +276,6 @@ body.tabula-dice-mode #placementTools{display:none!important}
 body.tabula-dice-mode #operations > :not(h2),
 body.tabula-dice-mode #operations .fold-indicator{display:none!important}
 body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:default}
+
+/* Let touch scrolling stay inside the dice detail window. */
+#modalBg .modal:has(.dice-detail){overscroll-behavior:contain;touch-action:pan-y pinch-zoom}
