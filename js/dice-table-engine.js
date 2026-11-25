@@ -89,7 +89,7 @@ function updateForceLabel(){
 forceSlider.addEventListener('input',updateForceLabel);
 forceSlider.addEventListener('change',()=>emitDice());
 updateForceLabel();
-let world,contactEvents,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
+let world,contactEvents,scene,camera,renderer,ground,objects=[],rolling=false;
 let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
 const BASE_DICE_SCALE=0.56,FIXED_STEP=1/60;
 const MIN_DICE_SIZE=100,MAX_DICE_SIZE=200,DEFAULT_DICE_SIZE=160;
@@ -476,9 +476,6 @@ function switchPreset(id){
  diceDOM.getElementById('iching-dice-panel').hidden=id!=='iching';
  diceDOM.getElementById('iching-color-scheme').value=ichingColorScheme;
  held=false;heldSelection=null;mixing=false;mixCount=0;
- diceDOM.getElementById('title').textContent=current.title;
- diceDOM.getElementById('subtitle').textContent=current.subtitle;
- diceDOM.getElementById('description').textContent=current.description;
  diceDOM.getElementById('table-corner-top').textContent='TABULA · '+({normal:'DICE',astro:'ASTRO',iching:'I CHING',calendar:'CALENDAR'}[id])+(felt.dataset.diceRenderer==='2d'?' · 2D':'');
  diceDOM.getElementById('table-corner-bottom').textContent=({normal:'RIGID BODY EXPERIMENT',astro:'ASTROLOGICAL DICE',iching:'THE BOOK OF CHANGES',calendar:'THE CALENDAR · THE CLOCK'}[id]);
  renderSettings();renderAstroColors();createDice();syncMeshes();showResults();
@@ -723,27 +720,24 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
  const n=384,canvas=document.createElement('canvas');canvas.width=n;canvas.height=n;
  const c=canvas.getContext('2d'),img=c.createImageData(n,n);
  const raw=parseInt(color.slice(1),16),r=raw>>16&255,g=raw>>8&255,b=raw&255;
- const random=seededRandom(1097+value*13+dieIndex*419+(material==='wood'?7001:material==='archaic'?11091:material==='ring'?17777:0));
+ const ring=material==='ring';
+ const random=seededRandom(1097+value*13+dieIndex*419+(ring?17777:0));
  const offsets=Array.from({length:8},()=>({a:random()*6.28,w:2+random()*5,p:random()*6.28}));
  for(let y=0;y<n;y++){
   for(let x=0;x<n;x++){
    const i=(y*n+x)*4,xx=x/n,yy=y/n;
-   const grain=material==='wood'
-    ? Math.sin(yy*22+5.0*Math.sin(xx*6)+1.7*Math.sin(yy*13+xx*4))*21
-      +Math.sin(yy*53+Math.sin(xx*9+yy*6)*3)*9
-      +Math.sin(yy*113+xx*17)*3.7
-    : Math.sin(xx*14+yy*3)*4.5+Math.sin(xx*39+yy*9)*2.2;
+   const grain=Math.sin(xx*14+yy*3)*4.5+Math.sin(xx*39+yy*9)*2.2;
    let patina=0;
    for(const a of offsets){
     patina+=Math.sin(xx*a.w*6+yy*a.w*2+a.p)*.65;
    }
    const wear= Math.max(0,1-Math.min(xx,yy,1-xx,1-yy)*15);
-   const pore=(random()-.5)*(material==='wood'?17:material==='archaic'||material==='ring'?30:12);
-   const variation=grain+patina*(material==='wood'?1.7:1.05)+pore
-     +(material==='wood'?-22:material==='archaic'||material==='ring'?-31:-18)*wear;
+   const pore=(random()-.5)*(ring?30:12);
+   const variation=grain+patina*1.05+pore
+     +(ring?-31:-18)*wear;
    img.data[i]=Math.min(255,Math.max(0,r+variation));
-   img.data[i+1]=Math.min(255,Math.max(0,g+variation*(material==='wood'?.78:1)));
-   img.data[i+2]=Math.min(255,Math.max(0,b+variation*(material==='wood'?.55:.93)));
+   img.data[i+1]=Math.min(255,Math.max(0,g+variation));
+   img.data[i+2]=Math.min(255,Math.max(0,b+variation*.93));
    img.data[i+3]=255;
   }
  }
@@ -752,24 +746,19 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
  if(surface==='brass')drawBrassPatina(c,n,value);
  // Fine directional fibres and a handful of irregular tool marks.
  c.lineCap='round';
- for(let k=0;k<(material==='wood'?240:90);k++){
+ for(let k=0;k<90;k++){
   const x=random()*n,y=random()*n;
-  c.strokeStyle=material==='wood'?'rgba(43,26,16,'+(.055+random()*.075)+')':'rgba(111,83,52,'+(.035+random()*.05)+')';
+  c.strokeStyle='rgba(111,83,52,'+(.035+random()*.05)+')';
   c.lineWidth=.45+random()*2;
   c.beginPath();c.moveTo(x,y);
-  if(material==='wood')c.bezierCurveTo(x+random()*6,y+12,x-3+random()*8,y+23,x+random()*4,y+30+random()*110);
-  else c.lineTo(x+random()*13-6,y+random()*3-1.5);
+  c.lineTo(x+random()*13-6,y+random()*3-1.5);
   c.stroke();
  }
  const sideShade=c.createRadialGradient(170,140,85,192,192,266);
  sideShade.addColorStop(0,'rgba(255,244,218,0)');
- sideShade.addColorStop(1,material==='wood'?'rgba(43,21,12,.23)':'rgba(82,65,39,.13)');
+ sideShade.addColorStop(1,'rgba(82,65,39,.13)');
  c.fillStyle=sideShade;c.fillRect(0,0,n,n);
- // Large, contrasting carved markings must remain legible at table size.
- // The two historic-inspired patterns are intentionally distinct:
- // concentric ring-and-dot (archaeological motif) versus bold recessed
- // numerals (an openly imaginative archaic style).
- if(material==='archaic'||numbered){
+ if(numbered){
   drawCarvedNumeral(c,value,n/2,n/2,205,280,{tilt:(random()-.5)*.12});
   // Time-worn pigment surrounding the carved number.
   for(let k=0;k<140;k++){
@@ -778,19 +767,8 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
    c.beginPath();c.ellipse(x,y,.5+random()*3,.4+random()*2,random()*6.28,0,Math.PI*2);c.fill();
   }
  }else{
-  const ring=material==='ring';
-  const wood=material==='wood';
-  // The reference die uses essentially the SAME ring stamp for 1–6.
-  // The previous large single pip was incorrect. Enlarge all circles
-  // uniformly while tightening the oversized decorative halo.
-  // Ring radius 54 at ±112 leaves 24px from the face edges;
-  // even the six's three rows remain distinct and legible.
-  const pipR=ring?54:wood?25:24;
-  // A consistent inset margin makes the ring stamps read as a group,
-  // not as four ornaments trapped in the die's corners.
-  // For D6, the middle row shares the same large rings: keep full
-  // vertical separation to prevent adjacent circles overlapping, but
-  // bring both columns closer to the centre.
+  // Keep ring stamps clear of face edges and adjacent rows.
+  const pipR=ring?54:24;
   const spacingX=ring?(value===6?82:86):n*PLAIN_PIP_SPACING;
   const spacingY=ring?(value===6?118:86):n*PLAIN_PIP_SPACING;
   for(const [px,py] of pipGrid[value]){
@@ -805,16 +783,15 @@ function finishTexture(value,color,material,dieIndex,numbered=false,surface=mate
     c.fillStyle=ringInk(color,-.91);c.fill();
    }else{
     c.beginPath();c.arc(x+2,y+3,pipR+12,0,Math.PI*2);
-    c.fillStyle=wood?'rgba(24,12,7,.8)':'rgba(52,39,23,.47)';c.fill();
+    c.fillStyle='rgba(52,39,23,.47)';c.fill();
     c.beginPath();c.arc(x-1,y-2,pipR+9,0,Math.PI*2);
-    c.strokeStyle=wood?'#c89661':'#e4cf9e';c.lineWidth=7;c.stroke();
+    c.strokeStyle='#e4cf9e';c.lineWidth=7;c.stroke();
     c.beginPath();c.arc(x,y,pipR+5,0,Math.PI*2);
-    c.strokeStyle=wood?'#26190f':'#41352b';c.lineWidth=7;c.stroke();
-    const dark=wood?'#24150d':'#514431';
+    c.strokeStyle='#41352b';c.lineWidth=7;c.stroke();
     const indent=c.createRadialGradient(x-7,y-8,1,x,y,pipR+4);
-    indent.addColorStop(0,dark);
-    indent.addColorStop(.7,wood?'#432818':'#6b5840');
-    indent.addColorStop(1,wood?'#674222':'#8b795c');
+    indent.addColorStop(0,'#514431');
+    indent.addColorStop(.7,'#6b5840');
+    indent.addColorStop(1,'#8b795c');
     c.fillStyle=indent;c.beginPath();c.arc(x,y,pipR,0,Math.PI*2);c.fill();
     c.fillStyle='rgba(12,10,7,.42)';c.beginPath();c.arc(x-2,y-1,8,0,Math.PI*2);c.fill();
    }
@@ -1114,14 +1091,14 @@ function astroTexture(face,dieIndex,color,ringRadius){
  c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
  const house=dieIndex===2,double=house&&face.glyph.length===2;
  const font=r*(double?1.12:house?1.45:1.78);
- c.font=(house?'bold ':'bold ')+font+'px '+(house?'Georgia,serif':'"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif');
+ c.font='bold '+font+'px '+(house?'Georgia,serif':'"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif');
  const glyph=dieIndex===1?face.glyph+'\uFE0E':face.glyph;
  c.strokeStyle='#f7deb0';c.lineWidth=Math.max(3,r*.12);
  c.strokeText(glyph,x,y+2,r*1.58);
  c.fillStyle='#271f18';c.fillText(glyph,x,y,r*1.58);
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;return texture;
 }
-function numberedMesh(sides,color,material='standard',astroDieIndex=0){
+function numberedMesh(sides,color,dieIndex){
  const source=getSolid(sides),scale=polyScale(sides);
  const solid={vertices:source.vertices.map(v=>v.map(x=>x*scale)),faces:source.faces};
  const {vertices,faces}=solid;
@@ -1173,11 +1150,11 @@ function numberedMesh(sides,color,material='standard',astroDieIndex=0){
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
  groups.forEach(g=>geometry.addGroup(g.start,g.count,g.materialIndex));
  geometry.computeVertexNormals();
- const die=diceSettings[astroDieIndex],mappedValues=die.opposites==='sum13'?complementaryFaceValues(faceNormals):faces.map((_,i)=>i+1);
+ const die=diceSettings[dieIndex],mappedValues=die.opposites==='sum13'?complementaryFaceValues(faceNormals):faces.map((_,i)=>i+1);
  const isRing=normalFaceStyle(die).startsWith('ring-');
  const materials=faces.map((_,i)=>makeFaceMaterial(die.surface,{
-  map:die.markings==='astro'?astroTexture(die.faces[mappedValues[i]-1],astroDieIndex,die.color,rings[i]):
-      die.markings==='engraved'?ichingTexture(die.faces[mappedValues[i]-1],astroDieIndex,die.ink,rings[i]):
+  map:die.markings==='astro'?astroTexture(die.faces[mappedValues[i]-1],dieIndex,die.color,rings[i]):
+      die.markings==='engraved'?ichingTexture(die.faces[mappedValues[i]-1],dieIndex,die.ink,rings[i]):
       isRing?ringNumberTexture(mappedValues[i],color,sides,rings[i],i,die.surface):numberTexture(mappedValues[i],color,sides,die.surface,die.markings==='calendar'?die.faces[mappedValues[i]-1].glyph:undefined),
   roughness:die.markings==='engraved'?.42:die.markings==='astro'?.84:die.surface==='brass'?.34:die.surface==='ivory'?.31:isRing?.88:.49,metalness:die.surface==='brass'?.5:0,side:THREE.DoubleSide
  }));
@@ -1192,7 +1169,7 @@ function wornCubeGeometry(material){
  const size=cubeSize();
  const geometry=new THREE.BoxGeometry(size,size,size,segments,segments,segments);
  const pos=geometry.getAttribute('position'),normals=geometry.getAttribute('normal'),half=size/2;
- const radius=size*(material==='wood'?.057:material==='standard'?.16:.09),inner=half-radius;
+ const radius=size*(material==='standard'?.16:.09),inner=half-radius;
  for(let i=0;i<pos.count;i++){
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
   const cx=Math.max(-inner,Math.min(inner,x));
@@ -1219,7 +1196,6 @@ function cubeFaceTexture(value,settings,dieIndex){
  if(style==='ring-numerals')return ringNumberTexture(value,color,6,142,value-1+dieIndex*6,surface);
  if(style==='ring-pips')return finishTexture(value,color,'ring',dieIndex,false,surface);
  if(surface==='ivory')return finishTexture(value,color,surface,dieIndex,style==='numerals');
- if(surface==='brass')return style==='numerals'?numberTexture(value,color,6,surface):faceTexture(value,color,surface);
  return style==='numerals'?numberTexture(value,color,6,surface):faceTexture(value,color,surface);
 }
 let polishedEnvironment;
@@ -1297,11 +1273,11 @@ function makeDie(i){
   const geometry=wornCubeGeometry(settings.markings==='number'?'standard':settings.surface);
   const materials=faceValues.map(n=>makeFaceMaterial(settings.surface,{
    map:cubeFaceTexture(n,settings,i),
-   roughness:settings.markings==='engraved'?.42:settings.surface==='brass'?.34:settings.surface==='ivory'?.31:settings.surface==='wood'?.94:settings.surface==='standard'?.47:.88,metalness:settings.surface==='brass'?.5:0
+   roughness:settings.markings==='engraved'?.42:settings.surface==='brass'?.34:settings.surface==='ivory'?.31:settings.surface==='standard'?.47:.88,metalness:settings.surface==='brass'?.5:0
   }));
   mesh=new THREE.Mesh(geometry,materials);normals=faceNormals;faceNumbers=faceValues;
  }else{
-  const poly=numberedMesh(sides,resinColor(settings),settings.surface,i);
+  const poly=numberedMesh(sides,resinColor(settings),i);
   mesh=poly.mesh;solid=poly.solid;normals=poly.normals;faceNumbers=poly.values;
  }
  mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
@@ -1622,7 +1598,7 @@ function stepDicePhysics(){
  if(strongest)window.TabulaTableTools?.playDiceImpact?.(Math.min(1,Math.sqrt((strongest-.32)/5.5)));
 }
 function render(time){
- frame=requestAnimationFrame(render);
+ requestAnimationFrame(render);
  if(!document.body.classList.contains('tabula-dice-mode'))return;
  const dt=Math.min(.05,lastTime?(time-lastTime)/1000:0);lastTime=time;
  if(ready&&mixing)animateMix(dt);
@@ -1799,7 +1775,7 @@ async function init(){
   updateDimensions();
   createDice();syncMeshes();
   ready=true;collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
-  frame=requestAnimationFrame(render);
+  requestAnimationFrame(render);
   if(pendingParentMode&&current.id!==pendingParentMode){diceDOM.getElementById('preset').value=pendingParentMode;switchPreset(pendingParentMode)}
   new ResizeObserver(updateDimensions).observe(felt);
   if(pendingRestore){const request=pendingRestore;pendingRestore=null;restoreDice(request.saved,request.id)}
