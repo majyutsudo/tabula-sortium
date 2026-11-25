@@ -1,5 +1,5 @@
-/* Optional velour cloth preview. The ring uses the cloth's shorter side. */
-body:has(#clothCirclePreview:checked) .cloth {
+/* Black preserves the original velour shading. Other colors tint the same nap. */
+.cloth {
   container-type: size;
   background-color: #1b1916;
   background-image:
@@ -11,6 +11,15 @@ body:has(#clothCirclePreview:checked) .cloth {
   border-color: #15120e;
 }
 
+body:has(#swatches > button.active:not(:first-child)) .cloth {
+  background-color: var(--cloth);
+  background-image: url("../images/ui/velour-nap.webp");
+  background-size: cover;
+  background-blend-mode: soft-light;
+  border-color: #0003;
+}
+
+/* The optional circle uses the shorter side of the cloth for its diameter. */
 body:has(#clothCirclePreview:checked) .cloth::after {
   inset: 50% auto auto 50%;
   width: 76cqmin;
