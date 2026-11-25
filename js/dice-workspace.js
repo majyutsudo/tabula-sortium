@@ -214,12 +214,35 @@
   sizeButtons[2].disabled=blocked||size===engine.sizeLimits.standard;
  }
  window.addEventListener('tabula:dice-size',syncDiceSize);
+ const selectRollButton=document.getElementById('dice-select-roll');
+ const rollDialog=document.getElementById('diceRollDialog');
+ const rollOptions=document.getElementById('diceRollOptions');
+ const rollConfirm=document.getElementById('diceRollConfirm');
+ selectRollButton.addEventListener('click',()=>{
+  const engine=window.TabulaDiceTable;
+  if(!engine?.isReady()||engine.busy()||engine.inspectionActive()||rollDialog.open)return;
+  rollConfirm.disabled=true;
+  rollOptions.replaceChildren(...engine.rollChoices().map(({name,value,color},index)=>{
+   const label=document.createElement('label');
+   const check=document.createElement('input');check.type='checkbox';check.value=String(index);
+   const swatch=document.createElement('span');swatch.className='result-swatch';swatch.style.background=color;
+   label.append(check,swatch,document.createTextNode(name+' · '+(value??'未投擲')));
+   return label;
+  }));
+  rollDialog.showModal();
+ });
+ rollOptions.addEventListener('change',()=>{rollConfirm.disabled=!rollOptions.querySelector(':checked')});
+ rollConfirm.addEventListener('click',()=>{
+  const indices=[...rollOptions.querySelectorAll(':checked')].map(input=>Number(input.value));
+  if(window.TabulaDiceTable?.rollSelected(indices))rollDialog.close();
+ });
  function syncActionStates(){
   syncDiceSize();
   const inspecting=window.TabulaDiceTable?.inspectionActive()===true;
   if(document.body.classList.contains('tabula-dice-mode'))newReading.disabled=inspecting||!window.TabulaDiceTable?.isReady()||window.TabulaDiceTable.busy();
   proxyButtons.forEach((btn,i)=>{btn.disabled=inspecting||sourceButtons[i].disabled});
   document.getElementById('diceQuickSettings').disabled=inspecting;
+  selectRollButton.disabled=inspecting||!window.TabulaDiceTable?.isReady()||window.TabulaDiceTable.busy();
   changeSet.disabled=inspecting;
   document.getElementById('dice-force').disabled=inspecting;
   const mixing=sourceButtons[1].getAttribute('aria-pressed')==='true';
@@ -260,7 +283,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0805').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0806').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;
@@ -329,6 +352,7 @@
   }).catch(()=>{});
  }
  function applyCurrentTable(detail){
+  if(rollDialog.open)rollDialog.close();
   const current=detail||window.TabulaTableTools?.context?.();
   if(!current)return;
   if(settingsDialog.open)settingsDialog.close();

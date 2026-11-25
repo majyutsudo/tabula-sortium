@@ -292,3 +292,13 @@ body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:defa
  .dice-dialog select{box-sizing:border-box;font-size:16px}
  .dice-dialog .dice-dialog-actions label{min-width:0;max-width:100%}
 }
+
+body.tabula-dice-mode #diceStrengthHolder .force-control{grid-template-columns:auto minmax(0,1fr) auto auto}
+#dice-select-roll{white-space:nowrap;padding:5px 8px}
+#diceRollOptions{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin:0 0 12px}
+#diceRollOptions label{display:flex;align-items:center;gap:7px;min-height:34px}
+#diceRollOptions .result-swatch{flex:none}
+@media(max-width:480px){
+ body.tabula-dice-mode #diceStrengthHolder .force-control{grid-template-columns:auto minmax(0,1fr) auto}
+ #dice-select-roll{grid-column:1/-1;justify-self:end}
+}

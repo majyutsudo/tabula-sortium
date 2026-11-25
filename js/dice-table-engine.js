@@ -141,6 +141,7 @@ function ichingLines(upper,lower){
  return [...bottomToTopTrigrams[lower-1],...bottomToTopTrigrams[upper-1]];
 }
 function hexagramSummary(upper,lower,line){
+ if(![upper,lower,line].every(Number.isInteger))return null;
  const lines=ichingLines(upper,lower);
  const changed=lines.slice();changed[line-1]=1-changed[line-1];
  const nextLower=trigramIndex(changed.slice(0,3));
@@ -156,7 +157,7 @@ let inspectingDice=false;
 function syncDiceInspection() {
  const button=document.getElementById('inspectCards');
  if(!button||!document.body.classList.contains('tabula-dice-mode'))return;
- const available=recordedResults?.some(Number.isInteger)===true;
+ const available=!rolling&&recordedResults?.some(Number.isInteger)===true;
  if(!available)inspectingDice=false;
  button.disabled=!available;
  button.setAttribute('aria-pressed',String(inspectingDice));
@@ -480,6 +481,12 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 
 window.TabulaDiceTable={
  snapshot:captureDice,
+ rollSelected:indices=>releaseDice({indices}),
+ rollChoices:()=>diceSettings.map((die,index)=>({
+  name:die.userLabel||(current.id==='normal'?'ダイス'+(index+1)+' · D'+die.sides:die.label),
+  value:die.faces?.[recordedResults?.[index]-1]?.name??recordedResults?.[index],
+  color:die.ink||resinColor(die)
+ })),
  sizePercent:diceSizePercent,
  sizeLimits:{min:MIN_DICE_SIZE,max:MAX_DICE_SIZE,standard:DEFAULT_DICE_SIZE},
  changeSize:changeDiceSize,
@@ -1361,13 +1368,18 @@ function animateMix(dt){
   mesh.rotation.set(t*9+i*2.1,t*7+i*2.4,t*8+i*1.9);
  });
 }
+let rollSelection=null;
 function releaseDice(options={}){
- if(inspectingDice||!ready||rolling||!held||mixing)return;
+ if(inspectingDice||!ready||rolling||mixing||(!held&&!options.indices))return false;
+ const selected=options.indices?new Set(options.indices):null;
+ if(selected&&(!selected.size||[...selected].some(i=>!Number.isInteger(i)||!objects[i])))return false;
+ rollSelection=selected&&selected.size<objects.length?selected:null;
  window.TabulaTableTools?.prepareDiceSound?.();
  held=false;
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
  lockSettings(true);
- button.disabled=true;mixButton.disabled=true;showResults();
+ collectButton.disabled=true;button.disabled=true;mixButton.disabled=true;
+ showResults(rollSelection?objects.map((_,i)=>rollSelection.has(i)?null:recordedResults?.[i]??null):null);
  status.textContent='ROLLING…';
  const dir=options.direction||{x:0,y:-1};
  const length=Math.hypot(dir.x,dir.y)||1;
@@ -1377,11 +1389,18 @@ function releaseDice(options={}){
  // In 3D, the edge is a low wall; spawn just inside the tabletop and above it,
  // with horizontal momentum aimed in the dragged direction.
  const tx=-dz,tz=dx;
- objects.forEach(({body,mesh,radius},i)=>{
-  const maxRadius=Math.max(...objects.map(d=>d.radius));
+ const throwing=objects.filter((_,i)=>!rollSelection||rollSelection.has(i));
+ const maxRadius=Math.max(...throwing.map(d=>d.radius));
+ if(rollSelection)objects.forEach(({body,mesh},i)=>{
+  if(rollSelection.has(i))return;
+  mesh.visible=Number.isInteger(recordedResults[i]);
+  if(mesh.visible)body.setBodyType(RAPIER.RigidBodyType.Fixed,false);
+  else body.setEnabled(false);
+ });
+ throwing.forEach(({body,mesh,radius},i)=>{
   const lateralCapacity=Math.max(.35,Math.min(width,depth)/2-maxRadius-.37);
-  const spacing=objects.length>1?Math.min(1.43,2*lateralCapacity/(objects.length-1)):0;
-   const offset=(i-(objects.length-1)/2)*spacing;
+  const spacing=throwing.length>1?Math.min(1.43,2*lateralCapacity/(throwing.length-1)):0;
+  const offset=(i-(throwing.length-1)/2)*spacing;
   // Compute EACH launch position separately. The old shared edge origin
   // could put the outer die beyond a side wall on diagonal throws.
   const ox=tx*offset,oz=tz*offset;
@@ -1402,6 +1421,7 @@ function releaseDice(options={}){
   body.setAngvel({x:random(-12,12)*power,y:random(-11,11)*power,z:random(-12,12)*power},true);
   mesh.visible=true;
  });
+ return true;
 }
 function stepDicePhysics(){
  let strongest=0;
@@ -1410,7 +1430,7 @@ function stepDicePhysics(){
   contactEvents.drainContactForceEvents(event=>{
    const first=world.getCollider(event.collider1())?.parent();
    const second=world.getCollider(event.collider2())?.parent();
-   const mass=Math.min(first?.mass()??Infinity,second?.mass()??Infinity);
+   const mass=Math.min(first?.isDynamic()?first.mass():Infinity,second?.isDynamic()?second.mass():Infinity);
    const speedChange=event.totalForceMagnitude()*FIXED_STEP/mass;
    // Ignore resting contact and light chatter as a die settles.
    if(Number.isFinite(speedChange)&&speedChange>.65)strongest=Math.max(strongest,speedChange);
@@ -1430,7 +1450,7 @@ function render(time){
   syncMeshes();
   if(rolling){
    rollTime+=dt;
-   const stopped=objects.every(({body})=>body.isSleeping()||(
+   const stopped=objects.every(({body},i)=>(rollSelection&&!rollSelection.has(i))||body.isSleeping()||(
     body.linvel().x**2+body.linvel().y**2+body.linvel().z**2<.008
     &&body.angvel().x**2+body.angvel().y**2+body.angvel().z**2<.02
    ));
@@ -1438,7 +1458,13 @@ function render(time){
    if(stableTime>.50||rollTime>12){
     rolling=false;button.disabled=true;collectButton.disabled=false;mixButton.disabled=true;
     lockSettings(false);
-    const results=objects.map(topFace);
+    const results=objects.map((die,i)=>!rollSelection||rollSelection.has(i)?topFace(die):recordedResults[i]);
+    if(rollSelection)objects.forEach(({body,mesh},i)=>{
+     if(rollSelection.has(i))return;
+     if(mesh.visible)body.setBodyType(RAPIER.RigidBodyType.Dynamic,false);
+     else body.setEnabled(true);
+    });
+    rollSelection=null;
     showResults(results);
     window.TabulaTableTools?.completeDiceRoll?.();
     status.textContent='THE DICE HAVE FALLEN';emitDice();
