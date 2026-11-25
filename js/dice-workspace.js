@@ -13,6 +13,7 @@
  const setChoices=document.getElementById('diceSetChoices');
  const draftPanel=document.getElementById('diceSetDraft');
  const draftRows=document.getElementById('diceDraftRows');
+ const draftResultMode=document.getElementById('diceDraftResultMode');
  const presetName=document.getElementById('dicePresetName');
  const message=document.getElementById('diceSetMessage');
  const PRESET_STORAGE='tabula_normal_dice_presets_v1';
@@ -43,11 +44,11 @@
  function setMessage(text){
   message.textContent=text;message.hidden=!text;
  }
- function applySet(mode,dice){
+ function applySet(mode,dice,resultMode){
   const bridge=window.TabulaTableTools,current=bridge?.context();
   if(!chooseFor||current?.tableId!==chooseFor.tableId||current?.id!==chooseFor.id)return;
   const size=!onChoose?current.dice?.scale:undefined;
-  const snapshot=dice||size?{schema:1,mode,settings:dice?cloneDice(dice):[],force:current.dice?.force,scale:size}:null;
+  const snapshot=dice||size?{schema:1,mode,settings:dice?cloneDice(dice):[],resultMode,force:current.dice?.force,scale:size}:null;
   const accepted=onChoose?onChoose('dice:'+mode,snapshot):bridge.switchTool('dice:'+mode,{replaceDice:true,snapshot});
   if(accepted)setDialog.close();
   else setMessage('セットを変更できませんでした。');
@@ -62,7 +63,7 @@
   setChoices.replaceChildren();
   addChoice('新しく組む','個数・面数・素材・目の意匠・色・ラベルを指定',openDraft,'dice-set-custom');
   for(const set of builtInSets)addChoice(set.name,set.description,()=>applySet(set.mode,set.dice));
-  for(const set of savedSets())addChoice(set.name,set.dice.map(die=>'D'+die.sides).join('・'),()=>applySet('normal',set.dice));
+  for(const set of savedSets())addChoice(set.name,set.dice.map(die=>'D'+die.sides).join('・'),()=>applySet('normal',set.dice,set.resultMode));
  }
  async function openDraft(){
   const request=++draftRequest;
@@ -73,6 +74,7 @@
     const engine=window.TabulaDiceTable;
     const previous=!onChoose&&chooseFor?.id==='dice:normal'?chooseFor.dice?.settings:null;
     draft=previous?.length?cloneDice(previous):[engine.defaultNormalDie()];
+    draftResultMode.value=previous?.length&&chooseFor.dice?.resultMode==='accumulate'?'accumulate':'latest';
     engine.editNormalDraft(draftRows,draft);
     draftPanel.hidden=false;
    }
@@ -93,7 +95,7 @@
  setDialog.addEventListener('close',()=>{if(!setDialog.open){chooseFor=null;onChoose=null;draftRequest++;}});
  changeSet.addEventListener('click',()=>openSetDialog());
  window.addEventListener('tabula:choose-dice-set',event=>openSetDialog(event.detail));
- document.getElementById('diceUseDraft').addEventListener('click',()=>applySet('normal',draft));
+ document.getElementById('diceUseDraft').addEventListener('click',()=>applySet('normal',draft,draftResultMode.value));
  document.getElementById('diceSavePreset').addEventListener('click',()=>{
   const name=presetName.value.trim();
   if(!name){setMessage('プリセット名を入力してください。');presetName.focus();return}
@@ -101,7 +103,7 @@
   if(sets.some(set=>set.name===name)||builtInSets.some(set=>set.name===name)){
    setMessage('同じ名前のプリセットがあります。');presetName.focus();return;
   }
-  try{localStorage.setItem(PRESET_STORAGE,JSON.stringify([...sets,{name,dice:cloneDice(draft)}]));}
+  try{localStorage.setItem(PRESET_STORAGE,JSON.stringify([...sets,{name,dice:cloneDice(draft),resultMode:draftResultMode.value}]));}
   catch{setMessage('プリセットを保存できませんでした。');return}
   renderSetChoices();setMessage('「'+name+'」を保存しました。');
  });
@@ -260,7 +262,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0809').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0810').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;

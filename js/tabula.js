@@ -2892,7 +2892,7 @@ function environmentDice(dice,id){
    ...(d.enabled===false?{enabled:false}:{}),
    faceStyle:typeof d.faceStyle==='string'?d.faceStyle:undefined,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''};
  });
- return {schema:1,mode,settings,scheme:dice.scheme==='redUpper'?'redUpper':'blackUpper',
+ return {schema:1,mode,settings,...(mode==='normal'&&dice.resultMode==='accumulate'?{resultMode:'accumulate'}:{}),scheme:dice.scheme==='redUpper'?'redUpper':'blackUpper',
   colors:Array.isArray(dice.colors)&&dice.colors.length===3&&dice.colors.every(color=>/^#[0-9a-f]{6}$/i.test(color))?dice.colors.slice():null,
   force:Number.isFinite(dice.force)?dice.force:undefined,scale:Number.isFinite(dice.scale)?dice.scale:undefined};
 }

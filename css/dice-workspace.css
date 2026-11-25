@@ -296,3 +296,10 @@ body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:defa
 #dice-fixed-use-settings{display:flex;flex-wrap:wrap;gap:6px 12px;margin-bottom:12px}
 .dice-use-control{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer}
 .dice-use-control input{accent-color:#cdb17b}
+
+.dice-dialog .dice-settings .die-setting{display:grid;gap:6px;padding:7px}
+.dice-setting-heading,.dice-setting-fields{display:flex;align-items:center;gap:7px;min-width:0}
+.dice-setting-heading>label:first-child{flex:0 0 4.6em;white-space:nowrap}
+.dice-setting-heading .dice-remove{margin-inline-start:auto}
+.dice-setting-fields{flex-wrap:wrap}
+.dice-result-mode-control{display:flex;align-items:center;gap:8px;margin-bottom:8px}

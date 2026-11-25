@@ -152,7 +152,13 @@ function hexagramSummary(upper,lower,line){
 // numeric die indices. The D-label denotes the number of faces, and the
 // large numeral is the outcome. Duplicate die types remain distinguishable
 // by order and their corresponding coloured dots.
-let recordedResults=null,heldSelection=null;
+let recordedResults=null,heldSelection=null,normalResultMode='latest';
+const resultModeSelect=diceDOM.getElementById('result-mode');
+resultModeSelect.addEventListener('change',()=>{
+ if(!ready||rolling||mixing||current.id!=='normal')return;
+ normalResultMode=resultModeSelect.value==='accumulate'?'accumulate':'latest';
+ emitDice();
+});
 let inspectingDice=false;
 function syncDiceInspection() {
  const button=document.getElementById('inspectCards');
@@ -191,8 +197,11 @@ function showResults(results=null){
  const lines=h?ichingLines(...results):null;
  const symbolic=current.result!=='sum';
  diceDOM.getElementById('result-tiles').classList.toggle('astro-results',symbolic);
+ const rolled=results?.filter(Number.isInteger)??[];
+ const latest=current.id==='normal'&&normalResultMode==='latest';
  diceSettings.forEach((d,i)=>{
   const result=results?.[i];
+  if(latest&&(rolled.length?!Number.isInteger(result):d.enabled===false))return;
   const tile=document.createElement(result==null?'div':'button');tile.className='result-die';
   const kind=document.createElement('span');kind.className='result-kind';
   const dot=document.createElement('span');dot.className='result-swatch';dot.style.background=d.ink||resinColor(d);
@@ -207,8 +216,14 @@ function showResults(results=null){
   if(result!=null)resultButton(tile,label.textContent+' '+(face?.name||result),()=>dieDetail(i));
   values.append(tile);
  });
- total.hidden=symbolic;
- if(!symbolic){total.replaceChildren();const t=document.createElement('span');t.textContent='合計';const sum=document.createElement('strong');const rolled=results?.filter(Number.isInteger);sum.textContent=rolled?.length?String(rolled.reduce((a,b)=>a+b,0)):'—';total.append(t,sum);}
+ total.hidden=symbolic||(latest&&(rolled.length||activeDiceIndices().length)<2);
+ if(!total.hidden){
+  total.replaceChildren();
+  const title=document.createElement('span');title.textContent='合計';
+  const sum=document.createElement('strong');
+  sum.textContent=rolled.length?String(rolled.reduce((a,b)=>a+b,0)):'—';
+  total.append(title,sum);
+ }
  const reading=diceDOM.getElementById('hexagram-reading');reading.hidden=current.result!=='hexagram';
  if(h){
   const changing=results[2], moved=diceSettings[2].faces[changing-1].name;
@@ -251,6 +266,8 @@ function renderSettings(){
  const host=diceDOM.getElementById('dice-settings');
  const panel=diceDOM.getElementById('normal-dice-panel');
  const fixed=diceDOM.getElementById('fixed-use-settings');
+ resultModeSelect.closest('label').hidden=current.id!=='normal';
+ resultModeSelect.value=normalResultMode;
  panel.hidden=current.id!=='normal';
  host.hidden=panel.hidden;refreshFloatingLabels();
  fixed.hidden=!host.hidden;
@@ -367,7 +384,11 @@ function renderNormalEditor(host,settings,change){
    redraw();
   });
   const use=dieUseControl(d,(d.userLabel||'ダイス'+(i+1))+'を使う',apply=>change(apply,'use',i));
-  refresh();syncColor();row.append(label,name,sides,faceStyle,material,color,glowColor,use,remove);host.append(row);
+  const top=document.createElement('div');top.className='dice-setting-heading';
+  top.append(label,use,remove);
+  const fields=document.createElement('div');fields.className='dice-setting-fields';
+  fields.append(name,sides,faceStyle,material,color,glowColor);
+  refresh();syncColor();row.append(top,fields);host.append(row);
  });
 }
 function renderAstroColors(){
@@ -403,6 +424,7 @@ function updateIChingColors(scheme){
 function switchPreset(id){
  if(!ready||rolling||mixing){diceDOM.getElementById('preset').value=current.id;return;}
  objects.forEach(destroyDie);objects=[];current=preset(id);diceSettings=current.dice;
+ normalResultMode='latest';
  if(id==='iching')setIChingColors(diceSettings,ichingColorScheme);
  if(id==='astro'){
   if(astroDiceColors)diceSettings.forEach((d,i)=>{d.color=astroDiceColors[i]});
@@ -425,6 +447,7 @@ let pendingParentMode=null;
 function captureDice(){
  if(!ready)return null;
  return {schema:1,mode:current.id,scale:diceScale,
+  ...(current.id==='normal'?{resultMode:normalResultMode}:{}),
   settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label,
    ...(d.enabled===false?{enabled:false}:{}),
    ...(current.id==='normal'?{faceStyle:normalFaceStyle(d)}:{}),
@@ -456,6 +479,7 @@ function restoreDice(saved,id,sizePercent){
  forceSlider.value=valid&&Number.isFinite(saved.force)?String(Math.max(0,Math.min(100,saved.force))):forceSlider.defaultValue;
  updateForceLabel();
  if(valid){
+  if(id==='normal'&&saved.resultMode==='accumulate')normalResultMode='accumulate';
   if(id==='normal'&&saved.settings.length>=1&&saved.settings.length<=8){
    diceSettings=saved.settings.map(d=>({sides:[6,8,10,12,20].includes(d.sides)?d.sides:6,
     color:/^#[0-9a-f]{6}$/i.test(d.color)?d.color:'#c7b48d',
@@ -1417,7 +1441,8 @@ function releaseDice(options={}){
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
  lockSettings(true);
  collectButton.disabled=true;button.disabled=true;mixButton.disabled=true;
- syncDiceInspection();
+ if(current.id==='normal'&&normalResultMode==='latest')showResults();
+ else syncDiceInspection();
  status.textContent='ROLLING…';
  const dir=options.direction||{x:0,y:-1};
  const length=Math.hypot(dir.x,dir.y)||1;
