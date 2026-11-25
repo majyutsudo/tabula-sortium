@@ -1,11 +1,13 @@
-/* Optional woven cloth preview. The ring uses the cloth's shorter side. */
+/* Optional velour cloth preview. The ring uses the cloth's shorter side. */
 body:has(#clothCirclePreview:checked) .cloth {
   container-type: size;
   background-color: #1b1916;
   background-image:
-    radial-gradient(ellipse at 46% 36%, #b1946c12, transparent 57%, #05040391 100%),
-    url("../images/ui/woven-black.webp");
-  background-size: 100% 100%, 320px 320px;
+    radial-gradient(ellipse at 44% 32%, #b49a7514, transparent 65%, #05040370 100%),
+    url("../images/ui/velour-black.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%, cover;
   border-color: #15120e;
 }
 
