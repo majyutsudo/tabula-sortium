@@ -60,7 +60,7 @@ function positionFloatingLabels(){
   const label=diceLabelNodes[i];if(!label)return;
   const text=globalThis.TabulaDiceLabels.labelFor(labelDice,i,mode);
   if(label.textContent!==text)label.textContent=text;
-  const show=!!text&&!held&&!rolling&&mesh.visible;
+  const show=!!text&&!isHeldDie(i)&&!rolling&&mesh.visible;
   label.hidden=!show;
   if(!show)return;
   const p=body.translation(),projected=new THREE.Vector3(p.x,p.y,p.z).project(camera);
@@ -152,7 +152,7 @@ function hexagramSummary(upper,lower,line){
 // numeric die indices. The D-label denotes the number of faces, and the
 // large numeral is the outcome. Duplicate die types remain distinguishable
 // by order and their corresponding coloured dots.
-let recordedResults=null;
+let recordedResults=null,heldSelection=null;
 let inspectingDice=false;
 function syncDiceInspection() {
  const button=document.getElementById('inspectCards');
@@ -261,6 +261,12 @@ function renderSettings(){
    objects.push(addNormalObject(index));results?.push(null);
   }else if(action==='remove'){
    destroyDie(objects[index]);objects.splice(index,1);results?.splice(index,1);
+   if(heldSelection){
+    const remaining=[...heldSelection].filter(i=>i!==index).map(i=>i>index?i-1:i);
+    held=remaining.length>0;
+    heldSelection=normalizeHeldSelection(remaining);
+    syncHeldActions();
+   }
   }else if(action==='shape'||action==='appearance'){
    replaceDieAppearance(index,action==='appearance');
    if(action==='shape'&&results)results[index]=null;
@@ -385,7 +391,7 @@ function switchPreset(id){
  const colorSettings=diceDOM.getElementById('iching-colors');colorSettings.hidden=id!=='iching';
  diceDOM.getElementById('iching-dice-panel').hidden=id!=='iching';
  diceDOM.getElementById('iching-color-scheme').value=ichingColorScheme;
- held=false;mixing=false;mixCount=0;
+ held=false;heldSelection=null;mixing=false;mixCount=0;
  diceDOM.getElementById('title').textContent=current.title;
  diceDOM.getElementById('subtitle').textContent=current.subtitle;
  diceDOM.getElementById('description').textContent=current.description;
@@ -409,7 +415,7 @@ function captureDice(){
   scheme:ichingColorScheme,colors:astroDiceColors?.slice()||null,
   poses:objects.map(({body,mesh})=>{const p=body.translation(),q=body.rotation();return {
    p:{x:p.x,y:p.y,z:p.z},q:{x:q.x,y:q.y,z:q.z,w:q.w},visible:mesh.visible
-  }}),held,results:recordedResults?.slice()||null,
+  }}),held,...(heldSelection?{heldIndices:[...heldSelection]}:{}),results:recordedResults?.slice()||null,
   hexagram:current.id==='iching'&&recordedResults?hexagramSummary(...recordedResults):null,
   force:Number(forceSlider.value)};
 }
@@ -456,8 +462,9 @@ function restoreDice(saved,id,sizePercent){
    });
   }
   held=!!saved.held;rolling=false;mixing=false;
-  if(held)objects.forEach(({mesh})=>mesh.visible=false);
-  collectButton.disabled=held;mixButton.disabled=!held;button.disabled=!held;
+  heldSelection=held?normalizeHeldSelection(saved.heldIndices):null;
+  objects.forEach(({mesh},i)=>{if(isHeldDie(i))mesh.visible=false});
+  syncHeldActions();
   showResults(Array.isArray(saved.results)&&saved.results.length===objects.length?saved.results:null);
   status.textContent=held?'IN HAND — 投げる準備ができました':'READY TO COLLECT';
   renderSettings();renderAstroColors();
@@ -481,11 +488,11 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 
 window.TabulaDiceTable={
  snapshot:captureDice,
- rollSelected:indices=>releaseDice({indices}),
+ holdSelected:indices=>collectDice(indices),
  rollChoices:()=>diceSettings.map((die,index)=>({
   name:die.userLabel||(current.id==='normal'?'ダイス'+(index+1)+' · D'+die.sides:die.label),
   value:die.faces?.[recordedResults?.[index]-1]?.name??recordedResults?.[index],
-  color:die.ink||resinColor(die)
+  color:die.ink||resinColor(die),selected:heldSelection?.has(index)===true
  })),
  sizePercent:diceSizePercent,
  sizeLimits:{min:MIN_DICE_SIZE,max:MAX_DICE_SIZE,standard:DEFAULT_DICE_SIZE},
@@ -1271,21 +1278,31 @@ function topFace(object){
  return object.faceNumbers[index];
 }
 function random(min,max){return min+Math.random()*(max-min)}
-function collectDice(){
- if(inspectingDice||!ready||rolling||held)return;
+function normalizeHeldSelection(indices){
+ if(!Array.isArray(indices))return null;
+ const selected=new Set(indices.filter(i=>Number.isInteger(i)&&objects[i]));
+ return selected.size&&selected.size<objects.length?selected:null;
+}
+function isHeldDie(index){return held&&(!heldSelection||heldSelection.has(index))}
+function syncHeldActions(){
+ collectButton.disabled=held;mixButton.disabled=!held;button.disabled=!held;
+}
+function collectDice(indices=null){
+ if(inspectingDice||!ready||rolling||mixing||(held&&!indices))return false;
+ if(indices&&(!indices.length||indices.some(i=>!Number.isInteger(i)||!objects[i])))return false;
+ heldSelection=normalizeHeldSelection(indices);
  // Leave physical dice untouched until the next throw; merely remove
  // them from the visible table. This preserves genuine physics on release.
  held=true;
- objects.forEach(({mesh})=>{mesh.visible=false});
- collectButton.disabled=true;
- mixButton.disabled=false;
- button.disabled=false;
+ objects.forEach(({mesh},i)=>{mesh.visible=!isHeldDie(i)&&Number.isInteger(recordedResults?.[i])});
+ syncHeldActions();
  mixCount=0;
  mixButton.textContent='⟳　混ぜる';
  mixButton.setAttribute('aria-pressed','false');
- showResults();
- status.textContent='IN HAND — 投げる準備ができました';
+ showResults(heldSelection?recordedResults:null);
+ status.textContent='IN HAND — '+(heldSelection?.size??objects.length)+'個を手に取っています';
  emitDice();
+ return true;
 }
 // Mix the very same 3D meshes used for the physical throw, at full size.
 // Rapier is not stepped while the dice are held; these are visual poses only.
@@ -1298,17 +1315,18 @@ function startMix(){
  button.disabled=true;
  mixButton.textContent='⟳　混ぜる';
  mixButton.setAttribute('aria-pressed','true');
- objects.forEach(({mesh})=>{mesh.visible=true;mesh.castShadow=false});
+ objects.forEach(({mesh},i)=>{if(isHeldDie(i)){mesh.visible=true;mesh.castShadow=false}});
  status.textContent='MIXING… — 押している間だけ混ぜます';
 }
 function stopMix(){
  if(!mixing)return;
  mixing=false;
- objects.forEach(({mesh})=>{mesh.visible=false;mesh.castShadow=true});
+ objects.forEach(({mesh},i)=>{if(isHeldDie(i)){mesh.visible=false;mesh.castShadow=true}});
  mixButton.textContent='⟳　混ぜる';
  mixButton.setAttribute('aria-pressed','false');
  button.disabled=false;
  status.textContent='IN HAND — 混ぜ終わりました（'+mixCount+'回）';
+ syncMeshes();
  emitDice();
 }
 function bindMixHold(control){
@@ -1355,10 +1373,11 @@ function animateMix(dt){
  // then another toss. Each die has a distinct lateral position and
  // slightly staggered flight, so they never fuse.
  const period=.92;
- objects.forEach(({mesh},i)=>{
+ const hand=objects.filter((_,i)=>isHeldDie(i));
+ hand.forEach(({mesh},i)=>{
   const phase=((t+i*.075)%period)/period;
   const tossHeight=4*phase*(1-phase); // a smooth rise and fall, 0 at catches
-  const orbit=t*2.7+i*2*Math.PI/objects.length;
+  const orbit=t*2.7+i*2*Math.PI/hand.length;
   const r=1.10+Math.sin(t*4.4+i)*.10;
   const x=Math.cos(orbit)*r;
   const z=Math.sin(orbit)*r*.77;
@@ -1370,10 +1389,9 @@ function animateMix(dt){
 }
 let rollSelection=null;
 function releaseDice(options={}){
- if(inspectingDice||!ready||rolling||mixing||(!held&&!options.indices))return false;
- const selected=options.indices?new Set(options.indices):null;
- if(selected&&(!selected.size||[...selected].some(i=>!Number.isInteger(i)||!objects[i])))return false;
- rollSelection=selected&&selected.size<objects.length?selected:null;
+ if(inspectingDice||!ready||rolling||mixing||!held)return false;
+ rollSelection=heldSelection;
+ heldSelection=null;
  window.TabulaTableTools?.prepareDiceSound?.();
  held=false;
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
@@ -1609,7 +1627,7 @@ async function init(){
   failure.textContent=status.textContent+'。'+status.title;
  }
 }
-collectButton.addEventListener('click',collectDice);
+collectButton.addEventListener('click',()=>collectDice());
 bindMixHold(mixButton);
 bindMixHold(document.getElementById('diceQuickMix'));
 button.addEventListener('click',()=>releaseDice());

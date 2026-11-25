@@ -222,19 +222,20 @@
   const engine=window.TabulaDiceTable;
   if(!engine?.isReady()||engine.busy()||engine.inspectionActive()||rollDialog.open)return;
   rollConfirm.disabled=true;
-  rollOptions.replaceChildren(...engine.rollChoices().map(({name,value,color},index)=>{
+  rollOptions.replaceChildren(...engine.rollChoices().map(({name,value,color,selected},index)=>{
    const label=document.createElement('label');
-   const check=document.createElement('input');check.type='checkbox';check.value=String(index);
+   const check=document.createElement('input');check.type='checkbox';check.value=String(index);check.checked=selected;
    const swatch=document.createElement('span');swatch.className='result-swatch';swatch.style.background=color;
    label.append(check,swatch,document.createTextNode(name+' · '+(value??'未投擲')));
    return label;
   }));
+  rollConfirm.disabled=!rollOptions.querySelector(':checked');
   rollDialog.showModal();
  });
  rollOptions.addEventListener('change',()=>{rollConfirm.disabled=!rollOptions.querySelector(':checked')});
  rollConfirm.addEventListener('click',()=>{
   const indices=[...rollOptions.querySelectorAll(':checked')].map(input=>Number(input.value));
-  if(window.TabulaDiceTable?.rollSelected(indices))rollDialog.close();
+  if(window.TabulaDiceTable?.holdSelected(indices))rollDialog.close();
  });
  function syncActionStates(){
   syncDiceSize();
@@ -283,7 +284,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0806').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0807').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;
