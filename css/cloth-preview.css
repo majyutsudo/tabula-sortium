@@ -1,0 +1,25 @@
+/* Optional woven cloth preview. The ring uses the cloth's shorter side. */
+body:has(#clothCirclePreview:checked) .cloth {
+  container-type: size;
+  background-color: #1b1916;
+  background-image:
+    radial-gradient(ellipse at 46% 36%, #b1946c12, transparent 57%, #05040391 100%),
+    url("../images/ui/woven-black.webp");
+  background-size: 100% 100%, 320px 320px;
+  border-color: #15120e;
+}
+
+body:has(#clothCirclePreview:checked) .cloth::after {
+  inset: 50% auto auto 50%;
+  width: 76cqmin;
+  height: 76cqmin;
+  translate: -50% -50%;
+  border: 0;
+  background: url("../images/ui/worn-gold.webp") repeat center / 192px 192px;
+  mask-image: radial-gradient(closest-side,
+    transparent calc(100% - 2.5px),
+    #000 calc(100% - 1.8px),
+    #000 calc(100% - .6px),
+    transparent 100%);
+  opacity: .88;
+}
