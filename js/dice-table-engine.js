@@ -298,7 +298,7 @@ function renderNormalEditor(host,settings,change){
   const sides=document.createElement('select');sides.setAttribute('aria-label','ダイス'+(i+1)+'の面数');
   for(const n of [6,8,10,12,20])sides.add(new Option('D'+n,String(n)));sides.value=String(d.sides);
   const material=document.createElement('select');material.className='material';material.setAttribute('aria-label','ダイス'+(i+1)+'の素材');
-  for(const [key,name] of [['standard','標準'],['ivory','象牙風'],['brass','古真鍮'],['glow','蓄光'],['obsidian','黒曜石'],['gold','磨き金']])material.add(new Option(name,key));material.value=normalSurface(d.surface);
+  for(const [key,name] of [['standard','樹脂'],['ivory','象牙風'],['brass','古真鍮'],['glow','蓄光'],['obsidian','黒曜石'],['gold','磨き金']])material.add(new Option(name,key));material.value=normalSurface(d.surface);
   const faceStyle=document.createElement('select');faceStyle.setAttribute('aria-label','ダイス'+(i+1)+'の目の表記');
   for(const [key,label] of [['numerals','数字（標準）'],['ring-numerals','数字（環状刻印）'],['pips','点'],['ring-pips','点（環状刻印）']])faceStyle.add(new Option(label,key));
   faceStyle.value=normalFaceStyle(d);
