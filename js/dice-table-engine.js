@@ -226,7 +226,7 @@ function showResults(results=null){
  syncDiceInspection();
 }
 function lockSettings(locked){diceDOM.getElementById('preset').disabled=locked;if(!locked&&current.id==='normal'){diceDOM.getElementById('iching-color-scheme').disabled=false;renderSettings();return;}diceDOM.getElementById('iching-color-scheme').disabled=locked;
- diceDOM.querySelectorAll('#astro-colors input').forEach(input=>input.disabled=locked);
+ diceDOM.querySelectorAll('#fixed-use-settings input,#astro-colors input').forEach(input=>input.disabled=locked);
  diceDOM.querySelectorAll('#dice-settings input,#dice-settings select,#dice-settings button').forEach(el=>el.disabled=locked);}
 const NORMAL_DICE_MAX=8;
 function addNormalObject(index){
@@ -250,9 +250,22 @@ function defaultNormalDie(){return {sides:6,color:'#c7b48d',surface:'standard',f
 function renderSettings(){
  const host=diceDOM.getElementById('dice-settings');
  const panel=diceDOM.getElementById('normal-dice-panel');
+ const fixed=diceDOM.getElementById('fixed-use-settings');
  panel.hidden=current.id!=='normal';
  host.hidden=panel.hidden;refreshFloatingLabels();
- if(host.hidden){host.replaceChildren();return}
+ fixed.hidden=!host.hidden;
+ fixed.replaceChildren();
+ if(host.hidden){
+  host.replaceChildren();
+  diceSettings.forEach(die=>fixed.append(dieUseControl(die,die.label+'を使う',apply=>{
+   if(!ready||rolling||mixing)return;
+   apply();
+   if(held)setHand(activeDiceIndices());
+   else syncHeldActions();
+   emitDice();
+  })));
+  return;
+ }
  renderNormalEditor(host,diceSettings,(apply,action,index)=>{
   if(!ready||rolling||mixing)return;
   const results=recordedResults?.slice();
@@ -261,18 +274,14 @@ function renderSettings(){
    objects.push(addNormalObject(index));results?.push(null);
   }else if(action==='remove'){
    destroyDie(objects[index]);objects.splice(index,1);results?.splice(index,1);
-   if(heldSelection){
-    const remaining=[...heldSelection].filter(i=>i!==index).map(i=>i>index?i-1:i);
-    held=remaining.length>0;
-    heldSelection=normalizeHeldSelection(remaining);
-    syncHeldActions();
-   }
   }else if(action==='shape'||action==='appearance'){
    replaceDieAppearance(index,action==='appearance');
    if(action==='shape'&&results)results[index]=null;
   }
   refreshFloatingLabels();syncMeshes();
   showResults(results?.some(Number.isInteger)?results:null);
+  if(held)setHand(activeDiceIndices());
+  else syncHeldActions();
   emitDice();
  });
 }
@@ -281,6 +290,16 @@ function normalFaceStyle(d){
  if(d.faceStyle==='ring-numerals'||d.faceStyle==='ring-pips')return d.sides===6?d.faceStyle:'ring-numerals';
  if(d.surface==='ring')return d.sides===6&&d.faceStyle!=='numerals'?'ring-pips':'ring-numerals';
  return d.faceStyle==='numerals'||d.sides!==6?'numerals':'pips';
+}
+function dieUseControl(die,name,change){
+ const label=document.createElement('label');
+ label.className='dice-use-control';
+ const input=document.createElement('input');
+ input.type='checkbox';input.checked=die.enabled!==false;
+ input.setAttribute('aria-label',name);
+ input.addEventListener('change',()=>change(()=>{die.enabled=input.checked}));
+ label.append(input,document.createTextNode(current.id==='normal'?'使う':name));
+ return label;
 }
 function renderNormalEditor(host,settings,change){
  host.replaceChildren();
@@ -347,7 +366,8 @@ function renderNormalEditor(host,settings,change){
    change(()=>settings.splice(i,1),'remove',i);
    redraw();
   });
-  refresh();syncColor();row.append(label,name,sides,faceStyle,material,color,glowColor,remove);host.append(row);
+  const use=dieUseControl(d,(d.userLabel||'ダイス'+(i+1))+'を使う',apply=>change(apply,'use',i));
+  refresh();syncColor();row.append(label,name,sides,faceStyle,material,color,glowColor,use,remove);host.append(row);
  });
 }
 function renderAstroColors(){
@@ -406,6 +426,7 @@ function captureDice(){
  if(!ready)return null;
  return {schema:1,mode:current.id,scale:diceScale,
   settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label,
+   ...(d.enabled===false?{enabled:false}:{}),
    ...(current.id==='normal'?{faceStyle:normalFaceStyle(d)}:{}),
    ...(d.surface==='glow'?{glowColor:glowColorKey(d.glowColor)}:{}),
    userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''})),
@@ -449,6 +470,7 @@ function restoreDice(saved,id,sizePercent){
    ichingColorScheme=saved.scheme;setIChingColors(diceSettings,ichingColorScheme);
    diceDOM.getElementById('iching-color-scheme').value=ichingColorScheme;
   }
+  diceSettings.forEach((die,i)=>{die.enabled=saved.settings[i]?.enabled!==false});
   objects.forEach(destroyDie);objects=[];createDice();
   if(Array.isArray(saved.poses)&&saved.poses.length===objects.length){
    objects.forEach(({body,mesh},i)=>{
@@ -488,12 +510,6 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 
 window.TabulaDiceTable={
  snapshot:captureDice,
- holdSelected:indices=>collectDice(indices),
- rollChoices:()=>diceSettings.map((die,index)=>({
-  name:die.userLabel||(current.id==='normal'?'ダイス'+(index+1)+' · D'+die.sides:die.label),
-  value:die.faces?.[recordedResults?.[index]-1]?.name??recordedResults?.[index],
-  color:die.ink||resinColor(die),selected:heldSelection?.has(index)===true
- })),
  sizePercent:diceSizePercent,
  sizeLimits:{min:MIN_DICE_SIZE,max:MAX_DICE_SIZE,standard:DEFAULT_DICE_SIZE},
  changeSize:changeDiceSize,
@@ -1284,25 +1300,29 @@ function normalizeHeldSelection(indices){
  return selected.size&&selected.size<objects.length?selected:null;
 }
 function isHeldDie(index){return held&&(!heldSelection||heldSelection.has(index))}
-function syncHeldActions(){
- collectButton.disabled=held;mixButton.disabled=!held;button.disabled=!held;
+function activeDiceIndices(){
+ return diceSettings.flatMap((die,i)=>die.enabled===false?[]:[i]);
 }
-function collectDice(indices=null){
- if(inspectingDice||!ready||rolling||mixing||(held&&!indices))return false;
- if(indices&&(!indices.length||indices.some(i=>!Number.isInteger(i)||!objects[i])))return false;
+function syncHeldActions(){
+ collectButton.disabled=held||!activeDiceIndices().length;
+ mixButton.disabled=!held;button.disabled=!held;
+}
+function setHand(indices){
+ held=indices.length>0;
  heldSelection=normalizeHeldSelection(indices);
- // Leave physical dice untouched until the next throw; merely remove
- // them from the visible table. This preserves genuine physics on release.
- held=true;
  objects.forEach(({mesh},i)=>{mesh.visible=!isHeldDie(i)&&Number.isInteger(recordedResults?.[i])});
  syncHeldActions();
  mixCount=0;
  mixButton.textContent='⟳　混ぜる';
  mixButton.setAttribute('aria-pressed','false');
- showResults(heldSelection?recordedResults:null);
- status.textContent='IN HAND — '+(heldSelection?.size??objects.length)+'個を手に取っています';
+ status.textContent=held?'IN HAND — '+indices.length+'個を手に取っています':'設定で使うダイスを選んでください';
+}
+function collectDice(){
+ if(inspectingDice||!ready||rolling||mixing||held)return;
+ const indices=activeDiceIndices();
+ if(!indices.length)return;
+ setHand(indices);
  emitDice();
- return true;
 }
 // Mix the very same 3D meshes used for the physical throw, at full size.
 // Rapier is not stepped while the dice are held; these are visual poses only.
@@ -1397,7 +1417,7 @@ function releaseDice(options={}){
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
  lockSettings(true);
  collectButton.disabled=true;button.disabled=true;mixButton.disabled=true;
- showResults(rollSelection?objects.map((_,i)=>rollSelection.has(i)?null:recordedResults?.[i]??null):null);
+ syncDiceInspection();
  status.textContent='ROLLING…';
  const dir=options.direction||{x:0,y:-1};
  const length=Math.hypot(dir.x,dir.y)||1;
@@ -1411,7 +1431,7 @@ function releaseDice(options={}){
  const maxRadius=Math.max(...throwing.map(d=>d.radius));
  if(rollSelection)objects.forEach(({body,mesh},i)=>{
   if(rollSelection.has(i))return;
-  mesh.visible=Number.isInteger(recordedResults[i]);
+  mesh.visible=Number.isInteger(recordedResults?.[i]);
   if(mesh.visible)body.setBodyType(RAPIER.RigidBodyType.Fixed,false);
   else body.setEnabled(false);
  });
@@ -1474,9 +1494,9 @@ function render(time){
    ));
    stableTime=stopped?stableTime+dt:0;
    if(stableTime>.50||rollTime>12){
-    rolling=false;button.disabled=true;collectButton.disabled=false;mixButton.disabled=true;
+    rolling=false;syncHeldActions();
     lockSettings(false);
-    const results=objects.map((die,i)=>!rollSelection||rollSelection.has(i)?topFace(die):recordedResults[i]);
+    const results=objects.map((die,i)=>!rollSelection||rollSelection.has(i)?topFace(die):recordedResults?.[i]??null);
     if(rollSelection)objects.forEach(({body,mesh},i)=>{
      if(rollSelection.has(i))return;
      if(mesh.visible)body.setBodyType(RAPIER.RigidBodyType.Dynamic,false);
@@ -1525,7 +1545,8 @@ function createCanvasDiceRenderer(){
    for(const [i,object] of objects.entries()){
     const {mesh,sides,radius,faceNumbers}=object;
     if(!mesh.visible)continue;
-    const value=recordedResults?.[i]??topFace(object);
+    const inMotion=(mixing&&isHeldDie(i))||(rolling&&(!rollSelection||rollSelection.has(i)));
+    const value=(inMotion?null:recordedResults?.[i])??topFace(object);
     projected.copy(mesh.position).project(camera);
     const size=radius*w/(camera.right-camera.left)*1.35;
     ctx.save();

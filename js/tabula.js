@@ -2889,6 +2889,7 @@ function environmentDice(dice,id){
   if(!d||![6,8,10,12,20].includes(d.sides)||!/^#[0-9a-f]{6}$/i.test(d.color))throw Error('ダイスの設定が不正です。');
   return {sides:d.sides,color:d.color,surface:['ivory','brass','ring','glow','obsidian','gold'].includes(d.surface)?d.surface:'standard',
    ...(d.surface==='glow'&&['teal','blue','lilac','amber'].includes(d.glowColor)?{glowColor:d.glowColor}:{}),
+   ...(d.enabled===false?{enabled:false}:{}),
    faceStyle:typeof d.faceStyle==='string'?d.faceStyle:undefined,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''};
  });
  return {schema:1,mode,settings,scheme:dice.scheme==='redUpper'?'redUpper':'blackUpper',
