@@ -814,7 +814,7 @@ let diceImpactNoise,lastDiceImpact=-Infinity;
 function playDiceImpact(strength){
  if(!settings.sound||audioCtx?.state!=='running')return;
  const time=audioCtx.currentTime;
- if(time-lastDiceImpact<.035)return;
+ if(time-lastDiceImpact<.085)return;
  try{
   if(!diceImpactNoise){
    diceImpactNoise=audioCtx.createBuffer(1,Math.ceil(audioCtx.sampleRate*.055),audioCtx.sampleRate);

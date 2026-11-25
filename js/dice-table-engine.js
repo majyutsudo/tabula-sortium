@@ -1366,8 +1366,8 @@ function stepDicePhysics(){
    const second=world.getCollider(event.collider2())?.parent();
    const mass=Math.min(first?.mass()??Infinity,second?.mass()??Infinity);
    const speedChange=event.totalForceMagnitude()*FIXED_STEP/mass;
-   // Skip the impulse of resting contact under the table's gravity.
-   if(Number.isFinite(speedChange)&&speedChange>.38)strongest=Math.max(strongest,speedChange);
+   // Ignore resting contact and light chatter as a die settles.
+   if(Number.isFinite(speedChange)&&speedChange>.65)strongest=Math.max(strongest,speedChange);
   });
   accumulator-=FIXED_STEP;
  }
