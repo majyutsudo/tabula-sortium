@@ -1254,27 +1254,29 @@ function makeFaceMaterial(surface,options){
   ...options,roughness:.63,emissive:0xffffff,emissiveMap:options.map,emissiveIntensity:glowIntensity()
  });
 }
-function createGlowHalo(radius,die){
- const key=glowColorKey(die.glowColor);
- if(!glowMaterials.has(key)){
-  const {halo}=GLOW_COLORS[key];
+const HALO_DIAMETER=3.5;
+function haloGradient(ctx,x,y,radius,rgb){
+ const gradient=ctx.createRadialGradient(x,y,radius*8/62,x,y,radius);
+ gradient.addColorStop(0,'rgba('+rgb+',.32)');
+ gradient.addColorStop(.48,'rgba('+rgb+',.12)');
+ gradient.addColorStop(1,'rgba('+rgb+',0)');
+ return gradient;
+}
+function createGlowHalo(radius,rgb){
+ if(!glowMaterials.has(rgb)){
   const canvas=document.createElement('canvas');
   canvas.width=canvas.height=128;
   const ctx=canvas.getContext('2d');
-  const gradient=ctx.createRadialGradient(64,64,8,64,64,62);
-  gradient.addColorStop(0,'rgba('+halo+',.32)');
-  gradient.addColorStop(.48,'rgba('+halo+',.12)');
-  gradient.addColorStop(1,'rgba('+halo+',0)');
-  ctx.fillStyle=gradient;
+  ctx.fillStyle=haloGradient(ctx,64,64,62,rgb);
   ctx.fillRect(0,0,128,128);
   const map=new THREE.CanvasTexture(canvas);
   map.colorSpace=THREE.SRGBColorSpace;
   glowGeometry??=new THREE.PlaneGeometry(1,1);
-  glowMaterials.set(key,new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,toneMapped:false}));
+  glowMaterials.set(rgb,new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,toneMapped:false}));
  }
- const halo=new THREE.Mesh(glowGeometry,glowMaterials.get(key));
+ const halo=new THREE.Mesh(glowGeometry,glowMaterials.get(rgb));
  halo.rotation.x=-Math.PI/2;
- halo.scale.setScalar(radius*3.5);
+ halo.scale.setScalar(radius*HALO_DIAMETER);
  halo.visible=false;
  scene.add(halo);
  return halo;
@@ -1321,7 +1323,7 @@ function makeDie(i){
  const lowest=sides===6?-half:Math.min(...solid.vertices.map(v=>v[1]));
  const columns=Math.min(4,diceSettings.length),col=i%columns,row=Math.floor(i/columns),rows=Math.ceil(diceSettings.length/columns);
   body.setTranslation({x:(col-(columns-1)/2)*dieSpacing,y:-lowest+.02,z:(row-(rows-1)/2)*dieSpacing},true);
- const halo=settings.surface==='glow'?createGlowHalo(radius,settings):null;
+ const halo=settings.surface==='glow'?createGlowHalo(radius,glowPalette(settings).halo):null;
  return {mesh,body,normals,faceNumbers,sides,radius,halo};
 }
 function replaceDieAppearance(index,keepPose=true){
@@ -1341,6 +1343,7 @@ function replaceDieAppearance(index,keepPose=true){
 }
 function destroyDie(obj){
  if(!obj)return;
+ removeFinaleHalo(glowingFaces.get(obj)?.spill);
  glowingFaces.delete(obj);
  world.removeRigidBody(obj.body);
  scene.remove(obj.mesh);
@@ -1367,11 +1370,16 @@ function topFaceIndex(object){
  return index;
 }
 function topFace(object){return object.faceNumbers[topFaceIndex(object)]}
-const diceFinaleColors={ritual:'#ffca83',mystic:'#a5d8ff',psychic:'#d6a1ff'};
+const diceFinaleColors={ritual:'255,202,131',mystic:'165,216,255',psychic:'214,161,255'};
 const glowingFaces=new Map();
 let diceFinale=null;
+function removeFinaleHalo(spill){
+ if(!spill)return;
+ scene.remove(spill);spill.material.dispose();
+}
 function clearDiceFinale(){
- for(const [die,{material,base,intensity}] of glowingFaces){
+ for(const [die,{material,base,intensity,spill}] of glowingFaces){
+  removeFinaleHalo(spill);
   material.emissive.copy(base);
   material.emissiveIntensity=die.halo?glowIntensity():intensity;
  }
@@ -1379,14 +1387,18 @@ function clearDiceFinale(){
 }
 function startDiceFinale(dice){
  clearDiceFinale();
- const color=diceFinaleColors[document.body.dataset.effectPreset||'ritual'];
- if(!color||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const rgb=diceFinaleColors[document.body.dataset.effectPreset||'ritual'];
+ if(!rgb||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const color='rgb('+rgb+')';
  for(const die of dice){
   if(!die.mesh.visible)continue;
   const material=die.mesh.material[topFaceIndex(die)];
-  glowingFaces.set(die,{material,base:material.emissive.clone(),intensity:material.emissiveIntensity});
+  const spill=createGlowHalo(die.radius,rgb);
+  spill.material=spill.material.clone();
+  spill.material.opacity=0;
+  glowingFaces.set(die,{material,base:material.emissive.clone(),intensity:material.emissiveIntensity,spill});
  }
- if(glowingFaces.size)diceFinale={start:performance.now(),color,tint:new THREE.Color(color),strength:0};
+ if(glowingFaces.size)diceFinale={start:performance.now(),color,rgb,tint:new THREE.Color(color),strength:0};
 }
 function updateDiceFinale(time){
  if(!diceFinale)return;
@@ -1396,7 +1408,10 @@ function updateDiceFinale(time){
  const strength=phase<.20?phase/.20:Math.pow((1-phase)/.80,2);
  diceFinale.strength=strength;
  const {tint}=diceFinale;
- for(const [die,{material,base,intensity}] of glowingFaces){
+ for(const [die,{material,base,intensity,spill}] of glowingFaces){
+  spill.position.set(die.mesh.position.x,.014,die.mesh.position.z);
+  spill.visible=die.mesh.visible;
+  spill.material.opacity=.85*strength;
   const baseline=die.halo?glowIntensity():intensity;
   const amount=strength*(die.halo ? .46 : .42);
   material.emissive.setRGB(base.r*baseline+tint.r*amount,base.g*baseline+tint.g*amount,base.b*baseline+tint.b*amount);
@@ -1666,6 +1681,19 @@ function createCanvasDiceRenderer(){
   setPixelRatio(value){if(ratio!==value){ratio=value;resize()}},
   render(_scene,camera){
    ctx.clearRect(0,0,w,h);
+   if(diceFinale?.strength){
+    ctx.save();
+    ctx.globalAlpha=.85*diceFinale.strength;
+    for(const die of glowingFaces.keys()){
+     if(!die.mesh.visible)continue;
+     projected.set(die.mesh.position.x,.014,die.mesh.position.z).project(camera);
+     const x=(projected.x+1)*w/2,y=(1-projected.y)*h/2;
+     const radius=die.radius*w/(camera.right-camera.left)*HALO_DIAMETER/2;
+     ctx.fillStyle=haloGradient(ctx,x,y,radius,diceFinale.rgb);
+     ctx.fillRect(x-radius,y-radius,2*radius,2*radius);
+    }
+    ctx.restore();
+   }
    hitAreas.length=0;
    for(const [i,object] of objects.entries()){
     const {mesh,sides,radius,faceNumbers}=object;
