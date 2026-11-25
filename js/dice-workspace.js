@@ -21,10 +21,10 @@
  const cloneDice=dice=>dice.map(die=>({...die}));
  const builtInSets=[
   ...[1,2,3].map(count=>({name:count+'ダイス',description:'6面ダイス× '+count,mode:'normal',dice:Array.from({length:count},()=>normalDie())})),
-  {name:'アルケミーダイス',description:'6面ダイス× 3（色違い）',mode:'normal',dice:[
-   {color:'#29242a',surface:'standard'},
+  {name:'アルケミーダイス',description:'6面ダイス× 3（黒曜石・赤い象牙風・磨き金）',mode:'normal',dice:[
+   {color:'#24252b',surface:'obsidian'},
    {color:'#a0252b',surface:'ivory'},
-   {color:'#c5a269',surface:'brass'}
+   {color:'#ebbe67',surface:'gold'}
   ].map(die=>({...normalDie(die.color),...die,faceStyle:'ring-numerals'}))},
   {name:'蓄光ダイス',description:'青緑に光る6面ダイス× 3',mode:'normal',dice:Array.from({length:3},()=>({...normalDie(),surface:'glow',faceStyle:'pips'}))},
   {name:'黒曜石と磨き金',description:'黒曜石と磨き金の6面ダイスを1個ずつ',mode:'normal',dice:[
