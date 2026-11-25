@@ -1370,7 +1370,11 @@ function topFaceIndex(object){
  return index;
 }
 function topFace(object){return object.faceNumbers[topFaceIndex(object)]}
-const diceFinaleColors={ritual:'255,202,131',mystic:'165,216,255',psychic:'214,161,255'};
+const diceFinalePresets={
+ ritual:{rgb:'255,202,131',duration:2450},
+ mystic:{rgb:'165,216,255',duration:2450},
+ psychic:{rgb:'214,161,255',duration:2800}
+};
 const glowingFaces=new Map();
 let diceFinale=null;
 function removeFinaleHalo(spill){
@@ -1387,8 +1391,9 @@ function clearDiceFinale(){
 }
 function startDiceFinale(dice){
  clearDiceFinale();
- const rgb=diceFinaleColors[document.body.dataset.effectPreset||'ritual'];
- if(!rgb||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const preset=diceFinalePresets[document.body.dataset.effectPreset||'ritual'];
+ if(!preset||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const {rgb,duration}=preset;
  const color='rgb('+rgb+')';
  for(const die of dice){
   if(!die.mesh.visible)continue;
@@ -1398,14 +1403,15 @@ function startDiceFinale(dice){
   spill.material.opacity=0;
   glowingFaces.set(die,{material,base:material.emissive.clone(),intensity:material.emissiveIntensity,spill});
  }
- if(glowingFaces.size)diceFinale={start:performance.now(),color,rgb,tint:new THREE.Color(color),strength:0};
+ if(glowingFaces.size)diceFinale={start:performance.now(),duration,color,rgb,tint:new THREE.Color(color),strength:0};
 }
 function updateDiceFinale(time){
  if(!diceFinale)return;
- const elapsed=(time-diceFinale.start)/1300;
+ const elapsed=(time-diceFinale.start)/diceFinale.duration;
  if(elapsed>=1){clearDiceFinale();return}
  const phase=Math.max(0,elapsed);
- const strength=phase<.20?phase/.20:Math.pow((1-phase)/.80,2);
+ const level=Math.min(phase/.32,1,(1-phase)/.54);
+ const strength=level*level*(3-2*level);
  diceFinale.strength=strength;
  const {tint}=diceFinale;
  for(const [die,{material,base,intensity,spill}] of glowingFaces){
