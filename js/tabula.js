@@ -810,6 +810,33 @@ function sortPhysicalCards(items,mode,deckId=settings.deckId){
 // Prepare audio in the direct click gesture; animationend may run after the
 // browser's autoplay permission window. No audible sound is played here.
 function prepareOpeningSound(){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});}catch(e){}}
+let diceImpactNoise,lastDiceImpact=-Infinity;
+function playDiceImpact(strength){
+ if(!settings.sound||audioCtx?.state!=='running')return;
+ const time=audioCtx.currentTime;
+ if(time-lastDiceImpact<.035)return;
+ try{
+  if(!diceImpactNoise){
+   diceImpactNoise=audioCtx.createBuffer(1,Math.ceil(audioCtx.sampleRate*.055),audioCtx.sampleRate);
+   const samples=diceImpactNoise.getChannelData(0);
+   for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+  }
+  const strike=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter();
+  const tap=audioCtx.createOscillator(),tapLevel=audioCtx.createGain(),envelope=audioCtx.createGain();
+  strike.buffer=diceImpactNoise;
+  filter.type='bandpass';filter.frequency.value=1200+1300*strength;filter.Q.value=.65;
+  tap.type='triangle';tap.frequency.value=190+55*strength+Math.random()*45;
+  tapLevel.gain.setValueAtTime(.42,time);
+  tapLevel.gain.exponentialRampToValueAtTime(.004,time+.024);
+  envelope.gain.setValueAtTime(.19*strength,time);
+  envelope.gain.exponentialRampToValueAtTime(.0001,time+.05);
+  strike.connect(filter);filter.connect(envelope);
+  tap.connect(tapLevel);tapLevel.connect(envelope);
+  envelope.connect(audioCtx.destination);
+  strike.start(time);tap.start(time);tap.stop(time+.05);
+  lastDiceImpact=time;
+ }catch(e){}
+}
 function soundAtAnimationEnd(node,animationName,volume=1){
  if(!node||!settings.sound)return;
  node.addEventListener('animationend',event=>{
@@ -5421,7 +5448,7 @@ function installTableToolLayout(){
  const spreadInfo=document.createElement('button');spreadInfo.id='spreadInfoButton';spreadInfo.type='button';
  spreadInfo.textContent='ⓘ';spreadInfo.title='このスプレッドの解説を見る';spreadInfo.setAttribute('aria-label','現在のスプレッドの解説');
  quickSpread.append(spreadInfo);spreadInfo.onclick=e=>{e.preventDefault();openSpreadGuide(settings.spread)};
- const soundButton=document.createElement('button');soundButton.type='button';soundButton.id='toolbarSoundToggle';soundButton.className='toolbar-icon';soundButton.dataset.toolLabel='効果音';soundButton.onclick=()=>{settings.sound=!settings.sound;syncToolbarSoundButton();saveLocal();};syncToolbarSoundButton();
+ const soundButton=document.createElement('button');soundButton.type='button';soundButton.id='toolbarSoundToggle';soundButton.className='toolbar-icon';soundButton.dataset.toolLabel='効果音';soundButton.onclick=()=>{settings.sound=!settings.sound;prepareOpeningSound();syncToolbarSoundButton();saveLocal();};syncToolbarSoundButton();
  const atlasMenu=document.createElement('button');atlasMenu.id='spreadAtlasMenu';atlasMenu.type='button';atlasMenu.className='spread-atlas-menu';
  atlasMenu.textContent='スプレッド図鑑';atlasMenu.onclick=()=>openSpreadAtlas();
  $('spread').closest('label').after(atlasMenu);
@@ -5839,6 +5866,7 @@ function replaceIndependentTool(target,snapshot=null){
  TabulaMultiWorkspace.validate(candidate);dualSession=candidate;dualRestoreView();dualSave();
 }
 window.TabulaTableTools={openDiceDetail,
+ prepareDiceSound:prepareOpeningSound,playDiceImpact,
  completeDiceRoll(){if(isDiceTool(activeToolId())&&settings.effectPreset!=='silent')previewVisualEffect(true)},
  context(){return{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}},
  saveDice(snapshot){if(!snapshot||!isDiceTool(activeToolId())||snapshot.mode!==activeToolId().slice(5))return;const t=activeToolTable();if(t){t.diceSnapshot=snapshot;dualSave()}else{mainToolState.dice=snapshot;storeMainTool()}},

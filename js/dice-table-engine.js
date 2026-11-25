@@ -85,7 +85,7 @@ function updateForceLabel(){
 forceSlider.addEventListener('input',updateForceLabel);
 forceSlider.addEventListener('change',()=>emitDice());
 updateForceLabel();
-let world,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
+let world,contactEvents,scene,camera,renderer,ground,objects=[],rolling=false,frame=0;
 let width=10,depth=6.6,lastTime=0,accumulator=0,rollTime=0,stableTime=0,ready=false,held=false,mixing=false,mixCount=0,mixTime=0;
 const BASE_DICE_SCALE=0.56,FIXED_STEP=1/60;
 const MIN_DICE_SIZE=100,MAX_DICE_SIZE=200,DEFAULT_DICE_SIZE=160;
@@ -1162,7 +1162,8 @@ function makeDie(i){
   RAPIER.ColliderDesc.cuboid(half,half,half):
   RAPIER.ColliderDesc.convexHull(new Float32Array(solid.vertices.flat()));
  if(!collider)throw Error('Convex collider failed for D'+sides);
- world.createCollider(collider.setRestitution(.38).setFriction(.76).setDensity(1),body);
+ world.createCollider(collider.setRestitution(.38).setFriction(.76).setDensity(1)
+  .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS),body);
  // max radial extent, including cube vertices, for wall clearance.
  const radius=sides===6?Math.sqrt(3)*half:
   Math.max(...solid.vertices.map(v=>Math.hypot(...v)));
@@ -1316,6 +1317,7 @@ function animateMix(dt){
 }
 function releaseDice(options={}){
  if(inspectingDice||!ready||rolling||!held||mixing)return;
+ window.TabulaTableTools?.prepareDiceSound?.();
  held=false;
  rolling=true;rollTime=0;stableTime=0;accumulator=0;
  lockSettings(true);
@@ -1355,6 +1357,22 @@ function releaseDice(options={}){
   mesh.visible=true;
  });
 }
+function stepDicePhysics(){
+ let strongest=0;
+ while(accumulator>=FIXED_STEP){
+  world.step(contactEvents);
+  contactEvents.drainContactForceEvents(event=>{
+   const first=world.getCollider(event.collider1())?.parent();
+   const second=world.getCollider(event.collider2())?.parent();
+   const mass=Math.min(first?.mass()??Infinity,second?.mass()??Infinity);
+   const speedChange=event.totalForceMagnitude()*FIXED_STEP/mass;
+   // Skip the impulse of resting contact under the table's gravity.
+   if(Number.isFinite(speedChange)&&speedChange>.38)strongest=Math.max(strongest,speedChange);
+  });
+  accumulator-=FIXED_STEP;
+ }
+ if(strongest)window.TabulaTableTools?.playDiceImpact?.(Math.min(1,Math.sqrt((strongest-.32)/5.5)));
+}
 function render(time){
  frame=requestAnimationFrame(render);
  if(!document.body.classList.contains('tabula-dice-mode'))return;
@@ -1362,7 +1380,7 @@ function render(time){
  if(ready&&mixing)animateMix(dt);
  if(ready&&rolling){
   accumulator=Math.min(.12,accumulator+dt);
-  while(accumulator>=FIXED_STEP){world.step();accumulator-=FIXED_STEP}
+  stepDicePhysics();
   syncMeshes();
   if(rolling){
    rollTime+=dt;
@@ -1475,6 +1493,7 @@ async function init(){
   await RAPIER.init();
   world=new RAPIER.World({x:0,y:-15,z:0});
   world.timestep=FIXED_STEP;
+  contactEvents=new RAPIER.EventQueue(true);
   world.createCollider(RAPIER.ColliderDesc.cuboid(100,.2,100).setTranslation(0,-.2,0).setFriction(.86).setRestitution(.28));
   stage='3D描画（WebGL 2）';
   scene=new THREE.Scene();
