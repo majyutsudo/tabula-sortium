@@ -828,7 +828,7 @@ function playDiceImpact(strength){
   tap.type='triangle';tap.frequency.value=190+55*strength+Math.random()*45;
   tapLevel.gain.setValueAtTime(.42,time);
   tapLevel.gain.exponentialRampToValueAtTime(.004,time+.024);
-  envelope.gain.setValueAtTime(.19*strength,time);
+  envelope.gain.setValueAtTime(.058*strength,time);
   envelope.gain.exponentialRampToValueAtTime(.0001,time+.05);
   strike.connect(filter);filter.connect(envelope);
   tap.connect(tapLevel);tapLevel.connect(envelope);
