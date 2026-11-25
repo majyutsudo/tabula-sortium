@@ -11,9 +11,17 @@ const diceDOM={
 };
 const felt=diceDOM.getElementById('felt');
 const darkRoom=diceDOM.getElementById('dark-room');
-const GLOW_COLOR='#99edc5';
-let hemisphereLight,keyLight,glowGeometry,glowMaterial;
-function resinColor(die){return die.surface==='glow'?GLOW_COLOR:die.color}
+const GLOW_COLORS={
+ teal:{label:'青緑',resin:'#99edc5',halo:'119,237,171'},
+ blue:{label:'水色',resin:'#a0ddff',halo:'120,203,255'},
+ lilac:{label:'薄紫',resin:'#ddc2ff',halo:'196,154,255'},
+ amber:{label:'琥珀',resin:'#ffda91',halo:'255,185,96'}
+};
+let hemisphereLight,keyLight,glowGeometry;
+const glowMaterials=new Map();
+function glowColorKey(value){return Object.hasOwn(GLOW_COLORS,value)?value:'teal'}
+function glowPalette(die){return GLOW_COLORS[glowColorKey(die.glowColor)]}
+function resinColor(die){return die.surface==='glow'?glowPalette(die).resin:die.color}
 function glowIntensity(){return darkRoom.checked ? .92:.15}
 function updateDarkRoom(){
  felt.closest('.stage').classList.toggle('dice-dark-room',darkRoom.checked);
@@ -291,6 +299,10 @@ function renderNormalEditor(host,settings,change){
   for(const [key,label] of [['numerals','数字（標準）'],['ring-numerals','数字（環状刻印）'],['pips','点'],['ring-pips','点（環状刻印）']])faceStyle.add(new Option(label,key));
   faceStyle.value=normalFaceStyle(d);
   const color=document.createElement('input');color.type='color';color.value=d.color;color.setAttribute('aria-label','ダイス'+(i+1)+'の色');
+  const glowColor=document.createElement('select');
+  glowColor.setAttribute('aria-label','ダイス'+(i+1)+'の発光色');
+  for(const [key,{label}] of Object.entries(GLOW_COLORS))glowColor.add(new Option(label,key));
+  glowColor.value=glowColorKey(d.glowColor);
   const remove=document.createElement('button');remove.type='button';remove.className='dice-remove';remove.textContent='×';remove.setAttribute('aria-label','ダイス'+(i+1)+'を削除');remove.disabled=settings.length===1;
   function refresh(){
    const cube=Number(sides.value)===6;
@@ -299,13 +311,17 @@ function renderNormalEditor(host,settings,change){
    if(!cube&&faceStyle.value==='ring-pips')faceStyle.value='ring-numerals';
   }
   function syncColor(){
-   color.disabled=material.value==='glow';
-   color.value=color.disabled?GLOW_COLOR:d.color;
+   const glowing=material.value==='glow';
+   color.hidden=glowing;
+   color.value=d.color;
+   glowColor.hidden=!glowing;
+   glowColor.value=glowColorKey(d.glowColor);
   }
   function update(){
    const nextSides=Number(sides.value);
    change(()=>{
-    if(!color.disabled&&material.value!=='glow')d.color=color.value;
+    if(!color.hidden&&material.value!=='glow')d.color=color.value;
+    if(material.value==='glow')d.glowColor=glowColor.value;
     d.sides=nextSides;d.surface=material.value;d.label='D'+nextSides;d.faceStyle=faceStyle.value;
    },nextSides!==d.sides?'shape':'appearance',i);
    syncColor();
@@ -314,12 +330,13 @@ function renderNormalEditor(host,settings,change){
   material.addEventListener('change',update);
   faceStyle.addEventListener('change',update);
   color.addEventListener('change',update);
+  glowColor.addEventListener('change',update);
   remove.addEventListener('click',()=>{
    if(settings.length===1)return;
    change(()=>settings.splice(i,1),'remove',i);
    redraw();
   });
-  refresh();syncColor();row.append(label,name,sides,faceStyle,material,color,remove);host.append(row);
+  refresh();syncColor();row.append(label,name,sides,faceStyle,material,color,glowColor,remove);host.append(row);
  });
 }
 function renderAstroColors(){
@@ -379,6 +396,7 @@ function captureDice(){
  return {schema:1,mode:current.id,scale:diceScale,
   settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label,
    ...(current.id==='normal'?{faceStyle:normalFaceStyle(d)}:{}),
+   ...(d.surface==='glow'?{glowColor:glowColorKey(d.glowColor)}:{}),
    userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''})),
   bounds:{width,depth},displayFaces:recordedResults?diceSettings.map((d,i)=>{
    const face=d.faces?.[recordedResults[i]-1];return face?{glyph:face.glyph,name:face.name}:null;
@@ -409,7 +427,7 @@ function restoreDice(saved,id,sizePercent){
   if(id==='normal'&&saved.settings.length>=1&&saved.settings.length<=8){
    diceSettings=saved.settings.map(d=>({sides:[6,8,10,12,20].includes(d.sides)?d.sides:6,
     color:/^#[0-9a-f]{6}$/i.test(d.color)?d.color:'#c7b48d',
-    surface:normalSurface(d.surface),
+    surface:normalSurface(d.surface),glowColor:glowColorKey(d.glowColor),
     faceStyle:normalFaceStyle(d),
     markings:'number',label:'D'+d.sides,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''}));
   }
@@ -1096,23 +1114,25 @@ function makeFaceMaterial(surface,options){
   ...options,roughness:.63,emissive:0xffffff,emissiveMap:options.map,emissiveIntensity:glowIntensity()
  });
 }
-function createGlowHalo(radius){
- if(!glowMaterial){
+function createGlowHalo(radius,die){
+ const key=glowColorKey(die.glowColor);
+ if(!glowMaterials.has(key)){
+  const {halo}=GLOW_COLORS[key];
   const canvas=document.createElement('canvas');
   canvas.width=canvas.height=128;
   const ctx=canvas.getContext('2d');
   const gradient=ctx.createRadialGradient(64,64,8,64,64,62);
-  gradient.addColorStop(0,'rgba(119,237,171,.32)');
-  gradient.addColorStop(.48,'rgba(119,237,171,.12)');
-  gradient.addColorStop(1,'rgba(119,237,171,0)');
+  gradient.addColorStop(0,'rgba('+halo+',.32)');
+  gradient.addColorStop(.48,'rgba('+halo+',.12)');
+  gradient.addColorStop(1,'rgba('+halo+',0)');
   ctx.fillStyle=gradient;
   ctx.fillRect(0,0,128,128);
   const map=new THREE.CanvasTexture(canvas);
   map.colorSpace=THREE.SRGBColorSpace;
-  glowGeometry=new THREE.PlaneGeometry(1,1);
-  glowMaterial=new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,toneMapped:false});
+  glowGeometry??=new THREE.PlaneGeometry(1,1);
+  glowMaterials.set(key,new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,toneMapped:false}));
  }
- const halo=new THREE.Mesh(glowGeometry,glowMaterial);
+ const halo=new THREE.Mesh(glowGeometry,glowMaterials.get(key));
  halo.rotation.x=-Math.PI/2;
  halo.scale.setScalar(radius*3.5);
  halo.visible=false;
@@ -1152,7 +1172,7 @@ function makeDie(i){
  const lowest=sides===6?-half:Math.min(...solid.vertices.map(v=>v[1]));
  const columns=Math.min(4,diceSettings.length),col=i%columns,row=Math.floor(i/columns),rows=Math.ceil(diceSettings.length/columns);
   body.setTranslation({x:(col-(columns-1)/2)*dieSpacing,y:-lowest+.02,z:(row-(rows-1)/2)*dieSpacing},true);
- const halo=settings.surface==='glow'?createGlowHalo(radius):null;
+ const halo=settings.surface==='glow'?createGlowHalo(radius,settings):null;
  return {mesh,body,normals,faceNumbers,sides,radius,halo};
 }
 function replaceDieAppearance(index,keepPose=true){
@@ -1419,7 +1439,7 @@ function createCanvasDiceRenderer(){
     const baseColor=resinColor(die);
     const glowing=die.surface==='glow';
     if(darkRoom.checked&&glowing){
-     ctx.shadowColor='#78efab99';ctx.shadowBlur=size*.28;ctx.shadowOffsetY=0;
+     ctx.shadowColor='rgba('+glowPalette(die).halo+',.6)';ctx.shadowBlur=size*.28;ctx.shadowOffsetY=0;
     }
     if(darkRoom.checked&&!glowing)ctx.filter='brightness(0.25)';
     ctx.fillStyle=baseColor;ctx.fill(shape);
