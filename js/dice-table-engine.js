@@ -156,7 +156,26 @@ function dieDetail(index) {
  const lines=hexagram?ichingLines(...recordedResults):null;
  return faceDetail(current.id,index,value,diceSettings[index],faceFigure(objects[index],value),hexagram?.primary,hexagram?.changed,lines);
 }
+const completionColors={ritual:'224,193,131',mystic:'181,218,255',psychic:'201,162,235'};
+let completionAnimation;
+function playDiceCompletion(results=[]){
+ completionAnimation?.cancel();
+ const preset=document.body.dataset.effectPreset||'ritual';
+ const color=completionColors[preset];
+ if(!color||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const tiles=diceDOM.getElementById('result-tiles');
+ const target=tiles.getClientRects().length?tiles:felt;
+ if(!target.getClientRects().length)return;
+ const matching=current.id==='normal'&&results.length>1
+  &&results.every(value=>Number.isInteger(value)&&value===results[0]);
+ const frame=alpha=>({outline:'1px solid rgba('+color+','+alpha+')',outlineOffset:'-1px'});
+ completionAnimation=target.animate(
+  [frame(0),{...frame(matching ? .52 : .28),offset:.26},frame(0)],
+  {duration:matching?790:620,easing:'ease-out'}
+ );
+}
 function showResults(results=null){
+ completionAnimation?.cancel();
  recordedResults=Array.isArray(results)?results.slice():null;
  values.replaceChildren();
  const h=current.id==='iching'&&results?hexagramSummary(...results):null;
@@ -437,6 +456,7 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 
 window.TabulaDiceTable={
  snapshot:captureDice,
+ previewCompletion:()=>playDiceCompletion(),
  sizePercent:diceSizePercent,
  sizeLimits:{min:MIN_DICE_SIZE,max:MAX_DICE_SIZE,standard:DEFAULT_DICE_SIZE},
  changeSize:changeDiceSize,
@@ -1303,6 +1323,7 @@ function render(time){
     lockSettings(false);
     const results=objects.map(topFace);
     showResults(results);
+    playDiceCompletion(results);
     status.textContent='THE DICE HAVE FALLEN';emitDice();
    }
   }
