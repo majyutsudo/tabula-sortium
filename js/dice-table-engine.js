@@ -1,7 +1,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0812';
+import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0813';
 
 import {faceFigure, faceDetail, hexagramDetail} from './dice-inspector.js?v=0812';
 
@@ -295,21 +295,32 @@ function renderSettings(){
  const host=diceDOM.getElementById('dice-settings');
  const panel=diceDOM.getElementById('normal-dice-panel');
  const fixed=diceDOM.getElementById('fixed-use-settings');
+ const calendar=current.id==='calendar';
+ darkRoom.closest('label').hidden=calendar;
  resultModeSelect.closest('label').hidden=current.id!=='normal';
+ diceDOM.getElementById('result-mode-note').hidden=current.id!=='normal';
  calendarYearInput.closest('label').hidden=current.id!=='calendar';
  resultModeSelect.value=normalResultMode;
  panel.hidden=current.id!=='normal';
  host.hidden=panel.hidden;refreshFloatingLabels();
  fixed.hidden=!host.hidden;
+ fixed.classList.toggle('calendar-use-settings',calendar);
  fixed.replaceChildren();
  if(host.hidden){
   host.replaceChildren();
-  diceSettings.forEach((die,i)=>fixed.append(dieUseControl(die,die.label+'を使う',apply=>{
-   if(!ready||rolling||mixing)return;
-   apply();
-   syncDieUse(i);
-   emitDice();
-  })));
+  diceSettings.forEach((die,i)=>{
+   const name=calendar?die.label+'（D'+die.sides+'）を使う':die.label+'を使う';
+   const control=dieUseControl(die,name,apply=>{
+    if(!ready||rolling||mixing)return;
+    apply();
+    syncDieUse(i);
+    emitDice();
+   });
+   if(!calendar){fixed.append(control);return}
+   const row=document.createElement('div');row.className='calendar-die-rule';
+   const rule=document.createElement('span');rule.className='mini';rule.textContent=die.rule;
+   row.append(control,rule);fixed.append(row);
+  });
   return;
  }
  renderNormalEditor(host,diceSettings,(apply,action,index)=>{
@@ -508,7 +519,7 @@ function restoreDice(saved,id,sizePercent){
  ichingColorScheme=valid&&id==='iching'&&saved.scheme==='redUpper'?'redUpper':'blackUpper';
  calendarYear=valid&&id==='calendar'&&TabulaStorage.validCalendarYear(saved.calendarYear)?saved.calendarYear:new Date().getFullYear();
  calendarYearInput.value=calendarYear;
- darkRoom.checked=valid&&saved.darkRoom===true;
+ darkRoom.checked=valid&&id!=='calendar'&&saved.darkRoom===true;
  switchPreset(id);
  forceSlider.value=valid&&Number.isFinite(saved.force)?String(Math.max(0,Math.min(100,saved.force))):forceSlider.defaultValue;
  updateForceLabel();
@@ -1201,7 +1212,7 @@ function cubeFaceTexture(value,settings,dieIndex){
  const color=resinColor(settings);
  if(markings==='engraved')return ichingTexture(faces[value-1],dieIndex,ink);
  if(markings==='astro')return astroTexture(faces[value-1],dieIndex,color,160);
- if(markings==='calendar')return numberTexture(value,color,6,surface,faces[value-1].glyph);
+ if(markings==='calendar')return faceTexture(value,color,surface);
  const style=normalFaceStyle({...settings,sides:6});
  if(style==='ring-numerals')return ringNumberTexture(value,color,6,142,value-1+dieIndex*6,surface);
  if(style==='ring-pips')return finishTexture(value,color,'ring',dieIndex,false,surface);
