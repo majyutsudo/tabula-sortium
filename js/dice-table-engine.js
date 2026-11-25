@@ -160,7 +160,7 @@ const completionColors={ritual:'224 193 131',mystic:'181 218 255',psychic:'201 1
 const completionGlow=document.createElement('div');
 completionGlow.className='dice-completion-glow';
 completionGlow.setAttribute('aria-hidden','true');
-felt.append(completionGlow);
+document.getElementById('stage').append(completionGlow);
 let completionAnimation;
 function playDiceCompletion(results=[]){
  completionAnimation?.cancel();
@@ -169,23 +169,10 @@ function playDiceCompletion(results=[]){
  if(!color||!ready||!felt.clientWidth||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
  const matching=current.id==='normal'&&results.length>1
   &&results.every(value=>Number.isInteger(value)&&value===results[0]);
- const spots=objects.filter(({mesh})=>mesh.visible).map(({mesh,radius})=>{
-  const point=mesh.position.clone().project(camera);
-  return [(point.x+1)*50,(1-point.y)*50,radius*3.9/(width*1.06)*100];
- });
- // A preview can also run while the dice are still in hand.
- if(!spots.length)spots.push([50,50,27]);
- completionGlow.replaceChildren(...spots.map(([x,y,size])=>{
-  const spot=document.createElement('span');
-  spot.style.left=x+'%';
-  spot.style.top=y+'%';
-  spot.style.width='max(74px, '+size+'%)';
-  return spot;
- }));
  completionGlow.style.setProperty('--dice-glow-color',color);
  completionAnimation=completionGlow.animate(
-  [{opacity:0},{opacity:matching?1:.78,offset:.18},{opacity:0}],
-  {duration:matching?1350:1060,easing:'ease-out'}
+  [{opacity:0},{opacity:matching?1:.84,offset:.24},{opacity:0}],
+  {duration:matching?1600:1280,easing:'ease-in-out'}
  );
 }
 function showResults(results=null){
