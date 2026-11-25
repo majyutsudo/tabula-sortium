@@ -3,6 +3,16 @@
 #dice-felt{display:none;position:absolute;inset:0;overflow:hidden;z-index:7;touch-action:none;cursor:crosshair;outline:none}
 body.tabula-dice-mode #dice-felt{display:block}
 #dice-felt canvas{display:block;width:100%;height:100%;position:absolute;inset:0;pointer-events:none}
+.dice-completion-glow{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0}
+.dice-completion-glow span{
+ position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);
+ background:radial-gradient(circle,
+  rgb(var(--dice-glow-color) / 0) 26%,
+  rgb(var(--dice-glow-color) / .15) 43%,
+  rgb(var(--dice-glow-color) / .69) 57%,
+  rgb(var(--dice-glow-color) / .46) 67%,
+  rgb(var(--dice-glow-color) / 0) 100%);
+}
 #dice-felt .corner{position:absolute;z-index:2;color:#f3e9c1b8;font:10px Georgia,serif;letter-spacing:.16em;pointer-events:none}
 #dice-felt .tl{left:12px;top:12px}
 #dice-felt .br{right:12px;bottom:10px}
