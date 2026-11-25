@@ -2823,10 +2823,155 @@ function importReadings(list){
  if(!storeSnapshots()){snapshots=original;return}
  setStatus(added.length+'件を追加しました（重複 '+duplicates.length+'件・競合 '+conflicts.length+'件はスキップ）。');
 }
-function exportCurrentReading(){
- if(!state.placed.length){setStatus('書き出すカードがありません。');return}
- if(dualBusy())return;
- exportOne(currentReadingSnapshot('shared_'+Date.now(),'占例 '+freshName()));
+
+function environmentSettings(source){
+ const defaults=createDefaultSettings();
+ const lengths={visualTheme:40,effectPreset:40,deckId:180,spread:180};
+ const out={};
+ for(const [key,value] of Object.entries(defaults)){
+  const item=source[key];
+  if(typeof value==='number'&&Number.isFinite(item))out[key]=item;
+  if(typeof value==='boolean'&&typeof item==='boolean')out[key]=item;
+  if(typeof value==='string'&&typeof item==='string'&&item.length<=(lengths[key]||300))out[key]=item;
+ }
+ if(validCardSize(source.cardSize))out.cardSize=source.cardSize;
+ if(Number.isFinite(source.deckPosition?.x)&&Number.isFinite(source.deckPosition?.y)){
+  out.deckPosition={x:source.deckPosition.x,y:source.deckPosition.y};
+ }
+ if(Array.isArray(source.candles)){
+  out.candles=source.candles.map(c=>{
+   if(!c||typeof c.id!=='string'||!Number.isFinite(c.x)||!Number.isFinite(c.y)||!/^#[0-9a-f]{6}$/i.test(c.color))throw Error('キャンドルの設定が不正です。');
+   return {id:c.id,x:c.x,y:c.y,color:c.color,length:c.length==='short'?'short':'long',size:Number.isFinite(c.size)?c.size:100,lit:!!c.lit};
+  });
+ }
+ for(const key of ['reversalsByDeck','deckBackColors','compactShortcutVisibility','refillShortcutVisibility']){
+  const map=source[key];
+  if(map&&typeof map==='object'&&!Array.isArray(map)){
+   out[key]=Object.fromEntries(Object.entries(map).filter(([id,v])=>!['__proto__','constructor','prototype'].includes(id)
+    &&typeof v===(key==='deckBackColors'?'string':'boolean')));
+  }
+ }
+ return out;
+}
+function environmentDice(dice,id){
+ if(!dice||!isDiceTool(id))return null;
+ const mode=id.slice(5);
+ if(dice.mode!==mode||!Array.isArray(dice.settings)||dice.settings.length>8||
+    (mode==='normal'?!dice.settings.length:![0,3].includes(dice.settings.length)))throw Error('ダイスの設定が不正です。');
+ const settings=dice.settings.map(d=>{
+  if(!d||![6,8,10,12,20].includes(d.sides)||!/^#[0-9a-f]{6}$/i.test(d.color))throw Error('ダイスの設定が不正です。');
+  return {sides:d.sides,color:d.color,surface:d.surface==='ivory'||d.surface==='brass'||d.surface==='ring'?d.surface:'standard',
+   faceStyle:typeof d.faceStyle==='string'?d.faceStyle:undefined,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''};
+ });
+ return {schema:1,mode,settings,scheme:dice.scheme==='redUpper'?'redUpper':'blackUpper',
+  colors:Array.isArray(dice.colors)&&dice.colors.length===3&&dice.colors.every(color=>/^#[0-9a-f]{6}$/i.test(color))?dice.colors.slice():null,
+  force:Number.isFinite(dice.force)?dice.force:undefined,scale:Number.isFinite(dice.scale)?dice.scale:undefined};
+}
+function environmentTool(id,dice,deckId){
+ if(isDiceTool(id))return {id,dice:environmentDice(dice,id)};
+ return {id:'card:'+deckId,dice:null};
+}
+function environmentTable(t){
+ const savedSettings=t.savedSettings?environmentSettings(t.savedSettings):null;
+ const tool=environmentTool(t.toolId,t.diceSnapshot,t.deckId||savedSettings?.deckId||'builtin');
+ const out={name:typeof t.name==='string'?t.name.slice(0,80):'',spread:t.spread||'free',
+  cardSize:validCardSize(t.cardSize)?t.cardSize:undefined,deckId:t.deckId,pool:t.pool,
+  color:Number.isInteger(t.color)?t.color:0,altar:!!t.altar,
+  candles:environmentSettings({candles:t.candles}).candles,savedSettings,diceSnapshot:tool.dice};
+ if(t.toolId)out.toolId=tool.id;
+ return out;
+}
+function environmentBusy(){
+ return dualBusy()||!!(isDiceTool(activeToolId())&&window.TabulaDiceTable?.busy?.());
+}
+function exportEnvironment(){
+ try{
+  if(environmentBusy())throw Error('卓の操作が終わってから書き出してください。');
+  const multi=backupMultiWorkspace();
+  const liveDice=isDiceTool(activeToolId())?window.TabulaDiceTable?.snapshot?.():null;
+  const ordinary=dualSession?(dualSingleBackup||JSON.parse(localStorage.getItem(KEY)||'null')):null;
+  const mainSettings=environmentSettings(ordinary?.settings||{...settings,cardSize:zoom,candles:altarCandles()});
+  const main=ordinary?.state||state;
+  const stock=[...main.deck,...main.placed,...(main.removed||[]),...(main.tablePiles||[]).flatMap(p=>p.cards)].map(c=>c.id).sort();
+  const mainTool=environmentTool(mainToolState.id,!dualSession&&liveDice||mainToolState.dice,mainSettings.deckId);
+  let extra=null;
+  if(multi){
+   if(dualSession){
+    const t=multi.tables[multi.activeTable];
+    if(isIndependentTables())t.savedSettings=environmentSettings(settings);
+    if(liveDice)t.diceSnapshot=liveDice;
+   }
+   extra={kind:multi.workspaceKind||'double',active:!!dualSession,activeTable:multi.activeTable,
+    idsA:multi.instances.filter(c=>c.sourceDeck==='A').map(c=>c.id).sort(),
+    idsB:multi.instances.filter(c=>c.sourceDeck==='B').map(c=>c.id).sort(),
+    tables:{table1:environmentTable(multi.tables.table1),table2:environmentTable(multi.tables.table2)},
+    appearances:multi.appearances,backColors:multi.backColors};
+  }
+  downloadJSON({format:EXPORT_FORMAT,version:1,kind:'environment',settings:mainSettings,stock,mainTool,extra},
+   'TABULA_ENVIRONMENT_'+new Date().toISOString().slice(0,10)+'.json');
+  setStatus('作業環境を書き出しました。');
+ }catch(e){setStatus('作業環境を書き出せませんでした：'+e.message)}
+}
+function environmentStock(ids,config){
+ const deckId=config.deckId;
+ if(!['builtin','simple'].includes(deckId)&&!blueprintFor(deckId)&&!deckLibrary.some(d=>d.id===deckId)){
+  throw Error('使用するデッキが登録されていません。');
+ }
+ if(config.spread!=='free'&&!Object.hasOwn(presets,config.spread))throw Error('使用するスプレッドが登録されていません。');
+ const available=new Set(catalogueFor(deckId).map(c=>c.id));
+ if(!Array.isArray(ids)||ids.length>400||new Set(ids).size!==ids.length||ids.some(id=>!available.has(id)))throw Error('デッキ構成が不正です。');
+ const cards=ids.map(id=>({id,reversed:false}));
+ return config.initialOrder==='random'?randomize(cards):sortPhysicalCards(cards,config.initialOrder,deckId);
+}
+function prepareEnvironment(data){
+ if(!data.settings||typeof data.settings!=='object'||Array.isArray(data.settings))throw Error('作業環境の設定が不正です。');
+ const config=createDefaultSettings(environmentSettings(data.settings));
+ const deck=environmentStock(data.stock,config);
+ if(!deck.length)throw Error('メインのデッキ構成が不正です。');
+ const mainTool=environmentTool(data.mainTool?.id,data.mainTool?.dice,config.deckId);
+ const ordinary={schemaVersion:STORAGE_SCHEMA_VERSION,environmentStart:true,settings:config,
+  state:{deck,placed:[],removed:[],tablePiles:[],selected:null,cutStage:null,dealCheckpoint:null,completionShown:false},
+  customIds:config.pool==='custom'?data.stock.slice():customIds,recipes,recipeId};
+ const extra=data.extra;
+ if(extra==null)return {ordinary,mainTool,workspace:null,restoreDouble:false};
+ if(!['double','single-shared','independent'].includes(extra.kind)||
+    !['table1','table2'].includes(extra.activeTable)||!extra.tables?.table1||!extra.tables?.table2)throw Error('追加卓の構成が不正です。');
+ const t1=environmentTable(extra.tables.table1),t2=environmentTable(extra.tables.table2);
+ const independent=extra.kind==='independent';
+ const stockFor=(ids,t)=>environmentStock(ids,{...config,...t.savedSettings,spread:t.spread,deckId:independent?t.deckId:config.deckId});
+ const idsA=stockFor(extra.idsA,t1).map(c=>c.id),idsB=stockFor(extra.idsB,t2).map(c=>c.id);
+ const expectsB=extra.kind==='double'||independent&&!isDiceTool(t2.toolId);
+ if((expectsB&&!idsB.length)||(!expectsB&&idsB.length)||(!idsA.length&&!(independent&&isDiceTool(t1.toolId))))throw Error('追加卓の山札が不正です。');
+ const workspace=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(idsA,idsB),'table2',t2.name);
+ Object.assign(workspace.tables.table1,t1);Object.assign(workspace.tables.table2,t2);
+ if(extra.kind!=='double')workspace.workspaceKind=extra.kind;
+ workspace.activeTable=extra.activeTable;
+ workspace.activePile=independent&&extra.activeTable==='table2'?'B':'A';
+ workspace.appearances={A:validAppearance(extra.appearances?.A),B:validAppearance(extra.appearances?.B)};
+ workspace.backColors={...DUAL_BACK_DEFAULTS};
+ for(const pile of ['A','B'])if(typeof extra.backColors?.[pile]==='string')workspace.backColors[pile]=extra.backColors[pile];
+ if(!validBackupMultiWorkspace(workspace,config,TabulaDeckBlueprint.load()))throw Error('追加卓の構成が不正です。');
+ return {ordinary,mainTool,workspace,restoreDouble:extra.kind==='double'&&extra.active===true};
+}
+function importEnvironment(data){
+ try{
+  if(environmentBusy())throw Error('卓の操作が終わってから読み込んでください。');
+  const {ordinary,mainTool,workspace,restoreDouble}=prepareEnvironment(data);
+  if(!confirm('作業環境を読み込むと、現在の卓の配札・出目が消えます。必要な占例は記録一覧に残してから読み込んでください。切り替えますか？'))return;
+  writeRestoredStorage(new Map([[KEY,JSON.stringify(ordinary)],[TOOL_STORAGE_KEY,JSON.stringify(mainTool)],
+   [DUAL_SESSION_KEY,workspace?JSON.stringify(workspace):null],[DUAL_RESTORE_ONCE_KEY,restoreDouble?'1':null]]));
+  location.reload();
+ }catch(e){alert('作業環境を読み込めませんでした：'+e.message)}
+}
+function writeRestoredStorage(values){
+ const old=new Map(Array.from(values.keys(),key=>[key,localStorage.getItem(key)]));
+ try{for(const [key,value] of values)value===null?localStorage.removeItem(key):localStorage.setItem(key,value)}
+ catch(e){
+  for(const [key,value] of old){
+   try{value===null?localStorage.removeItem(key):localStorage.setItem(key,value)}catch(_){}
+  }
+  throw Error('保存領域に書き込めませんでした。');
+ }
 }
 /* A full backup contains the ordinary table plus an optional saved physical
    multi-table workspace. This is independent of which table is currently visible. */
@@ -2931,6 +3076,7 @@ function readExternalFile(file){
   if(data?.kind==='spread'||(data&&!data.format&&!data.kind&&Array.isArray(data.slots))){
    importSingleSpread(data);return;
   }
+  if(data?.format===EXPORT_FORMAT&&data.kind==='environment'&&data.version===1){importEnvironment(data);return;}
   if(data?.format!==EXPORT_FORMAT||!((data.kind==='reading'&&data.version===1)||(data.kind==='readings'&&data.version===1)||(data.kind==='backup'&&[1,2,3].includes(data.version)))){
    alert('TABULA SORTIUMの対応するJSONファイルではありません。');return;
   }
@@ -2963,7 +3109,6 @@ function readExternalFile(file){
   // roll back every affected key rather than keeping half an import.
   const keys=[KEY,HISTORY_KEY,SPREAD_LIBRARY_KEY,TabulaDeckStore.KEY,TabulaDeckBlueprint.KEY,DUAL_SESSION_KEY,DUAL_RESTORE_ONCE_KEY,
    'tabula_card_texts_v1',DECK_INTRO_OVERRIDES_KEY,TOOL_STORAGE_KEY];
-  const previous=new Map();
   try{
    const values=[
     JSON.stringify(w),JSON.stringify(data.snapshots),
@@ -2974,10 +3119,8 @@ function readExternalFile(file){
     data.deckIntroOverrides===undefined?localStorage.getItem(DECK_INTRO_OVERRIDES_KEY):JSON.stringify(data.deckIntroOverrides),
     JSON.stringify(data.mainToolState||{id:'card:'+(w.settings?.deckId||'builtin'),dice:null})
    ];
-   for(const key of keys)previous.set(key,localStorage.getItem(key));
-   keys.forEach((key,i)=>values[i]===null?localStorage.removeItem(key):localStorage.setItem(key,values[i]));
+   writeRestoredStorage(new Map(keys.map((key,i)=>[key,values[i]])));
   }catch(e){
-   try{for(const [key,value] of previous)value===null?localStorage.removeItem(key):localStorage.setItem(key,value)}catch(_){}
    alert('保存領域への復元に失敗しました。空き容量を確認してください。');return;
   }
   // Reload through the usual startup path; a one-time marker also restores
@@ -3318,7 +3461,7 @@ function closeModal(){$('modalBg').classList.remove('open','records-active','car
   settings.deckBackColors={builtin:settings.deckId==='builtin'&&settings.cardBackColor!=='green'&&Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'sepia',[BUILTIN_LENORMAND.id]:'green'};
   if(settings.deckId==='builtin')settings.cardBackColor=settings.deckBackColors.builtin;
  }
- if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(settings.spread==='grandStar'?spreadCardSize('grandStar'):(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread)));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
+ if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(data.environmentStart&&validCardSize(data.settings?.cardSize)?data.settings.cardSize:settings.spread==='grandStar'?spreadCardSize('grandStar'):(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread)));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
 function updateStandaloneAvailability(){const cutting=!!document.getElementById('physicalCutOverlay');const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash||cutting;w.title=cutting?'カット中はウォッシュできません':noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}for(const id of ['quickShuffle','shuffle','manualShuffle']){const button=$(id);if(button)button.disabled=cutting||shuffleBusy}if(c){c.disabled=noCut||cutting;c.title=cutting?'カット中です':noCut?'カットは「なし」に設定されています':'山札をカット'}for(const id of ['quickDeal','deal','draw','quickOpen','quickRevealAll','revealAll']){const button=$(id);if(button&&cutting)button.disabled=true}}function sync(){syncDeckReversals();if(activeBlueprint())settings.cardDesign='simple';else if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';updateAppearanceControls();refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';const poolInput=$('pool');
  const blueprint=activeBlueprint();
  const poolOptions=blueprint
@@ -4057,7 +4200,7 @@ function openWithSelectedMode(){
  return openSequentially();
 }
 $('quickRevealAll').onclick=revealAllAtOnce;
-$('quickOpen').onclick=openWithSelectedMode;$('shuffle').onclick=()=>runRecipe(false);$('manualShuffle').onclick=()=>runRecipe(true);$('shuffleRecipe').onchange=e=>{recipeId=e.target.value;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};$('editRecipe').onclick=recipeEditor;$('deleteRecipe').onclick=()=>{if(recipeId==='single'){setStatus('標準手順は削除できません。');return}recipes=recipes.filter(r=>r.id!==recipeId);recipeId='single';syncRecipes();saveLocal();setStatus('登録した手順を削除しました。')};$('cut').onclick=()=>cutModal(false);$('deal').onclick=dealAuto;$('draw').onclick=()=>drawAt();$('revealAll').onclick=revealAllAtOnce;$('faceDown').onclick=()=>{state.placed.forEach(p=>p.faceUp=false);state.completionShown=false;render();saveLocal()};$('resetLayout').onclick=()=>{if(!state.placed.length){setStatus('戻すカードがありません。');return}modal('<h2>配札を戻す</h2><p class="note">卓上のカードを山札へ戻しますか？</p><div class="row"><button type="button" id="returnCancel">キャンセル</button><button type="button" class="primary" id="returnConfirm">山札に戻す</button></div>');$('returnCancel').onclick=closeModal;$('returnConfirm').onclick=()=>{state.deck=[...state.placed.map(TabulaPhysicalIdentity.preserveCard),...TabulaTablePiles.collect(state).map(TabulaPhysicalIdentity.preserveCard),...state.deck];state.placed=[];state.selected=null;state.dealCheckpoint=null;closeModal();render();saveLocal();setStatus('配札を山札に戻しました。')}};$('exportCurrent').onclick=exportCurrentReading;$('exportAll').onclick=exportAllData;$('importExternal').onclick=()=>{$('externalFile').click()};$('externalFile').onchange=e=>{const f=e.target.files?.[0];e.target.value='';readExternalFile(f)};$('snapshotSave').onclick=saveSnapshotModal;$('quickSnapshotSave').onclick=saveSnapshotModal;$('quickSnapshotList').onclick=compareModal;$('snapshotAgain').onclick=saveAndAgain;$('snapshotList').onclick=compareModal;$('resetSettings').onclick=resetSettingsAction;$('resetEverything').onclick=resetEverythingAction;$('save').onclick=()=>{saveLocal();setStatus('現在の卓をブラウザー内に保存しました。')};$('restore').onclick=restoreLocal;$('modalClose').onclick=closeModal;$('modalBg').onclick=e=>{ /* 背景クリックでは閉じない。入力欄のテキスト選択・ドラッグ時の誤終了を防ぐ。 */ };function defaultCardSize(){return window.innerWidth<=780?1.75:1.3}
+$('quickOpen').onclick=openWithSelectedMode;$('shuffle').onclick=()=>runRecipe(false);$('manualShuffle').onclick=()=>runRecipe(true);$('shuffleRecipe').onchange=e=>{recipeId=e.target.value;syncRecipes();saveLocal();setStatus('シャッフル手順を切り替えました。')};$('editRecipe').onclick=recipeEditor;$('deleteRecipe').onclick=()=>{if(recipeId==='single'){setStatus('標準手順は削除できません。');return}recipes=recipes.filter(r=>r.id!==recipeId);recipeId='single';syncRecipes();saveLocal();setStatus('登録した手順を削除しました。')};$('cut').onclick=()=>cutModal(false);$('deal').onclick=dealAuto;$('draw').onclick=()=>drawAt();$('revealAll').onclick=revealAllAtOnce;$('faceDown').onclick=()=>{state.placed.forEach(p=>p.faceUp=false);state.completionShown=false;render();saveLocal()};$('resetLayout').onclick=()=>{if(!state.placed.length){setStatus('戻すカードがありません。');return}modal('<h2>配札を戻す</h2><p class="note">卓上のカードを山札へ戻しますか？</p><div class="row"><button type="button" id="returnCancel">キャンセル</button><button type="button" class="primary" id="returnConfirm">山札に戻す</button></div>');$('returnCancel').onclick=closeModal;$('returnConfirm').onclick=()=>{state.deck=[...state.placed.map(TabulaPhysicalIdentity.preserveCard),...TabulaTablePiles.collect(state).map(TabulaPhysicalIdentity.preserveCard),...state.deck];state.placed=[];state.selected=null;state.dealCheckpoint=null;closeModal();render();saveLocal();setStatus('配札を山札に戻しました。')}};$('exportEnvironment').onclick=exportEnvironment;$('exportAll').onclick=exportAllData;$('importExternal').onclick=()=>{$('externalFile').click()};$('externalFile').onchange=e=>{const f=e.target.files?.[0];e.target.value='';readExternalFile(f)};$('snapshotSave').onclick=saveSnapshotModal;$('quickSnapshotSave').onclick=saveSnapshotModal;$('quickSnapshotList').onclick=compareModal;$('snapshotAgain').onclick=saveAndAgain;$('snapshotList').onclick=compareModal;$('resetSettings').onclick=resetSettingsAction;$('resetEverything').onclick=resetEverythingAction;$('save').onclick=()=>{saveLocal();setStatus('現在の卓をブラウザー内に保存しました。')};$('restore').onclick=restoreLocal;$('modalClose').onclick=closeModal;$('modalBg').onclick=e=>{ /* 背景クリックでは閉じない。入力欄のテキスト選択・ドラッグ時の誤終了を防ぐ。 */ };function defaultCardSize(){return window.innerWidth<=780?1.75:1.3}
 const validCardSize=TabulaStorage.validCardSize;
 const {builtinSpreadCardSizes}=TabulaCatalog;function spreadCardSize(id){const stored=spreadLibrary.find(v=>v.id===id);if(validCardSize(stored?.cardSize))return stored.cardSize;const built=builtinSpreadCardSizes[id];if(built)return window.innerWidth<=780?built.mobile:built.desktop;return defaultCardSize()}
 function syncCardSizeButtonState(){
@@ -4283,7 +4426,7 @@ installPileInteraction(deck,'A');installPileInteraction(deckB,'B');
 window.addEventListener('resize',render);
 // Independent disclosure state; no navigation or form submission on toggle.
 if((Number(settings.dealSkipFirst)||0)||(settings.dealSkipSchedule||'').trim())$('dealRulesDetails').open=true;
-const HELP_CONTENT="\n<p>TABULA SORTIUMは、タロット、プレイングカード、ルノルマンカード、登録した独自デッキなどを仮想の卓上で扱うアプリです。カードを混ぜ、配り、並べ、開くといった操作のほか、スプレッドの作成や占例の記録ができます。PCとスマートフォンに対応しており、使用するデッキや卓の状態によって表示される操作は変わります。</p>\n<h3>卓と周辺の操作</h3>\n<p>使用するデッキと展開法を選び、画面上部の「新しい占いを始める」で山札を用意します。卓上の山札をクリックまたはタップすると札を引き、ドラッグすると任意の場所へ置けます。配置したカードは表裏を切り替えたり、移動・回転したりできます。選択した札の角度はカード操作欄から調整できます。</p>\n<p>卓の操作には「ウォッシュ」「シャッフル」「カット」「ディール」「オープン」があります。ウォッシュは山札を広げて混ぜ、シャッフルは選択した方法や手順で札を混ぜ、カットは山札を分割して積み直します。ディールは選択した展開法に従って札を配り、オープンは配札した伏せ札を開きます。配札の回収や復元、山札への戻し方などは卓上の操作メニューから選択できます。</p>\n<p>「＋ 束を置く」では卓上にカードを重ねるための場所を追加できます。束のカードは移動や回収が可能です。配置された場所に空きが生じた場合は、必要に応じて「空きを詰める」「空きを一括補充」を使用できます。対応する操作は卓上にショートカットを表示することもできます。</p>\n<p>卓の周辺には、スプレッドの選択・確認、配置や配札に関する設定、カードサイズの変更、カード名・位置名の表示、配置枠の表示などの操作があります。虫眼鏡ではカードを拡大して確認でき、カード図鑑ではデッキの札を一覧・拡大表示できます。「手帖」ではスプレッドの登録、閲覧、編集を行います。占例の結果表示や記録・比較の機能も利用できます。</p>\n<p>画面上部では卓の切り替え、表示倍率の変更・リセットなどを行います。スマートフォンではピンチ操作による拡大・縮小と、卓面のドラッグによる表示位置の移動にも対応します。卓全体の表示倍率とカード自体の大きさは別々に変更できます。サウンドの切り替えやキャンドルなどの装飾も利用できます。</p>\n<h3>左メニュー</h3>\n<h4>Ⅰ. 卓の管理</h4>\n<p>現在の卓を確認し、卓を追加・切り替えます。追加方法には、独立した山札を持つ卓、メイン卓と山札を共有する卓、二組のデッキを扱うダブルデッキモードがあります。卓ごとの配札や表示設定を保ちながら作業できます。「卓の表示」ではカードと位置名の重なり順、配置枠の表示を設定します。</p>\n<h4>Ⅱ. 使用する道具</h4>\n<p>カードとダイスを切り替えます。ダイス使用中はカード専用の操作や設定が使えなくなり、「Ⅲ. カード操作」は見出しだけが表示されます。</p>\n<p>カードでは、使用するデッキを選択し、既存デッキの編集・管理や、新しいデッキの設計を行います。カードの表示では、名称・言語・外観・裏面色などを設定します。対応するデッキでは、数札の図像、上下の目印、カード名称セットなども選べます。カード群では使用する札の範囲、デッキ初期状態では山札の並び方、展開法ではフリースプレッドや各種スプレッドを指定します。正逆位置のランダム使用も設定できます。</p>\n<h4>Ⅲ. カード操作</h4>\n<p>単独ウォッシュの方向と巡回数、シャッフル手順の選択・編集・削除、単独シャッフル方式、カットの分割数を設定します。これらの設定は卓上で行う対応操作に反映されます。</p>\n<h4>Ⅳ. アルター設定</h4>\n<p>卓のビジュアルテーマ、カード操作時の演出プリセット、クロス色、キャンドルの表示を設定します。演出は「演出を試す」で確認できます。</p>\n<h4>Ⅴ. 保存・管理</h4>\n<p>現在の占例のJSON書き出し、全データのJSONバックアップ、外部JSONの読み込みを行います。設定のみの初期化と全データの初期化もここから選べます。作業状態は使用中のブラウザーに自動保存されますが、別の端末とは自動同期されません。大切な設定や記録は定期的にバックアップしてください。</p>\n<p>左メニューの項目がある見出しはクリックまたはタップして開閉できます。項目の種類や選択肢は、デッキ、スプレッド、卓のモードによって異なる場合があります。</p>\n";
+const HELP_CONTENT="\n<p>TABULA SORTIUMは、タロット、プレイングカード、ルノルマンカード、登録した独自デッキなどを仮想の卓上で扱うアプリです。カードを混ぜ、配り、並べ、開くといった操作のほか、スプレッドの作成や占例の記録ができます。PCとスマートフォンに対応しており、使用するデッキや卓の状態によって表示される操作は変わります。</p>\n<h3>卓と周辺の操作</h3>\n<p>使用するデッキと展開法を選び、画面上部の「新しい占いを始める」で山札を用意します。卓上の山札をクリックまたはタップすると札を引き、ドラッグすると任意の場所へ置けます。配置したカードは表裏を切り替えたり、移動・回転したりできます。選択した札の角度はカード操作欄から調整できます。</p>\n<p>卓の操作には「ウォッシュ」「シャッフル」「カット」「ディール」「オープン」があります。ウォッシュは山札を広げて混ぜ、シャッフルは選択した方法や手順で札を混ぜ、カットは山札を分割して積み直します。ディールは選択した展開法に従って札を配り、オープンは配札した伏せ札を開きます。配札の回収や復元、山札への戻し方などは卓上の操作メニューから選択できます。</p>\n<p>「＋ 束を置く」では卓上にカードを重ねるための場所を追加できます。束のカードは移動や回収が可能です。配置された場所に空きが生じた場合は、必要に応じて「空きを詰める」「空きを一括補充」を使用できます。対応する操作は卓上にショートカットを表示することもできます。</p>\n<p>卓の周辺には、スプレッドの選択・確認、配置や配札に関する設定、カードサイズの変更、カード名・位置名の表示、配置枠の表示などの操作があります。虫眼鏡ではカードを拡大して確認でき、カード図鑑ではデッキの札を一覧・拡大表示できます。「手帖」ではスプレッドの登録、閲覧、編集を行います。占例の結果表示や記録・比較の機能も利用できます。</p>\n<p>画面上部では卓の切り替え、表示倍率の変更・リセットなどを行います。スマートフォンではピンチ操作による拡大・縮小と、卓面のドラッグによる表示位置の移動にも対応します。卓全体の表示倍率とカード自体の大きさは別々に変更できます。サウンドの切り替えやキャンドルなどの装飾も利用できます。</p>\n<h3>左メニュー</h3>\n<h4>Ⅰ. 卓の管理</h4>\n<p>現在の卓を確認し、卓を追加・切り替えます。追加方法には、独立した山札を持つ卓、メイン卓と山札を共有する卓、二組のデッキを扱うダブルデッキモードがあります。卓ごとの配札や表示設定を保ちながら作業できます。「卓の表示」ではカードと位置名の重なり順、配置枠の表示を設定します。</p>\n<h4>Ⅱ. 使用する道具</h4>\n<p>カードとダイスを切り替えます。ダイス使用中はカード専用の操作や設定が使えなくなり、「Ⅲ. カード操作」は見出しだけが表示されます。</p>\n<p>カードでは、使用するデッキを選択し、既存デッキの編集・管理や、新しいデッキの設計を行います。カードの表示では、名称・言語・外観・裏面色などを設定します。対応するデッキでは、数札の図像、上下の目印、カード名称セットなども選べます。カード群では使用する札の範囲、デッキ初期状態では山札の並び方、展開法ではフリースプレッドや各種スプレッドを指定します。正逆位置のランダム使用も設定できます。</p>\n<h4>Ⅲ. カード操作</h4>\n<p>単独ウォッシュの方向と巡回数、シャッフル手順の選択・編集・削除、単独シャッフル方式、カットの分割数を設定します。これらの設定は卓上で行う対応操作に反映されます。</p>\n<h4>Ⅳ. アルター設定</h4>\n<p>卓のビジュアルテーマ、カード操作時の演出プリセット、クロス色、キャンドルの表示を設定します。演出は「演出を試す」で確認できます。</p>\n<h4>Ⅴ. 保存・管理</h4>\n<p>作業環境のJSON書き出し、全データのJSONバックアップ、JSONファイルの読み込みを行います。作業環境には卓の構成・道具・テーマ・キャンドルなどを含みます。配札や出目は記録一覧の占例として書き出せます。設定のみの初期化と全データの初期化もここから選べます。作業状態は使用中のブラウザーに自動保存されますが、別の端末とは自動同期されません。大切な設定や記録は定期的にバックアップしてください。</p>\n<p>左メニューの項目がある見出しはクリックまたはタップして開閉できます。項目の種類や選択肢は、デッキ、スプレッド、卓のモードによって異なる場合があります。</p>\n";
 
 $('openHelp').addEventListener('click',()=>{modal('<div class="help-popup-content"><h2>操作説明・仕様</h2>'+HELP_CONTENT+'</div>')});
 
