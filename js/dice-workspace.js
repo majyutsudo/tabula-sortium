@@ -27,13 +27,17 @@
    {color:'#c5a269',surface:'brass'}
   ].map(die=>({...normalDie(die.color),...die,faceStyle:'ring-numerals'}))},
   {name:'蓄光ダイス',description:'青緑に光る6面ダイス× 3',mode:'normal',dice:Array.from({length:3},()=>({...normalDie(),surface:'glow',faceStyle:'pips'}))},
+  {name:'黒曜石と磨き金',description:'黒曜石と磨き金の6面ダイスを1個ずつ',mode:'normal',dice:[
+   {...normalDie('#24252b'),surface:'obsidian',faceStyle:'pips'},
+   {...normalDie('#ebbe67'),surface:'gold',faceStyle:'pips'}
+  ]},
   {name:'アストロダイス',description:'12面体× 3（天体、十二宮、ハウス）',mode:'astro'},
   {name:'易占ダイス',description:'8面× 2、6面× 1（上卦、下卦、動爻）',mode:'iching'}
  ];
  function savedSets(){
   try {
    const sets=JSON.parse(localStorage.getItem(PRESET_STORAGE));
-   return Array.isArray(sets)?sets.filter(set=>typeof set?.name==='string'&&Array.isArray(set.dice)&&set.dice.length>=1&&set.dice.length<=8&&set.dice.every(d=>d&&[6,8,10,12,20].includes(d.sides)&&/^#[0-9a-f]{6}$/i.test(d.color)&&['standard','ring','ivory','brass','glow'].includes(d.surface))):[];
+   return Array.isArray(sets)?sets.filter(set=>typeof set?.name==='string'&&Array.isArray(set.dice)&&set.dice.length>=1&&set.dice.length<=8&&set.dice.every(d=>d&&[6,8,10,12,20].includes(d.sides)&&/^#[0-9a-f]{6}$/i.test(d.color)&&['standard','ring','ivory','brass','glow','obsidian','gold'].includes(d.surface))):[];
   }catch{return []}
  }
  function setMessage(text){
@@ -256,7 +260,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0802').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0803').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;

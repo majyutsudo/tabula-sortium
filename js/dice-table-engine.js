@@ -21,7 +21,11 @@ let hemisphereLight,keyLight,glowGeometry;
 const glowMaterials=new Map();
 function glowColorKey(value){return Object.hasOwn(GLOW_COLORS,value)?value:'teal'}
 function glowPalette(die){return GLOW_COLORS[glowColorKey(die.glowColor)]}
-function resinColor(die){return die.surface==='glow'?glowPalette(die).resin:die.color}
+const POLISHED_COLORS={obsidian:'#24252b',gold:'#ebbe67'};
+function resinColor(die){
+ if(die.surface==='glow')return glowPalette(die).resin;
+ return POLISHED_COLORS[die.surface]??die.color;
+}
 function glowIntensity(){return darkRoom.checked ? .92:.15}
 function updateDarkRoom(){
  felt.closest('.stage').classList.toggle('dice-dark-room',darkRoom.checked);
@@ -265,7 +269,7 @@ function renderSettings(){
   emitDice();
  });
 }
-function normalSurface(surface){return ['ivory','brass','glow'].includes(surface)?surface:'standard'}
+function normalSurface(surface){return ['ivory','brass','glow','obsidian','gold'].includes(surface)?surface:'standard'}
 function normalFaceStyle(d){
  if(d.faceStyle==='ring-numerals'||d.faceStyle==='ring-pips')return d.sides===6?d.faceStyle:'ring-numerals';
  if(d.surface==='ring')return d.sides===6&&d.faceStyle!=='numerals'?'ring-pips':'ring-numerals';
@@ -294,7 +298,7 @@ function renderNormalEditor(host,settings,change){
   const sides=document.createElement('select');sides.setAttribute('aria-label','ダイス'+(i+1)+'の面数');
   for(const n of [6,8,10,12,20])sides.add(new Option('D'+n,String(n)));sides.value=String(d.sides);
   const material=document.createElement('select');material.className='material';material.setAttribute('aria-label','ダイス'+(i+1)+'の素材');
-  for(const [key,name] of [['standard','標準'],['ivory','象牙風'],['brass','古真鍮'],['glow','蓄光']])material.add(new Option(name,key));material.value=normalSurface(d.surface);
+  for(const [key,name] of [['standard','標準'],['ivory','象牙風'],['brass','古真鍮'],['glow','蓄光'],['obsidian','黒曜石'],['gold','磨き金']])material.add(new Option(name,key));material.value=normalSurface(d.surface);
   const faceStyle=document.createElement('select');faceStyle.setAttribute('aria-label','ダイス'+(i+1)+'の目の表記');
   for(const [key,label] of [['numerals','数字（標準）'],['ring-numerals','数字（環状刻印）'],['pips','点'],['ring-pips','点（環状刻印）']])faceStyle.add(new Option(label,key));
   faceStyle.value=normalFaceStyle(d);
@@ -312,7 +316,7 @@ function renderNormalEditor(host,settings,change){
   }
   function syncColor(){
    const glowing=material.value==='glow';
-   color.hidden=glowing;
+   color.hidden=glowing||Object.hasOwn(POLISHED_COLORS,material.value);
    color.value=d.color;
    glowColor.hidden=!glowing;
    glowColor.value=glowColorKey(d.glowColor);
@@ -524,7 +528,15 @@ function faceTexture(value,color,surface){
  col=r*.299+g*.587+b*.114;
  c.fillStyle=col<140?'#f8eed6':'#25221f';
  for(const [x,y] of pipGrid[value]){
-  c.beginPath();c.arc(128+x*256*PLAIN_PIP_SPACING,128+y*256*PLAIN_PIP_SPACING,16,0,Math.PI*2);c.fill();
+  const px=128+x*256*PLAIN_PIP_SPACING,py=128+y*256*PLAIN_PIP_SPACING;
+  if(surface==='gold'){
+   const recess=c.createLinearGradient(px,py-16,px,py+16);
+   recess.addColorStop(0,'#6e471c');
+   recess.addColorStop(.58,'#a97532');
+   recess.addColorStop(1,'#fff0bd');
+   c.fillStyle=recess;
+  }else if(surface==='obsidian')c.fillStyle='#f1f0eb';
+  c.beginPath();c.arc(px,py,16,0,Math.PI*2);c.fill();
  }
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
  return texture;
@@ -1106,9 +1118,35 @@ function cubeFaceTexture(value,settings,dieIndex){
  if(style==='ring-pips')return finishTexture(value,color,'ring',dieIndex,false,surface);
  if(surface==='ivory')return finishTexture(value,color,surface,dieIndex,style==='numerals');
  if(surface==='brass')return style==='numerals'?numberTexture(value,color,6,surface):faceTexture(value,color,surface);
- return style==='numerals'?numberTexture(value,color,6):faceTexture(value,color);
+ return style==='numerals'?numberTexture(value,color,6,surface):faceTexture(value,color,surface);
+}
+let polishedEnvironment;
+function polishedReflection(){
+ if(polishedEnvironment)return polishedEnvironment;
+ const canvas=document.createElement('canvas');
+ canvas.width=256;canvas.height=128;
+ const ctx=canvas.getContext('2d');
+ const light=ctx.createLinearGradient(0,0,0,128);
+ light.addColorStop(0,'#bdb9b2');
+ light.addColorStop(.34,'#605f61');
+ light.addColorStop(.65,'#29292d');
+ light.addColorStop(1,'#141518');
+ ctx.fillStyle=light;ctx.fillRect(0,0,256,128);
+ ctx.fillStyle='#fffaf0';ctx.fillRect(35,18,72,29);
+ ctx.fillStyle='#dce5f2';ctx.fillRect(172,31,21,49);
+ polishedEnvironment=new THREE.CanvasTexture(canvas);
+ polishedEnvironment.colorSpace=THREE.SRGBColorSpace;
+ polishedEnvironment.mapping=THREE.EquirectangularReflectionMapping;
+ return polishedEnvironment;
 }
 function makeFaceMaterial(surface,options){
+ if(Object.hasOwn(POLISHED_COLORS,surface)){
+  const gold=surface==='gold';
+  return new THREE.MeshStandardMaterial({
+   ...options,roughness:gold?.19:.15,metalness:gold?.79:0,
+   envMap:polishedReflection(),envMapIntensity:gold?1.45:.95
+  });
+ }
  if(surface!=='glow')return new THREE.MeshStandardMaterial(options);
  return new THREE.MeshStandardMaterial({
   ...options,roughness:.63,emissive:0xffffff,emissiveMap:options.map,emissiveIntensity:glowIntensity()
@@ -1141,7 +1179,9 @@ function createGlowHalo(radius,die){
 }
 // Keep the simulated weight contrast modest for mixed-material throws.
 function diceDensity(surface){
+ if(surface==='gold')return 5.6;
  if(surface==='brass')return 2.8;
+ if(surface==='obsidian')return 1.5;
  if(surface==='ivory')return 1.15;
  return 1;
 }
