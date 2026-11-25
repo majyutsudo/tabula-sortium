@@ -4,13 +4,26 @@
 const schemaVersion=1;
 function fileNamePart(s){return String(s||'reading').normalize('NFKC').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').replace(/\s+/g,'_').slice(0,65)||'reading'}
 function validCardSize(v){return typeof v==='number'&&Number.isFinite(v)&&v>=.8&&v<=2.3}
+const calendarSides=[12,8,10,6,12,12];
+function validCalendarYear(year){return Number.isInteger(year)&&year>=1&&year<=9999}
+function calendarResult(results,year){
+ if(!validCalendarYear(year)||!Array.isArray(results)||results.length!==6
+  ||!results.every((n,i)=>Number.isInteger(n)&&n>=1&&n<=calendarSides[i]))return null;
+ const [month,tens,units,period,hour,minute]=results;
+ const day=Math.floor((tens-1)/2)*10+units%10;
+ const leap=year%4===0&&(year%100!==0||year%400===0);
+ const monthLength=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31][month-1];
+ const time=(period%2?'午前':'午後')+hour+'時'+String(minute%12*5).padStart(2,'0')+'分';
+ return {valid:day>=1&&day<=monthLength,text:year+'年'+month+'月'+day+'日 '+time};
+}
 function validDiceSnapshot(v){
- if(!v||v.kind!=='dice'||!['normal','astro','iching'].includes(v.dice?.mode))return false;
+ if(!v||v.kind!=='dice'||!['normal','astro','iching','calendar'].includes(v.dice?.mode))return false;
  const d=v.dice,number=n=>typeof n==='number'&&Number.isFinite(n);
- const count=d.mode==='normal'?d.settings?.length:3;
+ const count=d.mode==='normal'?d.settings?.length:d.mode==='calendar'?calendarSides.length:3;
  if(!Array.isArray(d.settings)||count<1||count>8||d.settings.length!==count)return false;
  if(d.settings.some(x=>!x||![6,8,10,12,20].includes(x.sides)||typeof x.color!=='string'||!/^#[0-9a-f]{6}$/i.test(x.color)))return false;
  if(!Array.isArray(d.results)||d.results.length!==count||d.results.some((r,i)=>!Number.isInteger(r)||r<1||r>d.settings[i].sides))return false;
+ if(d.mode==='calendar'&&(!d.settings.every((die,i)=>die.sides===calendarSides[i])||!calendarResult(d.results,d.calendarYear)?.valid))return false;
  if(!Array.isArray(d.poses)||d.poses.length!==count||d.poses.some(x=>
   !x||!x.p||!x.q||![x.p.x,x.p.y,x.p.z,x.q.x,x.q.y,x.q.z,x.q.w].every(number)||typeof x.visible!=='boolean'))return false;
  return typeof v.id==='string'&&v.id.length>0&&v.id.length<=160
@@ -54,5 +67,5 @@ function matchesDeck(reading,cards){
 }
 
 function supportsSchema(version){return version==null||version===schemaVersion}
-root.TabulaStorage=Object.freeze({schemaVersion,fileNamePart,validCardSize,validateReading,matchesDeck,supportsSchema});
+root.TabulaStorage=Object.freeze({schemaVersion,fileNamePart,validCardSize,validateReading,matchesDeck,supportsSchema,validCalendarYear,calendarResult});
 })(globalThis);

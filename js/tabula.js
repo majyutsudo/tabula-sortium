@@ -2884,7 +2884,7 @@ function environmentDice(dice,id){
  if(!dice||!isDiceTool(id))return null;
  const mode=id.slice(5);
  if(dice.mode!==mode||!Array.isArray(dice.settings)||dice.settings.length>8||
-    (mode==='normal'?!dice.settings.length:![0,3].includes(dice.settings.length)))throw Error('ダイスの設定が不正です。');
+    (mode==='normal'?!dice.settings.length:![0,mode==='calendar'?6:3].includes(dice.settings.length)))throw Error('ダイスの設定が不正です。');
  const settings=dice.settings.map(d=>{
   if(!d||![6,8,10,12,20].includes(d.sides)||!/^#[0-9a-f]{6}$/i.test(d.color))throw Error('ダイスの設定が不正です。');
   return {sides:d.sides,color:d.color,surface:['ivory','brass','ring','glow','obsidian','gold'].includes(d.surface)?d.surface:'standard',
@@ -2892,7 +2892,9 @@ function environmentDice(dice,id){
    ...(d.enabled===false?{enabled:false}:{}),
    faceStyle:typeof d.faceStyle==='string'?d.faceStyle:undefined,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''};
  });
- return {schema:1,mode,settings,...(mode==='normal'&&dice.resultMode==='accumulate'?{resultMode:'accumulate'}:{}),scheme:dice.scheme==='redUpper'?'redUpper':'blackUpper',
+ return {schema:1,mode,settings,darkRoom:dice.darkRoom===true,
+  ...(mode==='calendar'&&TabulaStorage.validCalendarYear(dice.calendarYear)?{calendarYear:dice.calendarYear}:{}),
+  ...(mode==='normal'&&dice.resultMode==='accumulate'?{resultMode:'accumulate'}:{}),scheme:dice.scheme==='redUpper'?'redUpper':'blackUpper',
   colors:Array.isArray(dice.colors)&&dice.colors.length===3&&dice.colors.every(color=>/^#[0-9a-f]{6}$/i.test(color))?dice.colors.slice():null,
   force:Number.isFinite(dice.force)?dice.force:undefined,scale:Number.isFinite(dice.scale)?dice.scale:undefined};
 }
@@ -3253,6 +3255,7 @@ function diceReadingSnapshot(id,name){
  const live=window.TabulaDiceTable?.snapshot?.();
  const dice=live?.mode===mode?live:context?.dice;
  if(!dice?.results?.every(Number.isInteger)){setStatus('すべてのダイスを振ってから占例を保存してください。');return null}
+ if(mode==='calendar'&&!TabulaStorage.calendarResult(dice.results,dice.calendarYear)?.valid){setStatus('暦にある日付が出てから占例を保存してください。');return null}
  const v={kind:'dice',id,name,time:new Date().toISOString(),settings:dualClone(settings),
   dice:dualClone(dice),tableName:dualSession?.tables?.[dualSession.activeTable]?.name||'メイン卓',
   placed:[],deck:[],removed:[],tablePiles:[],slots:[],spread:'free'};
@@ -3269,7 +3272,7 @@ function diceSnapshotPanel(v){
  ];
  const iching=[['乾','兌','離','震','巽','坎','艮','坤'],['乾','兌','離','震','巽','坎','艮','坤'],['初','二','三','四','五','上']];
  const details=d.results.map((value,i)=>{
-  const name=names[i]||(d.settings[i]?.userLabel||'ダイス'+(i+1)),label=m==='astro'?astro[i]?.[value-1]:m==='iching'?iching[i]?.[value-1]:'D'+d.settings[i].sides+' · '+value;
+  const name=names[i]||(m==='calendar'?d.settings[i]?.label:d.settings[i]?.userLabel)||'ダイス'+(i+1),label=m==='astro'?astro[i]?.[value-1]:m==='iching'?iching[i]?.[value-1]:m==='calendar'?d.displayFaces?.[i]?.glyph:'D'+d.settings[i].sides+' · '+value;
   return '<div class="snapshot-row"><b>'+escapeHTML(name)+'</b><span>'+escapeHTML(label||String(value))+'</span></div>';
  }).join('');
  const total=m==='normal'?'<div class="snapshot-row"><b>合計</b><span>'+d.results.reduce((a,b)=>a+b,0)+'</span></div>':'';
@@ -3283,8 +3286,9 @@ function diceSnapshotPanel(v){
   }
  }
  const cloth=colors[Number.isInteger(v.settings?.color)?v.settings.color:0]?.[1]||'#171719';
- const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[m];
- return '<div class="snapshot-board dice-record-board" style="--record-cloth:'+escapeHTML(cloth)+'"><div class="dice-record-glyph">⚄</div><div class="dice-record-name">'+heading+'</div><div class="dice-record-faces">'+d.results.map(String).join(' · ')+'</div></div><div class="snapshot-details">'+details+total+hex+'</div>';
+ const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE',calendar:'CALENDAR DICE'}[m];
+ const faces=m==='calendar'?TabulaStorage.calendarResult(d.results,d.calendarYear)?.text:d.results.map(String).join(' · ');
+ return '<div class="snapshot-board dice-record-board" style="--record-cloth:'+escapeHTML(cloth)+'"><div class="dice-record-glyph">⚄</div><div class="dice-record-name">'+heading+'</div><div class="dice-record-faces">'+escapeHTML(faces||'')+'</div></div><div class="snapshot-details">'+details+total+hex+'</div>';
 }
 
 function currentReadingSnapshot(id,name){
@@ -5844,7 +5848,7 @@ const DECK_CAPABILITY_DEFAULTS=Object.freeze({
 
 /* v0.727: the active TABLE owns one tool and its reading. */
 const TOOL_STORAGE_KEY='tabula_sortium_main_tool_v1';
-const DICE_TOOL_IDS=['dice:normal','dice:astro','dice:iching'];
+const DICE_TOOL_IDS=['dice:normal','dice:astro','dice:iching','dice:calendar'];
 const isDiceTool=id=>DICE_TOOL_IDS.includes(id);
 let mainToolState=(()=>{try{return JSON.parse(localStorage.getItem(TOOL_STORAGE_KEY))||{id:'card:'+settings.deckId,dice:null}}catch(e){return{id:'card:'+settings.deckId,dice:null}}})();
 const activeToolTable=()=>dualSession?.tables?.[dualSession.activeTable]||null;
@@ -6231,7 +6235,7 @@ function storedExtraWorkspace(){
 }
 function toolLabelForTable(table){
  const id=table?.toolId||'card:'+(table?.deckId||settings.deckId);
- const diceNames={'dice:normal':'ダイス','dice:astro':'アストロダイス','dice:iching':'易占ダイス'};
+ const diceNames={'dice:normal':'ダイス','dice:astro':'アストロダイス','dice:iching':'易占ダイス','dice:calendar':'暦占ダイス'};
  if(diceNames[id])return diceNames[id];
  const deckId=id.startsWith('card:')?id.slice(5):'builtin';
  if(deckId==='builtin')return 'TABULA TAROT';

@@ -303,3 +303,8 @@ body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:defa
 .dice-setting-heading .dice-remove{margin-inline-start:auto}
 .dice-setting-fields{flex-wrap:wrap}
 .dice-result-mode-control{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+
+#dice-calendar-reading:not([hidden]){display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px}
+#dice-calendar-reroll{padding:4px 8px}
+#dice-calendar-reroll[hidden]{display:none}
+#dice-calendar-year{width:7em}

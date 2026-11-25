@@ -1,9 +1,9 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js';
 import RAPIER from 'https://esm.sh/@dimforge/rapier3d-compat@0.17.3';
-import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0725';
+import {preset,TRIGRAMS,setIChingColors,ICHING_INKS} from './dice-presets.js?v=0812';
 
-import {faceFigure, faceDetail, hexagramDetail} from './dice-inspector.js?v=0770';
+import {faceFigure, faceDetail, hexagramDetail} from './dice-inspector.js?v=0812';
 
 const diceDOM={
  getElementById(id){return window.document.getElementById('dice-'+id)},
@@ -36,7 +36,7 @@ function updateDarkRoom(){
   if(halo)for(const material of mesh.material)material.emissiveIntensity=glowIntensity();
  }
 }
-darkRoom.addEventListener('change',updateDarkRoom);
+darkRoom.addEventListener('change',()=>{updateDarkRoom();emitDice()});
 const floatingLabels=document.createElement('div');
 floatingLabels.id='diceFloatingLabels';floatingLabels.setAttribute('aria-hidden','true');
 felt.append(floatingLabels);
@@ -152,7 +152,29 @@ function hexagramSummary(upper,lower,line){
 // numeric die indices. The D-label denotes the number of faces, and the
 // large numeral is the outcome. Duplicate die types remain distinguishable
 // by order and their corresponding coloured dots.
-let recordedResults=null,heldSelection=null,normalResultMode='latest';
+let recordedResults=null,heldSelection=null,normalResultMode='latest',calendarYear=new Date().getFullYear();
+const calendarYearInput=diceDOM.getElementById('calendar-year');
+const calendarReroll=diceDOM.getElementById('calendar-reroll');
+calendarYearInput.value=calendarYear;
+calendarYearInput.addEventListener('change',()=>{
+ const year=calendarYearInput.valueAsNumber;
+ if(TabulaStorage.validCalendarYear(year))calendarYear=year;
+ calendarYearInput.value=calendarYear;
+ showResults(recordedResults);emitDice();
+});
+calendarReroll.addEventListener('click',()=>{
+ if(current.id!=='calendar'||!ready||rolling||mixing||inspectingDice)return;
+ const summary=TabulaStorage.calendarResult(recordedResults,calendarYear);
+ if(summary?.valid!==false)return;
+ setHand([1,2]);
+ emitDice();
+});
+function syncCalendarAction(){
+ const summary=current.id==='calendar'?TabulaStorage.calendarResult(recordedResults,calendarYear):null;
+ const dateReady=summary!==null;
+ calendarReroll.hidden=!dateReady||summary.valid;
+ calendarReroll.disabled=rolling||mixing||inspectingDice||(held&&heldSelection?.size===2&&heldSelection.has(1)&&heldSelection.has(2));
+}
 const resultModeSelect=diceDOM.getElementById('result-mode');
 resultModeSelect.addEventListener('change',()=>{
  if(!ready||rolling||mixing||current.id!=='normal')return;
@@ -171,6 +193,7 @@ function syncDiceInspection() {
  holder.classList.toggle('dice-inspecting',inspectingDice);
  felt.classList.toggle('dice-inspecting',inspectingDice);
  holder.querySelectorAll('.dice-inspection-target').forEach(target=>{target.tabIndex=inspectingDice?0:-1});
+ syncCalendarAction();
 }
 function setDiceInspection(enabled) {
  inspectingDice=enabled&&recordedResults?.some(Number.isInteger)===true;
@@ -224,6 +247,12 @@ function showResults(results=null){
   sum.textContent=rolled.length?String(rolled.reduce((a,b)=>a+b,0)):'—';
   total.append(title,sum);
  }
+ const calendarReading=diceDOM.getElementById('calendar-reading');
+ calendarReading.hidden=current.id!=='calendar';
+ if(!calendarReading.hidden){
+  const date=TabulaStorage.calendarResult(results,calendarYear);
+  diceDOM.getElementById('calendar-text').textContent=date?(date.valid?date.text:date.text+' は暦にありません。日の2個を振り直してください。'):'月日と時刻を振ると、ここに結果が出ます。';
+ }
  const reading=diceDOM.getElementById('hexagram-reading');reading.hidden=current.result!=='hexagram';
  if(h){
   const changing=results[2], moved=diceSettings[2].faces[changing-1].name;
@@ -267,6 +296,7 @@ function renderSettings(){
  const panel=diceDOM.getElementById('normal-dice-panel');
  const fixed=diceDOM.getElementById('fixed-use-settings');
  resultModeSelect.closest('label').hidden=current.id!=='normal';
+ calendarYearInput.closest('label').hidden=current.id!=='calendar';
  resultModeSelect.value=normalResultMode;
  panel.hidden=current.id!=='normal';
  host.hidden=panel.hidden;refreshFloatingLabels();
@@ -437,8 +467,8 @@ function switchPreset(id){
  diceDOM.getElementById('title').textContent=current.title;
  diceDOM.getElementById('subtitle').textContent=current.subtitle;
  diceDOM.getElementById('description').textContent=current.description;
- diceDOM.getElementById('table-corner-top').textContent='TABULA · '+(id==='normal'?'DICE':id==='astro'?'ASTRO':'I CHING')+(felt.dataset.diceRenderer==='2d'?' · 2D':'');
- diceDOM.getElementById('table-corner-bottom').textContent=id==='normal'?'RIGID BODY EXPERIMENT':id==='astro'?'ASTROLOGICAL DICE':'THE BOOK OF CHANGES';
+ diceDOM.getElementById('table-corner-top').textContent='TABULA · '+({normal:'DICE',astro:'ASTRO',iching:'I CHING',calendar:'CALENDAR'}[id])+(felt.dataset.diceRenderer==='2d'?' · 2D':'');
+ diceDOM.getElementById('table-corner-bottom').textContent=({normal:'RIGID BODY EXPERIMENT',astro:'ASTROLOGICAL DICE',iching:'THE BOOK OF CHANGES',calendar:'THE CALENDAR · THE CLOCK'}[id]);
  renderSettings();renderAstroColors();createDice();syncMeshes();showResults();
  collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;status.textContent='READY TO COLLECT';
 }
@@ -448,6 +478,7 @@ function captureDice(){
  if(!ready)return null;
  return {schema:1,mode:current.id,scale:diceScale,
   ...(current.id==='normal'?{resultMode:normalResultMode}:{}),
+  ...(current.id==='calendar'?{calendarYear}:{}),darkRoom:darkRoom.checked,
   settings:diceSettings.map(d=>({sides:d.sides,color:d.color,surface:d.surface,label:d.label,
    ...(d.enabled===false?{enabled:false}:{}),
    ...(current.id==='normal'?{faceStyle:normalFaceStyle(d)}:{}),
@@ -475,6 +506,9 @@ function restoreDice(saved,id,sizePercent){
  // Table changes must not leak another table's customized astrological palette.
  astroDiceColors=valid&&id==='astro'&&Array.isArray(saved.colors)?saved.colors.slice():null;
  ichingColorScheme=valid&&id==='iching'&&saved.scheme==='redUpper'?'redUpper':'blackUpper';
+ calendarYear=valid&&id==='calendar'&&TabulaStorage.validCalendarYear(saved.calendarYear)?saved.calendarYear:new Date().getFullYear();
+ calendarYearInput.value=calendarYear;
+ darkRoom.checked=valid&&saved.darkRoom===true;
  switchPreset(id);
  forceSlider.value=valid&&Number.isFinite(saved.force)?String(Math.max(0,Math.min(100,saved.force))):forceSlider.defaultValue;
  updateForceLabel();
@@ -518,7 +552,7 @@ function restoreDice(saved,id,sizePercent){
   recordedResults=null;held=false;rolling=false;mixing=false;
   collectButton.disabled=false;mixButton.disabled=true;button.disabled=true;
  }
- syncMeshes();updateDimensions();
+ syncMeshes();updateDimensions();updateDarkRoom();
  window.dispatchEvent(new Event('tabula:dice-size'));
 }
 function changeDiceSize(delta,reset){
@@ -552,7 +586,7 @@ window.TabulaDiceTable={
  },
  busy(){return rolling||mixing},
  setMode(id){
-  if(!['normal','astro','iching'].includes(id))return;
+  if(!['normal','astro','iching','calendar'].includes(id))return;
   pendingParentMode=id;
   if(ready&&!rolling&&!mixing&&current.id!==id){
    diceDOM.getElementById('preset').value=id;
@@ -566,7 +600,7 @@ window.TabulaDiceTable={
 window.addEventListener('message',event=>{
  if(event.source!==window.parent||event.origin!==location.origin)return;
  if(event.data?.type!=='tabula:dice:mode')return;
- const id=event.data.mode;if(!['normal','astro','iching'].includes(id))return;
+ const id=event.data.mode;if(!['normal','astro','iching','calendar'].includes(id))return;
  pendingParentMode=id;
  if(ready&&!rolling&&!mixing&&current.id!==id){diceDOM.getElementById('preset').value=id;switchPreset(id)}
 });
@@ -944,7 +978,7 @@ function ringNumberTexture(value,color,sides,ringRadius,faceIndex,surface){
  texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
  return texture;
 }
-function numberTexture(value,color,sides,surface){
+function numberTexture(value,color,sides,surface,glyph=value){
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
  const c=canvas.getContext('2d');
  c.fillStyle=color;c.fillRect(0,0,256,256);
@@ -955,9 +989,9 @@ function numberTexture(value,color,sides,surface){
  if(surface==='brass')drawBrassPatina(c,256,value);
  const ink=isDarkDiceColor(color)?'#fff1d8':'#2c241f';
  const fontSize=sides===10?(value>=10?59:72):sides===20?(value>=10?76:98):(value>=10?86:112);
- drawCarvedNumeral(c,value,128,128,fontSize,112,{ink});
+ drawCarvedNumeral(c,glyph,128,128,fontSize,112,{ink});
  c.fillStyle=ink;
- if(value===6||value===9){
+ if(glyph===6||glyph===9||glyph==='6'||glyph==='9'){
   const w=Math.min(42,fontSize*.33);
   c.fillRect(128-w/2,128+fontSize*.43,w,Math.max(3,fontSize*.045));
  }
@@ -1131,7 +1165,7 @@ function numberedMesh(sides,color,material='standard',astroDieIndex=0){
  const materials=faces.map((_,i)=>makeFaceMaterial(die.surface,{
   map:die.markings==='astro'?astroTexture(die.faces[mappedValues[i]-1],astroDieIndex,die.color,rings[i]):
       die.markings==='engraved'?ichingTexture(die.faces[mappedValues[i]-1],astroDieIndex,die.ink,rings[i]):
-      isRing?ringNumberTexture(mappedValues[i],color,sides,rings[i],i,die.surface):numberTexture(mappedValues[i],color,sides,die.surface),
+      isRing?ringNumberTexture(mappedValues[i],color,sides,rings[i],i,die.surface):numberTexture(mappedValues[i],color,sides,die.surface,die.markings==='calendar'?die.faces[mappedValues[i]-1].glyph:undefined),
   roughness:die.markings==='engraved'?.42:die.markings==='astro'?.84:die.surface==='brass'?.34:die.surface==='ivory'?.31:isRing?.88:.49,metalness:die.surface==='brass'?.5:0,side:THREE.DoubleSide
  }));
  const mesh=new THREE.Mesh(geometry,materials);
@@ -1167,6 +1201,7 @@ function cubeFaceTexture(value,settings,dieIndex){
  const color=resinColor(settings);
  if(markings==='engraved')return ichingTexture(faces[value-1],dieIndex,ink);
  if(markings==='astro')return astroTexture(faces[value-1],dieIndex,color,160);
+ if(markings==='calendar')return numberTexture(value,color,6,surface,faces[value-1].glyph);
  const style=normalFaceStyle({...settings,sides:6});
  if(style==='ring-numerals')return ringNumberTexture(value,color,6,142,value-1+dieIndex*6,surface);
  if(style==='ring-pips')return finishTexture(value,color,'ring',dieIndex,false,surface);
@@ -1347,6 +1382,7 @@ function setHand(indices){
  mixButton.textContent='⟳　混ぜる';
  mixButton.setAttribute('aria-pressed','false');
  status.textContent=held?'IN HAND — '+indices.length+'個を手に取っています':'設定で使うダイスを選んでください';
+ syncCalendarAction();
 }
 function collectDice(){
  if(inspectingDice||!ready||rolling||mixing||held)return;
@@ -1368,6 +1404,7 @@ function startMix(){
  mixButton.setAttribute('aria-pressed','true');
  objects.forEach(({mesh},i)=>{if(isHeldDie(i)){mesh.visible=true;mesh.castShadow=false}});
  status.textContent='MIXING… — 押している間だけ混ぜます';
+ syncCalendarAction();
 }
 function stopMix(){
  if(!mixing)return;
@@ -1377,6 +1414,7 @@ function stopMix(){
  mixButton.setAttribute('aria-pressed','false');
  button.disabled=false;
  status.textContent='IN HAND — 混ぜ終わりました（'+mixCount+'回）';
+ syncCalendarAction();
  syncMeshes();
  emitDice();
 }

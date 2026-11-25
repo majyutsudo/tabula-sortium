@@ -27,11 +27,8 @@
    {color:'#a0252b',surface:'ivory'},
    {color:'#ebbe67',surface:'gold'}
   ].map(die=>({...normalDie(die.color),...die,faceStyle:'ring-numerals'}))},
-  {name:'蓄光ダイス',description:'青緑に光る6面ダイス× 3',mode:'normal',dice:Array.from({length:3},()=>({...normalDie(),surface:'glow',faceStyle:'pips'}))},
-  {name:'黒曜石と磨き金',description:'黒曜石と磨き金の6面ダイスを1個ずつ',mode:'normal',dice:[
-   {...normalDie('#24252b'),surface:'obsidian',faceStyle:'pips'},
-   {...normalDie('#ebbe67'),surface:'gold',faceStyle:'pips'}
-  ]},
+  {name:'蓄光ダイス',darkRoom:true,description:'青緑に光る6面ダイス× 3',mode:'normal',dice:Array.from({length:3},()=>({...normalDie(),surface:'glow',faceStyle:'pips'}))},
+  {name:'暦占ダイス',description:'6個で月日と時刻を占う · TABULAオリジナル',mode:'calendar'},
   {name:'アストロダイス',description:'12面体× 3（天体、十二宮、ハウス）',mode:'astro'},
   {name:'易占ダイス',description:'8面× 2、6面× 1（上卦、下卦、動爻）',mode:'iching'}
  ];
@@ -44,11 +41,11 @@
  function setMessage(text){
   message.textContent=text;message.hidden=!text;
  }
- function applySet(mode,dice,resultMode){
+ function applySet(mode,dice,resultMode,darkRoom=false){
   const bridge=window.TabulaTableTools,current=bridge?.context();
   if(!chooseFor||current?.tableId!==chooseFor.tableId||current?.id!==chooseFor.id)return;
   const size=!onChoose?current.dice?.scale:undefined;
-  const snapshot=dice||size?{schema:1,mode,settings:dice?cloneDice(dice):[],resultMode,force:current.dice?.force,scale:size}:null;
+  const snapshot=dice||size?{schema:1,mode,settings:dice?cloneDice(dice):[],resultMode,darkRoom,force:current.dice?.force,scale:size}:null;
   const accepted=onChoose?onChoose('dice:'+mode,snapshot):bridge.switchTool('dice:'+mode,{replaceDice:true,snapshot});
   if(accepted)setDialog.close();
   else setMessage('セットを変更できませんでした。');
@@ -62,7 +59,7 @@
  function renderSetChoices(){
   setChoices.replaceChildren();
   addChoice('新しく組む','個数・面数・素材・目の意匠・色・ラベルを指定',openDraft,'dice-set-custom');
-  for(const set of builtInSets)addChoice(set.name,set.description,()=>applySet(set.mode,set.dice));
+  for(const set of builtInSets)addChoice(set.name,set.description,()=>applySet(set.mode,set.dice,undefined,set.darkRoom));
   for(const set of savedSets())addChoice(set.name,set.dice.map(die=>'D'+die.sides).join('・'),()=>applySet('normal',set.dice,set.resultMode));
  }
  async function openDraft(){
@@ -122,7 +119,7 @@
  }
  function updateToolbarTool(id){
   if(!toolbarToolName)return;
-  const names={'dice:normal':'ダイス','dice:astro':'アストロダイス','dice:iching':'易占ダイス'};
+  const names={'dice:normal':'ダイス','dice:astro':'アストロダイス','dice:iching':'易占ダイス','dice:calendar':'暦占ダイス'};
   const label=names[id]||source.selectedOptions[0]?.textContent||'カード';
   toolbarToolName.textContent=label.replace(/（.*?枚）/g,'').trim();
   updateSharedLabelCaption(id);
@@ -262,7 +259,7 @@
   felt.addEventListener(type,event=>event.stopPropagation());
  }
  function loadEngine(){
-  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0811').catch(err=>{
+  if(!loadPromise)loadPromise=import('./dice-table-engine.js?v=0812').catch(err=>{
    loadPromise=null;
    document.getElementById('dice-status').textContent='ダイスの読み込みに失敗しました：'+err.message;
    throw err;

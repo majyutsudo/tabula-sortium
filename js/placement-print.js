@@ -58,9 +58,9 @@ function dicePrintable(){
    svg.append(element('text',{x,y:labelY,'text-anchor':'middle','font-family':'sans-serif','font-size':4,fill:prefs.position==='center'?ink:'#252525'},label));
   }
  }
- const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE'}[mode]||'DICE';
+ const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE',calendar:'CALENDAR DICE'}[mode]||'DICE';
  svg.append(placementHeading(heading));
- const line=mode==='normal'?'合計 '+saved.results.reduce((a,b)=>a+b,0):
+ const line=mode==='calendar'?globalThis.TabulaStorage?.calendarResult(saved.results,saved.calendarYear)?.text:mode==='normal'?'合計 '+saved.results.reduce((a,b)=>a+b,0):
   mode==='iching'&&saved.hexagram?'本卦 第'+saved.hexagram.primary+'卦  →  之卦 第'+saved.hexagram.changed+'卦':'';
  if(line)svg.append(element('text',{x:105,y:252,'text-anchor':'middle','font-family':'sans-serif','font-size':5,fill:'#242424'},line));
  svg.append(element('text',{x:105,y:272,'text-anchor':'middle','font-family':'Georgia, serif','font-size':3.6,fill:'#666666'},'TABULA SORTIUM · PLACEMENT DIAGRAM'));

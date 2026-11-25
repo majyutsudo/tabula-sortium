@@ -14,9 +14,22 @@ export function setIChingColors(dice,scheme='blackUpper'){
  return dice;
 }
 export const TRIGRAMS=["乾","兌","離","震","巽","坎","艮","坤"];
+const facesFor=(count,label)=>Array.from({length:count},(_,i)=>{
+ const glyph=String(label(i+1));
+ return {glyph,name:glyph};
+});
 export const PRESETS={
  normal:{title:'DICE LAB',subtitle:'PHYSICS OF FORTUNE',result:'sum',description:'通常ダイス。種類・使用数・色を自由に設定できます。',dice:Array.from({length:3},()=>({sides:6,color:'#c7b48d',surface:'ring',markings:'number',label:'D6'}))},
  astro:{title:'ASTRO DICE',subtitle:'PLANETS · ZODIAC · HOUSES',result:'symbols',description:'3個の12面体。対向面の値は合計13。',dice:['天体','十二宮','ハウス'].map((label,i)=>({sides:12,color:['#c5a269','#6b81a1','#658c78'][i],surface:'ivory',markings:'astro',label,faces:astroFaces[i],opposites:'sum13'}))},
+ calendar:{title:'CALENDAR DICE',subtitle:'THE CALENDAR · THE CLOCK',result:'calendar',
+  description:'月日と時刻を占うTABULAオリジナルのダイスです。',dice:[
+   [12,'月','#e2d7af','ivory',n=>n],
+   [8,'日・十の位','#d9ba95','ivory',n=>Math.floor((n-1)/2)],
+   [10,'日・一の位','#ba9475','ivory',n=>n%10],
+   [6,'午前／午後','#666f98','standard',n=>n%2?'午前':'午後'],
+   [12,'時','#ebbe67','gold',n=>n],
+   [12,'分','#9dbea9','standard',n=>String(n%12*5).padStart(2,'0')]
+  ].map(([sides,label,color,surface,face])=>({sides,label,color,surface,markings:'calendar',faces:facesFor(sides,face)}))},
  iching:{title:'I CHING DICE',subtitle:'THE EIGHT TRIGRAMS · SIXTY-FOUR HEXAGRAMS',result:'hexagram',description:'八卦2個と動爻1個。上卦・下卦の色は切替可能。象牙風の漢字刻印。',dice:[
   {sides:8,color:'#e2d7af',surface:'ivory',markings:'engraved',label:'上卦（外卦）',ink:ICHING_INKS.black,faces:TRIGRAMS.map(glyph=>({glyph,name:glyph}))},
   {sides:8,color:'#e2d7af',surface:'ivory',markings:'engraved',label:'下卦（内卦）',ink:ICHING_INKS.red,faces:TRIGRAMS.map(glyph=>({glyph,name:glyph}))},

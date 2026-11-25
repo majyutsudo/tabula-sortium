@@ -2,7 +2,8 @@
 (function(root){'use strict';
 const roles={
  astro:['天体','十二宮','ハウス'],
- iching:['上卦','下卦','動爻']
+ iching:['上卦','下卦','動爻'],
+ calendar:['月','日・十の位','日・一の位','午前／午後','時','分']
 };
 function labelFor(dice,index,mode='off'){
  if(mode==='off')return '';

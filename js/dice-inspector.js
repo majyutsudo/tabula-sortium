@@ -114,6 +114,7 @@ export function faceDetail(mode, index, value, die, figure, primary, changed, li
   section(node,'キーワード',astroKeywords[index][value-1]);
   return node;
  }
+ if(mode==='calendar')return detail('暦占ダイス · '+die.label,face.name,figure);
  if(index<2){
   const [image,meaning]=trigrams[value-1];
   const node=detail('易占ダイス · '+die.label,String.fromCodePoint(0x2630+value-1)+' '+face.name,figure);
