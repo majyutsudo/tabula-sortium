@@ -274,11 +274,10 @@ function renderSettings(){
  fixed.replaceChildren();
  if(host.hidden){
   host.replaceChildren();
-  diceSettings.forEach(die=>fixed.append(dieUseControl(die,die.label+'を使う',apply=>{
+  diceSettings.forEach((die,i)=>fixed.append(dieUseControl(die,die.label+'を使う',apply=>{
    if(!ready||rolling||mixing)return;
    apply();
-   if(held)setHand(activeDiceIndices());
-   else syncHeldActions();
+   syncDieUse(i);
    emitDice();
   })));
   return;
@@ -297,7 +296,8 @@ function renderSettings(){
   }
   refreshFloatingLabels();syncMeshes();
   showResults(results?.some(Number.isInteger)?results:null);
-  if(held)setHand(activeDiceIndices());
+  if(action==='use')syncDieUse(index);
+  else if(held)setHand(activeDiceIndices());
   else syncHeldActions();
   emitDice();
  });
@@ -509,7 +509,7 @@ function restoreDice(saved,id,sizePercent){
   }
   held=!!saved.held;rolling=false;mixing=false;
   heldSelection=held?normalizeHeldSelection(saved.heldIndices):null;
-  objects.forEach(({mesh},i)=>{if(isHeldDie(i))mesh.visible=false});
+  objects.forEach(({mesh},i)=>{if(isHeldDie(i)||diceSettings[i].enabled===false)mesh.visible=false});
   syncHeldActions();
   showResults(Array.isArray(saved.results)&&saved.results.length===objects.length?saved.results:null);
   status.textContent=held?'IN HAND — 投げる準備ができました':'READY TO COLLECT';
@@ -1331,10 +1331,17 @@ function syncHeldActions(){
  collectButton.disabled=held||!activeDiceIndices().length;
  mixButton.disabled=!held;button.disabled=!held;
 }
+function syncDieUse(index){
+ if(held){setHand(activeDiceIndices());return}
+ const die=diceSettings[index];
+ objects[index].mesh.visible=die.enabled!==false
+  &&(!recordedResults?.some(Number.isInteger)||Number.isInteger(recordedResults?.[index]));
+ syncHeldActions();
+}
 function setHand(indices){
  held=indices.length>0;
  heldSelection=normalizeHeldSelection(indices);
- objects.forEach(({mesh},i)=>{mesh.visible=!isHeldDie(i)&&Number.isInteger(recordedResults?.[i])});
+ objects.forEach(({mesh},i)=>{mesh.visible=diceSettings[i].enabled!==false&&!isHeldDie(i)&&Number.isInteger(recordedResults?.[i])});
  syncHeldActions();
  mixCount=0;
  mixButton.textContent='⟳　混ぜる';
@@ -1456,7 +1463,7 @@ function releaseDice(options={}){
  const maxRadius=Math.max(...throwing.map(d=>d.radius));
  if(rollSelection)objects.forEach(({body,mesh},i)=>{
   if(rollSelection.has(i))return;
-  mesh.visible=Number.isInteger(recordedResults?.[i]);
+  mesh.visible=diceSettings[i].enabled!==false&&Number.isInteger(recordedResults?.[i]);
   if(mesh.visible)body.setBodyType(RAPIER.RigidBodyType.Fixed,false);
   else body.setEnabled(false);
  });
