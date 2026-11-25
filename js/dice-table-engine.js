@@ -1139,6 +1139,12 @@ function createGlowHalo(radius,die){
  scene.add(halo);
  return halo;
 }
+// Keep the simulated weight contrast modest for mixed-material throws.
+function diceDensity(surface){
+ if(surface==='brass')return 2.4;
+ if(surface==='ivory')return 1.15;
+ return 1;
+}
 function makeDie(i){
  const settings=diceSettings[i],sides=settings.sides;
  const half=cubeSize()/2,dieSpacing=1.65*diceScale;
@@ -1162,7 +1168,7 @@ function makeDie(i){
   RAPIER.ColliderDesc.cuboid(half,half,half):
   RAPIER.ColliderDesc.convexHull(new Float32Array(solid.vertices.flat()));
  if(!collider)throw Error('Convex collider failed for D'+sides);
- world.createCollider(collider.setRestitution(.38).setFriction(.76).setDensity(1)
+ world.createCollider(collider.setRestitution(.38).setFriction(.76).setDensity(diceDensity(settings.surface))
   .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS),body);
  // max radial extent, including cube vertices, for wall clearance.
  const radius=sides===6?Math.sqrt(3)*half:
