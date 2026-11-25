@@ -1141,7 +1141,7 @@ function createGlowHalo(radius,die){
 }
 // Keep the simulated weight contrast modest for mixed-material throws.
 function diceDensity(surface){
- if(surface==='brass')return 2.4;
+ if(surface==='brass')return 2.8;
  if(surface==='ivory')return 1.15;
  return 1;
 }
