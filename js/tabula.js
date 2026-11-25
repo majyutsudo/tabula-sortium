@@ -2941,7 +2941,7 @@ function openEnvironmentLibrary(){
    <hr>
    <div class="stack">
     <label>保存した作業環境 <select id="environmentSelect"></select></label>
-    <div class="row"><button type="button" id="environmentOpen">開く</button>
+    <div class="row environment-actions"><button type="button" id="environmentOpen">開く</button>
      <button type="button" id="environmentExportSaved">書き出す（JSON）</button>
      <button type="button" id="environmentDelete">削除</button></div>
    </div>
