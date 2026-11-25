@@ -2860,7 +2860,7 @@ function environmentDice(dice,id){
     (mode==='normal'?!dice.settings.length:![0,3].includes(dice.settings.length)))throw Error('ダイスの設定が不正です。');
  const settings=dice.settings.map(d=>{
   if(!d||![6,8,10,12,20].includes(d.sides)||!/^#[0-9a-f]{6}$/i.test(d.color))throw Error('ダイスの設定が不正です。');
-  return {sides:d.sides,color:d.color,surface:d.surface==='ivory'||d.surface==='brass'||d.surface==='ring'?d.surface:'standard',
+  return {sides:d.sides,color:d.color,surface:['ivory','brass','ring','glow'].includes(d.surface)?d.surface:'standard',
    faceStyle:typeof d.faceStyle==='string'?d.faceStyle:undefined,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):''};
  });
  return {schema:1,mode,settings,scheme:dice.scheme==='redUpper'?'redUpper':'blackUpper',
