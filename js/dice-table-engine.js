@@ -208,7 +208,7 @@ function showResults(results=null){
   values.append(tile);
  });
  total.hidden=symbolic;
- if(!symbolic){total.replaceChildren();const t=document.createElement('span');t.textContent='合計';const sum=document.createElement('strong');sum.textContent=results?.every(Number.isInteger)?String(results.reduce((a,b)=>a+b,0)):'—';total.append(t,sum);}
+ if(!symbolic){total.replaceChildren();const t=document.createElement('span');t.textContent='合計';const sum=document.createElement('strong');const rolled=results?.filter(Number.isInteger);sum.textContent=rolled?.length?String(rolled.reduce((a,b)=>a+b,0)):'—';total.append(t,sum);}
  const reading=diceDOM.getElementById('hexagram-reading');reading.hidden=current.result!=='hexagram';
  if(h){
   const changing=results[2], moved=diceSettings[2].faces[changing-1].name;
