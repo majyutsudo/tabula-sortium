@@ -806,7 +806,7 @@ function sortPhysicalCards(items,mode,deckId=settings.deckId){
  const indices=new Map(order.map((id,i)=>[id,i]));
  return items.slice().sort((a,b)=>(indices.get(a.id)??Number.MAX_SAFE_INTEGER)-(indices.get(b.id)??Number.MAX_SAFE_INTEGER))
   .map(c=>({...c,reversed:false}));
-}function setStatus(t){$('status').textContent=t}function play(type,volume=1){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(type==='flip'?360:160,t);osc.frequency.exponentialRampToValueAtTime(type==='flip'?180:90,t+.06);g.gain.setValueAtTime(.035*volume,t);g.gain.exponentialRampToValueAtTime(.001,t+.075);osc.connect(g);g.connect(audioCtx.destination);osc.start(t);osc.stop(t+.085)}catch(e){}}
+}function setStatus(t){$('status').textContent=t}function play(type,volume=1){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,osc=audioCtx.createOscillator(),g=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(type==='flip'?360:160,t);osc.frequency.exponentialRampToValueAtTime(type==='flip'?180:90,t+.06);g.gain.setValueAtTime(.065*volume,t);g.gain.exponentialRampToValueAtTime(.001,t+.075);osc.connect(g);g.connect(audioCtx.destination);osc.start(t);osc.stop(t+.085)}catch(e){}}
 // Prepare audio in the direct click gesture; animationend may run after the
 // browser's autoplay permission window. No audible sound is played here.
 function prepareOpeningSound(){if(!settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});}catch(e){}}
@@ -828,7 +828,7 @@ function playDiceImpact(strength){
   tap.type='triangle';tap.frequency.value=190+55*strength+Math.random()*45;
   tapLevel.gain.setValueAtTime(.42,time);
   tapLevel.gain.exponentialRampToValueAtTime(.004,time+.024);
-  envelope.gain.setValueAtTime(.058*strength,time);
+  envelope.gain.setValueAtTime(.043*strength,time);
   envelope.gain.exponentialRampToValueAtTime(.0001,time+.05);
   strike.connect(filter);filter.connect(envelope);
   tap.connect(tapLevel);tapLevel.connect(envelope);
