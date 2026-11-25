@@ -580,6 +580,7 @@ function emitDice(){const v=captureDice();if(v)window.TabulaTableTools?.saveDice
 
 window.TabulaDiceTable={
  snapshot:captureDice,
+ previewFinale:()=>startDiceFinale(objects.filter(die=>die.mesh.visible)),
  sizePercent:diceSizePercent,
  sizeLimits:{min:MIN_DICE_SIZE,max:MAX_DICE_SIZE,standard:DEFAULT_DICE_SIZE},
  changeSize:changeDiceSize,
@@ -1340,6 +1341,7 @@ function replaceDieAppearance(index,keepPose=true){
 }
 function destroyDie(obj){
  if(!obj)return;
+ glowingFaces.delete(obj);
  world.removeRigidBody(obj.body);
  scene.remove(obj.mesh);
  if(obj.halo)scene.remove(obj.halo);
@@ -1356,13 +1358,50 @@ function syncMeshes(){
   mesh.position.set(p.x,p.y,p.z);mesh.quaternion.set(q.x,q.y,q.z,q.w);
  }
 }
-function topFace(object){
+function topFaceIndex(object){
  const q=object.mesh.quaternion;let best=-Infinity,index=0;
  for(let i=0;i<object.normals.length;i++){
   const score=object.normals[i].clone().applyQuaternion(q).dot(up);
   if(score>best){best=score;index=i}
  }
- return object.faceNumbers[index];
+ return index;
+}
+function topFace(object){return object.faceNumbers[topFaceIndex(object)]}
+const diceFinaleColors={ritual:'#ffca83',mystic:'#a5d8ff',psychic:'#d6a1ff'};
+const glowingFaces=new Map();
+let diceFinale=null;
+function clearDiceFinale(){
+ for(const [die,{material,base,intensity}] of glowingFaces){
+  material.emissive.copy(base);
+  material.emissiveIntensity=die.halo?glowIntensity():intensity;
+ }
+ glowingFaces.clear();diceFinale=null;
+}
+function startDiceFinale(dice){
+ clearDiceFinale();
+ const color=diceFinaleColors[document.body.dataset.effectPreset||'ritual'];
+ if(!color||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ for(const die of dice){
+  if(!die.mesh.visible)continue;
+  const material=die.mesh.material[topFaceIndex(die)];
+  glowingFaces.set(die,{material,base:material.emissive.clone(),intensity:material.emissiveIntensity});
+ }
+ if(glowingFaces.size)diceFinale={start:performance.now(),color,tint:new THREE.Color(color),strength:0};
+}
+function updateDiceFinale(time){
+ if(!diceFinale)return;
+ const elapsed=(time-diceFinale.start)/1300;
+ if(elapsed>=1){clearDiceFinale();return}
+ const phase=Math.max(0,elapsed);
+ const strength=phase<.20?phase/.20:Math.pow((1-phase)/.80,2);
+ diceFinale.strength=strength;
+ const {tint}=diceFinale;
+ for(const [die,{material,base,intensity}] of glowingFaces){
+  const baseline=die.halo?glowIntensity():intensity;
+  const amount=strength*(die.halo ? .46 : .42);
+  material.emissive.setRGB(base.r*baseline+tint.r*amount,base.g*baseline+tint.g*amount,base.b*baseline+tint.b*amount);
+  material.emissiveIntensity=1;
+ }
 }
 function random(min,max){return min+Math.random()*(max-min)}
 function normalizeHeldSelection(indices){
@@ -1386,6 +1425,7 @@ function syncDieUse(index){
  syncHeldActions();
 }
 function setHand(indices){
+ clearDiceFinale();
  held=indices.length>0;
  heldSelection=normalizeHeldSelection(indices);
  objects.forEach(({mesh},i)=>{mesh.visible=diceSettings[i].enabled!==false&&!isHeldDie(i)&&Number.isInteger(recordedResults?.[i])});
@@ -1491,6 +1531,7 @@ function animateMix(dt){
 let rollSelection=null;
 function releaseDice(options={}){
  if(inspectingDice||!ready||rolling||mixing||!held)return false;
+ clearDiceFinale();
  rollSelection=heldSelection;
  heldSelection=null;
  window.TabulaTableTools?.prepareDiceSound?.();
@@ -1584,9 +1625,10 @@ function render(time){
      if(mesh.visible)body.setBodyType(RAPIER.RigidBodyType.Dynamic,false);
      else body.setEnabled(true);
     });
+    const justRolled=objects.filter((_,i)=>!rollSelection||rollSelection.has(i));
     rollSelection=null;
     showResults(results);
-    window.TabulaTableTools?.completeDiceRoll?.();
+    startDiceFinale(justRolled);
     status.textContent='THE DICE HAVE FALLEN';emitDice();
    }
   }
@@ -1597,6 +1639,7 @@ function render(time){
   halo.visible=darkRoom.checked&&mesh.visible;
   if(halo.visible)halo.position.set(mesh.position.x,.012,mesh.position.z);
  }
+ updateDiceFinale(time);
  renderer.render(scene,camera);
 }
 function createCanvasDiceRenderer(){
@@ -1666,6 +1709,10 @@ function createCanvasDiceRenderer(){
      ctx.font='bold '+Math.max(10,size*.42)+'px Georgia, serif';
      ctx.textAlign='center';ctx.textBaseline='middle';
      ctx.fillText(die.faces?.[value-1]?.glyph??String(value),0,sides===8||sides===20?size*.12:0);
+    }
+    if(diceFinale&&glowingFaces.has(object)){
+     ctx.filter='none';ctx.globalAlpha=.34*diceFinale.strength;
+     ctx.fillStyle=diceFinale.color;ctx.fill(shape);
     }
     ctx.restore();
    }
