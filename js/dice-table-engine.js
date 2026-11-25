@@ -296,7 +296,7 @@ function renderSettings(){
  const panel=diceDOM.getElementById('normal-dice-panel');
  const fixed=diceDOM.getElementById('fixed-use-settings');
  const calendar=current.id==='calendar';
- darkRoom.closest('label').hidden=calendar;
+ darkRoom.closest('label').hidden=current.id!=='normal';
  resultModeSelect.closest('label').hidden=current.id!=='normal';
  diceDOM.getElementById('result-mode-note').hidden=current.id!=='normal';
  calendarYearInput.closest('label').hidden=current.id!=='calendar';
@@ -465,6 +465,7 @@ function updateIChingColors(scheme){
 function switchPreset(id){
  if(!ready||rolling||mixing){diceDOM.getElementById('preset').value=current.id;return;}
  objects.forEach(destroyDie);objects=[];current=preset(id);diceSettings=current.dice;
+ if(id!=='normal'&&darkRoom.checked){darkRoom.checked=false;updateDarkRoom()}
  normalResultMode='latest';
  if(id==='iching')setIChingColors(diceSettings,ichingColorScheme);
  if(id==='astro'){
@@ -519,7 +520,7 @@ function restoreDice(saved,id,sizePercent){
  ichingColorScheme=valid&&id==='iching'&&saved.scheme==='redUpper'?'redUpper':'blackUpper';
  calendarYear=valid&&id==='calendar'&&TabulaStorage.validCalendarYear(saved.calendarYear)?saved.calendarYear:new Date().getFullYear();
  calendarYearInput.value=calendarYear;
- darkRoom.checked=valid&&id!=='calendar'&&saved.darkRoom===true;
+ darkRoom.checked=valid&&id==='normal'&&saved.darkRoom===true;
  switchPreset(id);
  forceSlider.value=valid&&Number.isFinite(saved.force)?String(Math.max(0,Math.min(100,saved.force))):forceSlider.defaultValue;
  updateForceLabel();
