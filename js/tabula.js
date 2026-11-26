@@ -2293,13 +2293,16 @@ function animateCardFromDeck(index,sourceRect){
  // Use the placed card itself: the destination frame may be rotated, but
  // its post-transform bounding box must NEVER become the flying card's size.
  const cardsOnTable=Array.from(zone.children).filter(el=>el.classList.contains('card'));
- const card=cardsOnTable[index];if(!card||!sourceRect||!card.animate)return Promise.resolve();
+ return animateDealtCard(cardsOnTable[index],sourceRect);
+}
+function animateDealtCard(card,sourceRect,pileAngle){
+ if(!card?.animate||!sourceRect)return Promise.resolve();
  const end=card.getBoundingClientRect();if(!end.width||!end.height)return Promise.resolve();
  if(card.classList.contains('faceup'))card.classList.add('instant-faceup');
  const visualScale=tableCamera.scale||1;
  const physicalWidth=card.offsetWidth*visualScale;
  const physicalHeight=card.offsetHeight*visualScale;
- const angle=Number.parseFloat(getComputedStyle(card).getPropertyValue('--rotation'))||0;
+ const angle=pileAngle??(Number.parseFloat(getComputedStyle(card).getPropertyValue('--rotation'))||0);
  // Equivalent angle within [-180,180): a 315-degree destination should
  // rotate through -45 degrees rather than making almost a full revolution.
  const arrivalAngle=((angle+180)%360+360)%360-180;
@@ -2308,7 +2311,7 @@ function animateCardFromDeck(index,sourceRect){
  ghost.style.cssText='position:fixed;pointer-events:none;margin:0;z-index:100000;left:'+endX+'px;top:'+endY+'px;width:'+physicalWidth+'px;height:'+physicalHeight+'px;transform:translate(-50%,-50%) rotate('+arrivalAngle+'deg);';
  // A cloned card leaves #zone, losing zone-scoped Worn rules. Copy the
  // rendered back directly to the flying face instead of adding new CSS.
- if(card.dataset.appearance==='worn'){
+ if(pileAngle!==undefined||card.dataset.appearance==='worn'){
   const originalBack=card.querySelector('.face.back');
   const ghostBack=ghost.querySelector('.face.back');
   if(originalBack&&ghostBack){
@@ -2547,22 +2550,10 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(document.getElem
   TabulaTablePiles.drawFromDeck(state,refillPile.id,opening);
   play('deal');render();saveLocal();
   setStatus((slot+1)+'番の空いた束に1枚補充しました。');
-  // Registered pile frames use a different DOM node from loose cards.
-  // Animate their newly dealt top face with the same 320-ms card flight.
   if(animateArrival&&settings.spread==='fourSeasons'){
    const face=[...$('zone').querySelectorAll('.table-pile')]
-    .find(el=>el.dataset.pileId===refillPile.id)?.querySelector('.table-pile-top');
-   if(face?.animate){
-    const end=face.getBoundingClientRect();
-    const dx=sourceRect.left+sourceRect.width/2-(end.left+end.width/2);
-    const dy=sourceRect.top+sourceRect.height/2-(end.top+end.height/2);
-    const motion=face.animate([
-     {transform:'translate('+dx+'px,'+dy+'px) scale(.96)',filter:'brightness(1.08)'},
-     {offset:.16,transform:'translate('+(dx*.85)+'px,'+(dy*.85-7)+'px) rotate(-3deg) scale(1.025)'},
-     {transform:'translate(0px,0px) scale(1)',filter:'brightness(1)'}
-    ],{duration:320,easing:'cubic-bezier(.22,.72,.25,1)'});
-    return motion.finished.catch(()=>{});
-   }
+    .find(el=>el.dataset.pileId===refillPile.id)?.querySelector('.table-pile-top[data-pile-index="0"]');
+   return animateDealtCard(face,sourceRect,Number(refillPile.angle)||0);
   }
   return Promise.resolve();
  }
@@ -4216,7 +4207,21 @@ function changeActiveSpread(nextSpread){
 }
 function restoreDealWithoutPrompt(){if(dualSession){setStatus('先に「カードを回収」を実行してください。');return false}if(!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length))return false;const pileCards=(state.tablePiles||[]).flatMap(p=>p.cards).map(TabulaPhysicalIdentity.preserveCard);if(Array.isArray(state.dealCheckpoint)){const listed=new Set(state.dealCheckpoint.map(c=>c.instanceId||c.id));state.deck=[...state.dealCheckpoint.map(c=>({...c})),...pileCards.filter(c=>!listed.has(c.instanceId||c.id))];}else{state.deck=[...pileCards,...(state.removed||[]),...state.placed.map(TabulaPhysicalIdentity.preserveCard),...state.deck];}state.tablePiles=[];state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();return true}
 function collectForNextReading(){if(dualSession){dualCollect();return}if(!state.placed.length&&!(state.removed||[]).length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('回収するカードがありません。');return}const returned=state.placed.map(TabulaPhysicalIdentity.preserveCard);const stacked=TabulaTablePiles.collect(state).map(TabulaPhysicalIdentity.preserveCard);state.deck=[...returned,...stacked,...(state.removed||[]).map(TabulaPhysicalIdentity.preserveCard),...state.deck.map(TabulaPhysicalIdentity.preserveCard)];state.placed=[];state.selected=null;state.completionShown=false;state.dealCheckpoint=null;state.removed=[];render();saveLocal();setStatus('配札と除外カードを回収しました。')}
-function returnPositions(){if(!state.placed.length){setStatus('戻すカードがありません。');return}for(const p of state.placed){if(p.slot!=null&&getSlots()[p.slot]){const slot=getSlots()[p.slot];p.x=slot.x;p.y=slot.y;p.angle=slot.angle;p.manualMoved=false;p.dragOrder=0;}else if(p.origin){p.x=p.origin.x;p.y=p.origin.y;p.angle=p.origin.angle;p.manualMoved=false;p.dragOrder=0;}}render();saveLocal();setStatus('卓のカード位置を元に戻しました。')}
+function returnPositions(){
+ const slots=getSlots();
+ const piles=(state.tablePiles||[]).filter(pile=>Number.isInteger(pile.slot)&&slots[pile.slot]);
+ if(!state.placed.length&&!piles.length){setStatus('戻すカードがありません。');return}
+ for(const card of state.placed){
+  const position=slots[card.slot]||card.origin;
+  if(!position)continue;
+  Object.assign(card,{x:position.x,y:position.y,angle:position.angle,manualMoved:false,dragOrder:0});
+ }
+ for(const pile of piles){
+  const {x,y,angle}=slots[pile.slot];
+  Object.assign(pile,{x,y,angle:angle||0,manualMoved:false});
+ }
+ render();saveLocal();setStatus('卓のカード位置を元に戻しました。');
+}
 $('quickPositions').onclick=returnPositions;
 $('addTablePile').onclick=()=>{
  if(dualSession||spreadWorkbench){setStatus('束の自由操作は現在、単独卓で利用できます。');return}

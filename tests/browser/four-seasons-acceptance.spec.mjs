@@ -112,3 +112,87 @@ for(const mode of ['independent','shared']){
   }
  });
 }
+
+async function recordPileFlights(page){
+ await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.addInitScript(()=>{
+  const animate=Element.prototype.animate;
+  window.pileFlights=[];
+  Element.prototype.animate=function(frames,options){
+   const animation=animate.call(this,frames,options);
+   if(this.classList.contains('table-pile-top')){
+    window.pileFlights.push({duration:options.duration,first:frames[0].transform,last:frames.at(-1).transform});
+    animation.playbackRate=100;
+   }
+   return animation;
+  };
+ });
+}
+
+test('Four Seasons deals all six pile cards with each selected flight',async ({page})=>{
+ await recordPileFlights(page);
+ await page.goto('/table.html');
+ await page.locator('#spreadQuickSelect').selectOption('fourSeasons');
+ const deal=page.locator('#quickDeal');
+ const modes=await page.evaluate(()=>Object.keys(TabulaDealAnimation.MODES));
+ for(const mode of modes){
+  await page.locator('#newSessionStandalone').click();
+  await page.locator('#dealAnimation').selectOption(mode);
+  const expectedDuration=await page.evaluate(id=>TabulaDealAnimation.create(id,{dx:100,dy:100}).duration,mode);
+  await page.evaluate(()=>{window.pileFlights=[]});
+  await deal.click();
+  await expect(deal).not.toContainText('中断');
+  await expect(page.locator('#zone .table-pile-top')).toHaveCount(6);
+  const flights=await page.evaluate(()=>window.pileFlights);
+  expect(flights.map(flight=>flight.duration)).toEqual(Array(6).fill(expectedDuration));
+  expect(flights.every(flight=>flight.first!==flight.last)).toBe(true);
+ }
+});
+
+for(const mode of ['single','independent']){
+ test('Four Seasons returns filled and empty pile frames in '+mode+' mode',async ({page})=>{
+  await recordPileFlights(page);
+  await page.goto('/table.html');
+  if(mode==='independent'){
+   await page.locator('#tableManagement .section-toggle').click();
+   await page.locator('#tableAddOpen').click();
+   await page.locator('#independentTableAdd').click();
+   await expect(page.locator('#workspaceTable')).toHaveValue('table2');
+  }
+  await page.locator('#spreadQuickSelect').selectOption('fourSeasons');
+  await page.locator('#dealAnimation').selectOption('spin');
+  await page.locator('#quickDeal').click();
+  await expect(page.locator('#zone .table-pile-top')).toHaveCount(6);
+  await expect(page.locator('#quickDeal')).not.toContainText('中断');
+  const {durations,spinDuration}=await page.evaluate(()=>({
+   durations:window.pileFlights.map(flight=>flight.duration),
+   spinDuration:TabulaDealAnimation.create('spin',{dx:100,dy:100}).duration
+  }));
+  expect(durations).toEqual(Array(6).fill(spinDuration));
+  const key=mode==='single'?'tabula_sortium_v01':'tabula_sortium_dual_session_v1';
+  const original=await page.evaluate(key=>{
+   const saved=JSON.parse(localStorage.getItem(key));
+   const table=saved.state||saved.tables.table2;
+   const originals=[table.tablePiles.find(pile=>pile.cards.length),table.tablePiles.find(pile=>!pile.cards.length)];
+   const snapshot=structuredClone(originals);
+   for(const pile of originals)Object.assign(pile,{x:18,y:76,angle:25,manualMoved:true});
+   localStorage.setItem(key,JSON.stringify(saved));
+   return snapshot;
+  },key);
+  await page.reload();
+  for(const pile of original){
+   const frame=page.locator('[data-pile-id="'+pile.id+'"]');
+   expect(await frame.evaluate(node=>[node.style.left,node.style.top])).toEqual(['18%','76%']);
+  }
+  await page.locator('#quickPositions').click();
+  await page.reload();
+  const restored=await page.evaluate(key=>{
+   const saved=JSON.parse(localStorage.getItem(key));
+   return (saved.state||saved.tables.table2).tablePiles;
+  },key);
+  for(const pile of original){
+   const actual=restored.find(item=>item.id===pile.id);
+   expect(actual).toMatchObject({x:pile.x,y:pile.y,angle:0,manualMoved:false,cards:pile.cards});
+  }
+ });
+}
