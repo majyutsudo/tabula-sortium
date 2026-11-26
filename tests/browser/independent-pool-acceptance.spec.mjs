@@ -12,6 +12,7 @@ test('independent table can start with a historical playing-card pack',async ({p
  await page.goto('/table.html');
  await showTableSetup(page);
  await page.locator('#independentDeckSelect').selectOption('playing-cards');
+ await expect(page.locator('#independentDeckPool')).toHaveValue('fiftyTwo');
  await page.locator('#independentDeckPool').selectOption('piquet32');
  await page.locator('#independentTableAdd').click();
 
@@ -68,3 +69,37 @@ for(const [deckName,deckId,ids] of [
   await expect(page.locator('#pool')).toHaveValue(deckId==='builtin'?'custom':'all');
  });
 }
+
+test('independent playing deck defaults to the current main selection',async ({page})=>{
+ await page.goto('/table.html');
+ await page.locator('#instrumentChoiceSection .section-toggle').click();
+ await page.locator('#deckLibrarySelect').selectOption('playing-cards');
+ await page.locator('#pool').selectOption('piquet32');
+ await showTableSetup(page);
+ const extraPool=page.locator('#independentDeckPool');
+ await expect(extraPool).toHaveValue('piquet32');
+ await page.locator('#pool').selectOption('euchre24');
+ await expect(extraPool).toHaveValue('euchre24');
+ await extraPool.selectOption('all');
+ await page.locator('#pool').selectOption('fiftyTwo');
+ await expect(extraPool).toHaveValue('all');
+ await page.locator('#independentTableAdd').click();
+ const saved=await workspace(page);
+ expect(saved.piles.A).toHaveLength(52);
+ expect(saved.piles.B).toHaveLength(54);
+});
+
+test('independent playing deck copies an individual card selection',async ({page})=>{
+ await page.goto('/table.html');
+ await page.locator('#instrumentChoiceSection .section-toggle').click();
+ await page.locator('#deckLibrarySelect').selectOption('playing-cards');
+ await page.locator('#pool').selectOption('custom');
+ const ids=['c_clubs_r1','c_hearts_r2'];
+ await checkCards(page,ids);
+ await showTableSetup(page);
+ await expect(page.locator('#independentDeckPool')).toHaveValue('custom');
+ await page.locator('#independentTableAdd').click();
+ const saved=await workspace(page);
+ expect(saved.piles.B.map(card=>card.id).sort()).toEqual(ids);
+ expect(saved.tables.table2.pool).toBe('custom');
+});

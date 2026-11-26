@@ -4076,7 +4076,7 @@ $('deckEditCurrent').addEventListener('click',()=>openDeckEditor(false));
 function customModal(){
  const selected=settings.pool==='custom'?customIds:selectedCards().map(c=>c.id);
  chooseCardSubset(settings.deckId,selected,ids=>{
-  customIds=ids;settings.pool='custom';$('pool').value='custom';initialize();
+  customIds=ids;settings.pool='custom';$('pool').value='custom';updateIndependentPool();initialize();
  });
 }
 function chooseCardSubset(deckId,selectedIds,onConfirm){
@@ -4107,7 +4107,7 @@ function chooseCardSubset(deckId,selectedIds,onConfirm){
   if(!ids.length){alert('カードを1枚以上選択してください。');return}
   closeModal();onConfirm(ids);
  };
-}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewSelectedEffect()};$('previewEffect').onclick=previewSelectedEffect;colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('カード構成は一組モードで変更してください。');return}if(e.target.value==='custom'){e.target.value=settings.pool;customModal();return}settings.pool=e.target.value;initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{if(changeActiveSpread(e.target.value))setStatus('展開法を切り替えました。山札の配列は維持しています。');else{e.target.value=settings.spread;syncSpreadShortcut();}};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
+}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewSelectedEffect()};$('previewEffect').onclick=previewSelectedEffect;colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('カード構成は一組モードで変更してください。');return}if(e.target.value==='custom'){e.target.value=settings.pool;customModal();return}settings.pool=e.target.value;updateIndependentPool();initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{if(changeActiveSpread(e.target.value))setStatus('展開法を切り替えました。山札の配列は維持しています。');else{e.target.value=settings.spread;syncSpreadShortcut();}};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
 $('resetSpreadDealOrder').onclick=()=>{settings.spreadDealOrders={...(settings.spreadDealOrders||{})};delete settings.spreadDealOrders[settings.spread];syncDealOrderField();saveLocal();setStatus('このスプレッドの配札順を番号順に戻しました。')};
 $('playingOrientationMarks').onchange=e=>{settings.playingOrientationMarks=e.target.checked;render();saveLocal()};
 $('reversals').onchange=e=>{
@@ -6084,18 +6084,23 @@ function independentDeckChoices(){
  p.value=Array.from(p.options).some(o=>o.value===preferred)?preferred:'builtin';
  updateIndependentPool();
 }
-let independentPoolDeck=null,independentPoolChoice='all',independentCustomIds=[];
+let independentPoolDeck=null,independentPoolChoice='all',independentPoolCustomized=false,independentCustomIds=[];
 function updateIndependentPool(){
  const pool=$('independentDeckPool'),choice=$('independentDeckSelect').value,dice=isDiceTool(choice);
  if(independentPoolDeck!==choice){
   independentPoolDeck=choice;
-  independentPoolChoice='all';
+  independentPoolCustomized=false;
   independentCustomIds=[];
  }
  if(!dice){
   const options=cardPoolOptions(choice);
+  const defaultPool=initialDeckSettings(choice).pool;
+  if(!independentPoolCustomized){
+   independentPoolChoice=choice===BUILTIN_PLAYING.id&&settings.deckId===choice?settings.pool:defaultPool;
+   independentCustomIds=independentPoolChoice==='custom'?customIds.slice():[];
+  }
+  if(!options.some(([value])=>value===independentPoolChoice))independentPoolChoice=defaultPool;
   syncCardPoolOptions(pool,options);
-  if(!options.some(([value])=>value===independentPoolChoice))independentPoolChoice='all';
   pool.value=independentPoolChoice;
  }
  pool.disabled=dice;
@@ -6110,6 +6115,7 @@ function editIndependentCustomPool(){
   :useMainSelection?customIds:cardsForPool(deckId,independentPoolChoice).map(card=>card.id);
  chooseCardSubset(deckId,selected,ids=>{
   independentCustomIds=ids;
+  independentPoolCustomized=true;
   independentPoolChoice='custom';
   updateIndependentPool();
  });
@@ -6121,6 +6127,7 @@ $('independentDeckPool').onchange=e=>{
   editIndependentCustomPool();
   return;
  }
+ independentPoolCustomized=true;
  independentPoolChoice=e.target.value;
  updateIndependentPool();
 };
