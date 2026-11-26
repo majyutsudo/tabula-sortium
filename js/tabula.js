@@ -4115,7 +4115,7 @@ function stopOpening(){
 }
 function openSequentially(){
  if(openingBusy)return;
- const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...(!dualSession?TabulaTablePiles.closedTopCards(state):[])];
+ const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...TabulaTablePiles.closedTopCards(state)];
  if(!closed.length){setStatus('開ける伏せ札がありません。');return}
  startOpening();
  const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;
@@ -4207,7 +4207,7 @@ function revealAllAtOnce(){
 async function revealAllFloating(){
  if(openingBusy)return;
  const targets=state.placed.map((card,index)=>({card,index})).filter(item=>!item.card.faceUp&&!item.card.auxiliaryPile);
- const piles=!dualSession?TabulaTablePiles.closedTopCards(state):[];
+ const piles=TabulaTablePiles.closedTopCards(state);
  const total=targets.length+piles.length;
  if(!total){setStatus('開ける伏せ札がありません。');return}
  startOpening();
@@ -4248,7 +4248,7 @@ async function openCeremonially(mode){
  const targets=state.placed.map((card,index)=>({card,index}))
   .filter(({card})=>!card.faceUp&&!card.auxiliaryPile)
   .sort((a,b)=>(a.card.slot??999)-(b.card.slot??999)||a.index-b.index);
- const piles=!dualSession?TabulaTablePiles.closedTopCards(state):[];
+ const piles=TabulaTablePiles.closedTopCards(state);
  const total=targets.length+piles.length;
  if(!total){setStatus('開ける伏せ札がありません。');return}
  const reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
