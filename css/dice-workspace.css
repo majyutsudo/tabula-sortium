@@ -312,3 +312,25 @@ body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:defa
 #dice-fixed-use-settings.calendar-use-settings{display:grid;gap:0}
 .calendar-die-rule{display:grid;grid-template-columns:minmax(10em,max-content) 1fr;align-items:center;gap:4px 12px;padding:7px 0;border-bottom:1px solid #a18b5830}
 @media(max-width:420px){.calendar-die-rule{grid-template-columns:1fr}}
+
+#dice-corner-result {
+ position:absolute;
+ right:12px;
+ bottom:10px;
+ z-index:2;
+ max-width:calc(100% - 24px);
+ padding:3px 8px;
+ border-radius:4px;
+ background:#151512eb;
+ color:#f3e9c1;
+ text-align:right;
+ font:600 clamp(12px,2vw,16px)/1.25 system-ui,sans-serif;
+ font-variant-numeric:tabular-nums;
+ pointer-events:none;
+}
+#dice-corner-result strong {
+ color:#ffcf83;
+ font-size:1.25em;
+ margin-inline-start:.28em;
+}
+#dice-corner-result span:empty + strong {margin-inline-start:0}

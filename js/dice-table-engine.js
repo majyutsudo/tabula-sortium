@@ -213,6 +213,15 @@ function dieDetail(index) {
  const lines=hexagram?ichingLines(...recordedResults):null;
  return faceDetail(current.id,index,value,diceSettings[index],faceFigure(objects[index],value),hexagram?.primary,hexagram?.changed,lines);
 }
+function updateCornerResult(rolled,sum){
+ const caption=diceDOM.getElementById('table-corner-bottom');
+ const result=diceDOM.getElementById('corner-result');
+ const show=current.id==='normal'&&rolled.length>0;
+ caption.hidden=show;
+ result.hidden=!show;
+ result.firstElementChild.textContent=show&&rolled.length>1?rolled.join(' + ')+' =':'';
+ result.lastElementChild.textContent=show?String(sum):'';
+}
 function showResults(results=null){
  recordedResults=Array.isArray(results)?results.slice():null;
  values.replaceChildren();
@@ -221,6 +230,8 @@ function showResults(results=null){
  const symbolic=current.result!=='sum';
  diceDOM.getElementById('result-tiles').classList.toggle('astro-results',symbolic);
  const rolled=results?.filter(Number.isInteger)??[];
+ const rolledSum=rolled.reduce((a,b)=>a+b,0);
+ updateCornerResult(rolled,rolledSum);
  const latest=current.id==='normal'&&normalResultMode==='latest';
  diceSettings.forEach((d,i)=>{
   const result=results?.[i];
@@ -244,7 +255,7 @@ function showResults(results=null){
   total.replaceChildren();
   const title=document.createElement('span');title.textContent='合計';
   const sum=document.createElement('strong');
-  sum.textContent=rolled.length?String(rolled.reduce((a,b)=>a+b,0)):'—';
+  sum.textContent=rolled.length?String(rolledSum):'—';
   total.append(title,sum);
  }
  const calendarReading=diceDOM.getElementById('calendar-reading');
