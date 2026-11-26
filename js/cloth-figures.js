@@ -15,7 +15,7 @@
   const square = '<rect x="2" y="2" width="196" height="196"/>';
   const horizontal = '<path d="M2 100H198"/>';
   const vertical = '<path d="M100 2V198"/>';
-  const gridLines = [41.2, 80.4, 119.6, 158.8].map(position =>
+  const gridLines = [2 + 196 / 3, 198 - 196 / 3].map(position =>
     '<path d="M2 ' + position + 'H198M' + position + ' 2V198"/>').join('');
   const figures = [
     ['none', 'なし', ''],
@@ -26,7 +26,7 @@
     ['horizontal-line', '横線（上下二分）', horizontal],
     ['vertical-line', '縦線（左右二分）', vertical],
     ['square-quarters', '四分割の正方形', square + horizontal + vertical],
-    ['square-grid', '5×5の方陣', square + gridLines],
+    ['square-grid', '3×3の方陣', square + gridLines],
     ['pentagram', '五芒星', star],
     ['circle-pentagram', '円と五芒星', circle + star],
     ['hexagram', '六芒星', '<path d="M100 2 184.87 149H15.13ZM100 198 15.13 51H184.87Z"/>'],
