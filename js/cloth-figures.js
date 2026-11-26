@@ -20,7 +20,7 @@
     ['twelve', '十二分円', circle + diameters],
     ['pentagram', '五芒星', star],
     ['circle-pentagram', '円と五芒星', circle + star],
-    ['circle-triangle', '円と外三角', '<circle cx="80" cy="100" r="76"/><path d="M180 80 198 111.18H162Z"/>'],
+    ['circle-triangle', '円と外三角', '<circle cx="100" cy="127" r="71"/><path d="M100 2 123 41.84H77Z"/>'],
   ];
 
   const drawing = (shape, tone, width) =>
