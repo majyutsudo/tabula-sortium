@@ -320,6 +320,9 @@
   if(toggle)toggle.setAttribute('aria-expanded','true');
   diceSelect.value=id;
   updateToolbarTool('dice:'+id);
+  if(!window.TabulaDiceTable?.isReady()){
+   document.getElementById('dice-status').textContent='物理エンジンを読み込み中…';
+  }
   loadEngine().then(()=>{
    if(token!==activationToken||!document.body.classList.contains('tabula-dice-mode'))return;
    window.TabulaDiceTable?.restore(snapshot,id);
@@ -360,4 +363,5 @@
   if(document.body.classList.contains('tabula-dice-mode'))window.TabulaDiceTable?.resize();
  });
  applyCurrentTable();
+ if(window.TabulaTableTools)document.documentElement.setAttribute('data-table-tools-ready','');
 })();

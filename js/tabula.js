@@ -6771,4 +6771,6 @@ try{
  }
 }catch(e){setStatus('共有卓の復元に失敗しました：'+e.message)}
 if(initial&&!storedExtraWorkspace())restoreEmptyStandaloneStock();
-dualRefreshControls(); })();
+dualRefreshControls();
+document.documentElement.setAttribute('data-table-core-ready','');
+})();
