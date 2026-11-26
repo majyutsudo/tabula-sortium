@@ -80,9 +80,10 @@ body.tabula-dice-mode .main>.table-shortcuts.dice-quick-actions{display:grid!imp
 #diceSettingsHolder .normal-config[hidden]{display:none!important}
 #diceResultsHolder .hexagram-reading[hidden],
 #diceResultsHolder #dice-total[hidden]{display:none!important}
-#diceResultsHolder .iching-outcome{display:flex;flex-direction:column;gap:8px}
+#diceResultsHolder{padding:0;max-width:none}
+#diceResultsHolder .iching-outcome{display:flex;flex-direction:column;gap:6px}
 #diceResultsHolder .hexagram-reading,#diceResultsHolder .results{padding:8px 10px;border:1px solid #baa77a70;border-radius:6px;background:#162b23;color:#e9d7b0}
-#diceResultsHolder .results{display:flex;align-items:center;gap:8px;box-sizing:border-box;min-height:104px}
+#diceResultsHolder .results{display:flex;align-items:center;gap:8px;box-sizing:border-box;min-height:0;padding:6px 10px}
 #diceResultsHolder #dice-values{display:flex;flex:1;justify-content:space-around;flex-wrap:wrap;gap:5px}
 #diceResultsHolder .result-die{display:flex;flex-direction:column;align-items:center;gap:3px}
 #diceResultsHolder .hexagram-reading:not([hidden]) + .results .result-die{
@@ -95,9 +96,9 @@ body.tabula-dice-mode .main>.table-shortcuts.dice-quick-actions{display:grid!imp
 #diceResultsHolder .astro-name{font-size:11px}
 #diceResultsHolder #dice-total{display:flex;box-sizing:border-box;flex:0 0 clamp(5.5rem,25%,14rem);flex-direction:column;align-items:center;gap:3px;min-width:4.5rem;border-left:1px solid #baa77a70;padding-inline:12px;font-size:11px;line-height:1.2;color:#f1c779}
 #diceResultsHolder #dice-total strong{font:700 42px/1.1 system-ui,sans-serif;font-variant-numeric:lining-nums tabular-nums}
-#diceStrengthHolder{width:100%;grid-column:1/-1;box-sizing:border-box;padding:5px 10px}
+#diceStrengthHolder{width:100%;max-width:none;grid-column:1/-1;box-sizing:border-box;padding:0}
 #diceStrengthHolder .force-control{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:12px}
-#diceStrengthHolder #dice-force{width:100%;accent-color:#c8a76e}
+#diceStrengthHolder #dice-force{width:100%;min-width:0;height:36px;margin:0;padding:0;accent-color:#c8a76e}
 #diceSettingsHolder .normal-config{background:#1d332a;border:1px solid #647462;border-radius:5px}
 #diceSettingsHolder .dice-settings{display:grid;grid-template-columns:1fr;gap:8px;padding:8px}
 .dice-dialog .die-setting,.dice-dialog .dice-config-toolbar,
@@ -161,6 +162,13 @@ body.tabula-dice-mode .main>.info{
 }
 body.tabula-dice-mode .main>.live-results:not([hidden]){
  display:block!important;
+ padding:5px 14px 10px;
+}
+body.tabula-dice-mode .live-results-title{margin-bottom:6px}
+body.tabula-dice-mode .main>.table-action-settings{
+ grid-template-columns:minmax(0,1fr);
+ gap:0;
+ padding:3px 14px 2px;
 }
 body.tabula-dice-mode #diceStrengthHolder .force-control{
  grid-template-columns:auto minmax(0,1fr) auto;
