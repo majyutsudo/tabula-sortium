@@ -276,7 +276,10 @@ body:is([data-visual-theme="minimal"],[data-visual-theme="lovely"]) aside .mini{
 body[data-effect-preset="silent"] .card,body[data-effect-preset="silent"] .card-inner{transition-duration:.20s!important}
 body[data-effect-preset="ritual"] .card-inner{transition-duration:.7s}
 body[data-effect-preset="mystic"] .card.faceup{filter:drop-shadow(0 0 8px #d3c28b77) drop-shadow(2px 5px 3px #000a)}
-body[data-effect-preset="psychic"] .card.faceup{filter:drop-shadow(0 0 12px #ab62eeaa) drop-shadow(0 0 4px #a3ceff80);animation:psychic-glow 2s ease-in-out infinite alternate}
+body[data-effect-preset="psychic"] .card.faceup{filter:drop-shadow(0 0 12px #ab62eeaa) drop-shadow(0 0 4px #a3ceff80)}
+body[data-effect-preset="psychic"] .card.faceup:not(:where(.normal-spread-open:not(.effect-finale) *)){
+ animation:psychic-glow 2s ease-in-out infinite alternate;
+}
 @keyframes psychic-glow{from{filter:drop-shadow(0 0 5px #a467e688) drop-shadow(2px 5px 3px #0009)}to{filter:drop-shadow(0 0 16px #b67aebcc) drop-shadow(2px 5px 3px #0009)}}
 @media(prefers-reduced-motion:reduce){body[data-effect-preset="psychic"] .card.faceup{animation:none!important}}
 
@@ -385,6 +388,10 @@ body[data-effect-preset="ritual"] .stage.effect-finale .zone-label {animation:no
                0 0 18px 5px rgba(127,65,226,.45);
   }
   body[data-effect-preset="silent"] .card.faceup{box-shadow:none}
+}
+/* Return completed readings to the ordinary card shadow after the finale. */
+.stage.normal-spread-open:not(.effect-finale) .card.faceup{
+ filter:drop-shadow(1px 4px 3px #000b);
 }
 /* Honor motion-reduction while keeping the static visual treatment. */
 @media (prefers-reduced-motion:reduce){
