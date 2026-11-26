@@ -12,12 +12,21 @@
   const star = '<path d="M100 2 157.60 179.28 6.80 69.72 193.20 69.72 42.40 179.28Z"/>';
   const diameters = Array.from({length: 6}, (_, i) =>
     '<path d="M2 100H198" transform="rotate(' + i * 30 + ' 100 100)"/>').join('');
+  const square = '<rect x="2" y="2" width="196" height="196"/>';
+  const horizontal = '<path d="M2 100H198"/>';
+  const vertical = '<path d="M100 2V198"/>';
+  const gridLines = [41.2, 80.4, 119.6, 158.8].map(position =>
+    '<path d="M2 ' + position + 'H198M' + position + ' 2V198"/>').join('');
   const figures = [
     ['none', 'なし', ''],
     ['circle', '円', circle],
     ['double-circle', '二重円', circle + '<circle cx="100" cy="100" r="49"/>'],
     ['quarters', '四分円', circle + '<path d="M2 100H198M100 2V198"/>'],
     ['twelve', '十二分円', circle + diameters],
+    ['square-grid', '5×5の方陣', square + gridLines],
+    ['square-quarters', '四分割の正方形', square + horizontal + vertical],
+    ['horizontal-line', '横線（上下二分）', horizontal],
+    ['vertical-line', '縦線（左右二分）', vertical],
     ['pentagram', '五芒星', star],
     ['circle-pentagram', '円と五芒星', circle + star],
     ['circle-triangle', '円と外三角', '<circle cx="100" cy="127" r="71"/><path d="M100 2 123 41.84H77Z"/>'],
@@ -47,7 +56,7 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.figure = id;
-    button.innerHTML = drawing(shape || '<path d="M45 100H155"/>', 'currentColor', 8);
+    button.innerHTML = drawing(shape, 'currentColor', 8);
     button.append(label);
     button.addEventListener('click', () => {
       selectFigure(id, label, shape);
