@@ -38,6 +38,28 @@
     '<g fill="none" stroke="' + tone + '" stroke-width="' + width + '" stroke-linejoin="round">' +
     shape + '</g></svg>';
 
+  const defaultSize = Number(size.defaultValue);
+  let onChange;
+
+  function normalize(id, percent) {
+    const figure = figures.some(([key]) => key === id) ? id : 'none';
+    const validSize = Number.isInteger(percent) && percent >= Number(size.min) && percent <= Number(size.max);
+    return {clothFigure: figure, clothFigureSize: validSize ? percent : defaultSize};
+  }
+
+  function renderSize(percent) {
+    size.value = String(percent);
+    cloth.style.setProperty('--cloth-figure-size', percent + 'cqmin');
+    sizeValue.value = percent + '%';
+  }
+
+  function render(id, percent) {
+    const config = normalize(id, percent);
+    const [, label, shape, viewBox] = figures.find(([key]) => key === config.clothFigure);
+    renderSize(config.clothFigureSize);
+    selectFigure(config.clothFigure, label, shape, viewBox);
+  }
+
   function selectFigure(id, label, shape, viewBox) {
     cloth.classList.toggle('has-figure', Boolean(shape));
     if (shape) {
@@ -60,7 +82,7 @@
     button.innerHTML = drawing(shape, 'currentColor', 8, viewBox);
     button.append(label);
     button.addEventListener('click', () => {
-      selectFigure(id, label, shape, viewBox);
+      onChange?.(id, Number(size.value));
       menu.open = false;
       summary.focus();
     });
@@ -74,11 +96,15 @@
       summary.focus();
     }
   });
-  size.addEventListener('input', () => {
-    cloth.style.setProperty('--cloth-figure-size', size.value + 'cqmin');
-    sizeValue.value = size.value + '%';
+  size.addEventListener('input', () => renderSize(Number(size.value)));
+  size.addEventListener('change', () => {
+    const selected = options.querySelector('[aria-pressed="true"]');
+    onChange?.(selected?.dataset.figure, Number(size.value));
   });
 
-  const initial = new URLSearchParams(location.search).get('cloth') === 'velour' ? 1 : 0;
-  selectFigure(...figures[initial]);
+  window.TabulaClothFigures = {
+    normalize,
+    render,
+    bind(handler) { onChange = handler; },
+  };
 })();

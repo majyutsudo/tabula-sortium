@@ -415,7 +415,7 @@ const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.
    Mutable preference maps are recreated for every use, never shared by reference. */
 const DEFAULT_SETTINGS=Object.freeze({
  deckId:'builtin',cutCount:3,shuffleMethod:'overhand',pool:'all',cardDesign:'standard',
- spread:'celtic',color:0,altar:false,labels:true,crossLabelLayer:'front',
+ spread:'celtic',color:0,clothFigure:'none',clothFigureSize:76,altar:false,labels:true,crossLabelLayer:'front',
  sound:false,reversals:true,visualTheme:'classic',effectPreset:'ritual',
  dealAnimation:'standard',openMode:'normal',framesVisible:false,presetSnap:true,
  initialOrder:'random',quickWashDirection:'random',quickWashRounds:1,
@@ -2213,6 +2213,7 @@ function hideFramesForDeal(){
  if(spreadFramePolicy().hideOnDeal&&settings.framesVisible!==false&&!spreadWorkbench)setFrameVisibility(false,false);
 }
 function render(){
+ TabulaClothFigures.render(settings.clothFigure,settings.clothFigureSize);
  stopFreeSlide();
  syncFrameVisibility();syncPresetSnap();
  alignRegisteredSpreadPositions();
@@ -2861,6 +2862,7 @@ function environmentSettings(source){
   if(typeof value==='boolean'&&typeof item==='boolean')out[key]=item;
   if(typeof value==='string'&&typeof item==='string'&&item.length<=(lengths[key]||300))out[key]=item;
  }
+ Object.assign(out,TabulaClothFigures.normalize(source.clothFigure,source.clothFigureSize));
  if(validCardSize(source.cardSize))out.cardSize=source.cardSize;
  if(Number.isFinite(source.deckPosition?.x)&&Number.isFinite(source.deckPosition?.y)){
   out.deckPosition={x:source.deckPosition.x,y:source.deckPosition.y};
@@ -2908,6 +2910,7 @@ function environmentTable(t){
  const out={name:typeof t.name==='string'?t.name.slice(0,80):'',spread:t.spread||'free',
   cardSize:validCardSize(t.cardSize)?t.cardSize:undefined,deckId:t.deckId,pool:t.pool,
   color:Number.isInteger(t.color)?t.color:0,altar:!!t.altar,
+  ...TabulaClothFigures.normalize(t.clothFigure,t.clothFigureSize),
   candles:environmentSettings({candles:t.candles}).candles,savedSettings,diceSnapshot:tool.dice};
  if(t.toolId)out.toolId=tool.id;
  return out;
@@ -3099,6 +3102,7 @@ function backupMultiWorkspace(){
   t.spread=settings.spread;t.cardSize=zoom;
   if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;}
   t.color=settings.color;t.altar=!!settings.altar;
+  t.clothFigure=settings.clothFigure;t.clothFigureSize=settings.clothFigureSize;
   t.candles=dualClone(altarCandles());t.selected=state.selected;
   t.completionShown=state.completionShown;t.dealCheckpoint=dualClone(state.dealCheckpoint);
   t.cutStage=dualClone(state.cutStage);
@@ -3571,7 +3575,7 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');workflowOptions?.onComplete?.(true);
  }
 }
-function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){if(dualSession)return dualSave();try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;TabulaPhysicalIdentity.ensureSingle(persistedState);localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}));return true}catch(e){setStatus('このブラウザでは保存できません。');return false}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{})};
+function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){if(dualSession)return dualSave();try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;TabulaPhysicalIdentity.ensureSingle(persistedState);localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}));return true}catch(e){setStatus('このブラウザでは保存できません。');return false}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{}),...TabulaClothFigures.normalize(data.settings?.clothFigure,data.settings?.clothFigureSize)};
  if(!settings.deckBackColors||typeof settings.deckBackColors!=='object'){
   // Legacy versions shared the active back tone across decks. Do not let
   // LENORMAND's green contaminate the restored TAROT default.
@@ -6045,7 +6049,7 @@ function independentTableWorkspace(selectedTool=$('independentDeckSelect').value
  const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(idsA,idsB,{spread:settings.spread}),'table2','追加卓Ⅰ');
  const own=c=>({...c,instanceId:'A:'+c.id,sourceDeck:'A'});
  w.workspaceKind='independent';w.piles.A=state.deck.map(own);
- Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),tablePiles:(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)})),spread:settings.spread,cardSize:zoom,toolId:activeToolId(),diceSnapshot:activeDiceSnapshot(),deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:dualClone(settings)});
+ Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),tablePiles:(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)})),spread:settings.spread,cardSize:zoom,toolId:activeToolId(),diceSnapshot:activeDiceSnapshot(),deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,clothFigure:settings.clothFigure,clothFigureSize:settings.clothFigureSize,altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:dualClone(settings)});
  const extraSettings=dualClone(settings);
  extraSettings.deckId=deckId;extraSettings.pool=pool==='included'?'all':pool;
  extraSettings.reversals=reversalsForDeck(deckId,extraSettings);
@@ -6088,7 +6092,8 @@ function sharedTableWorkspace(){
  w.tables.table1.spread=settings.spread;w.tables.table1.cardSize=zoom;
  w.tables.table1.spreadDealProgress=dualClone(state.spreadDealProgress||null);
  w.tables.table1.waiteFacing=state.waiteFacing||null;
- w.tables.table1.color=settings.color;w.tables.table1.altar=!!settings.altar;
+ w.tables.table1.color=settings.color;
+ w.tables.table1.clothFigure=settings.clothFigure;w.tables.table1.clothFigureSize=settings.clothFigureSize;w.tables.table1.altar=!!settings.altar;
  w.tables.table1.candles=dualClone(altarCandles());
  w.tables.table2.name='追加卓Ⅰ';w.tables.table2.spread='free';
  w.tables.table2.cardSize=spreadCardSize('free');
@@ -6127,6 +6132,7 @@ function dualFresh(){
  w.tables.table2.spread='free';w.tables.table2.cardSize=spreadCardSize('free');
  // Give each physical table its own persistent visual identity.
  w.tables.table1.name='卓Ⅰ';w.tables.table1.color=settings.color;
+ w.tables.table1.clothFigure=settings.clothFigure;w.tables.table1.clothFigureSize=settings.clothFigureSize;
  w.tables.table1.altar=!!settings.altar;w.tables.table1.candles=dualClone(altarCandles());
  w.tables.table2.name='卓Ⅱ';w.tables.table2.color=colors.findIndex(([name])=>name==='ダークレッド');
  w.tables.table2.altar=!!settings.altar;w.tables.table2.candles=dualClone(altarCandles());
@@ -6140,7 +6146,9 @@ function dualCapture(){
  t.tablePiles=dualClone(state.tablePiles||[]);
  t.spread=settings.spread;t.cardSize=zoom;
  if(isIndependentTables()){t.deckId=settings.deckId;t.pool=settings.pool;t.savedSettings=dualClone(settings);}
- t.color=settings.color;t.altar=!!settings.altar;t.candles=dualClone(altarCandles());
+ t.color=settings.color;t.altar=!!settings.altar;
+ t.clothFigure=settings.clothFigure;t.clothFigureSize=settings.clothFigureSize;
+ t.candles=dualClone(altarCandles());
  t.selected=state.selected;t.completionShown=state.completionShown;
  t.dealCheckpoint=dualClone(state.dealCheckpoint);
  t.spreadDealProgress=dualClone(state.spreadDealProgress||null);
@@ -6170,6 +6178,7 @@ function dualRestoreView(){
   settings.cardBackColor=d?.backColor||(dualSession.backColors?.[dualSession.activePile]||'sepia');
  }
  settings.color=Number.isInteger(t.color)&&t.color>=0&&t.color<colors.length?t.color:0;
+ Object.assign(settings,TabulaClothFigures.normalize(t.clothFigure,t.clothFigureSize));
  settings.altar=typeof t.altar==='boolean'?t.altar:!!settings.altar;
  settings.candles=Array.isArray(t.candles)?dualClone(t.candles):dualClone(altarCandles());
  selectedCandle=null;
@@ -6525,6 +6534,7 @@ $('dualClear').onclick=()=>{
    if(isIndependentTables()){settings.deckId=main.deckId||'builtin';settings.pool=main.pool||'all';}
    if(settings.deckId===BUILTIN_PLAYING.id)settings.playingBackColor=dualBackTone('A');
    settings.color=main.color??settings.color;
+   Object.assign(settings,TabulaClothFigures.normalize(main.clothFigure,main.clothFigureSize));
    settings.altar=typeof main.altar==='boolean'?main.altar:settings.altar;
    settings.candles=Array.isArray(main.candles)?dualClone(main.candles):settings.candles;
    setCardSize(validCardSize(main.cardSize)?main.cardSize:spreadCardSize(settings.spread),false);
@@ -6592,8 +6602,13 @@ positionDualDock();
 window.addEventListener('resize',positionDualDock);
 installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
+TabulaClothFigures.bind((id,percent)=>{
+ Object.assign(settings,TabulaClothFigures.normalize(id,percent));
+ TabulaClothFigures.render(settings.clothFigure,settings.clothFigureSize);
+ saveLocal();
+});
 const initial=localStorage.getItem(KEY);
-if(initial){restoreLocal()}else{resetFramesForSpread();setCardSize(spreadCardSize(settings.spread));sync();initialize()}
+if(initial){restoreLocal()}else{if(new URLSearchParams(location.search).get('cloth')==='velour')settings.clothFigure='circle';resetFramesForSpread();setCardSize(spreadCardSize(settings.spread));sync();initialize()}
 try{
  const raw=localStorage.getItem(DUAL_SESSION_KEY);
  if(raw){
