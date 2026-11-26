@@ -114,7 +114,7 @@ test('table tool transitions share the deck replacement and preserve independent
  assert.match(js,/notifyTool\(\);setStatus\(/);
  assert.match(js,/toolId:isDice\?selectedTool/);
  assert.match(js,/diceSnapshot:activeDiceSnapshot\(\)/);
- assert.match(js,/mainToolState=\{id:dualSession\.tables\.table1\.toolId/);
+ assert.match(js,/mainToolState=\{id:main\.toolId\|\|'card:'\+settings\.deckId,dice:main\.diceSnapshot/);
 });
 test('dice state is serialized with actual physics poses and restored',()=>{
  const engine=file('js/dice-table-engine.js');

@@ -864,7 +864,25 @@ function soundAtAnimationEnd(node,animationName,volume=1){
  node.addEventListener('animationend',event=>{
   if(event.target===node&&event.animationName===animationName)play('flip',volume);
  },{once:false});
-}function initialize(){
+}
+function freshStandaloneStock(){
+ const randomOrder=settings.initialOrder==='random';
+ const stock=TabulaPhysicalIdentity.nextReading(state,selectedCards(),{reversals:randomOrder&&settings.reversals});
+ return randomOrder?randomize(stock):sortPhysicalCards(stock,settings.initialOrder);
+}
+function restoreEmptyStandaloneStock(){
+ if(dualSession||isDiceTool(activeToolId())||state.deck.length||state.placed.length
+    ||(state.removed||[]).length||(state.tablePiles||[]).some(pile=>pile.cards.length))return;
+ const deck=freshStandaloneStock();
+ if(!deck.length){
+  setStatus('山札を復元できませんでした。「使用する道具」でカード構成を選び直してください。');
+  return;
+ }
+ state.deck=deck;state.dealCheckpoint=null;
+ render();
+ if(saveLocal())setStatus('カード構成から山札を復元しました（'+deck.length+'枚）。');
+}
+function initialize(){
  clearTableUndo();
  // A new reading uses the selected spread's saved/default card size.
  applySpreadCardSize(settings.spread);
@@ -887,9 +905,7 @@ function soundAtAnimationEnd(node,animationName,volume=1){
   return;
  }
  // Preserve the selected frame presentation when starting a new reading.
- state={deck:(settings.initialOrder==='random'
-  ?randomize(TabulaPhysicalIdentity.nextReading(state,selectedCards(),{reversals:settings.reversals}))
-  :sortPhysicalCards(TabulaPhysicalIdentity.nextReading(state,selectedCards()),settings.initialOrder).map(c=>settings.reversals?c:{...c,reversed:false})),
+ state={deck:freshStandaloneStock(),
   placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};initializePresetFrames(state,settings.spread);render();setStatus(`新しい占いを始めました（山札${state.deck.length}枚）。`);saveLocal()}function defaultDealOrder(spread){return TabulaCardRules.defaultDealOrder(presets,spread)}
 function getDealOrder(spread=settings.spread){
  const order=TabulaCardRules.getDealOrder(presets,spread,settings.spreadDealOrders);
@@ -3603,14 +3619,22 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');workflowOptions?.onComplete?.(true);
  }
 }
-function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveLocal(){if(dualSession)return dualSave();try{settings.cardSize=zoom;const persistedState=spreadWorkbench?.savedSession||state;TabulaPhysicalIdentity.ensureSingle(persistedState);localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings,state:persistedState,customIds,recipes,recipeId}));return true}catch(e){setStatus('このブラウザでは保存できません。');return false}}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{}),...TabulaClothFigures.normalize(data.settings?.clothFigure,data.settings?.clothFigureSize)};
+function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveStandaloneWorkspace(config,persistedState){
+ TabulaPhysicalIdentity.ensureSingle(persistedState);
+ localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings:config,state:persistedState,customIds,recipes,recipeId}));
+}
+function saveLocal(){
+ if(dualSession)return dualSave();
+ try{settings.cardSize=zoom;saveStandaloneWorkspace(settings,spreadWorkbench?.savedSession||state);return true}
+ catch(e){setStatus('このブラウザでは保存できません。');return false}
+}function restoreLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){setStatus('保存された状態はありません。');return}const data=JSON.parse(raw);if(!TabulaStorage.supportsSchema(data.schemaVersion))throw Error('Unsupported workspace schema version');settings={...settings,...(data.settings||{}),...TabulaClothFigures.normalize(data.settings?.clothFigure,data.settings?.clothFigureSize)};
  if(!settings.deckBackColors||typeof settings.deckBackColors!=='object'){
   // Legacy versions shared the active back tone across decks. Do not let
   // LENORMAND's green contaminate the restored TAROT default.
   settings.deckBackColors={builtin:settings.deckId==='builtin'&&settings.cardBackColor!=='green'&&Object.hasOwn(TABULA_BACK_PALETTE,settings.cardBackColor)?settings.cardBackColor:'sepia',[BUILTIN_LENORMAND.id]:'green'};
   if(settings.deckId==='builtin')settings.cardBackColor=settings.deckBackColors.builtin;
  }
- if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(data.environmentStart&&validCardSize(data.settings?.cardSize)?data.settings.cardSize:settings.spread==='grandStar'?spreadCardSize('grandStar'):(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread)));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
+ if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(data.environmentStart&&validCardSize(data.settings?.cardSize)?data.settings.cardSize:settings.spread==='grandStar'?spreadCardSize('grandStar'):((!state.deck.length||state.placed.length||(state.tablePiles||[]).some(pile=>pile.cards.length))?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread)));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
 function updateStandaloneAvailability(){const cutting=!!document.getElementById('physicalCutOverlay');const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash||cutting;w.title=cutting?'カット中はウォッシュできません':noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}for(const id of ['quickShuffle','shuffle','manualShuffle']){const button=$(id);if(button)button.disabled=cutting||shuffleBusy}if(c){c.disabled=noCut||cutting;c.title=cutting?'カット中です':noCut?'カットは「なし」に設定されています':'山札をカット'}for(const id of ['quickDeal','deal','draw','quickOpen','quickRevealAll','revealAll']){const button=$(id);if(button&&cutting)button.disabled=true}}function sync(){syncDeckReversals();if(activeBlueprint())settings.cardDesign='simple';else if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';updateAppearanceControls();refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';const poolInput=$('pool');
  const poolOptions=cardPoolOptions(settings.deckId);
  syncCardPoolOptions(poolInput,poolOptions);
@@ -6573,39 +6597,46 @@ $('dualClear').onclick=()=>{
  if(isDiceTool(activeToolId())&&window.TabulaDiceTable?.busy?.()){setStatus('ダイスの投擲・混合が終了してから追加卓を片付けてください。');return}
  if(!dualSession&&!storedExtraWorkspace()){dualRefreshControls();return}
  if(!confirm(isSharedTables()?'追加卓を片付け、追加卓にあるカードを共有山札に戻しますか？ メイン卓の配札と保存済みの占い記録は残ります。':isIndependentTables()?'追加卓の独立デッキと配札を片付けますか？ メイン卓の山札・配札と占い記録は残ります。':'追加卓Ⅰ・Ⅱの配札とデッキA・Bの保存状態をすべて片付けますか？ メイン卓と保存済みの占い記録は維持します。'))return;
- // Restore the single-table view first; never delete its reading.
- if(dualSession){
-  dualSave();
-  if(isSharedTables()||isIndependentTables()){
-   // The surviving main table and all remaining physical cards become
-   // the standalone reading. Nothing is duplicated or silently lost.
-   const main=dualSession.tables.table1,extra=dualSession.tables.table2;
-   const oldSettings=main.savedSettings||dualSingleBackup?.settings;
-   if(oldSettings)settings=dualClone(oldSettings);
-   const strip=c=>{const {instanceId,sourceDeck,...rest}=c;return rest};
-   state={deck:[...dualSession.piles.A,...(isSharedTables()?(extra?.placed||[]):[]),...(isSharedTables()?(extra?.removed||[]):[])].map(strip),
-    placed:(main.placed||[]).map(strip),removed:(main.removed||[]).map(strip),
-    cutStage:null,selected:main.selected??null,completionShown:!!main.completionShown,dealCheckpoint:null,
- spreadDealProgress:dualClone(main.spreadDealProgress||null),waiteFacing:main.waiteFacing||null};
-   settings.spread=main.spread||settings.spread;
-   if(isIndependentTables()){settings.deckId=main.deckId||'builtin';settings.pool=main.pool||'all';}
-   if(settings.deckId===BUILTIN_PLAYING.id)settings.playingBackColor=dualBackTone('A');
-   settings.color=main.color??settings.color;
-   Object.assign(settings,TabulaClothFigures.normalize(main.clothFigure,main.clothFigureSize));
-   settings.altar=typeof main.altar==='boolean'?main.altar:settings.altar;
-   settings.candles=Array.isArray(main.candles)?dualClone(main.candles):settings.candles;
-   setCardSize(validCardSize(main.cardSize)?main.cardSize:spreadCardSize(settings.spread),false);
-  }else{
-   const old=dualSingleBackup;
-   if(old){state=old.state;settings=old.settings;setCardSize(old.zoom,false)}
-  }
-  if(isSharedTables()||isIndependentTables()){
-   mainToolState={id:dualSession.tables.table1.toolId||'card:'+settings.deckId,dice:dualSession.tables.table1.diceSnapshot||null};storeMainTool();
-  }
-  dualSession=null;dualSingleBackup=null;
+ if(dualSession&&!dualSave())return;
+ const returnToMain=isSharedTables()||isIndependentTables();
+ let nextState=state,nextSettings=settings,nextZoom=zoom;
+ if(returnToMain){
+  const main=dualSession.tables.table1,extra=dualSession.tables.table2;
+  const strip=c=>{const {instanceId,sourceDeck,...rest}=c;return rest};
+  const returned=isSharedTables()
+   ?[...extra.placed,...(extra.removed||[]),...(extra.tablePiles||[]).flatMap(pile=>pile.cards)]
+   :[];
+  nextState={
+   deck:[...dualSession.piles.A.map(strip),...returned.map(c=>strip(TabulaPhysicalIdentity.preserveCard(c)))],
+   placed:main.placed.map(strip),removed:(main.removed||[]).map(strip),
+   tablePiles:(main.tablePiles||[]).map(pile=>({...pile,cards:pile.cards.map(strip)})),
+   cutStage:null,selected:main.selected??null,completionShown:!!main.completionShown,dealCheckpoint:null,
+   spreadDealProgress:dualClone(main.spreadDealProgress||null),waiteFacing:main.waiteFacing||null
+  };
+  nextSettings=dualClone(main.savedSettings||dualSingleBackup?.settings||settings);
+  nextSettings.spread=main.spread||nextSettings.spread;
+  if(isIndependentTables()){nextSettings.deckId=main.deckId||'builtin';nextSettings.pool=main.pool||'all';}
+  if(nextSettings.deckId===BUILTIN_PLAYING.id)nextSettings.playingBackColor=dualBackTone('A');
+  nextSettings.color=main.color??nextSettings.color;
+  Object.assign(nextSettings,TabulaClothFigures.normalize(main.clothFigure,main.clothFigureSize));
+  nextSettings.altar=typeof main.altar==='boolean'?main.altar:nextSettings.altar;
+  if(Array.isArray(main.candles))nextSettings.candles=dualClone(main.candles);
+  nextZoom=validCardSize(main.cardSize)?main.cardSize:spreadCardSize(nextSettings.spread);
+ }else if(dualSession&&dualSingleBackup){
+  nextState=dualSingleBackup.state;nextSettings=dualSingleBackup.settings;nextZoom=dualSingleBackup.zoom;
  }
- try{localStorage.removeItem(DUAL_SESSION_KEY)}catch(e){setStatus('追加卓を片付けられませんでした：'+e.message);return}
- sync();render();saveLocal();dualRefreshControls();notifyTool();
+ // Persist the main reading before dropping the saved additional workspace.
+ try{
+  saveStandaloneWorkspace({...nextSettings,cardSize:nextZoom},nextState);
+  localStorage.removeItem(DUAL_SESSION_KEY);
+ }catch(e){setStatus('追加卓を片付けられませんでした：'+e.message);return}
+ state=nextState;settings=nextSettings;setCardSize(nextZoom,false);
+ if(returnToMain){
+  const main=dualSession.tables.table1;
+  mainToolState={id:main.toolId||'card:'+settings.deckId,dice:main.diceSnapshot||null};storeMainTool();
+ }
+ dualSession=null;dualSingleBackup=null;
+ sync();render();dualRefreshControls();notifyTool();
  setStatus('追加卓を片付けました。');
 };
 $('workspaceTable').onchange=e=>{
@@ -6682,4 +6713,5 @@ try{
   }
  }
 }catch(e){setStatus('共有卓の復元に失敗しました：'+e.message)}
+if(initial&&!storedExtraWorkspace())restoreEmptyStandaloneStock();
 dualRefreshControls(); })();
