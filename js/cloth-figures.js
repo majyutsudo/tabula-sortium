@@ -29,6 +29,7 @@
     ['square-grid', '5×5の方陣', square + gridLines],
     ['pentagram', '五芒星', star],
     ['circle-pentagram', '円と五芒星', circle + star],
+    ['hexagram', '六芒星', '<path d="M100 2 184.87 149H15.13ZM100 198 15.13 51H184.87Z"/>'],
     ['circle-triangle', '円と外三角', '<circle cx="100" cy="127" r="71"/><path d="M100 -5 123 34.84H77Z"/>', '0 -10 200 210'],
   ];
 
