@@ -23,24 +23,24 @@
     ['double-circle', '二重円', circle + '<circle cx="100" cy="100" r="49"/>'],
     ['quarters', '四分円', circle + '<path d="M2 100H198M100 2V198"/>'],
     ['twelve', '十二分円', circle + diameters],
-    ['square-grid', '5×5の方陣', square + gridLines],
-    ['square-quarters', '四分割の正方形', square + horizontal + vertical],
     ['horizontal-line', '横線（上下二分）', horizontal],
     ['vertical-line', '縦線（左右二分）', vertical],
+    ['square-quarters', '四分割の正方形', square + horizontal + vertical],
+    ['square-grid', '5×5の方陣', square + gridLines],
     ['pentagram', '五芒星', star],
     ['circle-pentagram', '円と五芒星', circle + star],
-    ['circle-triangle', '円と外三角', '<circle cx="100" cy="127" r="71"/><path d="M100 2 123 41.84H77Z"/>'],
+    ['circle-triangle', '円と外三角', '<circle cx="100" cy="127" r="71"/><path d="M100 -5 123 34.84H77Z"/>', '0 -10 200 210'],
   ];
 
-  const drawing = (shape, tone, width) =>
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-hidden="true">' +
+  const drawing = (shape, tone, width, viewBox = '0 0 200 200') =>
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + viewBox + '" aria-hidden="true">' +
     '<g fill="none" stroke="' + tone + '" stroke-width="' + width + '" stroke-linejoin="round">' +
     shape + '</g></svg>';
 
-  function selectFigure(id, label, shape) {
+  function selectFigure(id, label, shape, viewBox) {
     cloth.classList.toggle('has-figure', Boolean(shape));
     if (shape) {
-      const mask = encodeURIComponent(drawing(shape, 'white', .84));
+      const mask = encodeURIComponent(drawing(shape, 'white', .84, viewBox));
       cloth.style.setProperty('--cloth-figure-mask', 'url("data:image/svg+xml,' + mask + '")');
     } else {
       cloth.style.removeProperty('--cloth-figure-mask');
@@ -52,14 +52,14 @@
     }
   }
 
-  for (const [id, label, shape] of figures) {
+  for (const [id, label, shape, viewBox] of figures) {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.figure = id;
-    button.innerHTML = drawing(shape, 'currentColor', 8);
+    button.innerHTML = drawing(shape, 'currentColor', 8, viewBox);
     button.append(label);
     button.addEventListener('click', () => {
-      selectFigure(id, label, shape);
+      selectFigure(id, label, shape, viewBox);
       menu.open = false;
       summary.focus();
     });
