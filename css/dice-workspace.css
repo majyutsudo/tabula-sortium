@@ -61,6 +61,7 @@ body.tabula-dice-mode #instrumentChoiceSection.is-collapsed .instrument-picker{d
 
 /* v0.725: one TABULA interface, with only the five primary actions swapped. */
 #diceQuickActions[hidden]{display:none!important}
+body.tabula-dice-mode #tableArrangementShortcuts,
 body.tabula-dice-mode .table-shortcuts:not(.dice-quick-actions){display:none!important}
 body.tabula-dice-mode #diceQuickActions{display:grid!important}
 #diceWorkspace{display:none!important}
