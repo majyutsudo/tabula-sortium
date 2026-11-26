@@ -26,7 +26,7 @@
     ['horizontal-line', '横線（上下二分）', horizontal],
     ['vertical-line', '縦線（左右二分）', vertical],
     ['square-quarters', '四分割の正方形', square + horizontal + vertical],
-    ['square-grid', '3×3の方陣', square + gridLines],
+    ['square-grid', '九分割の正方形', square + gridLines],
     ['pentagram', '五芒星', star],
     ['circle-pentagram', '円と五芒星', circle + star],
     ['hexagram', '六芒星', '<path d="M100 2 184.87 149H15.13ZM100 198 15.13 51H184.87Z"/>'],
