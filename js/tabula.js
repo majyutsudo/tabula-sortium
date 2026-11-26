@@ -1885,8 +1885,24 @@ function pileAtPoint(clientX,clientY,excludeId=null){
  candidates.sort((a,b)=>a.distance-b.distance);
  return candidates[0]?.id||null;
 }
+function pileOverlapDestination(zone,el){
+    const moving=el.getBoundingClientRect();
+    let destination=null,bestArea=0;
+    for(const candidate of zone.querySelectorAll('.table-pile')){
+     if(candidate===el)continue;
+     const target=candidate.getBoundingClientRect();
+     const overlapX=Math.max(0,Math.min(moving.right,target.right)-Math.max(moving.left,target.left));
+     const overlapY=Math.max(0,Math.min(moving.bottom,target.bottom)-Math.max(moving.top,target.top));
+     const area=overlapX*overlapY;
+     const minArea=Math.min(moving.width*moving.height,target.width*target.height);
+     if(area>=minArea*.15&&area>bestArea){destination=candidate.dataset.pileId;bestArea=area}
+    }
+    return destination;
+}
 function highlightPileDropTarget(clientX,clientY,excludeId=null){
- const target=pileAtPoint(clientX,clientY,excludeId);
+ showPileDropTarget(pileAtPoint(clientX,clientY,excludeId));
+}
+function showPileDropTarget(target){
  for(const el of $('zone').querySelectorAll('.table-pile')){
   el.classList.toggle('pile-drop-target',!!target&&el.dataset.pileId===target);
  }
@@ -2162,8 +2178,9 @@ function renderTablePiles(zone,m){
     if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<6)return;
     moved=true;
     const pt=position(ev);el.style.left=pt.x+'%';el.style.top=pt.y+'%';
+    showPileDropTarget(pile.cards.length?pileOverlapDestination(zone,el):null);
    };
-   const clear=()=>{title.removeEventListener('pointermove',move);title.removeEventListener('pointerup',end);title.removeEventListener('pointercancel',cancel)};
+   const clear=()=>{clearPileDropTarget();title.removeEventListener('pointermove',move);title.removeEventListener('pointerup',end);title.removeEventListener('pointercancel',cancel)};
    const end=ev=>{
     clear();
     if(!moved){
@@ -2174,18 +2191,7 @@ function renderTablePiles(zone,m){
     }
     const pt=position(ev);
     el.style.left=pt.x+'%';el.style.top=pt.y+'%';
-    // Hit-test actual pile rectangles, not the pointer over the handle above the card.
-    const moving=el.getBoundingClientRect();
-    let destination=null,bestArea=0;
-    for(const candidate of zone.querySelectorAll('.table-pile')){
-     if(candidate===el)continue;
-     const target=candidate.getBoundingClientRect();
-     const overlapX=Math.max(0,Math.min(moving.right,target.right)-Math.max(moving.left,target.left));
-     const overlapY=Math.max(0,Math.min(moving.bottom,target.bottom)-Math.max(moving.top,target.top));
-     const area=overlapX*overlapY;
-     const minArea=Math.min(moving.width*moving.height,target.width*target.height);
-     if(area>=minArea*.15&&area>bestArea){destination=candidate.dataset.pileId;bestArea=area}
-    }
+    const destination=pileOverlapDestination(zone,el);
     if(destination&&pile.cards.length){
      const count=pile.cards.length;
      TabulaTablePiles.transfer(state,pile.id,destination,count);
