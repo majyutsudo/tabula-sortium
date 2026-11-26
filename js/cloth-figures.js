@@ -17,6 +17,13 @@
   const vertical = '<path d="M100 2V198"/>';
   const gridLines = [2 + 196 / 3, 198 - 196 / 3].map(position =>
     '<path d="M2 ' + position + 'H198M' + position + ' 2V198"/>').join('');
+  const sevenVertices = Array.from({length: 7}, (_, i) => {
+    const angle = i * 2 * Math.PI / 7;
+    return (100 + 98 * Math.sin(angle)).toFixed(2) + ',' + (100 - 98 * Math.cos(angle)).toFixed(2);
+  });
+  const heptagram = step =>
+    '<polygon points="' + sevenVertices.map((_, i) => sevenVertices[i * step % 7]).join(' ') + '"/>';
+
   const figures = [
     ['none', 'なし', ''],
     ['circle', '円', circle],
@@ -30,6 +37,8 @@
     ['pentagram', '五芒星', star],
     ['circle-pentagram', '円と五芒星', circle + star],
     ['hexagram', '六芒星', '<path d="M100 2 184.87 149H15.13ZM100 198 15.13 51H184.87Z"/>'],
+    ['heptagram-7-2', '七芒星 {7/2}', heptagram(2)],
+    ['heptagram-7-3', '七芒星 {7/3}', heptagram(3)],
     ['circle-triangle', '円と外三角', '<circle cx="100" cy="127" r="71"/><path d="M100 -5 123 34.84H77Z"/>', '0 -10 200 210'],
   ];
 
