@@ -69,3 +69,54 @@ for(const mode of ['normal','quick']){
   expect(frames.findIndex(frame=>frame.finale)).toBeGreaterThan(lastIndex);
  });
 }
+
+test('Monte Carlo dims the filled grid and keeps its separate success finale',async ({page})=>{
+ await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.goto('/table.html');
+ await page.locator('#spreadQuickSelect').selectOption('monteCarlo');
+ const key='tabula_sortium_v01';
+ await page.evaluate(key=>{
+  const saved=JSON.parse(localStorage.getItem(key));
+  saved.settings.effectPreset='psychic';
+  const slots=TabulaCatalog.presets.monteCarlo;
+  saved.state.placed=saved.state.deck.splice(0,slots.length).map((card,slot)=>({
+   ...card,slot,x:slots[slot].x,y:slots[slot].y,angle:0,faceUp:slot!==12
+  }));
+  localStorage.setItem(key,JSON.stringify(saved));
+ },key);
+ await page.reload();
+ const stage=page.locator('#stage');
+ const cards=page.locator('#zone > .card');
+ await expect(cards.first()).toHaveCSS('animation-name','psychic-glow');
+ await cards.nth(12).click();
+ await expect(stage).toHaveClass(/normal-spread-open/);
+ await expect(stage).not.toHaveClass(/effect-finale/);
+ await expect(cards.first()).not.toHaveCSS('animation-name','psychic-glow');
+
+ // Model a removed pair and then the final remaining occupied position.
+ await page.evaluate(key=>{
+  const saved=JSON.parse(localStorage.getItem(key));
+  saved.state.placed.slice(0,2).forEach(card=>{card.slot=null;card.manualMoved=true});
+  localStorage.setItem(key,JSON.stringify(saved));
+ },key);
+ await page.reload();
+ await expect(stage).toHaveClass(/normal-spread-open/);
+
+ await page.evaluate(key=>{
+  const saved=JSON.parse(localStorage.getItem(key));
+  saved.state.placed=saved.state.placed.map((card,i)=>i===12?card:{...card,slot:null,x:8,y:5,manualMoved:true});
+  saved.state.removed.push(...saved.state.deck.splice(0));
+  localStorage.setItem(key,JSON.stringify(saved));
+ },key);
+ await page.reload();
+ await expect(stage).not.toHaveClass(/effect-finale/);
+ const last=cards.nth(12),box=await last.boundingBox();
+ const grid=await page.locator('#zone').boundingBox();
+ await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+ await page.mouse.down();
+ await page.mouse.move(grid.x+grid.width*.94,grid.y+grid.height*.82,{steps:12});
+ await page.mouse.up();
+ await expect(stage).toHaveClass(/effect-finale/);
+ await expect(stage).not.toHaveClass(/effect-finale/);
+ await expect(cards.nth(12)).not.toHaveCSS('animation-name','psychic-glow');
+});

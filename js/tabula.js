@@ -3735,15 +3735,26 @@ function isCoreSpreadOpen(){
 
 let sequentialOpening=false,pendingOpenFinale=null;
 function usesOrdinaryOpenFinale(){return settings.spread!=='fourSeasons'&&settings.spread!=='monteCarlo'}
+function monteCarloGridOpen(){
+ const open=coreFaceUpCount();
+ if(!open||open!==occupiedSpreadSlots().size)return false;
+ // Removed pairs still count toward the first full layout, so moving them
+ // off the grid does not bring back the persistent glow on the remaining cards.
+ const dealt=state.placed.length+(state.removed||[]).length
+  +(state.tablePiles||[]).reduce((count,pile)=>count+pile.cards.length,0);
+ return !state.deck.length||dealt>=coreTargetCount();
+}
 function updateCompletionAppearance(){
  const stage=$('stage');
  if(!stage)return;
  const complete=isCoreSpreadOpen();
- const special=!usesOrdinaryOpenFinale();
+ const monteCarlo=settings.spread==='monteCarlo';
+ const gridOpen=monteCarlo&&monteCarloGridOpen();
  const showingLastCard=sequentialOpening||pendingOpenFinale?.state===state;
- stage.classList.toggle('normal-spread-open',complete&&!special&&!showingLastCard);
+ const restOpenCards=monteCarlo?gridOpen||complete:complete&&usesOrdinaryOpenFinale();
+ stage.classList.toggle('normal-spread-open',restOpenCards&&!showingLastCard);
  for(const preset of ['ritual','mystic','psychic']){
-  stage.classList.toggle('spread-complete-'+preset,complete&&special&&settings.effectPreset===preset);
+  stage.classList.toggle('spread-complete-'+preset,complete&&settings.spread==='fourSeasons'&&settings.effectPreset===preset);
  }
 }
 function maybeTriggerCompletionEffect(waitForLastCard=false){
