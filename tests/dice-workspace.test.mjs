@@ -181,9 +181,9 @@ test('common TABULA toolbar identifies the active instrument',()=>{
 test('dice extra table creation omits card composition and uses dice wording',()=>{
  const html=file('table.html'),model=file('js/tabula.js'),style=file('css/dice-workspace.css');
  assert.match(html,/id="independentDeckPoolField"/);
- assert.match(html,/id="independentDeckHelp"/);
+ assert.match(html,/id="independentCustomPoolEdit"/);
  assert.match(model,/independentDeckPoolField'\)\.hidden=dice/);
- assert.match(model,/independentDeckHelp'\)\.hidden=dice/);
+ assert.match(model,/independentCustomPoolEdit'\)\.hidden=dice\|\|/);
  assert.match(model,/ダイス用の卓を追加/);
  assert.match(style,/#independentDeckPoolField\[hidden\]/);
 });

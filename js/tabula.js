@@ -778,12 +778,34 @@ function selectBlueprintCards(blueprint,pool,ids){
  if(builtIn&&pool==='fiftyTwo')return available.filter(c=>c.kind!=='joker');
  return available;
 }
+function cardsForPool(deckId,pool,ids=[],blueprint=blueprintFor(deckId)){
+ if(blueprint)return selectBlueprintCards(blueprint,pool,ids);
+ const registered=deckLibrary.find(deck=>deck.id===deckId);
+ return TabulaCardRules.selectCards(cards,pool,ids).filter(card=>!registered||registered.included.includes(card.id));
+}
 function selectedCards(){
  const blueprint=activeBlueprint();
- if(blueprint)return selectBlueprintCards(blueprint,settings.pool,customIds);
- const d=activeDeck();
- const base=TabulaCardRules.selectCards(cards,settings.pool,customIds).filter(c=>!d||d.included.includes(c.id));
- return base.sort((a,b)=>a.group==='major'&&b.group==='major'?((displayCard(a).number??-1)-(displayCard(b).number??-1)):0);
+ const selected=cardsForPool(settings.deckId,settings.pool,customIds,blueprint);
+ return blueprint?selected:selected.sort((a,b)=>a.group==='major'&&b.group==='major'?((displayCard(a).number??-1)-(displayCard(b).number??-1)):0);
+}
+function cardPoolOptions(deckId,blueprint=blueprintFor(deckId)){
+ if(isPlayingBlueprint(blueprint))return [
+  ['all','全54枚（ジョーカー2枚）'],['fiftyTwo','52枚（ジョーカーなし）'],
+  ['russian36','36枚（6〜A）'],['piquet32','32枚（7〜A／ピケ）'],
+  ['euchre24','24枚（9〜A）'],['latin40','40枚（A・2〜7・J/Q/K）'],
+  ['custom','任意に選択…']
+ ];
+ if(blueprint)return [['all','デッキ全'+TabulaDeckBlueprint.generate(blueprint).length+'枚'],['custom','任意に選択…']];
+ const tarotPools=[['all','タロット全',78],['major','大アルカナ',22],['minor','小アルカナ',56],['court','コートカード',16]];
+ const registered=deckLibrary.some(deck=>deck.id===deckId);
+ return [...tarotPools.flatMap(([pool,label,total])=>{
+  const count=registered?cardsForPool(deckId,pool).length:total;
+  return count?[[pool,(registered&&pool==='all'?'収録カード全':label)+count+'枚']]:[];
+ }),['custom','任意に選択…']];
+}
+function syncCardPoolOptions(select,options){
+ if(select.options.length!==options.length||[...select.options].some((option,i)=>option.value!==options[i][0]||option.textContent!==options[i][1]))
+  select.replaceChildren(...options.map(([value,label])=>new Option(label,value)));
 }
 // Ordered stock is an explicit deck-level policy. For the playing deck:
 // NDO: two Jokers, Spades A-K, Diamonds A-K, Clubs K-A, Hearts K-A.
@@ -3298,7 +3320,10 @@ function diceSnapshotPanel(v){
 function currentReadingSnapshot(id,name){
  const names=new Map(workingCards().map(c=>[c.id,c]));
  const cardNames=state.placed.map(p=>names.has(p.id)?tableCardName(names.get(p.id)):'不明');
- const obj=TabulaReadingHistory.createSnapshot({id,name,time:new Date().toISOString(),settings,state,slots:getSlots(),customIds,recipeId,cardNames});
+ const selection=isIndependentTables()&&settings.pool==='custom'
+  ?dualSession.instances.filter(card=>card.sourceDeck===dualSession.activePile).map(card=>card.id)
+  :customIds;
+ const obj=TabulaReadingHistory.createSnapshot({id,name,time:new Date().toISOString(),settings,state,slots:getSlots(),customIds:selection,recipeId,cardNames});
  if(dualSession){
  obj.multiTableReading=true;
  obj.tableName=dualSession.tables[dualSession.activeTable]?.name||dualSession.activeTable;
@@ -3584,17 +3609,8 @@ function closeModal(){$('modalBg').classList.remove('open','records-active','car
  }
  if(!catalogueFor(settings.deckId)){settings.deckId='builtin';settings.pool='all';settings.cardDesign='standard';customIds=cards.map(c=>c.id);sync();initialize();setStatus('標準デッキに切り替えました。');return}settings.dealSkipFirst=0;settings.dealSkipSchedule='';if(!settings.spreadDealOrders||typeof settings.spreadDealOrders!=='object')settings.spreadDealOrders={};state=TabulaPhysicalIdentity.ensureSingle({completionShown:false,...(data.state||{})});initializePresetFrames(state,settings.spread);customIds=data.customIds||customIds;if(Array.isArray(data.recipes)&&data.recipes.length){recipes=[recipes[0],...data.recipes.filter(r=>r.id!=='single'&&Array.isArray(r.steps))];const single=data.recipes.find(r=>r.id==='single');if(single&&Array.isArray(single.steps)&&single.steps.length)recipes[0]={...single,name:'単独シャッフル'};}recipeId=recipes.some(r=>r.id===data.recipeId)?data.recipeId:'single';setCardSize(data.environmentStart&&validCardSize(data.settings?.cardSize)?data.settings.cardSize:settings.spread==='grandStar'?spreadCardSize('grandStar'):(state.placed.length?(validCardSize(data.settings?.cardSize)?data.settings.cardSize:zoom):spreadCardSize(settings.spread)));syncRecipes();sync();render();setStatus('保存した卓を復元しました。')}catch(e){setStatus(String(e?.message||'').includes('duplicate')?'保存データ内でカードのIDが重複しています。復元できません。':'保存データの復元に失敗しました。')}}function updateDealRuleSummary(){const n=Number(settings.dealSkipFirst)||0,s=(settings.dealSkipSchedule||'').trim(),el=$('dealRuleSummary');if(!el)return;el.textContent=(n||s)?[n?`最初に${n}枚`:null,s?'途中除外あり':null].filter(Boolean).join(' / '):'設定なし'}
 function updateStandaloneAvailability(){const cutting=!!document.getElementById('physicalCutOverlay');const noWash=settings.quickWashDirection==='none',noCut=Number(settings.cutCount)===0;const w=$('quickWash'),c=$('quickCut');if(w){w.disabled=noWash||cutting;w.title=cutting?'カット中はウォッシュできません':noWash?'単独ウォッシュは「なし」に設定されています':'単独ウォッシュを実行'}for(const id of ['quickShuffle','shuffle','manualShuffle']){const button=$(id);if(button)button.disabled=cutting||shuffleBusy}if(c){c.disabled=noCut||cutting;c.title=cutting?'カット中です':noCut?'カットは「なし」に設定されています':'山札をカット'}for(const id of ['quickDeal','deal','draw','quickOpen','quickRevealAll','revealAll']){const button=$(id);if(button&&cutting)button.disabled=true}}function sync(){syncDeckReversals();if(activeBlueprint())settings.cardDesign='simple';else if(activeDeck())settings.cardDesign=activeDeck().faceStyle||'standard';else if(settings.deckId==='simple')settings.cardDesign='simple';updateAppearanceControls();refreshDeckPicker();$('cardLanguage').value=effectiveCardLanguage();$('tableCardLanguage').value=settings.tableCardLanguage||'linked';$('pipBackground').value=effectivePipBackground();if(['cups','swords','wands','pentacles'].includes(settings.pool)){customIds=cards.filter(c=>c.suit===settings.pool).map(c=>c.id);settings.pool='custom'}$('cardDesign').value=settings.cardDesign==='standard'?'standard':'simple';const poolInput=$('pool');
- const blueprint=activeBlueprint();
- const poolOptions=blueprint
-  ?(isPlayingBlueprint(blueprint)
-    ?[['all','全54枚（ジョーカー2枚）'],['fiftyTwo','52枚（ジョーカーなし）'],
-      ['russian36','36枚（6〜A）'],['piquet32','32枚（7〜A／ピケ）'],
-      ['euchre24','24枚（9〜A）'],['latin40','40枚（A・2〜7・J/Q/K）'],
-      ['custom','任意に選択…']]
-    :[['all','デッキ全'+TabulaDeckBlueprint.generate(blueprint).length+'枚'],['custom','任意に選択…']])
-  :[['all','タロット全78枚'],['major','大アルカナ22枚'],['minor','小アルカナ56枚'],['court','コートカード16枚'],['custom','任意に選択…']];
- if(poolInput.options.length!==poolOptions.length||[...poolInput.options].some((o,i)=>o.value!==poolOptions[i][0]||o.textContent!==poolOptions[i][1]))
-  poolInput.replaceChildren(...poolOptions.map(([label,text])=>new Option(text,label)));
+ const poolOptions=cardPoolOptions(settings.deckId);
+ syncCardPoolOptions(poolInput,poolOptions);
  // Keep the saved pool (including a custom subset) when refreshing the UI.
  if(!poolOptions.some(([id])=>id===settings.pool))settings.pool='all';
  poolInput.value=settings.pool;$('spread').value=settings.spread;syncSpreadShortcut();syncDealOrderField();const initialOrderSelect=$('initialOrder');
@@ -4040,15 +4056,21 @@ $('pipBackground').addEventListener('change',e=>{
 $('deckLibrarySelect').addEventListener('change',e=>activateDeck(e.target.value));
 $('deckEditCurrent').addEventListener('click',()=>openDeckEditor(false));
 function customModal(){
- const blueprint=activeBlueprint();
- const catalogue=blueprint?blueprintCards(blueprint):cards.filter(c=>!activeDeck()||activeDeck().included.includes(c.id));
+ const selected=settings.pool==='custom'?customIds:selectedCards().map(c=>c.id);
+ chooseCardSubset(settings.deckId,selected,ids=>{
+  customIds=ids;settings.pool='custom';$('pool').value='custom';initialize();
+ });
+}
+function chooseCardSubset(deckId,selectedIds,onConfirm){
+ const blueprint=blueprintFor(deckId);
+ const catalogue=cardsForPool(deckId,'all',[],blueprint);
  const groups=blueprint
   ?[...blueprint.suits.map(s=>[s.id,s.name,catalogue.filter(c=>c.suitId===s.id)]),
       ...((catalogue.some(c=>c.kind==='joker'))?[['joker','ジョーカー',catalogue.filter(c=>c.kind==='joker')]]:[]),
       ...((catalogue.some(c=>!c.suitId&&c.kind!=='joker'))?[['other','その他',catalogue.filter(c=>!c.suitId&&c.kind!=='joker')]]:[])]
   :[['major','大アルカナ',catalogue.filter(c=>c.group==='major')],
     ...suitDefs.map(([id,name])=>[id,name,catalogue.filter(c=>c.suit===id)])];
- const selected=new Set(settings.pool==='custom'?customIds:selectedCards().map(c=>c.id));
+ const selected=new Set(selectedIds);
  let h='<h2>使用カードを個別に選択</h2><p class="note">チェックしたカードだけを山札として使用します。</p><div class="row"><button type="button" id="allCards">すべて選択</button><button type="button" id="noCards">すべて解除</button></div>';
  groups.forEach(([,name,list])=>{
   if(!list.length)return;
@@ -4065,7 +4087,7 @@ function customModal(){
  $('confirmCards').onclick=()=>{
   const ids=[...document.querySelectorAll('.pick-card:checked')].map(el=>el.value);
   if(!ids.length){alert('カードを1枚以上選択してください。');return}
-  customIds=ids;settings.pool='custom';$('pool').value='custom';closeModal();initialize();
+  closeModal();onConfirm(ids);
  };
 }$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewSelectedEffect()};$('previewEffect').onclick=previewSelectedEffect;colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('カード構成は一組モードで変更してください。');return}if(e.target.value==='custom'){e.target.value=settings.pool;customModal();return}settings.pool=e.target.value;initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{if(changeActiveSpread(e.target.value))setStatus('展開法を切り替えました。山札の配列は維持しています。');else{e.target.value=settings.spread;syncSpreadShortcut();}};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
 $('resetSpreadDealOrder').onclick=()=>{settings.spreadDealOrders={...(settings.spreadDealOrders||{})};delete settings.spreadDealOrders[settings.spread];syncDealOrderField();saveLocal();setStatus('このスプレッドの配札順を番号順に戻しました。')};
@@ -6027,23 +6049,52 @@ function independentDeckChoices(){
  p.value=Array.from(p.options).some(o=>o.value===preferred)?preferred:'builtin';
  updateIndependentPool();
 }
+let independentPoolDeck=null,independentPoolChoice='all',independentCustomIds=[];
 function updateIndependentPool(){
  const pool=$('independentDeckPool'),choice=$('independentDeckSelect').value,dice=isDiceTool(choice);
- const blueprint=dice?null:blueprintFor(choice);
- pool.disabled=!!blueprint||dice;
- if(blueprint||dice)pool.value='included';
+ if(independentPoolDeck!==choice){
+  independentPoolDeck=choice;
+  independentPoolChoice='all';
+  independentCustomIds=[];
+ }
+ if(!dice){
+  const options=cardPoolOptions(choice);
+  syncCardPoolOptions(pool,options);
+  if(!options.some(([value])=>value===independentPoolChoice))independentPoolChoice='all';
+  pool.value=independentPoolChoice;
+ }
+ pool.disabled=dice;
  $('independentDeckPoolField').hidden=dice;
+ $('independentCustomPoolEdit').hidden=dice||independentPoolChoice!=='custom';
  $('independentTableAdd').textContent=dice?'ダイス用の卓を追加':'独立したデッキで卓を追加';
- $('independentDeckHelp').hidden=dice;
+}
+function editIndependentCustomPool(){
+ const deckId=independentPoolDeck;
+ const useMainSelection=deckId===settings.deckId&&settings.pool==='custom'&&independentPoolChoice==='all';
+ const selected=independentCustomIds.length?independentCustomIds
+  :useMainSelection?customIds:cardsForPool(deckId,independentPoolChoice).map(card=>card.id);
+ chooseCardSubset(deckId,selected,ids=>{
+  independentCustomIds=ids;
+  independentPoolChoice='custom';
+  updateIndependentPool();
+ });
 }
 $('independentDeckSelect').addEventListener('change',()=>{independentDeckSelectionCustomized=true;updateIndependentPool();});
+$('independentDeckPool').onchange=e=>{
+ if(e.target.value==='custom'){
+  e.target.value=independentPoolChoice;
+  editIndependentCustomPool();
+  return;
+ }
+ independentPoolChoice=e.target.value;
+ updateIndependentPool();
+};
+$('independentCustomPoolEdit').onclick=editIndependentCustomPool;
 function independentTableWorkspace(selectedTool=$('independentDeckSelect').value,snapshot=null){
  const isDice=isDiceTool(selectedTool);
-  const deckId=isDice?'builtin':selectedTool,pool=$('independentDeckPool').value;
- const registered=deckLibrary.find(d=>d.id===deckId),blueprint=blueprintFor(deckId);
- const allowed=new Set(registered?registered.included:cards.map(c=>c.id));
- const idsB=isDice?[]:blueprint?TabulaDeckBlueprint.generate(blueprint).map(c=>c.id)
-  :TabulaCardRules.selectCards(cards,pool==='included'?'all':pool,cards.map(c=>c.id)).filter(c=>allowed.has(c.id)).map(c=>c.id);
+ const deckId=isDice?'builtin':selectedTool,pool=isDice?'all':independentPoolChoice;
+ const registered=deckLibrary.find(d=>d.id===deckId);
+ const idsB=isDice?[]:cardsForPool(deckId,pool,independentCustomIds).map(c=>c.id);
  const physical=[...state.deck,...state.placed,...(state.removed||[]),...(state.tablePiles||[]).flatMap(p=>p.cards)],idsA=physical.map(c=>c.id);
  if((!isDice&&!idsB.length)||!idsA.length||new Set(idsA).size!==idsA.length)throw Error('山札のカード構成を確認してください。');
  const w=TabulaMultiWorkspace.table(TabulaMultiWorkspace.create(idsA,idsB,{spread:settings.spread}),'table2','追加卓Ⅰ');
@@ -6051,7 +6102,7 @@ function independentTableWorkspace(selectedTool=$('independentDeckSelect').value
  w.workspaceKind='independent';w.piles.A=state.deck.map(own);
  Object.assign(w.tables.table1,{name:'メイン卓',placed:state.placed.map(own),removed:(state.removed||[]).map(own),tablePiles:(state.tablePiles||[]).map(p=>({...dualClone(p),cards:p.cards.map(own)})),spread:settings.spread,cardSize:zoom,toolId:activeToolId(),diceSnapshot:activeDiceSnapshot(),deckId:settings.deckId||'builtin',pool:settings.pool,color:settings.color,clothFigure:settings.clothFigure,clothFigureSize:settings.clothFigureSize,altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:dualClone(settings)});
  const extraSettings=dualClone(settings);
- extraSettings.deckId=deckId;extraSettings.pool=pool==='included'?'all':pool;
+ extraSettings.deckId=deckId;extraSettings.pool=pool;
  extraSettings.reversals=reversalsForDeck(deckId,extraSettings);
  Object.assign(w.tables.table2,{name:'追加卓Ⅰ',spread:'free',cardSize:spreadCardSize('free'),toolId:isDice?selectedTool:'card:'+deckId,diceSnapshot:snapshot,deckId,pool:extraSettings.pool,color:colors.findIndex(([name])=>name==='ダークレッド'),altar:!!settings.altar,candles:dualClone(altarCandles()),savedSettings:extraSettings});
  w.piles.B=isDice?[]:randomize(w.piles.B.map(c=>({...c,reversed:extraSettings.reversals?Math.random()<.5:false})));
