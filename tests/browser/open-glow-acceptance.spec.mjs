@@ -120,3 +120,39 @@ test('Monte Carlo dims the filled grid and keeps its separate success finale',as
  await expect(stage).not.toHaveClass(/effect-finale/);
  await expect(cards.nth(12)).not.toHaveCSS('animation-name','psychic-glow');
 });
+
+test('Monte Carlo starts its layout finale only after the 25th face-up card lands',async ({page})=>{
+ await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.addInitScript(()=>{
+  const animate=Element.prototype.animate;
+  let arrivals=0;
+  Element.prototype.animate=function(frames,options){
+   const animation=animate.call(this,frames,options);
+   if(this.parentElement===document.body&&this.matches('.card.faceup')){
+    arrivals++;
+    if(arrivals===25){
+     animation.pause();
+     window.lastMonteFlight=animation;
+    }else animation.playbackRate=30;
+   }
+   return animation;
+  };
+ });
+ await page.goto('/table.html');
+ await page.locator('#spreadQuickSelect').selectOption('monteCarlo');
+ await page.locator('#tableDealFace').selectOption('up');
+ await page.locator('#quickDeal').click();
+ const stage=page.locator('#stage');
+ const cards=page.locator('#zone > .card.faceup');
+ await expect.poll(()=>page.evaluate(()=>Boolean(window.lastMonteFlight))).toBe(true);
+ await expect(cards).toHaveCount(25);
+ await expect(cards.last()).toBeHidden();
+ await expect(stage).not.toHaveClass(/normal-spread-open|effect-finale/);
+
+ await page.evaluate(()=>window.lastMonteFlight.finish());
+ await expect(cards.last()).toBeVisible();
+ await expect(stage).toHaveClass(/effect-finale/);
+ await expect(cards.last()).toHaveCSS('animation-name','openEdgeFade');
+ await expect(stage).not.toHaveClass(/effect-finale/);
+ await expect(cards.last()).toHaveCSS('filter',/drop-shadow\(rgba\([^)]*0\.13\) 0px 0px 3px\)/);
+});

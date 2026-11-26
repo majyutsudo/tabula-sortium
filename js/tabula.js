@@ -2795,6 +2795,7 @@ async function dealAuto(){
  hideFramesForDeal();saveLocal();
  const startingSpread=settings.spread,startingSession=dualSession;
  const alreadyDealt=state.placed.length;
+ const monteDeal=beginMonteCarloDeal();
  autoDealBusy=true;dealCancelRequested=false;syncDealButton();
  if(dualSession)dualDealBusy=true;
  try{
@@ -2812,6 +2813,7 @@ async function dealAuto(){
  }finally{
   autoDealBusy=false;syncDealButton();
   if(startingSession)dualDealBusy=false;
+  finishMonteCarloDeal(monteDeal);
   if(dealCancelRequested)setStatus('配札を中断しました。');
  }
  if(!dealCancelRequested&&settings.spread===startingSpread&&state.placed.length>alreadyDealt&&getDealOrder().some(i=>!hasOccupiedSpreadSlot(i))&&!state.deck.length)
@@ -3744,12 +3746,25 @@ function monteCarloGridOpen(){
   +(state.tablePiles||[]).reduce((count,pile)=>count+pile.cards.length,0);
  return !state.deck.length||dealt>=coreTargetCount();
 }
+let monteCarloDeal=null;
+function beginMonteCarloDeal(){
+ if(settings.spread!=='monteCarlo'||monteCarloGridOpen())return null;
+ monteCarloDeal={state};
+ return monteCarloDeal;
+}
+function finishMonteCarloDeal(deal){
+ if(!deal||monteCarloDeal!==deal)return;
+ monteCarloDeal=null;
+ if(settings.spread!=='monteCarlo'||state!==deal.state)return;
+ updateCompletionAppearance();
+ if(coreFaceUpCount()===coreTargetCount()&&settings.effectPreset!=='silent')previewVisualEffect(true);
+}
 function updateCompletionAppearance(){
  const stage=$('stage');
  if(!stage)return;
  const complete=isCoreSpreadOpen();
  const monteCarlo=settings.spread==='monteCarlo';
- const gridOpen=monteCarlo&&monteCarloGridOpen();
+ const gridOpen=monteCarlo&&monteCarloDeal?.state!==state&&monteCarloGridOpen();
  const showingLastCard=sequentialOpening||pendingOpenFinale?.state===state;
  const restOpenCards=monteCarlo?gridOpen||complete:complete&&usesOrdinaryOpenFinale();
  stage.classList.toggle('normal-spread-open',restOpenCards&&!showingLastCard);
@@ -5759,6 +5774,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
     const finalIds=dealt.map(c=>c.id).join('|')+';'+removed.map(c=>c.id).join('|');
     const last=timeline[timeline.length-1];
     if(last.dealt.map(c=>c.id).join('|')+';'+last.removed.map(c=>c.id).join('|')!==finalIds)throw Error('ディール工程の最終結果が一致しません');
+    const monteDeal=beginMonteCarloDeal();
     const sequence=[{type:'start',label:'開始',stock:[...state.deck],piles:[],selected:[],dealt:[],removed:[]},...timeline];
     let cursor=0;
     // PETAL allows brief overlap between adjacent cards of the same operation.
@@ -5852,6 +5868,7 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
         state.placed=[...placeRemoved(tableCards),...placed];
         state.removed=removed.filter(c=>!tableIds.has(c.id)).map(c=>({...c}));
         render();
+        finishMonteCarloDeal(monteDeal);
         if(settings.spread!=='fourSeasons'&&settings.spread!=='monteCarlo')maybeTriggerCompletionEffect();
         saveLocal();
         setStatus('指定の配札を完了しました。'+dealt.length+'枚を配札、'+removed.length+'枚を除外しました。');
@@ -5860,10 +5877,12 @@ const dealWorkbenchController=TabulaDealWorkbench.install({
     // Give the browser a paint before beginning a potentially long animated procedure.
     requestAnimationFrame(()=>requestAnimationFrame(nextStage));return;
   }
+  const monteDeal=beginMonteCarloDeal();
   state.deck=cards.map(c=>({...c}));
   state.placed=[...placeRemoved(tableCards),...placed];
   state.removed=removed.filter(c=>!tableIds.has(c.id)).map(c=>({...c}));
   render();
+  finishMonteCarloDeal(monteDeal);
   if(settings.spread!=='fourSeasons'&&settings.spread!=='monteCarlo')maybeTriggerCompletionEffect();
   saveLocal();setStatus('指定の配札を完了しました。');
 
