@@ -335,3 +335,17 @@ body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:defa
  margin-inline-start:.36em;
 }
 #dice-corner-result span:empty + strong {margin-inline-start:0}
+
+#dice-corner-result:not([data-mode="normal"]) > * {
+ display:inline-block;
+ max-inline-size:100%;
+}
+#dice-corner-result:not([data-mode="normal"]) strong {font-size:1em}
+#dice-corner-result[data-mode="astro"] span {
+ font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;
+ font-size:1.2em;
+}
+#dice-corner-result[data-mode="iching"] {
+ font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN","Noto Serif CJK JP",serif;
+ font-size:clamp(12px,2.1vw,16px);
+}

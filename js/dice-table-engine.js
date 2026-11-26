@@ -213,14 +213,15 @@ function dieDetail(index) {
  const lines=hexagram?ichingLines(...recordedResults):null;
  return faceDetail(current.id,index,value,diceSettings[index],faceFigure(objects[index],value),hexagram?.primary,hexagram?.changed,lines);
 }
-function updateCornerResult(rolled,sum){
+function updateCornerResult(first='',last=''){
  const caption=diceDOM.getElementById('table-corner-bottom');
  const result=diceDOM.getElementById('corner-result');
- const show=current.id==='normal'&&rolled.length>0;
+ const show=Boolean(first||last);
  caption.hidden=show;
  result.hidden=!show;
- result.firstElementChild.textContent=show&&rolled.length>1?rolled.join(' + ')+' =':'';
- result.lastElementChild.textContent=show?String(sum):'';
+ result.dataset.mode=current.id;
+ result.firstElementChild.textContent=first;
+ result.lastElementChild.textContent=last;
 }
 function showResults(results=null){
  recordedResults=Array.isArray(results)?results.slice():null;
@@ -231,7 +232,16 @@ function showResults(results=null){
  diceDOM.getElementById('result-tiles').classList.toggle('astro-results',symbolic);
  const rolled=results?.filter(Number.isInteger)??[];
  const rolledSum=rolled.reduce((a,b)=>a+b,0);
- updateCornerResult(rolled,rolledSum);
+ let cornerFirst='',cornerLast='';
+ if(current.id==='normal'&&rolled.length){
+  cornerFirst=rolled.length>1?rolled.join(' + ')+' =':'';
+  cornerLast=String(rolledSum);
+ }
+ if(current.id==='astro'&&rolled.length){
+  const [planet,sign,house]=diceSettings.map((die,i)=>die.faces?.[results[i]-1]?.glyph);
+  cornerFirst=(planet||'—')+'　'+(sign?sign+'\uFE0E':'—');
+  cornerLast=(house||'—')+'ハウス';
+ }
  const latest=current.id==='normal'&&normalResultMode==='latest';
  diceSettings.forEach((d,i)=>{
   const result=results?.[i];
@@ -262,6 +272,8 @@ function showResults(results=null){
  calendarReading.hidden=current.id!=='calendar';
  if(!calendarReading.hidden){
   const date=TabulaStorage.calendarResult(results,calendarYear);
+  if(date?.valid)[cornerFirst,cornerLast]=date.text.split(' ');
+  else if(date)cornerLast='無効な日付 · 日を振り直す';
   diceDOM.getElementById('calendar-text').textContent=date?(date.valid?date.text:date.text+' は暦にありません。日の2個を振り直してください。'):'月日と時刻を振ると、ここに結果が出ます。';
  }
  const reading=diceDOM.getElementById('hexagram-reading');reading.hidden=current.result!=='hexagram';
@@ -274,10 +286,13 @@ function showResults(results=null){
   const title=(role,n)=>role+' '+String.fromCodePoint(0x4dc0+n-1)+' 第'+n+'卦';
   primary.textContent=title('本卦',h.primary)+'（'+primaryContext+'）';
   changed.textContent=title('之卦',h.changed);
+  cornerFirst=primary.textContent+' ·';
+  cornerLast='第'+changing+'爻 → '+changed.textContent;
   resultButton(primary,'本卦',()=>hexagramDetail(h.primary,'本卦',lines,changing,primaryContext+' · '+moved+'が変化'));
   resultButton(changed,'之卦',()=>hexagramDetail(h.changed,'之卦',changedLines,changing,changedContext+' · 本卦の'+moved+'が変化'));
   reading.replaceChildren(primary,' · '+moved+' → ',changed);
  }else reading.textContent='本卦 —　·　動爻 —　·　之卦 —';
+ updateCornerResult(cornerFirst,cornerLast);
  syncDiceInspection();
 }
 function lockSettings(locked){diceDOM.getElementById('preset').disabled=locked;if(!locked&&current.id==='normal'){diceDOM.getElementById('iching-color-scheme').disabled=false;renderSettings();return;}diceDOM.getElementById('iching-color-scheme').disabled=locked;
