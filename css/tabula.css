@@ -277,7 +277,7 @@ body[data-effect-preset="silent"] .card,body[data-effect-preset="silent"] .card-
 body[data-effect-preset="ritual"] .card-inner{transition-duration:.7s}
 body[data-effect-preset="mystic"] .card.faceup{filter:drop-shadow(0 0 8px #d3c28b77) drop-shadow(2px 5px 3px #000a)}
 body[data-effect-preset="psychic"] .card.faceup{filter:drop-shadow(0 0 12px #ab62eeaa) drop-shadow(0 0 4px #a3ceff80)}
-body[data-effect-preset="psychic"] .card.faceup:not(:where(.normal-spread-open:not(.effect-finale) *)){
+body[data-effect-preset="psychic"] .card.faceup:not(:where(.normal-spread-open *)){
  animation:psychic-glow 2s ease-in-out infinite alternate;
 }
 @keyframes psychic-glow{from{filter:drop-shadow(0 0 5px #a467e688) drop-shadow(2px 5px 3px #0009)}to{filter:drop-shadow(0 0 16px #b67aebcc) drop-shadow(2px 5px 3px #0009)}}
@@ -351,7 +351,7 @@ body[data-effect-preset="ritual"] .stage.effect-demo::after {
 body[data-effect-preset="ritual"] .card.faceup {
  filter:drop-shadow(0 0 8px #ffdf9acf) drop-shadow(0 0 14px #dfb66cb0);
 }
-body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup,
+body[data-effect-preset="ritual"] .stage.effect-finale:not(.normal-spread-open) .card.faceup,
 body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup .front,
 body[data-effect-preset="ritual"] .stage.effect-finale .cloth,
 body[data-effect-preset="ritual"] .stage.effect-finale .zone-label {animation:none!important}
@@ -389,10 +389,6 @@ body[data-effect-preset="ritual"] .stage.effect-finale .zone-label {animation:no
   }
   body[data-effect-preset="silent"] .card.faceup{box-shadow:none}
 }
-/* Return completed readings to the ordinary card shadow after the finale. */
-.stage.normal-spread-open:not(.effect-finale) .card.faceup{
- filter:drop-shadow(1px 4px 3px #000b);
-}
 /* Honor motion-reduction while keeping the static visual treatment. */
 @media (prefers-reduced-motion:reduce){
   body[data-effect-preset="ritual"] .card.faceup,
@@ -406,15 +402,38 @@ body[data-effect-preset="ritual"] .stage.effect-finale .zone-label {animation:no
   body[data-effect-preset="mystic"] .card.faceup,
   body[data-effect-preset="psychic"] .card.faceup{
     box-shadow:1px 3px 5px #0009!important;
+  }
+  body[data-effect-preset="ritual"] .card.faceup:not(:where(.normal-spread-open *)),
+  body[data-effect-preset="mystic"] .card.faceup:not(:where(.normal-spread-open *)),
+  body[data-effect-preset="psychic"] .card.faceup:not(:where(.normal-spread-open *)){
     filter:drop-shadow(1px 3px 3px #0008)!important;
   }
-  body[data-effect-preset="psychic"] .card.faceup{animation:none!important}
+  body[data-effect-preset="psychic"] .card.faceup:not(:where(.normal-spread-open *)){animation:none!important}
   /* Keep the finale glow but avoid the constant halo on small cards. */
-  body[data-effect-preset="ritual"] .stage.effect-finale .card.faceup,
-  body[data-effect-preset="mystic"] .stage.effect-finale .card.faceup,
-  body[data-effect-preset="psychic"] .stage.effect-finale .card.faceup{filter:drop-shadow(0 0 9px #dfd5ffb0)!important}
+  body[data-effect-preset="ritual"] .stage.effect-finale:not(.normal-spread-open) .card.faceup,
+  body[data-effect-preset="mystic"] .stage.effect-finale:not(.normal-spread-open) .card.faceup,
+  body[data-effect-preset="psychic"] .stage.effect-finale:not(.normal-spread-open) .card.faceup{filter:drop-shadow(0 0 9px #dfd5ffb0)!important}
   .stage,.stage-shell,.table-zone,.live-results{overflow-anchor:none}
 }
+
+/* The last animation frame and the resting card use the same faint edge. */
+body[data-effect-preset="ritual"] .stage.normal-spread-open{--open-edge-rgb:255 222 158}
+body[data-effect-preset="mystic"] .stage.normal-spread-open{--open-edge-rgb:177 224 255}
+body[data-effect-preset="psychic"] .stage.normal-spread-open{--open-edge-rgb:190 135 255}
+body:not([data-effect-preset="silent"]) .stage.normal-spread-open .card.faceup{
+ --open-edge-rest:drop-shadow(1px 4px 3px #000b) drop-shadow(0 0 3px rgb(var(--open-edge-rgb) / .13));
+ filter:var(--open-edge-rest);
+}
+@media(prefers-reduced-motion:no-preference){
+ body:not([data-effect-preset="silent"]) .stage.normal-spread-open.effect-finale .card.faceup{
+  animation:openEdgeFade 3.4s ease-out both;
+ }
+}
+@keyframes openEdgeFade{
+ from{filter:drop-shadow(1px 4px 3px #000b) drop-shadow(0 0 11px rgb(var(--open-edge-rgb) / .56))}
+ to{filter:var(--open-edge-rest)}
+}
+
 
 @media(max-width:780px){
  html,body{overflow-anchor:none}
