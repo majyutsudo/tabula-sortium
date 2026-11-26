@@ -314,23 +314,24 @@ body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:defa
 @media(max-width:420px){.calendar-die-rule{grid-template-columns:1fr}}
 
 #dice-corner-result {
+ --result-inset:clamp(20px,2.4vw,30px);
  position:absolute;
- right:12px;
- bottom:10px;
+ inset-inline-end:var(--result-inset);
+ inset-block-end:calc(var(--result-inset) - 3px);
  z-index:2;
- max-width:calc(100% - 24px);
- padding:3px 8px;
- border-radius:4px;
- background:#151512eb;
- color:#f3e9c1;
- text-align:right;
- font:600 clamp(12px,2vw,16px)/1.25 system-ui,sans-serif;
- font-variant-numeric:tabular-nums;
+ max-width:calc(100% - 2 * var(--result-inset));
+ color:#deca9a;
+ text-align:end;
+ font:400 clamp(15px,2.5vw,19px)/1.15 Georgia,"Times New Roman",serif;
+ font-variant-numeric:lining-nums tabular-nums;
+ letter-spacing:.045em;
+ text-shadow:0 1px 3px #000,0 0 8px #000;
  pointer-events:none;
 }
 #dice-corner-result strong {
- color:#ffcf83;
- font-size:1.25em;
- margin-inline-start:.28em;
+ color:#efcc82;
+ font-weight:400;
+ font-size:1.3em;
+ margin-inline-start:.36em;
 }
 #dice-corner-result span:empty + strong {margin-inline-start:0}
