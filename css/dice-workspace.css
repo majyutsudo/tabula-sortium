@@ -15,7 +15,8 @@ body.tabula-dice-mode .dice-dark-room #dice-felt .corner{visibility:hidden}
 #dice-throwGuide line{stroke:#ebd7aa;stroke-width:3;stroke-dasharray:7 7}
 #dice-throwGuide circle{fill:none;stroke:#f2e3ba;stroke-width:2}
 #dice-throwGuide polygon{fill:#ead5a3}
-body.tabula-dice-mode #surface>.table-zone,body.tabula-dice-mode #surface>.deck,body.tabula-dice-mode #surface>.deck-label,body.tabula-dice-mode #surface>.shuffle-layer,body.tabula-dice-mode #surface>.removed-pile{visibility:hidden!important}
+/* Hide entire card-only layers, including descendants with explicit visibility:visible. */
+body.tabula-dice-mode #surface>.table-zone,body.tabula-dice-mode #surface>.deck,body.tabula-dice-mode #surface>.deck-label,body.tabula-dice-mode #surface>.shuffle-layer,body.tabula-dice-mode #surface>.removed-pile{display:none!important}
 body.tabula-dice-mode #surface>.altar{z-index:8;pointer-events:none}
 
 body.tabula-dice-mode #instrumentChoiceSection{display:block!important}
