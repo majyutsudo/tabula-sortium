@@ -1736,7 +1736,7 @@ node.innerHTML=`<div class="card-inner"><div class="face back"></div><div class=
 const nextOrder=Math.max(0,...state.placed.map(p=>Number(p.dragOrder)||0))+1;
 item.dragOrder=nextOrder;
 node.style.setProperty('--z',String(1000+nextOrder));
-node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;recordTiltSample(drag,e);moveCardLongPress(drag.longPress,e);const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item);updateStackIntent(drag,node);if(!dualSession&&!spreadWorkbench)highlightPileDropTarget(e.clientX,e.clientY)}});node.addEventListener('pointerup',e=>{if(pilePlacementArmed||!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';recordTiltSample(drag,e);const releasedDrag=drag;cancelCardLongPress();clearPileDropTarget();const stackIndex=releasedDrag.stackArmed?Number(releasedDrag.stackCandidate):null;const stackTarget=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;const stackReady=!!stackTarget&&stackCandidate(node)===stackTarget;const vacantTarget=vacantDropSlot(item,index);clearStackIntent(releasedDrag);drag=null;if(stackReady&&vacantTarget===null&&!dualSession&&!spreadWorkbench){TabulaTablePiles.stackPlaced(state,index,stackIndex);rememberTableUndo(releasedDrag.beforeUndo);commitTableChange();setStatus('重ねた2枚を束にしました。');return}if(dragMoved&&!dualSession&&!spreadWorkbench){const pileId=pileAtPoint(e.clientX,e.clientY);if(pileId){TabulaTablePiles.deposit(state,index,pileId);rememberTableUndo(releasedDrag.beforeUndo);commitTableChange();setStatus('カードを束に重ねました。');return}}if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}
+node.classList.add('dragging')});node.addEventListener('pointermove',e=>{if(!drag||drag.type!=='placed'||drag.idx!==index)return;recordTiltSample(drag,e);moveCardLongPress(drag.longPress,e);const dx=(e.clientX-drag.startX)/drag.rect.width*100,dy=(e.clientY-drag.startY)/drag.rect.height*100;if(Math.abs(dx)+Math.abs(dy)>1.5)dragMoved=true;if(dragMoved){cancelCardLongPress();selectCard(index);if(!item.manualMoved&&settings.spread==='celtic'&&item.slot===1&&item.faceUp){item.manualMoved=true;}const desktop=window.innerWidth>780;item.x=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origX+dx));item.y=Math.max(desktop?-50:0,Math.min(desktop?150:100,drag.origY+dy));node.style.left=item.x+'%';node.style.top=item.y+'%';refreshDraggedSlotLabel(item);updateStackIntent(drag,node);if(canDropOnTablePile())highlightPileDropTarget(e.clientX,e.clientY)}});node.addEventListener('pointerup',e=>{if(pilePlacementArmed||!drag||drag.idx!==index)return;node.classList.remove('dragging');node.style.cursor='';recordTiltSample(drag,e);const releasedDrag=drag;cancelCardLongPress();clearPileDropTarget();const stackIndex=releasedDrag.stackArmed?Number(releasedDrag.stackCandidate):null;const stackTarget=stackIndex!==null?$('zone').querySelector('.card[data-index="'+stackIndex+'"]'):null;const stackReady=!!stackTarget&&stackCandidate(node)===stackTarget;const vacantTarget=vacantDropSlot(item,index);clearStackIntent(releasedDrag);drag=null;if(stackReady&&vacantTarget===null&&!dualSession&&!spreadWorkbench){TabulaTablePiles.stackPlaced(state,index,stackIndex);rememberTableUndo(releasedDrag.beforeUndo);commitTableChange();setStatus('重ねた2枚を束にしました。');return}if(dragMoved&&canDropOnTablePile()){const pileId=pileAtPoint(e.clientX,e.clientY);if(pileId){TabulaTablePiles.deposit(state,index,pileId);rememberTableUndo(releasedDrag.beforeUndo);commitTableChange();setStatus('カードを束に重ねました。');return}}if(spreadWorkbench&&dragMoved&&spreadSnap){const z=$('zone').getBoundingClientRect();const spacing=(Number($('spreadGridSize').value)||24)*tableCamera.scale;const px=z.width*item.x/100,py=z.height*item.y/100;item.x=Math.max(0,Math.min(100,Math.round(px/spacing)*spacing/z.width*100));item.y=Math.max(0,Math.min(100,Math.round(py/spacing)*spacing/z.height*100));node.style.left=item.x+'%';node.style.top=item.y+'%';}if(!spreadWorkbench&&dragMoved&&settings.spread==='free'&&freeSnapMode!=='off'){const p=snapFreePosition(item.x,item.y,item.id);item.x=p.x;item.y=p.y;node.style.left=item.x+'%';node.style.top=item.y+'%';}if(spreadWorkbench&&!dragMoved){spreadChoose(index);return}
 // Allow existing cards (including freely placed significators) to be
 // registered to empty preset frames after dragging. Monte Carlo retains its
 // dedicated 5x5 removal/compaction behavior below.
@@ -1849,6 +1849,9 @@ function tablePoint(clientX,clientY){
  const rect=$('zone').getBoundingClientRect();
  return {x:Math.max(4,Math.min(96,(clientX-rect.left)/rect.width*100)),
          y:Math.max(4,Math.min(96,(clientY-rect.top)/rect.height*100))};
+}
+function canDropOnTablePile(){
+ return !spreadWorkbench&&(!dualSession||settings.spread==='fourSeasons');
 }
 function pileAtPoint(clientX,clientY,excludeId=null){
  const candidates=[];
@@ -2524,7 +2527,7 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(document.getElem
   // Refill the original registered location without creating a second card
   // location. Keep its ID, role and fan properties intact.
   const opening=TabulaTablePiles.roleOf(refillPile)==='waste'||dealFaceUp;
-  const sourceRect=$('deck').getBoundingClientRect();
+  const sourceRect=activeStockElement().getBoundingClientRect();
   TabulaTablePiles.drawFromDeck(state,refillPile.id,opening);
   play('deal');render();saveLocal();
   setStatus((slot+1)+'番の空いた束に1枚補充しました。');
@@ -2547,7 +2550,7 @@ function drawAt(slot=null,x=null,y=null,animateArrival=true){if(document.getElem
   }
   return Promise.resolve();
  }
- const sourceRect=$(dualSession&&dualSession.activePile==='B'&&!isIndependentTables()?'deckB':'deck').getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:dealFaceUp,dragOrder:nextPlacedStackOrder()});play('deal');render();
+ const sourceRect=activeStockElement().getBoundingClientRect();const next=state.deck.shift(),pos=slot!==null?slots[slot]:{x:x??50,y:y??50,angle:0};state.placed.push({...next,slot,x:pos.x,y:pos.y,angle:pos.angle,origin:{x:pos.x,y:pos.y,angle:pos.angle},faceUp:dealFaceUp,dragOrder:nextPlacedStackOrder()});play('deal');render();
  const arrival=animateArrival?animateCardFromDeck(state.placed.length-1,sourceRect):Promise.resolve();
  setStatus(`配札しました（${state.placed.length}枚・${dealFaceUp?'表':'裏'}向き）。${dealFaceUp?'':'カードをクリックして開いてください。'}`);
  saveLocal();return arrival;
@@ -2566,29 +2569,29 @@ function fourSeasonsHasUnplacedHand(){
   ||(state.tablePiles||[]).some(p=>!Number.isInteger(p.slot)&&p.cards.length>0);
 }
 function fourSeasonsHandGuard(){
- if(settings.spread==='fourSeasons'&&!dualSession&&fourSeasonsHasUnplacedHand()){
+ if(settings.spread==='fourSeasons'&&fourSeasonsHasUnplacedHand()){
   setStatus('枠外の手札をファウンデーション・場札・タロンへ移してください。');
   return true;
  }
  return false;
 }
-async function revealFourSeasonsStock(){
+async function revealFourSeasonsStock(stock=activeStockElement()){
  if(document.getElementById('physicalCutOverlay')){setStatus('カット中はカードを開けません。');return;}
  if(!state.deck.length){setStatus('山札がありません。');return}
  if(fourSeasonsHandGuard())return;
- const zone=$('zone'),stock=$('deck');
+ const zone=$('zone');
  const zr=zone.getBoundingClientRect(),sr=stock.getBoundingClientRect();
  const m=metrics(),w=m.w*(tableCamera.scale||1);
  const cx=sr.left+sr.width/2+w*.3,cy=sr.top+sr.height/2-m.h*(tableCamera.scale||1)*1.2;
  const x=Math.max(7,Math.min(93,(cx-zr.left)/zr.width*100));
  const y=Math.max(8,Math.min(92,(cy-zr.top)/zr.height*100));
  if(!applyDealRemoval())return;
- const source=stock.getBoundingClientRect(),card=state.deck.shift();
+ const card=state.deck.shift();
  state.placed.push({...card,slot:null,x,y,angle:0,origin:{x,y,angle:0},
   faceUp:true,manualMoved:true,fourSeasonsReveal:true,dragOrder:nextPlacedStackOrder()});
  play('deal');render();saveLocal();
- await animateCardFromDeck(state.placed.length-1,source);
  setStatus('山札から1枚開きました。タロンまたは場札へドラッグしてください。');
+ await animateCardFromDeck(state.placed.length-1,sr);
 }
 // Per-spread interactive prerequisites are resolved before the existing
 // automatic deal. The modal never mutates the physical deck on cancellation.
@@ -2753,7 +2756,7 @@ async function dealAuto(){
  }
  // The Four Seasons preset always uses its six registered deal targets,
  // regardless of any user-configured dealing workbench.
- if(settings.spread==='fourSeasons'&&!dualSession){
+ if(settings.spread==='fourSeasons'){
   if(fourSeasonsHandGuard())return;
   if(!state.deck.length){setStatus('山札がありません。');return}
   const vacancies=getDealOrder().filter(i=>!hasOccupiedSpreadSlot(i));
@@ -4484,10 +4487,13 @@ function beginDeckPreview(e){
   deckPreview.dataset.appearance=appearanceForPile(source);if(deckPreview.dataset.appearance==='worn')deckPreview.dataset.wearVariant=wearVariant(state.deck[0]);
   document.body.append(deckPreview);moveDeckPreview(e);
 }
+function activeStockElement(){
+ return $(dualSession?.activePile==='B'&&!isIndependentTables()?'deckB':'deck');
+}
 function installPileInteraction(pile,source){
 pile.addEventListener('pointerdown',e=>{
   if(e.button!==0)return;
-  if(dualSession&&!dualSession.mixed&&source!==dualSession.activePile){if(dualBusy())return;dualSwitchPile(source)}
+  if(dualSession&&!isIndependentTables()&&!dualSession.mixed&&source!==dualSession.activePile){if(dualBusy())return;dualSwitchPile(source)}
   if(!state.deck.length)return;
   drag={type:'deck',startX:e.clientX,startY:e.clientY,pointerId:e.pointerId};recordTiltSample(drag,e);
   dragMoved=false;
@@ -4506,11 +4512,11 @@ pile.addEventListener('pointerup',e=>{
   const releasedDrag=drag;
   drag=null;clearDeckPreview();
   if(!dragMoved){
-   if(settings.spread==='fourSeasons'&&!dualSession){
+   if(settings.spread==='fourSeasons'){
     if(autoDealBusy||openingBusy||fourSeasonsHandGuard())return;
     const next=nextDealSlot();
     if(next>=0)drawAt(next);
-    else revealFourSeasonsStock();
+    else revealFourSeasonsStock(pile);
    }else drawAt();
    return;
   }
@@ -4519,7 +4525,7 @@ pile.addEventListener('pointerup',e=>{
   if(x<0||x>100||y<0||y>100)return;
   // A stock card may land directly on an existing pile, without an
   // intermediate free card. Keep the stock-to-pile transfer atomic.
-  const destination=!dualSession&&!spreadWorkbench?pileAtPoint(e.clientX,e.clientY):null;
+  const destination=canDropOnTablePile()?pileAtPoint(e.clientX,e.clientY):null;
   if(destination){
     if(!applyDealRemoval())return;
     // Turning stock into a talon reveals the card; other piles retain the deal setting.
