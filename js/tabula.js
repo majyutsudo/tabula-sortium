@@ -1802,7 +1802,8 @@ if(dragMoved&&settings.spread==='monteCarlo'&&Number.isInteger(item.slot)){
  }
 }
 
-if(!dragMoved&&!releasedDrag.longPress?.triggered){item.faceUp=!item.faceUp;play('flip')}if(dragMoved)selectCard(index);if(dragMoved&&settings.spread==='monteCarlo')maybeTriggerCompletionEffect();
+const flipped=!dragMoved&&!releasedDrag.longPress?.triggered;
+if(flipped){item.faceUp=!item.faceUp;play('flip')}if(dragMoved)selectCard(index);if(dragMoved&&settings.spread==='monteCarlo')maybeTriggerCompletionEffect();
 // Keep the tapped DOM node mounted. Rebuilding it while the pointer is released
 // makes mobile Safari jump to alternating scroll anchors.
 node.classList.toggle('faceup',item.faceUp);
@@ -1812,7 +1813,7 @@ node.style.top=`calc(${item.y}% + ${moveCross}px)`;
 node.classList.toggle('no-reversal-spin',!!item.reversed);node.style.setProperty('--rotation',cardDisplayRotation(item)+'deg');refreshDraggedSlotLabel(item);
 const cardData=workingCard(item.id),position=item.slot!=null?getSlots()[item.slot]:null;
 $('infoText').textContent=`${cardData.name}（${item.reversed?'逆位置':'正位置'}）${position?` — ${item.slot+1}. ${position.name}：${position.detail}`:' — 自由配置'}`;
-if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position.name:'');updateLiveResults();maybeTriggerCompletionEffect();rememberTableUndo(releasedDrag.beforeUndo);saveLocal();if(dragMoved&&!snappedToPreset)startHandGlide(item,node,releasedDrag)});node.addEventListener('pointercancel',()=>{cancelCardLongPress();clearPileDropTarget();clearStackIntent(drag);node.classList.remove('dragging');drag=null});node.addEventListener('contextmenu',e=>{e.preventDefault();if(inspectionEnabled()||e.pointerType==='touch')return;const before=captureTableUndo();item.angle=(item.angle+90)%360;rememberTableUndo(before);render();saveLocal()});if(inspectionEnabled()){node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',item.faceUp?c.name+(inspectSelectionMode==='multi'?'を比較選択':'を拡大する'):'伏せ札');}node.addEventListener('click',()=>{if(inspectionEnabled())inspectTableCard(index,node)});node.addEventListener('keydown',e=>{if(inspectionEnabled()&&(e.key==='Enter'||e.key===' ')){e.preventDefault();inspectTableCard(index,node)}});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
+if(!item.faceUp)$('infoText').textContent='伏せ札'+(position?' — '+position.name:'');updateLiveResults();maybeTriggerCompletionEffect(flipped&&item.faceUp);rememberTableUndo(releasedDrag.beforeUndo);saveLocal();if(dragMoved&&!snappedToPreset)startHandGlide(item,node,releasedDrag)});node.addEventListener('pointercancel',()=>{cancelCardLongPress();clearPileDropTarget();clearStackIntent(drag);node.classList.remove('dragging');drag=null});node.addEventListener('contextmenu',e=>{e.preventDefault();if(inspectionEnabled()||e.pointerType==='touch')return;const before=captureTableUndo();item.angle=(item.angle+90)%360;rememberTableUndo(before);render();saveLocal()});if(inspectionEnabled()){node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',item.faceUp?c.name+(inspectSelectionMode==='multi'?'を比較選択':'を拡大する'):'伏せ札');}node.addEventListener('click',()=>{if(inspectionEnabled())inspectTableCard(index,node)});node.addEventListener('keydown',e=>{if(inspectionEnabled()&&(e.key==='Enter'||e.key===' ')){e.preventDefault();inspectTableCard(index,node)}});return node}const RESULTS_VIS_KEY='tabula_sortium_results_visible';let resultsVisible=false;try{resultsVisible=localStorage.getItem(RESULTS_VIS_KEY)==='1'}catch(e){};
 function syncResultsVisibility(){if(document.body.classList.contains('tabula-dice-mode'))return;const panel=$('liveResults'),button=$('toggleResults');if(!panel||!button)return;panel.hidden=!resultsVisible;button.textContent=resultsVisible?'結果を閉じる ▴':'結果を表示 ▾';button.setAttribute('aria-expanded',String(resultsVisible))}
 function updateLiveResults(){const root=$('liveResultsRows');if(!root)return;syncResultsVisibility();if(!resultsVisible)return;const spread=getSlots(),all=Array.isArray(state.placed)?state.placed:[];const entries=[];if(settings.spread!=='free'){spread.forEach((slot,i)=>entries.push({label:`${i+1}. ${slot.name}`,item:all.find(p=>p.slot===i)||(state.tablePiles||[]).find(p=>p.slot===i)?.cards[0]}));}all.filter(p=>p.slot==null||settings.spread==='free').forEach((item,i)=>entries.push({label:item.significator?'シグニフィケイター':`${settings.spread==='free'?i+1+'. 自由配置':'補助 '+(i+1)}`,item}));root.replaceChildren();entries.forEach(({label,item})=>{const row=document.createElement('div');row.className='live-result-row';const left=document.createElement('div');left.className='live-result-pos';left.textContent=label;const right=document.createElement('div');right.className='live-result-card';if(!item){right.classList.add('unrevealed');right.textContent='未配札'}else if(!item.faceUp){right.classList.add('unrevealed');right.textContent='裏向き'}else{right.textContent=`${displayCard(workingCard(item.id)||workingCards()[0]).name}（${item.reversed?'逆位置':'正位置'}）`;}row.append(left,right);root.append(row)});$('liveResultsCount').textContent=`${entries.filter(e=>e.item?.faceUp&&!e.item.significator).length} / ${entries.filter(e=>e.item&&!e.item.significator).length}枚公開`;if(!entries.length){const empty=document.createElement('div');empty.className='mini';empty.textContent='まだカードがありません。';root.append(empty)}}
 $('toggleResults').addEventListener('click',()=>{resultsVisible=!resultsVisible;try{localStorage.setItem(RESULTS_VIS_KEY,resultsVisible?'1':'0')}catch(e){}updateLiveResults()});syncResultsVisibility();
@@ -3732,21 +3733,42 @@ function isCoreSpreadOpen(){
  const target=coreTargetCount();return target>0&&coreFaceUpCount()>=target
 }
 
+let sequentialOpening=false,pendingOpenFinale=null;
+function usesOrdinaryOpenFinale(){return settings.spread!=='fourSeasons'&&settings.spread!=='monteCarlo'}
 function updateCompletionAppearance(){
  const stage=$('stage');
  if(!stage)return;
  const complete=isCoreSpreadOpen();
- const special=settings.spread==='fourSeasons'||settings.spread==='monteCarlo';
- stage.classList.toggle('normal-spread-open',complete&&!special);
+ const special=!usesOrdinaryOpenFinale();
+ const showingLastCard=sequentialOpening||pendingOpenFinale?.state===state;
+ stage.classList.toggle('normal-spread-open',complete&&!special&&!showingLastCard);
  for(const preset of ['ritual','mystic','psychic']){
   stage.classList.toggle('spread-complete-'+preset,complete&&special&&settings.effectPreset===preset);
  }
 }
-function maybeTriggerCompletionEffect(force=false){
+function maybeTriggerCompletionEffect(waitForLastCard=false){
+ const complete=isCoreSpreadOpen();
+ if(usesOrdinaryOpenFinale()){
+  if(!complete)pendingOpenFinale=null;
+  else if(waitForLastCard&&!state.completionShown&&settings.effectPreset!=='silent'
+      &&!window.matchMedia('(prefers-reduced-motion: reduce)').matches&&pendingOpenFinale?.state!==state){
+   const pending={state,spread:settings.spread};
+   pendingOpenFinale=pending;
+   // Give the flip time to finish and keep the revealed face lit briefly.
+   setTimeout(()=>{
+    if(pendingOpenFinale!==pending)return;
+    pendingOpenFinale=null;
+    if(state!==pending.state||settings.spread!==pending.spread)return;
+    maybeTriggerCompletionEffect();
+    saveLocal();
+   },settings.effectPreset==='ritual'?850:710);
+  }
+ }
  updateCompletionAppearance();
  if(settings.spread==='fourSeasons'){inspectFourSeasonsCompletion();return}
- if(!isCoreSpreadOpen()){state.completionShown=false;return}
- if(force||!state.completionShown){
+ if(!complete){state.completionShown=false;return}
+ if(usesOrdinaryOpenFinale()&&(sequentialOpening||pendingOpenFinale?.state===state))return;
+ if(!state.completionShown){
   state.completionShown=true;
   if(settings.effectPreset!=='silent')previewVisualEffect(true);
  }
@@ -4165,6 +4187,7 @@ function startOpening(){
  $('quickRevealAll').disabled=true;
 }
 function finishOpening(){
+ sequentialOpening=false;
  openingBusy=false;openingStopRequested=false;syncOpeningControls();
  $('quickRevealAll').disabled=false;
 }
@@ -4178,6 +4201,7 @@ function openSequentially(){
  const closed=[...state.placed.filter(p=>!p.faceUp&&!p.auxiliaryPile).sort((a,b)=>(a.slot??999)-(b.slot??999)),...TabulaTablePiles.closedTopCards(state)];
  if(!closed.length){setStatus('開ける伏せ札がありません。');return}
  startOpening();
+ sequentialOpening=true;
  const basePace={silent:330,ritual:760,mystic:470,psychic:430}[settings.effectPreset]||500;
  const pace=settings.openMode==='quick'?Math.max(110,Math.round(basePace/2)):basePace;
  let index=0;
@@ -4194,7 +4218,8 @@ function openSequentially(){
   }
   closed[index].faceUp=true;index++;play('flip');render();saveLocal();
   setStatus('カードを開いています：'+index+'/'+closed.length+'枚');
-  setTimeout(step,pace);
+  const lastCardPause=index===closed.length&&usesOrdinaryOpenFinale()&&settings.effectPreset!=='silent'?350:0;
+  setTimeout(step,Math.max(pace,lastCardPause));
  }
  step();
 }
