@@ -341,10 +341,14 @@ body.tabula-dice-mode #operations .section-toggle:disabled{opacity:1;cursor:defa
  max-inline-size:100%;
 }
 #dice-corner-result:not([data-mode="normal"]) strong {font-size:1em}
-#dice-corner-result[data-mode="astro"] span {
+#dice-corner-result[data-mode="astro"] {--astro-result-gap:.85em}
+#dice-corner-result[data-mode="astro"] > span {
+ display:inline-flex;
+ gap:var(--astro-result-gap);
  font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;
- font-size:1.2em;
 }
+#dice-corner-result[data-mode="astro"] > span > span {font-size:1.2em}
+#dice-corner-result[data-mode="astro"] > strong {margin-inline-start:var(--astro-result-gap)}
 #dice-corner-result[data-mode="iching"] {
  font-family:Georgia,"Yu Mincho","Hiragino Mincho ProN","Noto Serif CJK JP",serif;
  font-size:clamp(12px,2.1vw,16px);

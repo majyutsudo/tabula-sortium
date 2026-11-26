@@ -216,12 +216,22 @@ function dieDetail(index) {
 function updateCornerResult(first='',last=''){
  const caption=diceDOM.getElementById('table-corner-bottom');
  const result=diceDOM.getElementById('corner-result');
- const show=Boolean(first||last);
- caption.hidden=show;
+ const show=!held&&!rolling&&Boolean(first||last);
+ caption.hidden=show||held||rolling;
  result.hidden=!show;
  result.dataset.mode=current.id;
- result.firstElementChild.textContent=first;
- result.lastElementChild.textContent=last;
+ const prefix=result.firstElementChild;
+ prefix.textContent='';
+ if(show){
+  if(Array.isArray(first)){
+   for(const glyph of first){
+    const symbol=document.createElement('span');
+    symbol.textContent=glyph;
+    prefix.append(symbol);
+   }
+  }else prefix.textContent=first;
+ }
+ result.lastElementChild.textContent=show?last:'';
 }
 function showResults(results=null){
  recordedResults=Array.isArray(results)?results.slice():null;
@@ -239,7 +249,7 @@ function showResults(results=null){
  }
  if(current.id==='astro'&&rolled.length){
   const [planet,sign,house]=diceSettings.map((die,i)=>die.faces?.[results[i]-1]?.glyph);
-  cornerFirst=(planet||'—')+'　'+(sign?sign+'\uFE0E':'—');
+  cornerFirst=[planet||'—',sign?sign+'\uFE0E':'—'];
   cornerLast=(house||'—')+'ハウス';
  }
  const latest=current.id==='normal'&&normalResultMode==='latest';
@@ -1450,6 +1460,7 @@ function syncDieUse(index){
 function setHand(indices){
  clearDiceFinale();
  held=indices.length>0;
+ if(held)updateCornerResult();
  heldSelection=normalizeHeldSelection(indices);
  objects.forEach(({mesh},i)=>{mesh.visible=diceSettings[i].enabled!==false&&!isHeldDie(i)&&Number.isInteger(recordedResults?.[i])});
  syncHeldActions();
