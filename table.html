@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ja" class="table-starting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover"><title>TABULA SORTIUM v0.856 — 仮想占術卓</title><link rel="stylesheet" href="css/tabula.css?v=0856"><link rel="stylesheet" href="css/dice-workspace.css?v=0856"><link rel="stylesheet" href="css/cloth.css?v=0822"><link rel="stylesheet" href="css/card-backs.css?v=0518"><link rel="stylesheet" href="css/deck-appearances.css?v=0518"><link rel="stylesheet" href="css/deck-editor.css?v=0529"><link rel="stylesheet" href="css/spread-encyclopedia.css"><link rel="stylesheet" href="css/sidebar-notice.css?v=10"><link rel="icon" type="image/png" href="images/ui/icon-00.png"><link rel="apple-touch-icon" href="images/ui/icon-00.png"><style>
+<!DOCTYPE html><html lang="ja" class="table-starting"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover"><title>TABULA SORTIUM v0.857 — 仮想占術卓</title><link rel="stylesheet" href="css/tabula.css?v=0857"><link rel="stylesheet" href="css/dice-workspace.css?v=0857"><link rel="stylesheet" href="css/cloth.css?v=0822"><link rel="stylesheet" href="css/card-backs.css?v=0518"><link rel="stylesheet" href="css/deck-appearances.css?v=0518"><link rel="stylesheet" href="css/deck-editor.css?v=0529"><link rel="stylesheet" href="css/spread-encyclopedia.css"><link rel="stylesheet" href="css/sidebar-notice.css?v=10"><link rel="icon" type="image/png" href="images/ui/icon-00.png"><link rel="apple-touch-icon" href="images/ui/icon-00.png"><style>
 #tableStartup{display:none}
 .table-starting body{background:#1b2421}
 .table-starting .shell{visibility:hidden;opacity:0;pointer-events:none}
@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="js/multi-workspace.js?v=0535" defer></script>
 <script src="js/catalog.js?v=0702" defer></script>
 <script src="js/spread-deal.js?v=0700" defer></script>
-<script src="js/content-identity.js?v=0856" defer></script>
-<script src="js/spread-store.js?v=0856" defer></script>
+<script src="js/content-identity.js?v=0857" defer></script>
+<script src="js/spread-store.js?v=0857" defer></script>
 <script src="js/spread-geometry.js?v=0553" defer></script>
 <script src="js/spread-encyclopedia.js?v=0703" defer></script>
 <script src="js/deck-store.js?v=0529" defer></script>
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="js/deal-workbench.js?v=0636" defer></script>
 <script src="js/card-snap.js?v=0374" defer></script>
 <script src="js/cloth-figures.js?v=0834" defer></script>
-<script src="js/tabula.js?v=0856" defer></script>
+<script src="js/tabula.js?v=0857" defer></script>
 <script src="js/dice-labels.js?v=0812" defer></script>
 <script src="js/placement-print.js?v=0812" defer></script>
 <script src="js/sidebar-notice.js?v=10" defer></script>
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  <a id="tableStartupRetry" href="" hidden>再読み込み</a>
  <noscript>卓を開くにはJavaScriptを有効にしてください。</noscript>
 </div>
-<div class="shell"><aside><header><a id="tabulaEntranceLink" class="tabula-brand tabula-entrance-link" href="index.html" title="入口へ戻る" aria-label="TABULAの入口へ戻る"><h1>TABULA</h1><div class="tabula-series"><span>SORTIUM</span></div></a><div class="version">THE VIRTUAL DIVINATION TABLE<br>v0.856</div><p class="mini">占術の設計・実験・実行のための仮想卓</p></header>
+<div class="shell"><aside><header><a id="tabulaEntranceLink" class="tabula-brand tabula-entrance-link" href="index.html" title="入口へ戻る" aria-label="TABULAの入口へ戻る"><h1>TABULA</h1><div class="tabula-series"><span>SORTIUM</span></div></a><div class="version">THE VIRTUAL DIVINATION TABLE<br>v0.857</div><p class="mini">占術の設計・実験・実行のための仮想卓</p></header>
 <section class="section stack" id="tableManagement"><h2><button type="button" class="section-toggle" aria-expanded="false"><span class="section-heading"><span class="section-title">Ⅰ. 卓の管理</span><span class="section-hint">卓の追加・切り替え・管理</span></span><span class="fold-indicator" aria-hidden="true">▾</span></button></h2>
 <div class="table-workspace-start">
  <div class="deck-setting-heading">現在の卓</div>
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <details class="candle-disclosure"><summary>キャンドル設定</summary><label class="choice"><input type="checkbox" id="altarToggle">キャンドルを表示</label></details></section><section class="section stack"><h2><button type="button" class="section-toggle" aria-expanded="false"><span class="section-heading"><span class="section-title">Ⅴ. 保存・管理</span><span class="section-hint">データの保存・読み込み・初期化</span></span><span class="fold-indicator" aria-hidden="true">▾</span></button></h2><button type="button" id="openEnvironmentLibrary">作業環境を保存・開く</button><button type="button" id="exportEnvironment">作業環境を書き出す（JSON）</button><button type="button" id="exportAll">全データをバックアップ（JSON）</button><button type="button" id="importExternal" aria-describedby="importFileHelp">JSONファイルを読み込む</button><p class="mini" id="importFileHelp">作業環境・全データのバックアップ・占例・スプレッドに対応</p><input type="file" id="externalFile" accept=".json,application/json" hidden><div hidden aria-hidden="true"><button id="snapshotSave" type="button"></button><button id="snapshotAgain" type="button"></button><button id="snapshotList" type="button"></button><button id="save" type="button"></button><button id="restore" type="button"></button></div><hr><button type="button" id="resetSettings">設定を初期化</button><button type="button" id="resetEverything">すべて初期化</button><p class="mini">作業状態は自動保存。全データの読み込みは既存データを置き換えます。</p></section><div class="aside-help-area"><button type="button" id="openHelp" class="aside-help-button" aria-label="操作説明・仕様を開く">?　操作説明・仕様</button><button type="button" id="openAbout" class="aside-help-button" aria-label="Aboutを開く">About</button></div><section class="sidebar-notice" id="sidebarNotice" aria-label="関連サイトのご案内" hidden></section></aside><main class="main"><div class="toolbar"><span class="status" id="status">開始する占いを選んでください。</span><label class="workspace-switcher" id="workspaceSwitcher" hidden>卓 <select id="workspaceTable" aria-label="表示する卓"><option value="main">メイン卓</option><option value="table1">卓Ⅰ</option><option value="table2">卓Ⅱ</option></select><span id="workspaceClothSwatch" class="table-cloth-swatch" role="img" aria-label="現在の卓のクロス色"></span></label><button type="button" id="tableUndo" title="直前のカード操作を取り消す（Ctrl+Z）" aria-label="直前のカード操作を取り消す" disabled>↶ 戻す</button><button type="button" id="zoomOut" title="縮小">−</button><button type="button" id="zoomReset" title="表示倍率をリセット" aria-label="表示倍率をリセット">R</button><button type="button" id="zoomIn" title="拡大">＋</button><button type="button" class="primary" id="newSessionStandalone">新しい占いを始める</button><button type="button" id="cardGalleryOpen" title="カード図鑑を開く">カード図鑑</button><button type="button" id="spreadNotebook" class="notebook-tool" title="手帖を開く" aria-label="手帖を開く"><span class="notebook-tool-icon" aria-hidden="true">▣</span><span>手帖</span></button></div><section id="spreadArchive" class="spread-archive" hidden aria-label="スプレッド手帖">
  <div class="archive-paper"><div class="archive-top"><div><small>TABULA SORTIUM / PRIVATE ARCHIVE</small><h2>スプレッド手帖</h2><p>MY SPREADS</p></div><button type="button" id="archiveClose">手帖を閉じる ×</button></div><div id="archiveSpreadsPanel">
  <button type="button" class="archive-capture" id="archiveCapture">✧　現在の卓から作成 <span>この卓のカード配置を新しいスプレッドとして記録する</span></button>
- <div class="row archive-transfer-actions"><button type="button" id="archiveImport" title="単体・パックのJSONを複数選択して読み込む">読み込み</button><input id="archiveImportFile" type="file" accept=".json,application/json" multiple hidden><button type="button" id="archiveExportPack" title="表示中のスプレッドをパックとして書き出す">パック出力</button><button type="button" id="archiveCreatorProfile">制作者情報</button></div><label class="field">グループ <select id="archiveGroupFilter" aria-label="スプレッドグループ"><option value="">すべてのスプレッド</option></select></label>
+ <div class="row archive-transfer-actions"><button type="button" id="archiveImport" title="単体・パックのJSONを複数選択して読み込む">読み込み</button><input id="archiveImportFile" type="file" accept=".json,application/json" multiple hidden><button type="button" id="archiveExportPack" title="既存パックの再出力・新規パックの作成">パック管理</button><button type="button" id="archiveCreatorProfile">制作者情報</button></div><label class="field">グループ <select id="archiveGroupFilter" aria-label="スプレッドグループ"><option value="">すべてのスプレッド</option></select></label>
  <div class="archive-bar"><span>REGISTERED SPREADS</span><span id="archiveCount"></span></div><div id="archiveItems" class="archive-items"></div></div>
  </div>
 </section><div class="spread-workbench" id="spreadWorkbench" hidden>
