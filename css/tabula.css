@@ -2767,11 +2767,15 @@ aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);
 #instrumentChoiceSection .instrument-preparation{display:grid;gap:10px;min-width:0}
 #instrumentChoiceSection .instrument-preparation :is(#deckLibrarySelect,#spread){height:auto;min-height:var(--side-control-height);font-size:14px;font-weight:normal;border-color:var(--ui-accent,#a48d64)}
 #instrumentChoiceSection .instrument-reference{margin-top:4px;min-width:0}
-#instrumentChoiceSection .instrument-reference-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-#instrumentChoiceSection .instrument-reference-buttons>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;width:100%;min-height:48px;padding:6px 3px;margin:0;font-size:13px;line-height:1.4;white-space:normal;overflow-wrap:anywhere;background:var(--side-quiet);border-color:var(--side-line);font-weight:normal}
+#instrumentChoiceSection .instrument-reference-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;align-items:stretch}
+#instrumentChoiceSection .instrument-reference-buttons>button,#instrumentChoiceSection .instrument-reference-buttons>#cardGalleryOpen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;width:100%;min-height:54px;height:100%;align-self:stretch;padding:6px 3px;margin:0;font-size:13px;line-height:1.4;white-space:normal;overflow-wrap:anywhere;background:var(--side-quiet);border-color:var(--side-line);font-weight:normal}
 #instrumentChoiceSection .instrument-reference-buttons>button:hover{background:rgba(160,140,100,.12)}
 #instrumentChoiceSection .instrument-management .deck-edit-actions{display:flex}
 #instrumentChoiceSection #deckEditCurrent{background:var(--side-quiet);border:1px solid var(--side-line);box-shadow:none;width:100%;font:normal 14px/1.5 var(--tabula-ui-font,Arial,sans-serif);text-align:left;padding:8px 10px;min-height:var(--side-control-height)}
 #instrumentChoiceSection #deckEditCurrent::after{content:'›';float:right;color:var(--ui-accent,#d6c29d)}
 #instrumentChoiceSection #deckEditCurrent:hover{background:rgba(160,140,100,.12)}
 #instrumentChoiceSection [hidden]{display:none!important}
+
+#instrumentChoiceSection #playingOrientationMarkField{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:7px;row-gap:2px;align-items:center}
+#instrumentChoiceSection #playingOrientationMarkField input{margin:0}
+#instrumentChoiceSection #playingOrientationMarkField small{grid-column:2;line-height:1.5;font-size:12px}
