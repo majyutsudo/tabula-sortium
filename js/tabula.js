@@ -180,16 +180,19 @@ function importSpreadBundles(documents){
   const next=spreadLibrary.map(v=>({...v,groups:[...(v.groups||[])],packSources:[...(v.packSources||[])]}));
   const indexed=new Map(next.filter(v=>v.identity).map(v=>[I.key(v.identity),v]));
   let added=0,duplicates=0,conflicts=0,linked=0;
-  const mergeSource=(v,p)=>{const key=p.creator.id+':'+p.id;if(!v.packSources.some(q=>q.creator.id+':'+q.id===key)){v.packSources.push(p);linked++}};
-  const link=(v,p)=>{
+  const mergeSource=(v,p)=>{const key=p.creator.id+':'+p.id;if(v.packSources.some(q=>q.creator.id+':'+q.id===key))return false;v.packSources.push(p);linked++;return true};
+  const link=(v,p,initial=false)=>{
    if(!p)return;
-   const key=p.creator.id+':'+p.id;
-   mergeSource(v,p);
-   // A local group is not the pack's identity: users can reorganize it freely.
-   // Initial grouping is based on matching pack provenance, not just its title.
-   const group=next.find(q=>q!==v&&q.packSources?.some(x=>x.creator.id+':'+x.id===key)&&q.groups?.some(g=>g.name===p.name))?.groups?.find(g=>g.name===p.name);
-   const match=group||{id:I.uuid(),name:p.name};
-   if(!v.groups.some(g=>g.id===match.id||g.name===p.name))v.groups.push(match);
+   if(!mergeSource(v,p)&&!initial)return;
+   const all=next.flatMap(q=>q.groups||[]);
+   let match=all.find(g=>g.origin?.creatorId===p.creator.id&&g.origin?.packId===p.id);
+   if(!match){
+    let name=p.name;
+    if(all.some(g=>g.name===name))name=(p.name.slice(0,78)+' — '+(p.creator.name||p.creator.id.slice(-8))).slice(0,100);
+    if(all.some(g=>g.name===name))name=name.slice(0,89)+' ['+p.id.slice(-8)+']';
+    match={id:I.uuid(),name,origin:{creatorId:p.creator.id,packId:p.id}};
+   }
+   if(!v.groups.some(g=>g.id===match.id))v.groups.push(match);
   };
   for(const {spread,pack} of items){
    const identity=spread.identity||I.newIdentity({id:I.uuid(),name:'',website:''});
@@ -201,7 +204,7 @@ function importSpreadBundles(documents){
    }
    const v={...spread,identity,id:newLocalSpreadId(),groups:[],packSources:[]};
    for(const source of spread.packSources||[])mergeSource(v,source);
-   link(v,pack);next.push(v);indexed.set(key,v);added++;
+   link(v,pack,true);next.push(v);indexed.set(key,v);added++;
   }
   if(next.length>TabulaSpreadStore.MAX_LIBRARY)throw Error('登録上限（'+TabulaSpreadStore.MAX_LIBRARY+'件）を超えます。');
   if(!added&&!linked){alert('追加なし：登録済み '+duplicates+'篇／改訂・内容の相違 '+conflicts+'篇。既存データは上書きしません。');return false}
