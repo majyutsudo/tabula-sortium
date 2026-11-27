@@ -63,6 +63,7 @@ function portableSpread(v){
   }
  }
  if(v.identity!==undefined)meta.identity=identityModule().identity(v.identity);
+ if(v.packSources!==undefined&&v.packSources.length)meta.packSources=sources(v.packSources);
  if(v.deal!==undefined)meta.deal=root.TabulaSpreadDeal.normalize(v.deal,slots.length);
  if(v.cardSize!==undefined&&(!Number.isFinite(v.cardSize)||v.cardSize<.8||v.cardSize>2.3))
   throw Error('カードサイズが不正です。');
@@ -94,7 +95,16 @@ function importBundle(data){
  if(spreads.some(s=>!s.identity)||new Set(spreads.map(s=>identityModule().key(s.identity))).size!==spreads.length)throw Error('パック内の作品IDが不正です。');
  return spreads.map(spread=>({spread,pack}));
 }
-function content(v){const {identity,...rest}=portableSpread(v);return JSON.stringify(rest)}
+function content(v){
+ try{const {identity,packSources,...rest}=portableSpread(v);return JSON.stringify(rest)}
+ catch(e){const fields=['name','slots','alternate','author','source','overview','method','notes','deal','cardSize','deckPosition'];return JSON.stringify(Object.fromEntries(fields.filter(k=>v[k]!==undefined).map(k=>[k,v[k]])))}
+}
+function sameContent(a,b){return content(a)===content(b)}
+function validLibrary(items){
+ if(!Array.isArray(items)||items.length>MAX_LIBRARY||!items.every(validSpread))return false;
+ const ids=items.map(v=>v.id),works=items.filter(v=>v.identity).map(v=>identityModule().key(v.identity));
+ return new Set(ids).size===ids.length&&new Set(works).size===works.length;
+}
 function prepareLibrary(items,previous,profile){
  const I=identityModule(),old=new Map(previous.map(v=>[v.id,v]));
  if(items.length>MAX_LIBRARY)throw Error('登録上限（'+MAX_LIBRARY+'件）に達しています。');
@@ -102,7 +112,7 @@ function prepareLibrary(items,previous,profile){
   const before=old.get(v.id),prior=before?.identity;
   let id=v.identity;
   if(!id)id=I.newIdentity(profile);
-  else if(prior&&I.key(id)===I.key(prior)&&content(v)!==content(before)){
+  else if(prior&&I.key(id)===I.key(prior)&&!sameContent(v,before)){
    id=prior.creator.id===profile.id?I.revise(prior,profile):I.newIdentity(profile,prior);
   }
   return {...v,identity:I.identity(id),groups:groups(v.groups||[]),packSources:sources(v.packSources||[])};
@@ -119,5 +129,5 @@ function read(storage,key){
 function write(storage,key,items){
   storage.setItem(key,JSON.stringify(items));
 }
-root.TabulaSpreadStore=Object.freeze({MAX_SPREAD_SLOTS,MAX_LIBRARY,validSpread,fromReading,read,write,portableSpread,exportPortable,importPortable,exportPack,importBundle,prepareLibrary,groups,packInfo});
+root.TabulaSpreadStore=Object.freeze({MAX_SPREAD_SLOTS,MAX_LIBRARY,validSpread,fromReading,read,write,portableSpread,exportPortable,importPortable,exportPack,importBundle,prepareLibrary,groups,packInfo,sameContent,validLibrary});
 })(globalThis);
