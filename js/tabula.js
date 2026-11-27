@@ -13,7 +13,8 @@ function editCreatorProfile(){
   const name=prompt('制作者ID：'+p.id+'\n制作者名（公開ファイルに記録されます。空欄でも可）',p.name);if(name===null)return;
   const website=prompt('Webサイト（任意・公開ファイルに記録されます）',p.website);if(website===null)return;
   creatorProfile=TabulaContentIdentity.save(localStorage,{...p,name:name.trim(),website:website.trim()});
-  renderSpreadArchive();setStatus('制作者情報を保存しました。');
+  try{storeSpreadLibrary()}catch(e){renderSpreadArchive();alert('制作者プロフィールは保存しましたが、既存作品の表示情報を更新できませんでした：'+e.message);return}
+  setStatus('制作者情報を保存しました。');
  }catch(e){alert(e.message)}
 }
 function newLocalSpreadId(){return 'custom_'+TabulaContentIdentity.uuid()}
