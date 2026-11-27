@@ -95,6 +95,44 @@ function importBundle(data){
  if(spreads.some(s=>!s.identity)||new Set(spreads.map(s=>identityModule().key(s.identity))).size!==spreads.length)throw Error('パック内の作品IDが不正です。');
  return spreads.map(spread=>({spread,pack}));
 }
+/* A pack is a publication snapshot, independent of editable local groups. */
+const PACK_LIBRARY_KEY='tabula_sortium_spread_packs_v1',MAX_PACKS=500;
+function packKey(p){return p.creator.id+':'+p.id}
+function normalizePack(data){
+ if(data?.kind!=='spread-pack')throw Error('スプレッドパックではありません。');
+ const rows=importBundle(data);
+ return exportPack(rows[0].pack,rows.map(r=>r.spread));
+}
+function normalizePackLibrary(items){
+ if(!Array.isArray(items)||items.length>MAX_PACKS)throw Error('パック登録数が上限を超えています。');
+ const packs=items.map(normalizePack);
+ if(new Set(packs.map(p=>packKey(p.pack))).size!==packs.length)throw Error('パックIDが重複しています。');
+ return packs;
+}
+function readPacks(storage){
+ const raw=storage.getItem(PACK_LIBRARY_KEY);
+ return raw===null?[]:normalizePackLibrary(JSON.parse(raw));
+}
+function stagePacks(existing,documents){
+ const next=normalizePackLibrary(existing),index=new Map(next.map(p=>[packKey(p.pack),p]));
+ let added=0,unchanged=0,conflicts=0;
+ const accepted=[];
+ for(const document of documents){
+  if(document?.kind!=='spread-pack'){accepted.push(document);continue}
+  const pack=normalizePack(document),key=packKey(pack.pack),prior=index.get(key);
+  if(prior){
+   if(JSON.stringify(prior)===JSON.stringify(pack)){unchanged++;accepted.push(pack)}
+   else conflicts++;
+   continue;
+  }
+  next.push(pack);index.set(key,pack);added++;accepted.push(pack);
+ }
+ if(next.length>MAX_PACKS)throw Error('パック登録数が上限を超えています。');
+ return {packs:next,accepted,added,unchanged,conflicts};
+}
+function newPack(name,creator,items){
+ return exportPack({id:identityModule().uuid(),name,creator},items);
+}
 function content(v){
  try{const {identity,packSources,...rest}=portableSpread(v);return JSON.stringify(rest)}
  catch(e){const fields=['name','slots','alternate','author','source','overview','method','notes','deal','cardSize','deckPosition'];return JSON.stringify(Object.fromEntries(fields.filter(k=>v[k]!==undefined).map(k=>[k,v[k]])))}
@@ -130,5 +168,5 @@ function read(storage,key){
 function write(storage,key,items){
   storage.setItem(key,JSON.stringify(items));
 }
-root.TabulaSpreadStore=Object.freeze({MAX_SPREAD_SLOTS,MAX_LIBRARY,validSpread,fromReading,read,write,portableSpread,exportPortable,importPortable,exportPack,importBundle,prepareLibrary,groups,packInfo,sameContent,validLibrary});
+root.TabulaSpreadStore=Object.freeze({MAX_SPREAD_SLOTS,MAX_LIBRARY,validSpread,fromReading,read,write,portableSpread,exportPortable,importPortable,exportPack,importBundle,prepareLibrary,groups,packInfo,sameContent,validLibrary,PACK_LIBRARY_KEY,MAX_PACKS,packKey,normalizePack,normalizePackLibrary,readPacks,stagePacks,newPack});
 })(globalThis);
