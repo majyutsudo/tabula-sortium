@@ -2730,3 +2730,26 @@ aside header .tabula-entrance-link:focus-visible{
 /* Deck totals belong to the table, not to the movable stock. */
 .table-surface .deck-label{left:auto;right:4%;top:2.5%;bottom:auto;transform:none;width:auto;max-width:92%;white-space:normal;text-align:right;line-height:1.4;pointer-events:none}
 @media(max-width:460px){.table-surface .deck-label{font-size:10px}}
+
+/* Instrument sidebar: frequent decisions first; reference and maintenance quieter. */
+#instrumentChoiceSection .instrument-preparation{display:grid;gap:11px;min-width:0}
+#instrumentChoiceSection .instrument-preparation .field{gap:5px}
+#instrumentChoiceSection .instrument-preparation select{min-height:38px}
+#instrumentChoiceSection .instrument-preparation :is(#deckLibrarySelect,#spread){min-height:44px;border-color:var(--ui-accent,#a48d64);font-weight:600}
+#instrumentChoiceSection .instrument-reference{margin-top:12px;min-width:0}
+#instrumentChoiceSection .instrument-reference-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#instrumentChoiceSection .instrument-reference-buttons>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0;width:100%;min-height:49px;padding:6px 3px;margin:0;font-size:11px;line-height:1.35;white-space:normal;overflow-wrap:anywhere;background:transparent;border-color:var(--ui-border,#75684e);font-weight:normal}
+#instrumentChoiceSection .instrument-reference-buttons>button:hover{background:rgba(160,140,100,.12)}
+#instrumentChoiceSection .instrument-display{margin-top:10px;background:transparent;border-color:transparent;border-top-color:var(--ui-border,#594f3d);border-radius:0}
+#instrumentChoiceSection .instrument-display>summary{padding:9px 1px;justify-content:flex-start;color:inherit}
+#instrumentChoiceSection .instrument-display>summary span{flex:1}
+#instrumentChoiceSection .instrument-display>summary small{display:block;font-size:10px;font-weight:normal;opacity:.72;margin-top:4px}
+#instrumentChoiceSection .instrument-display .setting-details-body{padding:0 0 8px;gap:9px}
+#instrumentChoiceSection .instrument-display .field{font-size:12px}
+#instrumentChoiceSection .instrument-display .choice small{font-size:10px;opacity:.82}
+#instrumentChoiceSection .instrument-management{border-top:1px solid var(--ui-border,#594f3d);padding-top:5px}
+#instrumentChoiceSection .instrument-management .deck-edit-actions{display:flex}
+#instrumentChoiceSection #deckEditCurrent{background:transparent;border-color:transparent;box-shadow:none;width:100%;font-size:12px;font-weight:normal;text-align:left;padding:8px 4px;opacity:.84}
+#instrumentChoiceSection #deckEditCurrent::after{content:'›';float:right}
+#instrumentChoiceSection #deckEditCurrent:hover,#instrumentChoiceSection #deckEditCurrent:focus-visible{opacity:1;border-color:var(--ui-border,#75684e)}
+#instrumentChoiceSection [hidden]{display:none!important}
