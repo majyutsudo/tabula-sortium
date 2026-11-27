@@ -1,5 +1,5 @@
 
-(()=>{'use strict';let inspectMode=false,tableDetailFocus=null,inspectSelectionMode='single',inspectSelection=[];const $=id=>document.getElementById(id);const {majors,suitDefs,ranks,cards}=TabulaCatalog;const SPREAD_LIBRARY_KEY='tabula_sortium_spread_library_v1';let spreadLibrary=[];
+(()=>{'use strict';let inspectMode=false,tableDetailFocus=null,inspectSelectionMode='single',inspectSelection=[];const $=id=>document.getElementById(id);const {majors,suitDefs,ranks,cards}=TabulaCatalog;const SPREAD_LIBRARY_KEY='tabula_sortium_spread_library_v1';let spreadLibrary=[];const SPREAD_MENU_KEY='tabula_spread_menu_v1';let builtinSpreadMenu=null;
 let creatorProfile=null;
 function currentCreator(){return creatorProfile||(creatorProfile=TabulaContentIdentity.load(localStorage))}
 function loadSpreadLibrary(){
@@ -118,14 +118,48 @@ function syncSpreadShortcut(){
  if(stale)shortcut.replaceChildren(...options.map(option=>option.cloneNode(true)));
  if(shortcut.value!==settings.spread)shortcut.value=settings.spread;
 }
+function spreadMenuEntries(includeActive=false){
+ if(!builtinSpreadMenu)builtinSpreadMenu=[...$('spread').options].filter(o=>o.value!=='__menu_settings'&&!o.dataset.custom).map(o=>({id:o.value,name:o.text}));
+ const rows=spreadLibrary.filter(v=>isMySpread(v)||(includeActive&&v.id===settings.spread));
+ return [...builtinSpreadMenu,...rows.map(v=>({id:v.id,name:rows.some(q=>q.id!==v.id&&q.name===v.name)?v.name+' — '+(v.identity?.creator?.name||'制作者名なし')+' ['+(v.identity?.id||v.id).slice(-8)+']':v.name,custom:true}))];
+}
+function normalizeSpreadMenu(v){
+ const clean=a=>Array.isArray(a)?[...new Set(a.filter(x=>typeof x==='string'&&x.length<=180&&x!=='free'&&x!=='__menu_settings'))].slice(0,600):[];
+ return {order:clean(v?.order),hidden:clean(v?.hidden)};
+}
+function readSpreadMenu(){try{return normalizeSpreadMenu(JSON.parse(localStorage.getItem(SPREAD_MENU_KEY)||'{}'))}catch{return normalizeSpreadMenu(null)}}
+function orderedSpreadMenu(entries,prefs){
+ const ranks=new Map(prefs.order.map((id,i)=>[id,i]));
+ return entries.slice().sort((a,b)=>a.id==='free'?-1:b.id==='free'?1:(ranks.get(a.id)??1e6)-(ranks.get(b.id)??1e6));
+}
 function syncCustomSpreadOptions(){
  const select=$('spread');if(!select)return;
- const rows=spreadLibrary.filter(v=>isMySpread(v)||v.id===settings.spread);
- const options=[...select.querySelectorAll('option[data-custom="1"]')];
- const labels=rows.map(v=>rows.some(q=>q.id!==v.id&&q.name===v.name)?v.name+' — '+(v.identity?.creator?.name||'制作者名なし')+' ['+(v.identity?.id||v.id).slice(-8)+']':v.name);
- if(options.length===rows.length&&options.every((o,i)=>o.value===rows[i].id&&o.textContent===labels[i]))return;
- options.forEach(el=>el.remove());
- rows.forEach((v,i)=>{const o=new Option(labels[i],v.id);o.dataset.custom='1';select.append(o)});
+ const prefs=readSpreadMenu(),entries=orderedSpreadMenu(spreadMenuEntries(true),prefs),eligible=new Set(spreadMenuEntries().map(v=>v.id));
+ const rows=entries.filter(v=>v.id==='free'||v.id===settings.spread||(eligible.has(v.id)&&!prefs.hidden.includes(v.id)));
+ rows.push({id:'__menu_settings',name:'表示するスプレッドを設定…'});
+ const options=[...select.options];
+ if(options.length===rows.length&&options.every((o,i)=>o.value===rows[i].id&&o.textContent===rows[i].name))return;
+ select.replaceChildren(...rows.map(v=>{const o=new Option(v.name,v.id);if(v.custom)o.dataset.custom='1';return o}));
+}
+function openSpreadMenuSettings(){
+ const prefs=readSpreadMenu();let rows=orderedSpreadMenu(spreadMenuEntries(),prefs).filter(v=>v.id!=='free').map(v=>({...v,on:!prefs.hidden.includes(v.id)}));
+ modal('<h2>表示するスプレッドを設定</h2><p class="note">卓上とサイドメニューに共通の表示設定です。フリースプレッドは常に先頭に表示されます。非表示でも図鑑・手帖から使用できます。</p><div id="spreadMenuRows" class="stack" style="max-height:55vh;overflow:auto"></div><div class="row"><button type="button" id="spreadMenuReset">標準に戻す</button><button type="button" id="spreadMenuCancel">キャンセル</button><button type="button" class="primary" id="spreadMenuSave">保存</button></div>');
+ const paint=()=>{
+  const root=$('spreadMenuRows');root.replaceChildren();
+  rows.forEach((v,i)=>{
+   const row=document.createElement('div');row.className='spread-menu-setting-row';
+   const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=v.on;check.onchange=()=>{v.on=check.checked};label.append(check,document.createTextNode(v.name));row.append(label);
+   for(const [delta,caption] of [[-1,'↑'],[1,'↓']]){
+    const btn=document.createElement('button');btn.type='button';btn.textContent=caption;btn.setAttribute('aria-label',v.name+(delta<0?'を上へ':'を下へ'));btn.disabled=i+delta<0||i+delta>=rows.length;
+    btn.onclick=()=>{[rows[i],rows[i+delta]]=[rows[i+delta],rows[i]];paint()};row.append(btn);
+   }
+   root.append(row);
+  });
+ };
+ $('spreadMenuReset').onclick=()=>{rows=spreadMenuEntries().filter(v=>v.id!=='free').map(v=>({...v,on:true}));paint()};
+ $('spreadMenuCancel').onclick=closeModal;
+ $('spreadMenuSave').onclick=()=>{try{localStorage.setItem(SPREAD_MENU_KEY,JSON.stringify({order:rows.map(v=>v.id),hidden:rows.filter(v=>!v.on).map(v=>v.id)}));syncSpreadShortcut();closeModal();setStatus('展開法の表示設定を保存しました。')}catch(e){alert('保存できませんでした：'+e.message)}};
+ paint();
 }
 function refreshCustomPresets(){
  Object.keys(presets).filter(k=>k.startsWith('custom_')).forEach(k=>delete presets[k]);
@@ -437,7 +471,7 @@ function syncToolbarSoundButton(){
  :'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM17 9l5 6M22 9l-5 6"/></svg>';
 }
 function openSpreadAtlas(){
- const ranks=new Map([...$('spread').options].map((option,i)=>[option.value,i]));
+ const ranks=new Map(spreadMenuEntries().map((option,i)=>[option.id,i]));
  const list=SpreadGuide.entries(presets,spreadLibrary).sort((a,b)=>(ranks.get(a.id)??Number.MAX_SAFE_INTEGER)-(ranks.get(b.id)??Number.MAX_SAFE_INTEGER));
  modal('<div class="spread-atlas"><div class="spread-guide-kicker">TABULA SORTIUM / SPREAD ENCYCLOPEDIA</div><h2>スプレッド図鑑</h2><label class="field">スプレッドを検索<input id="spreadAtlasSearch" type="search" placeholder="名前・考案者・出典・枚数" autocomplete="off"></label><div class="spread-atlas-filters"><button type="button" data-spread-filter="all" class="is-selected">すべて</button><button type="button" data-spread-filter="builtin">プリセット</button><button type="button" data-spread-filter="custom">自作</button></div><p id="spreadAtlasCount" class="spread-guide-meta"></p><div id="spreadAtlasList" class="spread-atlas-list"></div></div>');
  let filter='all';
@@ -3393,7 +3427,7 @@ function exportAllData(){
    format:EXPORT_FORMAT,version:3,kind:'backup',exportedAt:new Date().toISOString(),
    workspace:base,multiWorkspace,
    mainToolState,activeMultiWorkspace:!!dualSession,
-   snapshots,spreadLibrary,creatorProfile:currentCreator(),spreadPacks:packLibrary(),deckLibrary,blueprintLibrary:TabulaDeckBlueprint.load(),
+   snapshots,spreadLibrary,spreadMenu:readSpreadMenu(),creatorProfile:currentCreator(),spreadPacks:packLibrary(),deckLibrary,blueprintLibrary:TabulaDeckBlueprint.load(),
    cardTextOverrides:cardTexts,deckIntroOverrides,environmentLibrary:readEnvironmentLibrary()
   },'TABULA_BACKUP_'+new Date().toISOString().slice(0,10)+'.json');
   setStatus('全データのバックアップを書き出しました。');
@@ -3501,6 +3535,7 @@ function readExternalFile(file){
    const restored=new Map(keys.map((key,i)=>[key,values[i]]));
    if(data.environmentLibrary!==undefined)restored.set(ENVIRONMENT_LIBRARY_KEY,JSON.stringify(data.environmentLibrary));
     if(data.creatorProfile!==undefined)restored.set(TabulaContentIdentity.KEY,JSON.stringify(TabulaContentIdentity.profile(data.creatorProfile)));
+   restored.set(SPREAD_MENU_KEY,JSON.stringify(normalizeSpreadMenu(data.spreadMenu)));
    restored.set(TabulaSpreadStore.PACK_LIBRARY_KEY,JSON.stringify(TabulaSpreadStore.normalizePackLibrary(data.spreadPacks||[])));
    writeRestoredStorage(restored);
   }catch(e){
@@ -3751,7 +3786,7 @@ function compareModal(){
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
 function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定を初期化しました。配札と記録は残ります。')}
-function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、作業環境、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(DUAL_SESSION_KEY);localStorage.removeItem(DUAL_RESTORE_ONCE_KEY);localStorage.removeItem(TOOL_STORAGE_KEY);localStorage.removeItem(ENVIRONMENT_LIBRARY_KEY);mainToolState={id:'card:builtin',dice:null};localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(TabulaSpreadStore.PACK_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();notifyTool();setStatus('全データを初期化しました。')}
+function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、作業環境、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(DUAL_SESSION_KEY);localStorage.removeItem(DUAL_RESTORE_ONCE_KEY);localStorage.removeItem(TOOL_STORAGE_KEY);localStorage.removeItem(ENVIRONMENT_LIBRARY_KEY);mainToolState={id:'card:builtin',dice:null};localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(SPREAD_MENU_KEY);localStorage.removeItem(TabulaSpreadStore.PACK_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();notifyTool();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false,workflowOptions=null){
  if(!workflowOptions&&spreadDealPreparing){setStatus('ディール手順の実行中はカット操作を変更できません。');return}
  if(!workflowOptions&&Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
@@ -4431,7 +4466,7 @@ function chooseCardSubset(deckId,selectedIds,onConfirm){
   if(!ids.length){alert('カードを1枚以上選択してください。');return}
   closeModal();onConfirm(ids);
  };
-}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewSelectedEffect()};$('previewEffect').onclick=previewSelectedEffect;colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('カード構成は一組モードで変更してください。');return}if(e.target.value==='custom'){e.target.value=settings.pool;customModal();return}settings.pool=e.target.value;updateIndependentPool();initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{if(changeActiveSpread(e.target.value))setStatus('展開法を切り替えました。山札の配列は維持しています。');else{e.target.value=settings.spread;syncSpreadShortcut();}};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
+}$('visualTheme').onchange=e=>{settings.visualTheme=e.target.value;applyVisuals();saveLocal()};$('effectPreset').onchange=e=>{settings.effectPreset=e.target.value;applyVisuals();saveLocal();previewSelectedEffect()};$('previewEffect').onclick=previewSelectedEffect;colors.forEach(([name,color],i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{settings.color=i;render();saveLocal()};$('swatches').append(b)});$('pool').onchange=e=>{if(dualSession){e.target.value=settings.pool;setStatus('カード構成は一組モードで変更してください。');return}if(e.target.value==='custom'){e.target.value=settings.pool;customModal();return}settings.pool=e.target.value;updateIndependentPool();initialize()};$('captureSpread').onclick=spreadCapture;$('editCustomSpread').onclick=editCurrentSpread;$('spread').onchange=e=>{if(e.target.value==='__menu_settings'){syncSpreadShortcut();openSpreadMenuSettings();return}if(changeActiveSpread(e.target.value))setStatus('展開法を切り替えました。山札の配列は維持しています。');else{e.target.value=settings.spread;syncSpreadShortcut();}};$('spreadDealOrder').addEventListener('change',e=>{try{const order=parseDealOrderInput(e.target.value);settings.spreadDealOrders={...(settings.spreadDealOrders||{}),[settings.spread]:order};syncDealOrderField();saveLocal();setStatus('配札順を保存しました。次にカードを配る際に適用されます。')}catch(err){setStatus(err.message);syncDealOrderField();alert(err.message)}});
 $('resetSpreadDealOrder').onclick=()=>{settings.spreadDealOrders={...(settings.spreadDealOrders||{})};delete settings.spreadDealOrders[settings.spread];syncDealOrderField();saveLocal();setStatus('このスプレッドの配札順を番号順に戻しました。')};
 $('playingOrientationMarks').onchange=e=>{settings.playingOrientationMarks=e.target.checked;render();saveLocal()};
 $('reversals').onchange=e=>{
