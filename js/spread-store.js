@@ -2,7 +2,7 @@
 (function(root){'use strict';
 const MAX_SPREAD_SLOTS=100,MAX_LIBRARY=500;
 const identityModule=()=>root.TabulaContentIdentity;
-function groups(v){if(!Array.isArray(v)||v.length>100)throw Error('グループ情報が不正です。');const seen=new Set();return v.map(g=>{if(!g||!identityModule().validId(g.id)||typeof g.name!=='string'||!g.name.trim()||g.name.length>100||seen.has(g.id))throw Error('グループ情報が不正です。');seen.add(g.id);return {id:g.id,name:g.name}})}
+function groups(v){if(!Array.isArray(v)||v.length>100)throw Error('グループ情報が不正です。');const seen=new Set();return v.map(g=>{if(!g||!identityModule().validId(g.id)||typeof g.name!=='string'||!g.name.trim()||g.name.length>100||seen.has(g.id))throw Error('グループ情報が不正です。');seen.add(g.id);const result={id:g.id,name:g.name};if(g.origin!==undefined){const o=g.origin;if(!o||!identityModule().validId(o.creatorId)||!identityModule().validId(o.packId))throw Error('グループの配布元が不正です。');result.origin={creatorId:o.creatorId,packId:o.packId}}return result})}
 function packInfo(v){if(!v||!identityModule().validId(v.id)||typeof v.name!=='string'||!v.name.trim()||v.name.length>100)throw Error('パック情報が不正です。');return {id:v.id,name:v.name,creator:identityModule().creator(v.creator)}}
 function sources(v){if(!Array.isArray(v)||v.length>100)throw Error('配布元情報が不正です。');return v.map(packInfo)}
 function validMetadata(v){try{if(v.identity!==undefined)identityModule().identity(v.identity);if(v.groups!==undefined)groups(v.groups);if(v.packSources!==undefined)sources(v.packSources);return true}catch(e){return false}}
