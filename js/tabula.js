@@ -70,8 +70,32 @@ function validStoredDeckPosition(p){return !!p&&Number.isFinite(p.x)&&Number.isF
 function spreadDeckPosition(id=settings.spread){const p=spreadLibrary.find(v=>v.id===id)?.deckPosition||TabulaCatalog.builtinSpreadDeckPositions?.[id];return validStoredDeckPosition(p)?{x:p.x,y:p.y}:null}
 function syncSpreadDeckPositionButton(){const b=$('saveSpreadDeckPosition');if(b)b.hidden=!!dualSession||!!spreadWorkbench||!spreadLibrary.some(v=>v.id===settings.spread)}
 function saveDeckPositionForSpread(){const spread=spreadLibrary.find(v=>v.id===settings.spread);if(!spread||dualSession||spreadWorkbench)return;const p=settings.deckPosition;if(!validStoredDeckPosition(p)){setStatus('山札を移動してから、この位置を保存してください。');return}const before=spread.deckPosition;spread.deckPosition={x:p.x,y:p.y};try{storeSpreadLibrary();setStatus('「'+spread.name+'」に山札の位置を保存しました。')}catch(e){if(before===undefined)delete spread.deckPosition;else spread.deckPosition=before;setStatus('山札の位置を保存できませんでした。')}}
-function closeSpreadArchive(){$('spreadArchive').hidden=true;document.body.classList.remove('spread-archive-open');setNotebookButtonState(false);applyDesktopTableView();applyTableCamera();render()}
-function openSpreadArchive(){renderSpreadArchive();$('archiveCapture').hidden=settings.spread!=='free';$('spreadArchive').hidden=false;document.body.classList.add('spread-archive-open');setNotebookButtonState(true);$('spreadArchive').scrollIntoView({block:'nearest',behavior:'smooth'})}
+let archiveReturnScroll=null,archiveScrollEpoch=0;
+function closeSpreadArchive(){
+ const archive=$('spreadArchive'),wasOpen=!archive.hidden,restore=archiveReturnScroll;
+ const epoch=++archiveScrollEpoch;archiveReturnScroll=null;
+ archive.hidden=true;document.body.classList.remove('spread-archive-open');setNotebookButtonState(false);
+ applyDesktopTableView();applyTableCamera();render();
+ if(wasOpen&&restore){
+  const reset=()=>{
+   if(epoch!==archiveScrollEpoch||!archive.hidden)return;
+   if(restore.main)restore.main.scrollTo({left:restore.mainX,top:restore.mainY,behavior:'instant'});
+   window.scrollTo({left:restore.x,top:restore.y,behavior:'instant'});
+  };
+  reset();requestAnimationFrame(()=>{reset();requestAnimationFrame(reset)});
+ }
+}
+function openSpreadArchive(){
+ const archive=$('spreadArchive');
+ if(archive.hidden){
+  const main=archive.closest('.main');
+  archiveReturnScroll={x:window.scrollX,y:window.scrollY,main,mainX:main?.scrollLeft||0,mainY:main?.scrollTop||0};
+  ++archiveScrollEpoch;
+ }
+ renderSpreadArchive();$('archiveCapture').hidden=settings.spread!=='free';archive.hidden=false;
+ document.body.classList.add('spread-archive-open');setNotebookButtonState(true);
+ archive.scrollIntoView({block:'start',behavior:'instant'});
+}
 const spreadThumb=TabulaUiFormat.spreadThumb;
 
 function editStoredSpreadDeal(spread){
