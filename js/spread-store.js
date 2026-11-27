@@ -115,6 +115,7 @@ function prepareLibrary(items,previous,profile){
   else if(prior&&I.key(id)===I.key(prior)&&!sameContent(v,before)){
    id=prior.creator.id===profile.id?I.revise(prior,profile):I.newIdentity(profile,prior);
   }
+  if(id.creator.id===profile.id)id={...id,creator:I.creator(profile)};
   return {...v,identity:I.identity(id),groups:groups(v.groups||[]),packSources:sources(v.packSources||[])};
  });
  if(new Set(prepared.map(v=>v.id)).size!==prepared.length||new Set(prepared.map(v=>I.key(v.identity))).size!==prepared.length)throw Error('作品IDが重複しています。');
