@@ -610,7 +610,7 @@ $('spreadRestoreLayout').onclick=()=>{if(spreadWorkbench){
  if(w.circle)w.circle.active=false;updateSpreadCircleUi();render();
 }};
 $('spreadCancel').onclick=()=>spreadEnd(true);
-$('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(name.length>100){alert('スプレッド名は100文字以内にしてください。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];if(original.deal){try{TabulaSpreadDeal.normalize(original.deal,slots.length)}catch(e){alert('ディール設定の配置先が現在の枠数と一致しません。'+e.message);return}}spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした。');return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}if(spreadLibrary.length>=TabulaSpreadStore.MAX_LIBRARY){alert('登録上限に達しています。');return}const id=newLocalSpreadId();spreadLibrary.push({id,name,slots,cardSize:zoom,...(validStoredDeckPosition(settings.deckPosition)?{deckPosition:{...settings.deckPosition}}:{})});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした。');return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。')};
+$('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(name.length>100){alert('スプレッド名は100文字以内にしてください。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];if(original.deal){try{TabulaSpreadDeal.normalize(original.deal,slots.length)}catch(e){alert('ディール設定の配置先が現在の枠数と一致しません。'+e.message);return}}spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした：'+e.message);return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}if(spreadLibrary.length>=TabulaSpreadStore.MAX_LIBRARY){alert('登録上限に達しています。');return}const id=newLocalSpreadId();spreadLibrary.push({id,name,slots,cardSize:zoom,...(validStoredDeckPosition(settings.deckPosition)?{deckPosition:{...settings.deckPosition}}:{})});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした：'+e.message);return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。')};
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
 const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';/* One authoritative starting configuration for a new workspace and both reset paths.
    Mutable preference maps are recreated for every use, never shared by reference. */
@@ -3069,7 +3069,7 @@ function storeSnapshots(){try{TabulaReadingHistory.write(localStorage,HISTORY_KE
 const EXPORT_FORMAT='tabula-sortium';
 const fileNamePart=TabulaStorage.fileNamePart;
 function downloadJSON(payload,name){const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000)}
-function exportOne(v){if(!v)return;downloadJSON({format:EXPORT_FORMAT,version:1,kind:'reading',exportedAt:new Date().toISOString(),reading:v},'TABULA_'+fileNamePart(v.name)+'.json');setStatus('占例をJSONに書き出しました。')}
+function exportOne(v){if(!v)return;downloadJSON({format:EXPORT_FORMAT,version:1,kind:'reading',exportedAt:new Date().toISOString(),reading:v},'TABULA_READING_'+fileNamePart(v.name)+'.json');setStatus('占例をJSONに書き出しました。')}
 function exportReadings(list){
  if(!list.length){setStatus('書き出す占例を選択してください。');return}
  downloadJSON(TabulaReadingHistory.readingBundle(list.map(v=>JSON.parse(JSON.stringify(v)))),
@@ -3436,6 +3436,7 @@ function readExternalFile(file){
    importSingleSpread(data);return;
   }
   if(data?.format===EXPORT_FORMAT&&data.kind==='environment'&&data.version===1){importEnvironment(data);return;}
+  if(data?.format===EXPORT_FORMAT&&['spread','spread-pack'].includes(data.kind)){alert('これはスプレッドファイルです。スプレッド手帖のLIBRARYから読み込んでください。');return;}
   if(data?.format!==EXPORT_FORMAT||!((data.kind==='reading'&&data.version===1)||(data.kind==='readings'&&data.version===1)||(data.kind==='backup'&&[1,2,3].includes(data.version)))){
    alert('TABULA SORTIUMの対応するJSONファイルではありません。');return;
   }
@@ -3575,7 +3576,9 @@ function captureSnapshot(name){
  if(!state.placed.length&&!(state.tablePiles||[]).some(p=>p.cards.length)){setStatus('結果がありません。まずカードを配ってください。');return false}
  if(dualBusy())return false;
  const id='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
- snapshots.unshift(currentReadingSnapshot(id,name||freshName()));
+ const reading=currentReadingSnapshot(id,name||freshName());
+ if(!validateReading(reading)){setStatus('占例を保存できません。カードの座標などを確認してください。');return false}
+ snapshots.unshift(reading);
  if(!storeSnapshots()){snapshots.shift();return false}
  setStatus('占例を保存しました。');return true;
 }
