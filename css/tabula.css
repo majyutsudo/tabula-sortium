@@ -2779,3 +2779,5 @@ aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);
 #instrumentChoiceSection #playingOrientationMarkField{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:7px;row-gap:2px;align-items:center}
 #instrumentChoiceSection #playingOrientationMarkField input{margin:0}
 #instrumentChoiceSection #playingOrientationMarkField small{grid-column:2;line-height:1.5;font-size:12px}
+
+#instrumentChoiceSection .instrument-deck-settings{display:grid;gap:8px;min-width:0;margin-top:4px}
