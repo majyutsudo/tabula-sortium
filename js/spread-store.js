@@ -2,6 +2,7 @@
 (function(root){'use strict';
 const MAX_SPREAD_SLOTS=100,MAX_LIBRARY=500;
 const identityModule=()=>root.TabulaContentIdentity;
+function validSlotGeometry(q){return !!q&&root.TabulaStorage.validTableCoordinate(q.x)&&root.TabulaStorage.validTableCoordinate(q.y)&&root.TabulaStorage.validTableAngle(q.angle)}
 function groups(v){if(!Array.isArray(v)||v.length>100)throw Error('グループ情報が不正です。');const seen=new Set();return v.map(g=>{if(!g||!identityModule().validId(g.id)||typeof g.name!=='string'||!g.name.trim()||g.name.length>100||seen.has(g.id))throw Error('グループ情報が不正です。');seen.add(g.id);const result={id:g.id,name:g.name};if(g.origin!==undefined){const o=g.origin;if(!o||!identityModule().validId(o.creatorId)||!identityModule().validId(o.packId))throw Error('グループの配布元が不正です。');result.origin={creatorId:o.creatorId,packId:o.packId}}return result})}
 function packInfo(v){if(!v||!identityModule().validId(v.id)||typeof v.name!=='string'||!v.name.trim()||v.name.length>100)throw Error('パック情報が不正です。');return {id:v.id,name:v.name,creator:identityModule().creator(v.creator)}}
 function sources(v){if(!Array.isArray(v)||v.length>100)throw Error('配布元情報が不正です。');return v.map(packInfo)}
@@ -11,7 +12,7 @@ function copyDeckPosition(p){return {x:p.x,y:p.y}}
 function validDeal(plan,count){try{return !!root.TabulaSpreadDeal?.normalize(plan,count)}catch(e){return false}}
 function validSpread(v){
   return !!(v&&typeof v.id==='string'&&validMetadata(v)&&Array.isArray(v.slots)
-    &&v.slots.length<=MAX_SPREAD_SLOTS&&(v.deckPosition===undefined||validDeckPosition(v.deckPosition))&&(v.deal===undefined||validDeal(v.deal,v.slots.length))&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
+    &&v.slots.length<=MAX_SPREAD_SLOTS&&(v.deckPosition===undefined||validDeckPosition(v.deckPosition))&&(v.deal===undefined||validDeal(v.deal,v.slots.length))&&v.slots.every(q=>validSlotGeometry(q)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
 }
 function fromReading(reading,id,name){
  if(!reading||!Array.isArray(reading.placed))throw Error('占例の配置を読み取れません。');
@@ -42,8 +43,7 @@ function portableSpread(v){
  if(!name||name.length>100)throw Error('スプレッド名が不正です。');
  if(!Array.isArray(v.slots)||v.slots.length<1||v.slots.length>MAX_SPREAD_SLOTS)throw Error('配置数は1〜'+MAX_SPREAD_SLOTS+'にしてください。');
  const slots=v.slots.map((q,i)=>{
-  if(!q||typeof q!=='object'||Array.isArray(q)||![q.x,q.y,q.angle].every(Number.isFinite)
-    ||q.x<0||q.x>100||q.y<0||q.y>100||Math.abs(q.angle)>3600)
+  if(!q||typeof q!=='object'||Array.isArray(q)||!validSlotGeometry(q))
    throw Error('位置'+(i+1)+'の座標・角度が不正です。');
   if(q.frameRole!==undefined&&!['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))
    throw Error('位置'+(i+1)+'の種類が不正です。');
@@ -75,6 +75,7 @@ function exportPortable(v){
 }
 function importPortable(data){
  const wrapped=data&&data.format===PORTABLE_FORMAT&&data.kind==='spread'&&[1,2].includes(data.version);
+ if(data?.format===PORTABLE_FORMAT&&['reading','readings'].includes(data.kind))throw Error('これは占例ファイルです。記録一覧の読み込みをご利用ください。');
  if(data&&('format' in Object(data)||'kind' in Object(data))&&!wrapped)
   throw Error('対応していないスプレッドJSONです。');
  const result=portableSpread(wrapped?data.spread:data);
@@ -147,6 +148,7 @@ function prepareLibrary(items,previous,profile){
  const I=identityModule(),old=new Map(previous.map(v=>[v.id,v]));
  if(items.length>MAX_LIBRARY)throw Error('登録上限（'+MAX_LIBRARY+'件）に達しています。');
  const prepared=items.map(v=>{
+  portableSpread(v);
   const before=old.get(v.id),prior=before?.identity;
   let id=v.identity;
   if(!id)id=I.newIdentity(profile);
