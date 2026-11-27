@@ -88,3 +88,31 @@ test('portable identity, revisions, local groups and pack round trip',()=>{
  assert.equal(S.validLibrary([first,{...fork,id:'custom_d'}]),true);
  assert.throws(()=>S.importBundle({...pack,spreads:[pack.spreads[0],pack.spreads[0]]}));
 });
+
+test('pack redistribution preserves identity and content independently of local edits',()=>{
+ const identitySource=readFileSync(new URL('../js/content-identity.js',import.meta.url),'utf8');
+ let n=0;const ctx={crypto:{randomUUID:()=>`00000000-0000-4000-8000-${(++n).toString(16).padStart(12,'0')}`}};
+ runInNewContext(identitySource,ctx);runInNewContext(source,ctx);
+ const I=ctx.TabulaContentIdentity,S=ctx.TabulaSpreadStore,storage=memoryStorage(),creator=I.load(storage);
+ const first=S.prepareLibrary([{id:'custom_a',name:'A',slots:[{x:10,y:20,angle:0,name:'Past'}]}],[],creator)[0];
+ const pack=S.newPack('Pack',creator,[first]);
+ const duplicateTitle=S.newPack('Pack',creator,[first]);
+ assert.notEqual(pack.pack.id,duplicateTitle.pack.id);
+ const import1=S.stagePacks([], [pack]);
+ assert.equal(import1.added,1);
+ const import2=S.stagePacks(import1.packs,[JSON.parse(JSON.stringify(pack))]);
+ assert.equal(import2.added,0);
+ assert.equal(import2.unchanged,1);
+ assert.equal(import2.packs.length,1);
+ const edited=S.prepareLibrary([{...first,name:'Edited'}],[first],creator)[0];
+ const altered=S.exportPack(pack.pack,[edited]);
+ const conflict=S.stagePacks(import2.packs,[altered]);
+ assert.equal(conflict.conflicts,1);
+ assert.equal(conflict.accepted.length,0);
+ assert.equal(conflict.packs[0].spreads[0].name,'A');
+ assert.equal(conflict.packs[0].pack.id,pack.pack.id);
+ assert.equal(S.stagePacks(conflict.packs,[duplicateTitle]).packs.length,2);
+ storage.setItem(S.PACK_LIBRARY_KEY,JSON.stringify(conflict.packs));
+ assert.equal(S.readPacks(storage)[0].pack.id,pack.pack.id);
+ assert.throws(()=>S.normalizePackLibrary([pack,pack]));
+});
