@@ -31,14 +31,67 @@ function syncArchiveGroups(){
  select.replaceChildren(new Option('すべてのスプレッド',''),...archiveGroups().map(g=>new Option(g.name,g.id)));
  if([...select.options].some(o=>o.value===prior))select.value=prior;
 }
-function editSpreadGroups(v){
- const all=archiveGroups(),existing=(v.groups||[]).map(g=>g.name).join('、');
- const raw=prompt('所属グループ名（読点「、」で区切る。空欄で所属解除）',existing);if(raw===null)return;
- const names=[...new Set(raw.split('、').map(x=>x.trim()).filter(Boolean))];
- if(names.length>100||names.some(n=>n.length>100)){alert('グループ名または件数が上限を超えています。');return}
- const before=v.groups;
- v.groups=names.map(name=>v.groups?.find(g=>g.name===name)||all.find(g=>g.name===name)||{id:TabulaContentIdentity.uuid(),name});
- try{storeSpreadLibrary()}catch(e){v.groups=before;alert('グループを保存できません：'+e.message)}
+const archiveSelection=new Set();
+function selectedArchiveRows(){return spreadLibrary.filter(v=>archiveSelection.has(v.id))}
+function updateArchiveSelection(){
+ const rows=selectedArchiveRows();
+ $('archiveSelectedCount').textContent=rows.length+'篇選択中';
+ $('archiveBatchGroup').disabled=!rows.length;
+ $('archiveBatchPack').disabled=!rows.length;
+ $('archiveClearSelection').disabled=!rows.length;
+}
+function editSpreadGroups(v){openArchiveGroupEditor([v])}
+function openArchiveGroupEditor(rows){
+ if(!rows.length)return;
+ modal('<h2>グループ分け</h2><p id="archiveGroupTarget" class="mini"></p><div id="archiveGroupChoices" class="stack" style="max-height:35vh;overflow:auto"></div><label class="field">新しいグループ名（任意）<input id="archiveNewGroup" maxlength="100"></label><button type="button" id="archiveApplyGroups">保存</button>');
+ $('archiveGroupTarget').textContent=rows.length+'篇の所属を編集します。一部のみ所属しているグループは、変更しない限り維持されます。';
+ const choices=[];
+ for(const g of archiveGroups()){
+  const count=rows.filter(v=>v.groups?.some(x=>x.id===g.id)).length;
+  const label=document.createElement('label'),input=document.createElement('input');
+  label.style.cssText='display:flex;align-items:center;gap:8px;min-height:32px;overflow-wrap:anywhere';
+  input.type='checkbox';input.checked=count===rows.length;input.indeterminate=count>0&&count<rows.length;
+  const choice={g,input,changed:false};input.onchange=()=>{choice.changed=true};
+  label.append(input,document.createTextNode(g.name+(count>0&&count<rows.length?'（'+count+'/'+rows.length+'篇）':'')));
+  $('archiveGroupChoices').append(label);choices.push(choice);
+ }
+ $('archiveApplyGroups').onclick=()=>{
+  const name=$('archiveNewGroup').value.trim(),ids=new Set(rows.map(v=>v.id));
+  const newGroup=name?(archiveGroups().find(g=>g.name===name)||{id:TabulaContentIdentity.uuid(),name}):null;
+  const before=spreadLibrary;
+  spreadLibrary=spreadLibrary.map(v=>{
+   if(!ids.has(v.id))return v;
+   const groups=new Map((v.groups||[]).map(g=>[g.id,g]));
+   for(const {g,input,changed} of choices)if(changed){if(input.checked)groups.set(g.id,g);else groups.delete(g.id)}
+   if(newGroup)groups.set(newGroup.id,newGroup);
+   return {...v,groups:[...groups.values()]};
+  });
+  try{storeSpreadLibrary();closeModal();setStatus(rows.length+'篇のグループを更新しました。')}catch(e){spreadLibrary=before;alert('グループを保存できません：'+e.message)}
+ };
+}
+function openNewArchivePack(rows){
+ if(!rows.length)return;
+ modal('<h2>新規パックの作成</h2><p class="mini">収録するスプレッドを確認してください。</p><div id="archivePackSelection" class="stack" style="max-height:35vh;overflow:auto"></div><label class="field">パック名<input id="archiveNewPackName" maxlength="100"></label><button type="button" id="archiveNewPack">作成して書き出す</button>');
+ const chosen=new Set(rows.map(v=>v.id)),list=$('archivePackSelection');
+ for(const v of rows){
+  const label=document.createElement('label'),input=document.createElement('input');label.style.cssText='display:flex;align-items:center;gap:8px;min-height:32px;overflow-wrap:anywhere';input.type='checkbox';input.checked=true;
+  input.onchange=()=>{if(input.checked)chosen.add(v.id);else chosen.delete(v.id);syncButton()};
+  label.append(input,document.createTextNode(v.name+'（'+v.slots.length+'枚）'));list.append(label);
+ }
+ function syncButton(){$('archiveNewPack').textContent=chosen.size+'篇のパックを作成して書き出す';$('archiveNewPack').disabled=!chosen.size}
+ $('archiveNewPackName').value=archiveGroups().find(g=>g.id===$('archiveGroupFilter').value)?.name||'TABULA スプレッド集';syncButton();
+ $('archiveNewPack').onclick=()=>{
+  try{
+   const name=$('archiveNewPackName').value.trim(),items=spreadLibrary.filter(v=>chosen.has(v.id));
+   if(!name){alert('パック名を入力してください。');return}
+   if(!items.length)return;
+   if(!confirm(items.length+'篇で新しいパックを作成します。制作者情報も含まれます。よろしいですか？'))return;
+   const data=TabulaSpreadStore.newPack(name,currentCreator(),items);
+   const next=spreadLibrary.map(v=>chosen.has(v.id)?{...v,packSources:[...(v.packSources||[]),data.pack]}:v);
+   writePackAndSpreads([...packLibrary(),data],next);
+   downloadJSON(data,'TABULA_SPREAD_PACK_'+fileNamePart(name)+'.json');closeModal();setStatus('新しいスプレッドパックを書き出しました。');
+  }catch(e){alert('書き出せませんでした：'+e.message)}
+ };
 }
 function packLibrary(){return TabulaSpreadStore.readPacks(localStorage)}
 function writePackAndSpreads(packs,items){
@@ -49,9 +102,9 @@ function writePackAndSpreads(packs,items){
 }
 function exportArchivePack(){
  try{
-  const rows=archiveVisibleSpreads(),packs=packLibrary(),S=TabulaSpreadStore;
-  modal('<h2>スプレッドパック</h2><p class="mini">既存パックは制作者・ID・収録内容を維持して再出力します。新しい選集を作る場合だけ、新しいパックIDを発行します。</p><div id="archivePackList" class="stack"></div><div class="stack"><label class="field">新規パック名<input id="archiveNewPackName" maxlength="100"></label><button type="button" id="archiveNewPack">表示中のスプレッドで新規パックを作成</button></div>');
-  const list=$('archivePackList'),group=archiveGroups().find(g=>g.id===$('archiveGroupFilter').value);
+  const packs=packLibrary(),S=TabulaSpreadStore;
+  modal('<h2>スプレッドパック</h2><p class="mini">既存パックは制作者・ID・収録内容を維持して再出力します。新しい選集を作る場合だけ、新しいパックIDを発行します。</p><div id="archivePackList" class="stack"></div><button type="button" id="archiveNewPack">新規パックを作成</button>');
+  const list=$('archivePackList');
   const heading=document.createElement('h3');heading.textContent='既存パックの再出力';list.append(heading);
   if(!packs.length){const p=document.createElement('p');p.className='mini';p.textContent='再出力できるパックはまだありません。旧版で登録したパックは、元のJSONをもう一度読み込むと登録できます。';list.append(p)}
   for(const data of packs){
@@ -65,19 +118,8 @@ function exportArchivePack(){
    remove.onclick=()=>{if(!confirm('このパックの再出力用データのみ削除します。登録済みスプレッド・グループは残ります。よろしいですか？'))return;try{const fresh=packLibrary().filter(p=>S.packKey(p.pack)!==S.packKey(data.pack));writeRestoredStorage(new Map([[S.PACK_LIBRARY_KEY,JSON.stringify(fresh)]]));exportArchivePack()}catch(e){alert(e.message)}};
    actions.append(output,remove);row.append(label,actions);list.append(row);
   }
-  $('archiveNewPackName').value=group?.name||'TABULA スプレッド集';
-  $('archiveNewPack').textContent='表示中の'+rows.length+'篇で新規パックを作成';
-  $('archiveNewPack').disabled=!rows.length;
-  $('archiveNewPack').onclick=()=>{
-   try{
-    const name=$('archiveNewPackName').value.trim();if(!name){alert('パック名を入力してください。');return}
-    if(!confirm(rows.length+'篇で新しいパックを作成します。制作者情報も含まれます。よろしいですか？'))return;
-    const data=S.newPack(name,currentCreator(),rows);
-    const next=spreadLibrary.map(v=>rows.some(r=>r.id===v.id)?{...v,packSources:[...(v.packSources||[]),data.pack]}:v);
-    writePackAndSpreads([...packLibrary(),data],next);
-    downloadJSON(data,'TABULA_SPREAD_PACK_'+fileNamePart(name)+'.json');closeModal();setStatus('新しいスプレッドパックを書き出しました。');
-   }catch(e){alert('書き出せませんでした：'+e.message)}
-  };
+  $('archiveNewPack').disabled=!spreadLibrary.length;
+  $('archiveNewPack').onclick=()=>openNewArchivePack(selectedArchiveRows().length?selectedArchiveRows():spreadLibrary);
  }catch(e){alert('パックを開けませんでした：'+e.message)}
 }
 function openSpreadIdentity(v){
@@ -226,7 +268,7 @@ function editStoredSpreadDeal(spread){
  panel.append(heading,row('カード選択',mode),...controlRows,recommendationSection,stepsHeading,stepsHint,shuffleRow,recipeRow,cutRow,countRow,repeatRow,cancel,save);
  overlay.append(panel);document.body.append(overlay);document.addEventListener('keydown',escape);
 }
-function renderSpreadArchive(){syncArchiveGroups();const root=$('archiveItems'),visible=archiveVisibleSpreads();root.replaceChildren();$('archiveCount').textContent=visible.length+' / '+spreadLibrary.length+'篇';if(!visible.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}visible.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚'+(v.identity?' · '+(v.identity.creator.name||'制作者名なし'):'');info.append(name,count);if(v.groups?.length){const label=document.createElement('small');label.textContent='グループ：'+v.groups.map(g=>g.name).join(' / ');info.append(label)}const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('情報',()=>openSpreadIdentity(v));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('ディール設定',()=>editStoredSpreadDeal(v));action('書き出し',()=>exportSingleSpread(v));action('グループ',()=>editSpreadGroups(v));action('複製',()=>{if(spreadLibrary.length>=TabulaSpreadStore.MAX_LIBRARY){alert('登録上限に達しています。');return}const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id=newLocalSpreadId();copy.name=name;copy.identity=TabulaContentIdentity.newIdentity(currentCreator(),v.identity);copy.packSources=[];spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});row.append(thumb,info,actions);root.append(row)})}
+function renderSpreadArchive(){syncArchiveGroups();const root=$('archiveItems'),visible=archiveVisibleSpreads();root.replaceChildren();for(const id of archiveSelection)if(!spreadLibrary.some(v=>v.id===id))archiveSelection.delete(id);updateArchiveSelection();$('archiveCount').textContent=visible.length+' / '+spreadLibrary.length+'篇';if(!visible.length){const msg=document.createElement('p');msg.className='archive-empty';msg.textContent='まだ登録されたスプレッドはありません。卓で思いついた配置とカードサイズを、この手帖に記録できます。';root.append(msg);return}visible.forEach(v=>{const row=document.createElement('article');row.className='archive-entry';const thumb=document.createElement('div');thumb.className='archive-thumb';thumb.innerHTML=spreadThumb(v.slots);const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=v.name;const count=document.createElement('small');count.textContent=v.slots.length+'枚'+(v.identity?' · '+(v.identity.creator.name||'制作者名なし'):'');info.append(name,count);if(v.groups?.length){const label=document.createElement('small');label.textContent='グループ：'+v.groups.map(g=>g.name).join(' / ');info.append(label)}const actions=document.createElement('div');actions.className='archive-actions';function action(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;actions.append(b)}action('使う',()=>{if(changeActiveSpread(v.id)){closeSpreadArchive();setStatus('「'+v.name+'」を選択しました。')}});action('解説',()=>openSpreadGuide(v.id));action('情報',()=>openSpreadIdentity(v));action('編集',()=>{closeSpreadArchive();openStoredSpreadWorkbench(v)});action('ディール設定',()=>editStoredSpreadDeal(v));action('書き出し',()=>exportSingleSpread(v));action('グループ',()=>editSpreadGroups(v));action('複製',()=>{if(spreadLibrary.length>=TabulaSpreadStore.MAX_LIBRARY){alert('登録上限に達しています。');return}const base=v.name+' のコピー';let name=base,n=2;while(spreadLibrary.some(p=>p.name===name))name=base+' '+n++;const copy=JSON.parse(JSON.stringify(v));copy.id=newLocalSpreadId();copy.name=name;copy.identity=TabulaContentIdentity.newIdentity(currentCreator(),v.identity);copy.packSources=[];spreadLibrary.push(copy);try{storeSpreadLibrary();renderSpreadArchive()}catch(e){spreadLibrary.pop();alert('複製を保存できませんでした。')}});action('削除',()=>{if(!confirm('「'+v.name+'」を削除しますか？'))return;spreadLibrary=spreadLibrary.filter(p=>p.id!==v.id);if(settings.spread===v.id)settings.spread='free';storeSpreadLibrary();sync();renderSpreadArchive();saveLocal()});const pick=document.createElement('label');pick.className='archive-pick';const check=document.createElement('input');check.type='checkbox';check.checked=archiveSelection.has(v.id);check.setAttribute('aria-label',v.name+'を選択');check.onchange=()=>{if(check.checked)archiveSelection.add(v.id);else archiveSelection.delete(v.id);row.classList.toggle('archive-selected',check.checked);updateArchiveSelection()};pick.append(check);row.classList.toggle('archive-selected',check.checked);info.prepend(pick);row.append(thumb,info,actions);root.append(row)})}
 function exportSingleSpread(spread){
  try{
   const data=TabulaSpreadStore.exportPortable(spread);
@@ -285,7 +327,7 @@ async function readSpreadFiles(files){
  }catch(e){alert('ファイルを読み込めませんでした：'+e.message)}
 }
 function setNotebookButtonState(open){const b=$('spreadNotebook');b.setAttribute('aria-pressed',String(open));b.setAttribute('aria-expanded',String(open));b.setAttribute('aria-label',open?'手帖を閉じる':'手帖を開く');b.title=open?'手帖を閉じる':'手帖を開く';b.dataset.toolLabel=open?'手帖を閉じる':'手帖';}
-$('spreadNotebook').setAttribute('aria-controls','spreadArchive');setNotebookButtonState(false);$('spreadNotebook').onclick=()=>{$('spreadArchive').hidden?openSpreadArchive():closeSpreadArchive()};$('archiveClose').onclick=closeSpreadArchive;$('archiveCapture').onclick=()=>{spreadCapture()};$('archiveImport').onclick=()=>$('archiveImportFile').click();$('archiveImportFile').onchange=e=>{const files=[...(e.target.files||[])];e.target.value='';readSpreadFiles(files)};$('archiveGroupFilter').onchange=renderSpreadArchive;$('archiveExportPack').onclick=exportArchivePack;$('archiveCreatorProfile').onclick=editCreatorProfile;
+$('spreadNotebook').setAttribute('aria-controls','spreadArchive');setNotebookButtonState(false);$('spreadNotebook').onclick=()=>{$('spreadArchive').hidden?openSpreadArchive():closeSpreadArchive()};$('archiveClose').onclick=closeSpreadArchive;$('archiveCapture').onclick=()=>{spreadCapture()};$('archiveImport').onclick=()=>$('archiveImportFile').click();$('archiveImportFile').onchange=e=>{const files=[...(e.target.files||[])];e.target.value='';readSpreadFiles(files)};$('archiveGroupFilter').onchange=renderSpreadArchive;$('archiveSelectVisible').onclick=()=>{for(const v of archiveVisibleSpreads())archiveSelection.add(v.id);renderSpreadArchive()};$('archiveClearSelection').onclick=()=>{archiveSelection.clear();renderSpreadArchive()};$('archiveBatchGroup').onclick=()=>openArchiveGroupEditor(selectedArchiveRows());$('archiveBatchPack').onclick=()=>openNewArchivePack(selectedArchiveRows());$('archiveExportPack').onclick=exportArchivePack;$('archiveCreatorProfile').onclick=editCreatorProfile;
 
 
 /* One encyclopedia entry per spread definition: no duplicate diagrams or libraries. */
