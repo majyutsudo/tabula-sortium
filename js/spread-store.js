@@ -154,7 +154,9 @@ function prepareLibrary(items,previous,profile){
    id=prior.creator.id===profile.id?I.revise(prior,profile):I.newIdentity(profile,prior);
   }
   if(id.creator.id===profile.id)id={...id,creator:I.creator(profile)};
-  return {...v,identity:I.identity(id),groups:groups(v.groups||[]),packSources:sources(v.packSources||[])};
+  const mySpread=typeof v.mySpread==='boolean'?v.mySpread:!v.identity||id.creator.id===profile.id||v.favorite===true;
+  const librarySingle=typeof v.librarySingle==='boolean'?v.librarySingle:!!v.identity&&id.creator.id!==profile.id&&!(v.packSources||[]).length;
+  return {...v,identity:I.identity(id),mySpread,librarySingle,groups:groups(v.groups||[]),packSources:sources(v.packSources||[])};
  });
  if(new Set(prepared.map(v=>v.id)).size!==prepared.length||new Set(prepared.map(v=>I.key(v.identity))).size!==prepared.length)throw Error('作品IDが重複しています。');
  return prepared;
