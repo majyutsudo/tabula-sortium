@@ -35,9 +35,9 @@ test('corrupt and invalid persisted spreads are ignored',()=>{
 });
 test('custom library limit is retained',()=>{
   const storage=memoryStorage();
-  const rows=Array.from({length:120},(_,i)=>({id:'custom_'+i,slots:[]}));
+  const rows=Array.from({length:520},(_,i)=>({id:'custom_'+i,slots:[]}));
   storage.setItem('spread_key',JSON.stringify(rows));
-  assert.equal(store.read(storage,'spread_key').length,100);
+  assert.equal(store.read(storage,'spread_key').length,500);
 });
 
 test('reading slots become a reusable spread with original order, names and details',()=>{
@@ -59,4 +59,32 @@ test('legacy free reading without slots can still register physical positions',(
  assert.deepEqual(Array.from(spread.slots,p=>[p.x,p.y,p.name]),[[72,54,'位置1'],[21,34,'位置2']]);
  assert.equal('cardSize' in spread,false);
  assert.throws(()=>store.fromReading({placed:[],slots:[]},'custom_x','bad'));
+});
+
+test('portable identity, revisions, local groups and pack round trip',()=>{
+ const identitySource=readFileSync(new URL('../js/content-identity.js',import.meta.url),'utf8');
+ let n=0;const ctx={crypto:{randomUUID:()=>`00000000-0000-4000-8000-${(++n).toString(16).padStart(12,'0')}`}};
+ runInNewContext(identitySource,ctx);runInNewContext(source,ctx);
+ const I=ctx.TabulaContentIdentity,S=ctx.TabulaSpreadStore,storage=memoryStorage(),creator=I.load(storage);
+ assert.equal(I.load(storage).id,creator.id);
+ const first=S.prepareLibrary([{id:'custom_a',name:'A',slots:[{x:10,y:20,angle:0,name:'Past'}]}],[],creator)[0];
+ const changed=S.prepareLibrary([{...first,name:'B'}],[first],creator)[0];
+ assert.equal(changed.identity.id,first.identity.id);
+ assert.equal(changed.identity.revision,2);
+ assert.notEqual(changed.identity.revisionId,first.identity.revisionId);
+ const grouped=S.prepareLibrary([{...changed,groups:[{id:I.uuid(),name:'Research'}]}],[changed],creator)[0];
+ assert.equal(grouped.identity.revisionId,changed.identity.revisionId);
+ const other={...creator,id:I.uuid()};
+ const fork=S.prepareLibrary([{...changed,name:'Fork'}],[changed],other)[0];
+ assert.notEqual(fork.identity.id,changed.identity.id);
+ assert.equal(fork.identity.derivedFrom.id,changed.identity.id);
+ assert.equal(fork.identity.creator.id,other.id);
+ const pack=S.exportPack({id:creator.libraryPackId,name:'Pack',creator},[grouped]);
+ const loaded=S.importBundle(JSON.parse(JSON.stringify(pack)))[0];
+ assert.equal(loaded.spread.identity.id,grouped.identity.id);
+ assert.equal(loaded.pack.id,creator.libraryPackId);
+ assert.equal(S.importPortable(S.exportPortable(grouped)).identity.id,grouped.identity.id);
+ assert.equal(S.validLibrary([first,{...first,id:'custom_b'}]),false);
+ assert.equal(S.validLibrary([first,{...fork,id:'custom_d'}]),true);
+ assert.throws(()=>S.importBundle({...pack,spreads:[pack.spreads[0],pack.spreads[0]]}));
 });
