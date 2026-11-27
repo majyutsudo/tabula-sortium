@@ -4372,7 +4372,31 @@ $('pipBackground').addEventListener('change',e=>{
  setStatus('小アルカナの図像を切り替えました。');
 });
 $('deckLibrarySelect').addEventListener('change',e=>activateDeck(e.target.value));
-$('deckEditCurrent').addEventListener('click',()=>openDeckEditor(false));
+function openRegisteredDeckManager(){
+ modal('<h2>登録デッキの管理</h2><p class="note">自分で登録したデッキを個別に削除できます。標準デッキは対象外です。</p><div id="registeredDeckRows" class="stack"></div><div class="row"><button type="button" id="registeredDeckEdit">使用中のデッキを編集</button><button type="button" id="registeredDeckClose">閉じる</button></div>');
+ const root=$('registeredDeckRows');
+ const entries=[...deckLibrary.map(d=>({d,type:'tarot'})),...TabulaDeckBlueprint.load().filter(d=>d&&typeof d.id==='string'&&!['builtin','simple',BUILTIN_PLAYING.id,BUILTIN_LENORMAND.id].includes(d.id)).map(d=>({d,type:'blueprint'}))];
+ if(!entries.length)root.textContent='登録デッキはありません。';
+ for(const {d,type} of entries){
+  const row=document.createElement('div');row.className='row';
+  const name=document.createElement('span');name.style.cssText='flex:2;overflow-wrap:anywhere';name.textContent=d.name||d.id;
+  const del=document.createElement('button');del.type='button';del.textContent='削除';
+  del.onclick=()=>{
+   if(dualSession){alert('追加卓・ダブルデッキを終了してから削除してください。');return}
+   if(settings.deckId===d.id){alert('別のデッキに切り替えてから削除してください。');return}
+   if(!confirm('「'+(d.name||d.id)+'」を削除しますか？ このデッキを使った保存済み占例や作業環境は残りますが、卓への復元ができなくなる場合があります。'))return;
+   try{
+    if(type==='blueprint')TabulaDeckBlueprint.remove(d.id);
+    else {const old=deckLibrary;deckLibrary=old.filter(q=>q.id!==d.id);if(!storeDeckLibrary()){deckLibrary=old;throw Error('保存に失敗しました。')}}
+    refreshDeckPicker();if(GALLERY.visible){galleryDeckOptions();galleryRender()}
+    openRegisteredDeckManager();setStatus('登録デッキを削除しました。');
+   }catch(e){alert('削除できませんでした：'+e.message)}
+  };
+  row.append(name,del);root.append(row);
+ }
+ $('registeredDeckEdit').onclick=()=>openDeckEditor(false);$('registeredDeckClose').onclick=closeModal;
+}
+$('deckEditCurrent').addEventListener('click',openRegisteredDeckManager);
 function customModal(){
  const selected=settings.pool==='custom'?customIds:selectedCards().map(c=>c.id);
  chooseCardSubset(settings.deckId,selected,ids=>{
