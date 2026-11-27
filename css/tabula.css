@@ -115,8 +115,8 @@ aside .section.is-collapsed .fold-indicator{transform:rotate(-90deg)}
 .standalone-start{padding:14px 0 2px}
 .standalone-start button{width:100%;min-height:44px;font-size:14px}
 .table-surface .deck{left:3.5%;right:auto;top:83%}
-.table-surface .deck-label{left:calc(3.5% + var(--cw) + 12px);right:2%;top:calc(83% + var(--ch) / 2);transform:translateY(-50%);max-width:none;white-space:normal;line-height:1.4;text-align:left;pointer-events:none}
-@media(max-width:460px){.table-surface .deck-label{left:calc(3.5% + var(--cw) + 7px);font-size:10px}}
+
+
 @media(max-width:780px){
  .standalone-start{order:5;display:block;padding:12px 14px 8px;background:#1d2724;border-top:1px solid #46483d}
  aside .section:nth-of-type(1){order:6}
@@ -129,21 +129,10 @@ aside .section.is-collapsed .fold-indicator{transform:rotate(-90deg)}
 .table-surface .deck{
   left:6%; right:auto; top:auto; bottom:5.5%;
 }
-.table-surface .deck-label{
-  left:calc(6% + var(--cw) + 13px);
-  right:3%; top:auto;
-  bottom:calc(5.5% + var(--ch) / 2);
-  transform:translateY(50%);
-  max-width:none; white-space:normal;
-  line-height:1.4; text-align:left; pointer-events:none;
-}
+
 @media(max-width:460px){
   .table-surface .deck{left:5.7%;bottom:5.2%;}
-  .table-surface .deck-label{
-    left:calc(5.7% + var(--cw) + 8px);
-    bottom:calc(5.2% + var(--ch) / 2);
-    font-size:10px;
-  }
+  
 }
 
 body[data-effect-preset="ritual"] .stage.effect-finale::before{
@@ -2737,3 +2726,7 @@ aside header .tabula-entrance-link:focus-visible{
 .archive-info{overflow-wrap:anywhere}
 .archive-actions>button{white-space:normal;overflow-wrap:anywhere;min-width:0}
 @media(max-width:780px){.archive-actions{padding-left:0}.archive-actions>button{flex:1 1 75px}}
+
+/* Deck totals belong to the table, not to the movable stock. */
+.table-surface .deck-label{left:auto;right:4%;top:2.5%;bottom:auto;transform:none;width:auto;max-width:92%;white-space:normal;text-align:right;line-height:1.4;pointer-events:none}
+@media(max-width:460px){.table-surface .deck-label{font-size:10px}}
