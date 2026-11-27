@@ -1,11 +1,16 @@
 /* TABULA SORTIUM — custom spread storage rules. */
 (function(root){'use strict';
-const MAX_SPREAD_SLOTS=100;
+const MAX_SPREAD_SLOTS=100,MAX_LIBRARY=500;
+const identityModule=()=>root.TabulaContentIdentity;
+function groups(v){if(!Array.isArray(v)||v.length>100)throw Error('グループ情報が不正です。');const seen=new Set();return v.map(g=>{if(!g||!identityModule().validId(g.id)||typeof g.name!=='string'||!g.name.trim()||g.name.length>100||seen.has(g.id))throw Error('グループ情報が不正です。');seen.add(g.id);return {id:g.id,name:g.name}})}
+function packInfo(v){if(!v||!identityModule().validId(v.id)||typeof v.name!=='string'||!v.name.trim()||v.name.length>100)throw Error('パック情報が不正です。');return {id:v.id,name:v.name,creator:identityModule().creator(v.creator)}}
+function sources(v){if(!Array.isArray(v)||v.length>100)throw Error('配布元情報が不正です。');return v.map(packInfo)}
+function validMetadata(v){try{if(v.identity!==undefined)identityModule().identity(v.identity);if(v.groups!==undefined)groups(v.groups);if(v.packSources!==undefined)sources(v.packSources);return true}catch(e){return false}}
 function validDeckPosition(p){return p&&typeof p==='object'&&!Array.isArray(p)&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100}
 function copyDeckPosition(p){return {x:p.x,y:p.y}}
 function validDeal(plan,count){try{return !!root.TabulaSpreadDeal?.normalize(plan,count)}catch(e){return false}}
 function validSpread(v){
-  return !!(v&&typeof v.id==='string'&&Array.isArray(v.slots)
+  return !!(v&&typeof v.id==='string'&&validMetadata(v)&&Array.isArray(v.slots)
     &&v.slots.length<=MAX_SPREAD_SLOTS&&(v.deckPosition===undefined||validDeckPosition(v.deckPosition))&&(v.deal===undefined||validDeal(v.deal,v.slots.length))&&v.slots.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.angle)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
 }
 function fromReading(reading,id,name){
@@ -57,6 +62,7 @@ function portableSpread(v){
    meta[field]=v[field];
   }
  }
+ if(v.identity!==undefined)meta.identity=identityModule().identity(v.identity);
  if(v.deal!==undefined)meta.deal=root.TabulaSpreadDeal.normalize(v.deal,slots.length);
  if(v.cardSize!==undefined&&(!Number.isFinite(v.cardSize)||v.cardSize<.8||v.cardSize>2.3))
   throw Error('カードサイズが不正です。');
@@ -64,22 +70,54 @@ function portableSpread(v){
  return {name,slots,...meta,...(v.cardSize===undefined?{}:{cardSize:v.cardSize}),...(v.deckPosition===undefined?{}:{deckPosition:copyDeckPosition(v.deckPosition)})};
 }
 function exportPortable(v){
- return {format:PORTABLE_FORMAT,kind:'spread',version:1,spread:portableSpread(v)};
+ return {format:PORTABLE_FORMAT,kind:'spread',version:v.identity?2:1,spread:portableSpread(v)};
 }
 function importPortable(data){
- const wrapped=data&&data.format===PORTABLE_FORMAT&&data.kind==='spread'&&data.version===1;
+ const wrapped=data&&data.format===PORTABLE_FORMAT&&data.kind==='spread'&&[1,2].includes(data.version);
  if(data&&('format' in Object(data)||'kind' in Object(data))&&!wrapped)
   throw Error('対応していないスプレッドJSONです。');
- return portableSpread(wrapped?data.spread:data);
+ const result=portableSpread(wrapped?data.spread:data);
+ if(wrapped&&data.version===2&&!result.identity)throw Error('作品IDがありません。');
+ return result;
+}
+function exportPack(info,items){
+ const pack=packInfo(info);
+ if(!Array.isArray(items)||!items.length||items.length>MAX_LIBRARY)throw Error('パックの収録数が不正です。');
+ const spreads=items.map(portableSpread);
+ if(spreads.some(s=>!s.identity)||new Set(spreads.map(s=>identityModule().key(s.identity))).size!==spreads.length)throw Error('パック内の作品IDが不正です。');
+ return {format:PORTABLE_FORMAT,kind:'spread-pack',version:1,pack,spreads};
+}
+function importBundle(data){
+ if(data?.kind!=='spread-pack')return [{spread:importPortable(data),pack:null}];
+ if(data.format!==PORTABLE_FORMAT||data.version!==1||!Array.isArray(data.spreads)||!data.spreads.length||data.spreads.length>MAX_LIBRARY)throw Error('対応していないスプレッドパックです。');
+ const pack=packInfo(data.pack),spreads=data.spreads.map(portableSpread);
+ if(spreads.some(s=>!s.identity)||new Set(spreads.map(s=>identityModule().key(s.identity))).size!==spreads.length)throw Error('パック内の作品IDが不正です。');
+ return spreads.map(spread=>({spread,pack}));
+}
+function content(v){const {identity,...rest}=portableSpread(v);return JSON.stringify(rest)}
+function prepareLibrary(items,previous,profile){
+ const I=identityModule(),old=new Map(previous.map(v=>[v.id,v]));
+ if(items.length>MAX_LIBRARY)throw Error('登録上限（'+MAX_LIBRARY+'件）に達しています。');
+ const prepared=items.map(v=>{
+  const before=old.get(v.id),prior=before?.identity;
+  let id=v.identity;
+  if(!id)id=I.newIdentity(profile);
+  else if(prior&&I.key(id)===I.key(prior)&&content(v)!==content(before)){
+   id=prior.creator.id===profile.id?I.revise(prior,profile):I.newIdentity(profile,prior);
+  }
+  return {...v,identity:I.identity(id),groups:groups(v.groups||[]),packSources:sources(v.packSources||[])};
+ });
+ if(new Set(prepared.map(v=>v.id)).size!==prepared.length||new Set(prepared.map(v=>I.key(v.identity))).size!==prepared.length)throw Error('作品IDが重複しています。');
+ return prepared;
 }
 function read(storage,key){
   try{
     const entries=JSON.parse(storage.getItem(key)||'[]');
-    return Array.isArray(entries)?entries.filter(validSpread).slice(0,100):[];
+    return Array.isArray(entries)?entries.filter(validSpread).slice(0,MAX_LIBRARY):[];
   }catch(e){return []}
 }
 function write(storage,key,items){
   storage.setItem(key,JSON.stringify(items));
 }
-root.TabulaSpreadStore=Object.freeze({MAX_SPREAD_SLOTS,validSpread,fromReading,read,write,portableSpread,exportPortable,importPortable});
+root.TabulaSpreadStore=Object.freeze({MAX_SPREAD_SLOTS,MAX_LIBRARY,validSpread,fromReading,read,write,portableSpread,exportPortable,importPortable,exportPack,importBundle,prepareLibrary,groups,packInfo});
 })(globalThis);
