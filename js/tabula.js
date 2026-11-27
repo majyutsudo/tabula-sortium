@@ -24,9 +24,29 @@ function myArchiveRows(){return spreadLibrary.filter(isMySpread)}
 function libraryWorkKey(v){return v.identity?TabulaContentIdentity.key(v.identity):''}
 function libraryPackKeys(packs){return new Set(packs.flatMap(p=>p.spreads.map(libraryWorkKey)))}
 function libraryProtected(v){
- if(v.librarySingle||v.mySpread===false||v.identity?.creator.id!==currentCreator().id)return true;
+ if(v.librarySingle||v.mySpread===false)return true;
  const key=libraryWorkKey(v);
  return packLibrary().some(p=>p.spreads.some(x=>libraryWorkKey(x)===key));
+}
+function removeLibraryItems(packs,items){
+ const removed=spreadLibrary.filter(v=>!items.some(q=>q.id===v.id));
+ if(removed.some(v=>v.id===settings.spread)){alert('現在使用中のスプレッドです。別の展開法に切り替えてから削除してください。');return false}
+ try{writePackAndSpreads(packs,items);return true}catch(e){alert('削除できませんでした：'+e.message);return false}
+}
+function removeLibrarySingle(v){
+ if(!confirm('「'+v.name+'」をLIBRARYの単体スプレッドから削除しますか？ MY SPREADSや他のパックにあるものは残ります。'))return;
+ const packs=packLibrary(),keys=libraryPackKeys(packs);
+ const items=spreadLibrary.flatMap(q=>q.id!==v.id?[q]:isMySpread(q)||keys.has(libraryWorkKey(q))?[{...q,librarySingle:false}]:[]);
+ removeLibraryItems(packs,items);
+}
+function removeLibraryPack(data){
+ if(!confirm('「'+data.pack.name+'」をLIBRARYから削除しますか？ MY SPREADSに追加した作品や他のパックは残ります。'))return;
+ const S=TabulaSpreadStore,key=S.packKey(data.pack),packs=packLibrary().filter(p=>S.packKey(p.pack)!==key),remaining=libraryPackKeys(packs),removed=libraryPackKeys([data]);
+ const items=spreadLibrary.flatMap(v=>{
+  if(removed.has(libraryWorkKey(v))&&!isMySpread(v)&&!v.librarySingle&&!remaining.has(libraryWorkKey(v)))return [];
+  return [{...v,packSources:(v.packSources||[]).filter(p=>S.packKey(p)!==key)}];
+ });
+ if(removeLibraryItems(packs,items))archivePackOpen.delete(key);
 }
 function setMySpread(v,value){
  const before=spreadLibrary;
@@ -267,7 +287,7 @@ function archiveEntry(v,mode,original=v){
     if(settings.spread===v.id)settings.spread='free';sync();renderSpreadArchive();saveLocal();
    });
   }else{
-   const add=action(isMySpread(v)?'追加済み':'＋ MY SPREADS',()=>setMySpread(v,true));add.disabled=isMySpread(v);
+   const add=action(isMySpread(v)?'追加済み':'＋ MY SPREADS',()=>setMySpread(v,true));add.disabled=isMySpread(v);if(mode==='single')action('削除',()=>removeLibrarySingle(v));
   }
  }
  row.append(thumb,info,actions);return row;
@@ -292,19 +312,19 @@ function renderSpreadArchive(){
   details.ontoggle=()=>{if(terms.length)return;if(details.open)archivePackOpen.add(key);else archivePackOpen.delete(key)};
   const summary=document.createElement('summary');summary.textContent=data.pack.name+'（'+rows.length+'篇）';details.append(summary);
   const toolbar=document.createElement('div');toolbar.className='row archive-pack-toolbar';
-  archiveButton(toolbar,'パックを書き出す',()=>downloadJSON(data,'TABULA_SPREAD_PACK_'+fileNamePart(data.pack.name)+'.json'));details.append(toolbar);
+  archiveButton(toolbar,'パックを書き出す',()=>downloadJSON(data,'TABULA_SPREAD_PACK_'+fileNamePart(data.pack.name)+'.json'));archiveButton(toolbar,'削除',()=>removeLibraryPack(data));details.append(toolbar);
   for(const v of rows){
    const local=index.get(libraryWorkKey(v)),same=local&&local.identity.revisionId===v.identity.revisionId&&TabulaSpreadStore.sameContent(local,v);
    details.append(archiveEntry(same?local:null,'library',v));
   }
   root.append(details);
  }
- const loose=spreadLibrary.filter(v=>(v.librarySingle||((!isMySpread(v)||v.identity?.creator.id!==currentCreator().id)&&!keys.has(libraryWorkKey(v))))&&archiveMatches(v,terms));
+ const loose=spreadLibrary.filter(v=>(v.librarySingle||(!isMySpread(v)&&!keys.has(libraryWorkKey(v))))&&archiveMatches(v,terms));
  if(loose.length){
   count+=loose.length;const details=document.createElement('details');details.className='archive-pack-folder';details.open=archivePackOpen.has('single')||terms.length>0;
   details.ontoggle=()=>{if(terms.length)return;if(details.open)archivePackOpen.add('single');else archivePackOpen.delete('single')};
   const summary=document.createElement('summary');summary.textContent='単体スプレッド（'+loose.length+'篇）';details.append(summary);
-  for(const v of loose)details.append(archiveEntry(v,'library'));root.append(details);
+  for(const v of loose)details.append(archiveEntry(v,'single'));root.append(details);
  }
  $('archiveCount').textContent=count+'篇';
  if(!count){const p=document.createElement('p');p.className='archive-empty';p.textContent=terms.length?'該当するスプレッドはありません。':'読み込んだスプレッドはありません。';root.append(p)}
@@ -326,7 +346,8 @@ function importSpreadBundles(documents){
   let added=0,duplicates=0,conflicts=0,linked=0;
   const mergeSource=(v,p)=>{const key=p.creator.id+':'+p.id;if(v.packSources.some(q=>q.creator.id+':'+q.id===key))return false;v.packSources.push(p);linked++;return true};
   for(const {spread,pack} of items){
-   const identity=spread.identity||I.newIdentity({id:I.uuid(),name:'',website:''});
+   const legacyMatch=!spread.identity?next.find(v=>S.sameContent(v,spread)):null;
+   const identity=spread.identity||legacyMatch?.identity||I.newIdentity({id:I.uuid(),name:'',website:''});
    const key=I.key(identity),existing=indexed.get(key);
    if(existing){
     if(existing.identity.revisionId!==identity.revisionId||existing.identity.revision!==identity.revision||!TabulaSpreadStore.sameContent(existing,spread))conflicts++;
