@@ -4,6 +4,9 @@
 const schemaVersion=1;
 function fileNamePart(s){return String(s||'reading').normalize('NFKC').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').replace(/\s+/g,'_').slice(0,65)||'reading'}
 function validCardSize(v){return typeof v==='number'&&Number.isFinite(v)&&v>=.8&&v<=2.3}
+const TABLE_COORD_MIN=-200,TABLE_COORD_MAX=300;
+function validTableCoordinate(n){return Number.isFinite(n)&&n>=TABLE_COORD_MIN&&n<=TABLE_COORD_MAX}
+function validTableAngle(n){return Number.isFinite(n)}
 const calendarSides=[12,8,10,6,12,12];
 function validCalendarYear(year){return Number.isInteger(year)&&year>=1&&year<=9999}
 function calendarResult(results,year){
@@ -38,8 +41,7 @@ function validateReading(v,cards){
  const validList=list=>Array.isArray(list)&&list.length<=800&&list.every(validCard);
  const piles=v?.tablePiles??[];
  const validPiles=Array.isArray(piles)&&piles.length<=200&&piles.every(p=>
-  p&&typeof p.id==='string'&&p.id.length>0&&Number.isFinite(p.x)&&p.x>=-200&&p.x<=300
-  &&Number.isFinite(p.y)&&p.y>=-200&&p.y<=300
+  p&&typeof p.id==='string'&&p.id.length>0&&validTableCoordinate(p.x)&&validTableCoordinate(p.y)
   &&(p.slot==null||Number.isInteger(p.slot)&&p.slot>=0&&p.slot<80)
   &&validList(p.cards));
  const slotList=[
@@ -49,8 +51,8 @@ function validateReading(v,cards){
  const uniqueSlots=new Set(slotList).size===slotList.length;
  const uniquePiles=Array.isArray(piles)&&new Set(piles.map(p=>p?.id)).size===piles.length;
  return !!(v&&typeof v==='object'&&!Array.isArray(v)&&validList(v.placed)
-  &&v.placed.every(p=>Number(p.x)>=-200&&Number(p.x)<=300&&Number(p.y)>=-200&&Number(p.y)<=300
-   &&(p.angle==null||typeof p.angle==='number'&&Number.isFinite(p.angle))
+  &&v.placed.every(p=>validTableCoordinate(p.x)&&validTableCoordinate(p.y)
+   &&(p.angle==null||validTableAngle(p.angle))
    &&(p.slot==null||Number.isInteger(p.slot)&&p.slot>=0&&p.slot<80))
   &&validPiles&&uniquePiles&&uniqueSlots
   &&[v.deck,v.removed,v.dealCheckpoint].every(list=>list==null||validList(list))
@@ -67,5 +69,5 @@ function matchesDeck(reading,cards){
 }
 
 function supportsSchema(version){return version==null||version===schemaVersion}
-root.TabulaStorage=Object.freeze({schemaVersion,fileNamePart,validCardSize,validateReading,matchesDeck,supportsSchema,validCalendarYear,calendarResult});
+root.TabulaStorage=Object.freeze({schemaVersion,fileNamePart,validCardSize,TABLE_COORD_MIN,TABLE_COORD_MAX,validTableCoordinate,validTableAngle,validateReading,matchesDeck,supportsSchema,validCalendarYear,calendarResult});
 })(globalThis);
