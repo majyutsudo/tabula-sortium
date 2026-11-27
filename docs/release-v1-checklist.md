@@ -1,53 +1,99 @@
-# TABULA SORTIUM — v1.0 release review
+# TABULA SORTIUM — v1.0 正式公開準備台帳
 
-This is a development checklist, not a release announcement. Do not merge the draft PR into `main` until the owner approves publication. The currently published version is v0.9.95.
+更新日：2026-11-27  
+確認基準：開発版 v0.869 / `e1cc2e565699abc9825095bb41772c0825277841`  
+開発ブランチ：`cleanup/schema-v1`  
+公開先：[Cloudflare Pages](https://tabula-sortium.pages.dev/)
 
-## Architecture reviewed
+本書は開発・公開判定用であり、公開告知ではない。main への反映は所有者の明示的な指示に限る。
 
-- [x] Separate HTML, CSS, and JavaScript assets while preserving script order.
-- [x] Split card definitions and built-in spreads (`js/catalog.js`).
-- [x] Extract pure operations: `card-rules.js`, `shuffle.js`, `spread-geometry.js`, and `ui-format.js`.
-- [x] Extract storage helpers: `storage-format.js`, `spread-store.js`, `reading-history.js`.
-- [x] Preserve active browser storage keys and JSON import/export formats.
-- [x] Change `resetEverything` so the remembered card size is reset.
-- [ ] Decide a version number and update the title/version only at release time.
+## 管理方針
 
-## Automated verification
+- [x] 開発版と main の基準コミットを確認（2026-11-27 時点では同一）。
+- [x] Node 静的テスト、Playwright、GitHub Actions の検証基盤が存在することを確認。
+- [x] 保存スキーマおよびカードエンジンの設計文書が存在することを確認。
+- [ ] v1.0 の対象機能を確定し、機能追加凍結の時期を決める。
+- [ ] 公開阻害事項と公開後対応事項を区別する。
+- [ ] 各検証結果に対象コミット、日付、環境、結果、再現手順、関連修正を記録する。
 
-- [x] Add Node tests for pure helpers and storage contracts.
-- [x] Expand CI's Node command to include every `tests/*.test.mjs` file.
-- [x] Add Playwright coverage for reading-history round trip, workspace save/reload, JSON backup, bad JSON, reset actions, and mobile controls.
-- [x] Run the development head through GitHub Actions: [validation #112](https://github.com/majyutsudo/tabula-sortium/actions/runs/42063696637) passed after fixing a staggered-deal timing race in the test. Re-run for any subsequent changes.
-- [ ] Investigate or fix every failed test; do not interpret a previously passing run as validation for a newer commit.
-- [ ] Run once more immediately before merging.
+チェック済みは明示された事実または作業の完了を示す。機能の存在と動作検証の完了は別。古い合格結果を最新コミットに流用しない。
 
-To prevent a large volume of CI emails, commits do **not** automatically start the workflow. Add the `run-validation` label to draft PR #1 to run it once; remove and re-add the label for a later run. Keep the PR in draft until approved.
+## P0 — 正式公開の必須条件
 
-## Manual browser acceptance
+### A. コード・配信・品質
+- [ ] 現行コードの責務、依存関係、重複・未使用処理を調査する。例外の追加より共通設計を優先し、呼び出し元とテストを確認してから削除する。
+- [ ] 試作・旧版ページ（ダイス実験、入口プロトタイプ等）と公開対象を分類する。参照先を確認し、必要な開発資産は保存する。
+- [ ] HTML/CSS/JS、画像、外部ライブラリの参照・読み込み順序を確認し、初期表示の崩れやエラーを防ぐ。
+- [ ] アプリ表示バージョン、package.json、README、キャッシュ識別子の役割と更新方法を整理する。
+- [ ] 最新候補コミットで静的テストとブラウザ回帰テストを実行し、失敗を解消する。
+- [ ] PC（Chromium、Firefox、Safari/Edge の利用可能な環境）、iPhone Safari、Android Chrome で実機または実ブラウザ検証する。実機未確認は明示する。
+- [ ] 初回ロード・低速回線・キャッシュ更新・長時間操作・大規模配札・ダイスのメモリ/描画負荷を確認する。
+- [ ] タッチ、横画面、画面回転、ズーム、ドラッグ、スクロール、ダイアログ、キーボード、フォーカス、文字の可読性を確認する。
+- [ ] 公開先の画像・スクリプト・リンク、HTTPS、外部依存、エラー時の表示を確認する。
 
-- [ ] Compare PC and mobile screenshots against currently deployed v0.9.95.
-- [ ] Check all 78 card images and the magnifier on real devices; automated Chromium gallery filter, enlarged artwork, next/previous and close controls passed in #112.
-- [ ] Exercise one-card, three-card, Celtic cross, and free-placement spreads.
-- [ ] Manually verify create/edit/duplicate/delete and touch placement on real devices; automated Chromium tests passed for free-table spread creation, registered spread editing and cancellation, circular alignment and selection in #112.
-- [ ] Exercise shuffle variants and custom multi-step recipes; verify cut interactions.
-- [ ] Manually verify compare/rename/delete and real-device behavior; automated named reading save/reload/restore passed.
-- [ ] Repeat standalone reading and full-backup import with a **copy** of real user data; synthetic end-to-end Chromium tests passed in #112, but actual user backups have not been tested.
-- [ ] Check behavior when localStorage is blocked/full and when JSON imports are corrupted or unsupported.
-- [ ] Check zoom, drag, touch, orientation changes, and scroll on phone/tablet.
-- [ ] Confirm production images/paths all load when served from GitHub Pages.
-- [ ] Back up important user data before publishing any change.
+### B. データと安全性
+- [ ] v1.0 保存スキーマを確定し、v1.0 以降の読み込み互換性とマイグレーション方針を文書化する。v1.0 前の全データ互換は必須としない。
+- [ ] 占例、独自デッキ、独自スプレッド、手帳、卓と各設定の保存・復元・出力・取り込みを確認する。
+- [ ] 実データのコピーと合成テストデータでバックアップ往復を検証する。原本を破壊しない。
+- [ ] 不正・破損・未対応バージョンの JSON、重複ID、巨大入力、ストレージ容量超過・利用不可を安全に処理する。
+- [ ] インポートやユーザー入力が意図せず HTML/JS として実行されないこと、外部URL等の入力処理を確認する。
+- [ ] 部分初期化・全初期化・削除の対象、確認ダイアログ、失敗時の状態保全を確認する。
+- [ ] ブラウザ内保存の制約（端末間で自動同期されない、サイトデータ削除による消失、オリジン変更）とバックアップ方法を利用者に説明する。
+- [ ] 公開前のバックアップと復旧手順を確立する。正式URLを変える場合はデータ移行方法を用意する。
 
-## Release procedure
+### C. 機能別受入検証
+- [ ] カード体系：タロット・プレイングカード・独自体系の定義、画像、表裏、物理ID、重複カード、デッキ切替。
+- [ ] 卓上操作：指定配置、枠への吸着、移動、重なり、選択、拡大、ラベル、UNDO、山札・捨て札、カット・シャッフル。
+- [ ] スプレッド：標準・独自、作成/編集/複製/削除、対応デッキ、表示/非表示、順序、既定状態、グランド・スター/フィギュア等の特殊手順。
+- [ ] 配札：自動・手動、相談者カード、順序、複数ステップの混ぜる/カット、発光終了、途中操作・キャンセル。
+- [ ] デッキ管理：作成/編集/複製/削除/出力/取込、旧管理室由来の残存デッキ、非表示デッキの扱い。
+- [ ] 複数卓：共有・独立山札、卓切替、追加・片付け、保存/復元、卓ごとの配札条件。
+- [ ] ダイス：通常・天体・十二宮・易等のプリセット、物理演算、投入順、結果・ラベル・配置図・占例、カード卓との切替。
+- [ ] 図鑑・手帳：全画像、検索/選択/拡大、解説・正逆位置・編集保存、対象体系との一致。
+- [ ] 占例：保存/比較/改名/削除/復元、配置図出力、単独取込と全体バックアップの区別。
+- [ ] アルター・表示：クロス、キャンドル、カード表示、目印、設定保持、初期化。
+- [ ] 組合せ：独自デッキ＋独自スプレッド＋追加卓＋占例保存＋再起動＋復元。
+- [ ] 組合せ：カードとダイスの切替、異なるデッキ/展開法、設定変更後の復元、連続操作。
+- [ ] 機能名・手順・文体が実装と一致することを確認する。
 
-1. Review the draft PR and all modified files; avoid opportunistic changes to live data.
-2. Finish acceptance checks and verify the current commit in CI.
-3. After explicit approval, merge into `main`; confirm GitHub Pages deploy and perform a production smoke test.
-4. Keep the backup and a rollback reference to v0.9.95, so the release can be reverted if necessary.
+### D. 利用者向け・権利
+- [ ] 初回ガイド（デッキ選択、展開法、混ぜる、配る）を整備する。入口演出を妨げない。
+- [ ] 操作説明、About、推奨環境、保存/バックアップ説明を最新状態にする。
+- [ ] 不具合報告窓口を定め、個人の占例や機密情報を送信しないよう案内する。
+- [ ] 利用規約・プライバシーポリシーを実際の処理・運用に合わせて作成する。外部通信・ホスティング・アクセス解析の有無も確認する。
+- [ ] カード画像・背景・フォント・効果音・解説・外部ライブラリの権利とライセンスを確認し、必要な表記を行う。
+- [ ] 公開リポジトリでのソース・画像の利用許諾範囲を定める。
+- [ ] 正式な公開URL、ページタイトル、説明、OGP、ファビコン、共有時の表示を確認する。
+- [ ] README の旧公開先・旧バージョン記述を改める。
 
-## Scope note
+## P1 — 公開までに推奨（未完なら影響を評価）
+- [ ] FAQ、変更履歴、紹介画像・デモ動画、公開告知を整備する。
+- [ ] 初見利用者による操作確認とフィードバックを得る。
+- [ ] アクセシビリティ・低性能端末での操作性を改善する。
+- [ ] 検証記録と既知の制限を整理し、公開後の修正優先順位を定める。
 
-The remaining `js/tabula.js` contains tightly coupled DOM handlers, animations, and application state. Its size alone does not establish that code is obsolete. Avoid deleting any function until call sites and interaction tests establish that it is dead.
+## P2 — 公開後の候補（v1.0 の必須条件ではない）
+アカウント、クラウド同期、多言語、PWA、オンライン共有、新規占術体系、課金。採否は別途判断する。
 
-## Acceptance progress (2026-11-06)
+## 検証の運用
+現行の package.json は `npm run test:static` と `npm run test:browser` を提供する。`npm test` は両者を実行する。依存関係と Chromium の準備が必要。
 
-On isolated Chromium browser contexts, all **15** automated browser scenarios passed in run #112, covering desktop and emulated mobile. Tests include the card gallery, 3-pile manual cut, new custom spread creation and selection, registered-spread editing/cancellation, standalone reading import without replacing the table, full JSON backup round trip, saved-reading restoration, and existing reset and storage cases. The test environment is not a substitute for physical smartphone/tablet or multi-browser acceptance. No changes have been merged into production.
+GitHub Actions の validation.yml は通知過多を避けるためコミットごとの自動実行ではなく、手動実行または PR の run-validation ラベルによる起動を採用している。最終候補の SHA と実際にチェックアウトされた SHA を必ず照合する。以前の PR 番号を固定の前提にしない。
+
+| 日付 | 対象 | 結果・範囲 |
+|---|---|---|
+| 2026-11-06 | [validation #112](https://github.com/majyutsudo/tabula-sortium/actions/runs/42063696637) | 旧台帳では Chromium 15 シナリオ合格と記録。ギャラリー、カット、独自スプレッド、占例・バックアップ等。現行版の合格証明ではない。 |
+| 2026-11-27 | v0.869 / e1cc2e5 | 開発・公開ブランチの一致と検証基盤の存在を確認。最新コミットのテスト・実機操作は本台帳更新時に未実施。 |
+
+検証記録テンプレート：項目ID / 対象SHA / 日付 / 端末・OS・ブラウザ / 前提条件 / 手順 / 期待結果 / 実結果 / 合否 / 証跡 / 修正SHA / 再検証日。
+
+## リリース手順
+1. v1.0 対象機能を確定し、機能追加を原則凍結する。
+2. Beta で P0 を検証し、修正と再検証を繰り返す。
+3. RC を固定し、利用者向け文書と権利・保存仕様を確定する。P0 の未解決事項があれば公開判定を保留する。
+4. 所有者の明示的承認後、v1.0 の表示・キャッシュ識別子・Git タグ・リリース記録を整備し main に反映する。
+5. Cloudflare Pages の反映先とコミットを確認し、本番環境でスモークテストを行う。
+6. 公開前のコミットを復旧基準として記録し、障害時は履歴を破壊せず復旧する。データ形式が変化した場合の復元条件も確認する。
+7. 告知後、不具合報告を整理して修正版と将来機能を分けて管理する。
+
+関連：[保存スキーマ](storage-schema-v1.md) / [カードエンジン移行](card-engine-transition.md)
