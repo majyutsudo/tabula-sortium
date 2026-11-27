@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 
 const source=readFileSync(new URL('../js/spread-store.js',import.meta.url),'utf8');
+const storageSource=readFileSync(new URL('../js/storage-format.js',import.meta.url),'utf8');
 const context={};
+runInNewContext(storageSource,context);
 runInNewContext(source,context);
 const store=context.TabulaSpreadStore;
 
@@ -64,7 +66,7 @@ test('legacy free reading without slots can still register physical positions',(
 test('portable identity, revisions, local groups and pack round trip',()=>{
  const identitySource=readFileSync(new URL('../js/content-identity.js',import.meta.url),'utf8');
  let n=0;const ctx={crypto:{randomUUID:()=>`00000000-0000-4000-8000-${(++n).toString(16).padStart(12,'0')}`}};
- runInNewContext(identitySource,ctx);runInNewContext(source,ctx);
+ runInNewContext(identitySource,ctx);runInNewContext(storageSource,ctx);runInNewContext(source,ctx);
  const I=ctx.TabulaContentIdentity,S=ctx.TabulaSpreadStore,storage=memoryStorage(),creator=I.load(storage);
  assert.equal(I.load(storage).id,creator.id);
  const first=S.prepareLibrary([{id:'custom_a',name:'A',slots:[{x:10,y:20,angle:0,name:'Past'}]}],[],creator)[0];
@@ -92,7 +94,7 @@ test('portable identity, revisions, local groups and pack round trip',()=>{
 test('pack redistribution preserves identity and content independently of local edits',()=>{
  const identitySource=readFileSync(new URL('../js/content-identity.js',import.meta.url),'utf8');
  let n=0;const ctx={crypto:{randomUUID:()=>`00000000-0000-4000-8000-${(++n).toString(16).padStart(12,'0')}`}};
- runInNewContext(identitySource,ctx);runInNewContext(source,ctx);
+ runInNewContext(identitySource,ctx);runInNewContext(storageSource,ctx);runInNewContext(source,ctx);
  const I=ctx.TabulaContentIdentity,S=ctx.TabulaSpreadStore,storage=memoryStorage(),creator=I.load(storage);
  const first=S.prepareLibrary([{id:'custom_a',name:'A',slots:[{x:10,y:20,angle:0,name:'Past'}]}],[],creator)[0];
  const pack=S.newPack('Pack',creator,[first]);
@@ -115,4 +117,24 @@ test('pack redistribution preserves identity and content independently of local 
  storage.setItem(S.PACK_LIBRARY_KEY,JSON.stringify(conflict.packs));
  assert.equal(S.readPacks(storage)[0].pack.id,pack.pack.id);
  assert.throws(()=>S.normalizePackLibrary([pack,pack]));
+});
+
+test('table geometry uses the same bounds for readings and portable spreads',()=>{
+ const spread={id:'custom_bounds',name:'Altar',slots:[{x:95.649,y:-3.879,angle:0,name:'Top'},{x:96.592,y:103.711,angle:360,name:'Bottom'}]};
+ assert.equal(store.validSpread(spread),true);
+ const restored=store.importPortable(store.exportPortable(spread));
+ assert.deepEqual(JSON.parse(JSON.stringify(restored.slots)),spread.slots);
+ for(const x of [-200,300]){
+  const v={...spread,slots:[{x,y:x,angle:0,name:'Boundary'}]};
+  assert.equal(store.validSpread(v),true);
+  assert.equal(context.TabulaStorage.validateReading({placed:[{id:'a',x,y:x,angle:0}]}),true);
+  assert.doesNotThrow(()=>store.exportPortable(v));
+ }
+ for(const x of [-200.01,300.01,NaN,Infinity,'10']){
+  const v={...spread,slots:[{x,y:10,angle:0,name:'Invalid'}]};
+  assert.equal(store.validSpread(v),false);
+  assert.equal(context.TabulaStorage.validateReading({placed:[{id:'a',x,y:10,angle:0}]}),false);
+  assert.throws(()=>store.exportPortable(v));
+ }
+ assert.throws(()=>store.importPortable({format:'tabula-sortium',kind:'reading',version:1}),/占例ファイル/);
 });
