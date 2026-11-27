@@ -24,7 +24,7 @@ function myArchiveRows(){return spreadLibrary.filter(isMySpread)}
 function libraryWorkKey(v){return v.identity?TabulaContentIdentity.key(v.identity):''}
 function libraryPackKeys(packs){return new Set(packs.flatMap(p=>p.spreads.map(libraryWorkKey)))}
 function libraryProtected(v){
- if(v.librarySingle||v.mySpread===false)return true;
+ if(v.librarySingle||v.mySpread===false||v.identity?.creator.id!==currentCreator().id)return true;
  const key=libraryWorkKey(v);
  return packLibrary().some(p=>p.spreads.some(x=>libraryWorkKey(x)===key));
 }
@@ -76,25 +76,20 @@ function openNewArchivePack(){
   }catch(e){alert('書き出せませんでした：'+e.message)}
  };
 }
-function packLibrary(){return TabulaSpreadStore.readPacks(localStorage)}
+let archivePackCacheRaw,archivePackCache=[];
+function packLibrary(){const raw=localStorage.getItem(TabulaSpreadStore.PACK_LIBRARY_KEY);if(raw!==archivePackCacheRaw){const next=TabulaSpreadStore.readPacks(localStorage);archivePackCache=next;archivePackCacheRaw=raw}return archivePackCache}
 function writePackAndSpreads(packs,items){
  const next=TabulaSpreadStore.prepareLibrary(items,TabulaSpreadStore.read(localStorage,SPREAD_LIBRARY_KEY),currentCreator());
  const normalized=TabulaSpreadStore.normalizePackLibrary(packs);
  writeRestoredStorage(new Map([[SPREAD_LIBRARY_KEY,JSON.stringify(next)],[TabulaSpreadStore.PACK_LIBRARY_KEY,JSON.stringify(normalized)]]));
  spreadLibrary=next;refreshCustomPresets();if(!$('spreadArchive').hidden)renderSpreadArchive();
 }
-function openSpreadIdentity(v){
- modal('<h2>スプレッド情報</h2><div id="spreadIdentityDetails" class="stack"></div>');
- const root=$('spreadIdentityDetails'),id=v.identity;
- const field=(name,value)=>{const row=document.createElement('div'),label=document.createElement('small'),body=document.createElement('div');label.className='mini';label.textContent=name;body.textContent=value||'—';body.style.overflowWrap='anywhere';row.append(label,body);root.append(row)};
- field('スプレッド',v.name);field('制作者',id?.creator.name||'制作者名なし');field('Webサイト',id?.creator.website);field('制作者ID',id?.creator.id);field('作品ID',id?.id);field('改訂番号',String(id?.revision||'—'));field('改訂ID',id?.revisionId);
- if(id?.derivedFrom){field('派生元の制作者ID',id.derivedFrom.creatorId);field('派生元の作品ID',id.derivedFrom.id);field('派生元の改訂ID',id.derivedFrom.revisionId)}
- for(const p of v.packSources||[]){field('収録パック',p.name+' — '+(p.creator.name||'制作者名なし'));field('パックID',p.id);field('パック制作者ID',p.creator.id)}
-}
 function syncSpreadShortcut(){
  const shortcut=$('spreadQuickSelect'),source=$('spread');if(!shortcut||!source)return;
  // Do not rebuild a native select while its popup is being used. Changing
  // its option nodes during a selection can discard the user's choice.
+ syncCustomSpreadOptions();
+ if(source.value!==settings.spread)source.value=settings.spread;
  const options=[...source.options];
  const stale=shortcut.options.length!==options.length||options.some((option,i)=>{
   const current=shortcut.options[i];
@@ -103,7 +98,20 @@ function syncSpreadShortcut(){
  if(stale)shortcut.replaceChildren(...options.map(option=>option.cloneNode(true)));
  if(shortcut.value!==settings.spread)shortcut.value=settings.spread;
 }
-function refreshCustomPresets(){Object.keys(presets).filter(k=>k.startsWith('custom_')).forEach(k=>delete presets[k]);spreadLibrary.forEach(v=>presets[v.id]=v.slots.map(p=>({...p})));const select=document.getElementById('spread');if(!select)return;select.querySelectorAll('option[data-custom="1"]').forEach(el=>el.remove());spreadLibrary.forEach(v=>{const o=document.createElement('option');o.value=v.id;const duplicate=spreadLibrary.some(q=>q.id!==v.id&&q.name===v.name);o.textContent=duplicate?v.name+' — '+(v.identity?.creator?.name||'制作者名なし')+' ['+(v.identity?.id||v.id).slice(-8)+']':v.name;o.dataset.custom='1';select.append(o)});syncSpreadShortcut()}
+function syncCustomSpreadOptions(){
+ const select=$('spread');if(!select)return;
+ const rows=spreadLibrary.filter(v=>isMySpread(v)||v.id===settings.spread);
+ const options=[...select.querySelectorAll('option[data-custom="1"]')];
+ const labels=rows.map(v=>rows.some(q=>q.id!==v.id&&q.name===v.name)?v.name+' — '+(v.identity?.creator?.name||'制作者名なし')+' ['+(v.identity?.id||v.id).slice(-8)+']':v.name);
+ if(options.length===rows.length&&options.every((o,i)=>o.value===rows[i].id&&o.textContent===labels[i]))return;
+ options.forEach(el=>el.remove());
+ rows.forEach((v,i)=>{const o=new Option(labels[i],v.id);o.dataset.custom='1';select.append(o)});
+}
+function refreshCustomPresets(){
+ Object.keys(presets).filter(k=>k.startsWith('custom_')).forEach(k=>delete presets[k]);
+ spreadLibrary.forEach(v=>presets[v.id]=v.slots.map(p=>({...p})));
+ syncSpreadShortcut();
+}
 function storeSpreadLibrary(){const next=TabulaSpreadStore.prepareLibrary(spreadLibrary,TabulaSpreadStore.read(localStorage,SPREAD_LIBRARY_KEY),currentCreator());TabulaSpreadStore.write(localStorage,SPREAD_LIBRARY_KEY,next);spreadLibrary=next;refreshCustomPresets();if($('spreadArchive')&&!$('spreadArchive').hidden)renderSpreadArchive()}
 let spreadWorkbench=null;let spreadSnap=true;
 function validStoredDeckPosition(p){return !!p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100}
@@ -291,7 +299,7 @@ function renderSpreadArchive(){
   }
   root.append(details);
  }
- const loose=spreadLibrary.filter(v=>(v.librarySingle||(!isMySpread(v)&&!keys.has(libraryWorkKey(v))))&&archiveMatches(v,terms));
+ const loose=spreadLibrary.filter(v=>(v.librarySingle||((!isMySpread(v)||v.identity?.creator.id!==currentCreator().id)&&!keys.has(libraryWorkKey(v))))&&archiveMatches(v,terms));
  if(loose.length){
   count+=loose.length;const details=document.createElement('details');details.className='archive-pack-folder';details.open=archivePackOpen.has('single')||terms.length>0;
   details.ontoggle=()=>{if(terms.length)return;if(details.open)archivePackOpen.add('single');else archivePackOpen.delete('single')};
@@ -389,13 +397,11 @@ function openSpreadGuide(id){
  });
  if(related.length)showPosition(0);
  $('spreadGuideAtlas').onclick=()=>openSpreadAtlas();
- if(!spread.builtin)$('spreadGuideEdit').onclick=()=>openSpreadGuideEditor(spread.id);
+ if($('spreadGuideEdit'))$('spreadGuideEdit').onclick=()=>openSpreadGuideEditor(spread.id);
  $('spreadGuideUse').onclick=()=>{
   if(spread.id===settings.spread){closeModal();setStatus('この展開法を使用しています。');return}
-  if((state.placed.length||(state.removed||[]).length)&&!confirm('現在の配札を片付けて展開法を切り替えますか？'))return;
-  closeModal();
-  $('spread').value=spread.id;
-  $('spread').dispatchEvent(new Event('change',{bubbles:true}));
+  if(!changeActiveSpread(spread.id))return;
+  closeModal();if(!$('spreadArchive').hidden)closeSpreadArchive();
   setStatus('展開法「'+spread.name+'」を選択しました。');
  };
 }
