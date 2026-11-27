@@ -4587,10 +4587,9 @@ deckMoveHandle.setAttribute('aria-label','山札を移動する（ドラッグ�
 deck.append(deckMoveHandle);
 function applyDeckPosition(){
   const position=dualSession?(dualSession.deckPositions?.[dualSession.mixed?'mixed':'A']||null):settings.deckPosition;
-  const pile=$('deck'),label=$('deckCount'),surface=$('surface');
+  const pile=$('deck'),surface=$('surface');
   if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.y)){
     for(const prop of ['left','top','right','bottom'])pile.style.removeProperty(prop);
-    for(const prop of ['left','top','right','bottom','transform','width'])label.style.removeProperty(prop);
     return;
   }
   const sw=surface.offsetWidth||1,sh=surface.offsetHeight||1;
@@ -4600,22 +4599,6 @@ function applyDeckPosition(){
   const x=Math.max(100*inset/sw,Math.min(Number(position.x),100*Math.max(inset,sw-pile.offsetWidth-inset)/sw));
   const y=Math.max(100*inset/sh,Math.min(Number(position.y),100*Math.max(inset,sh-pile.offsetHeight-inset)/sh));
   pile.style.left=x+'%';pile.style.top=y+'%';pile.style.right='auto';pile.style.bottom='auto';
-  // Fit the counter into the actual free space beside the rendered deck.
-  // Percentages use the surface; dimensions use the deck, not a CSS variable
-  // scoped to its sibling. Keep the saved deck coordinates untouched.
-  const gap=10,px=x*sw/100,py=y*sh/100;
-  const left=Math.max(0,px-inset-gap);
-  const right=Math.max(0,sw-px-pile.offsetWidth-inset-gap);
-  const leftSide=left>right;
-  const available=leftSide?left:right;
-  const width=Math.min(available,Math.max(120,Math.min(320,sw*.65)));
-  label.style.right='auto';label.style.bottom='auto';
-  label.style.transform='none';
-  label.style.width=Math.max(1,width)+'px';
-  label.style.left=(leftSide?px-gap-width:px+pile.offsetWidth+gap)+'px';
-  label.style.top='0px';
-  const height=label.offsetHeight;
-  label.style.top=Math.max(inset,Math.min(py+(pile.offsetHeight-height)/2,sh-height-inset))+'px';
 }
 let deckMove=null;
 deckMoveHandle.addEventListener('pointerdown',e=>{
