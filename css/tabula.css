@@ -2731,31 +2731,47 @@ aside header .tabula-entrance-link:focus-visible{
 .table-surface .deck-label{left:auto;right:4%;top:2.5%;bottom:auto;transform:none;width:auto;max-width:92%;white-space:normal;text-align:right;line-height:1.4;pointer-events:none}
 @media(max-width:460px){.table-surface .deck-label{font-size:10px}}
 
-/* Instrument sidebar: frequent decisions first; reference and maintenance quieter. */
-#instrumentChoiceSection .instrument-preparation{display:grid;gap:11px;min-width:0}
-#instrumentChoiceSection .instrument-preparation .field{gap:5px}
-#instrumentChoiceSection .instrument-preparation select{min-height:38px}
-#instrumentChoiceSection .instrument-preparation :is(#deckLibrarySelect,#spread){min-height:44px;border-color:var(--ui-accent,#a48d64);font-weight:600}
-#instrumentChoiceSection .instrument-reference{margin-top:12px;min-width:0}
+/* Shared sidebar rhythm. Importance is expressed by grouping and surface, not tiny type. */
+aside .section{--side-control-height:38px;--side-radius:5px;--side-line:var(--ui-border,#75684e);--side-quiet:rgba(140,116,80,.045)}
+aside .section.stack{gap:10px;padding-top:12px;padding-bottom:14px}
+aside .section > h2 .section-toggle{min-height:44px;font-size:14px}
+aside .section > h2 .section-toggle .section-hint{font-size:12px}
+aside .section .field,aside .section .choice{font-size:14px;line-height:1.5}
+aside .section .field{gap:5px;min-width:0}
+aside .section .field select,aside .section .field input:not([type=checkbox]){font-size:14px;font-weight:normal;min-height:var(--side-control-height);height:auto;border-radius:var(--side-radius);padding:7px 10px;min-width:0;max-width:100%;width:100%}
+aside .section :is(.deck-setting-heading,.wash-header){font-size:13px;line-height:1.5;font-weight:600}
+aside .section .mini,aside .section .choice small{font-size:12px;line-height:1.5}
+aside .section :is(.wash-settings,.deck-setting-group){min-width:0}
+aside .section .wash-settings .field{font-size:13px}
+aside .section .wash-settings .field input,aside .section .wash-settings .field select{min-height:34px;font-size:13px;padding:5px 7px}
+aside .section > button:not(.section-toggle),aside .section .row>button:not(.swatch){min-height:var(--side-control-height);font-size:13px;line-height:1.4}
+aside .section :is(.label-cycle-settings,.instrument-display,.cloth-figures,.candle-disclosure){padding:0;margin:3px 0;border:0;background:transparent;border-radius:0;min-width:0}
+aside .section :is(.label-cycle-settings,.instrument-display,.cloth-figures,.candle-disclosure)>summary,
+aside #tableManagement #tableDisplaySettings .label-cycle-settings>summary{
+ display:flex;align-items:center;justify-content:flex-start;gap:8px;list-style:none;box-sizing:border-box;min-height:var(--side-control-height);padding:8px 10px;border:1px solid var(--side-line);border-radius:var(--side-radius);background:var(--side-quiet);color:var(--ui-text,#e8ddc5);font:normal 14px/1.5 var(--tabula-ui-font,Arial,sans-serif);cursor:pointer;letter-spacing:normal
+}
+aside .section :is(.label-cycle-settings,.instrument-display,.cloth-figures,.candle-disclosure)>summary::-webkit-details-marker{display:none}
+aside .section :is(.label-cycle-settings,.instrument-display,.cloth-figures,.candle-disclosure)>summary::before{content:'▸';font-size:12px;color:var(--ui-accent,#d6c29d);flex:none}
+aside .section :is(.label-cycle-settings,.instrument-display,.cloth-figures,.candle-disclosure)[open]>summary::before{content:'▾'}
+aside .section :is(.label-cycle-settings,.instrument-display,.cloth-figures,.candle-disclosure)>summary:hover{background:rgba(160,140,100,.12)}
+aside .section :is(.label-cycle-settings,.instrument-display,.cloth-figures,.candle-disclosure)>summary:focus-visible{outline:2px solid var(--ui-accent,#d6c29d);outline-offset:2px}
+aside .section :is(.label-cycle-settings,.instrument-display,.cloth-figures,.candle-disclosure)[open]{padding-bottom:5px}
+aside .section .instrument-display .setting-details-body{padding:10px 0 3px;gap:10px}
+aside .section .cloth-figures .cloth-figure-options{margin:8px 0 0}
+aside .section .candle-disclosure>.choice{padding:8px 3px 0}
+aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);font-size:13px}
+#tableManagement #tableDisplaySettings .field{font-size:14px}
+#tableManagement #tableDisplaySettings .field select{font-size:14px;min-height:var(--side-control-height)}
+#tableManagement #tableDisplaySettings .label-cycle-options label,#tableManagement #tableDisplaySettings .label-cycle-placement{font-size:13px}
+#tableManagement #tableDisplaySettings .label-cycle-settings{margin:3px 0 5px}
+#instrumentChoiceSection .instrument-preparation{display:grid;gap:10px;min-width:0}
+#instrumentChoiceSection .instrument-preparation :is(#deckLibrarySelect,#spread){height:auto;min-height:var(--side-control-height);font-size:14px;font-weight:normal;border-color:var(--ui-accent,#a48d64)}
+#instrumentChoiceSection .instrument-reference{margin-top:4px;min-width:0}
 #instrumentChoiceSection .instrument-reference-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-#instrumentChoiceSection .instrument-reference-buttons>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0;width:100%;min-height:52px;padding:6px 3px;margin:0;font-size:13px;line-height:1.4;white-space:normal;overflow-wrap:anywhere;background:transparent;border-color:var(--ui-border,#75684e);font-weight:normal}
+#instrumentChoiceSection .instrument-reference-buttons>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;width:100%;min-height:48px;padding:6px 3px;margin:0;font-size:13px;line-height:1.4;white-space:normal;overflow-wrap:anywhere;background:var(--side-quiet);border-color:var(--side-line);font-weight:normal}
 #instrumentChoiceSection .instrument-reference-buttons>button:hover{background:rgba(160,140,100,.12)}
-#instrumentChoiceSection .instrument-display{margin-top:10px;background:transparent;border-color:transparent;border-top-color:var(--ui-border,#594f3d);border-radius:0}
-#instrumentChoiceSection .instrument-display>summary{padding:11px 3px;min-height:42px;justify-content:flex-start;color:inherit;font-size:15px;font-weight:500;line-height:1.5}
-#instrumentChoiceSection .instrument-display>summary span{flex:1}
-#instrumentChoiceSection .instrument-display>summary small{display:block;font-size:12px;font-weight:normal;opacity:.95;margin-top:4px}
-#instrumentChoiceSection .instrument-display .setting-details-body{padding:0 0 8px;gap:9px}
-#instrumentChoiceSection .instrument-display .field{font-size:14px}
-#instrumentChoiceSection .instrument-display .choice small{font-size:12px;opacity:1}
-#instrumentChoiceSection .instrument-management{border-top:1px solid var(--ui-border,#594f3d);padding-top:5px}
 #instrumentChoiceSection .instrument-management .deck-edit-actions{display:flex}
-#instrumentChoiceSection #deckEditCurrent{background:transparent;border-color:transparent;box-shadow:none;width:100%;font-size:15px;font-weight:500;text-align:left;padding:10px 4px;min-height:42px;opacity:1}
-#instrumentChoiceSection #deckEditCurrent::after{content:'›';float:right}
-#instrumentChoiceSection #deckEditCurrent:hover,#instrumentChoiceSection #deckEditCurrent:focus-visible{opacity:1;border-color:var(--ui-border,#75684e)}
+#instrumentChoiceSection #deckEditCurrent{background:var(--side-quiet);border:1px solid var(--side-line);box-shadow:none;width:100%;font:normal 14px/1.5 var(--tabula-ui-font,Arial,sans-serif);text-align:left;padding:8px 10px;min-height:var(--side-control-height)}
+#instrumentChoiceSection #deckEditCurrent::after{content:'›';float:right;color:var(--ui-accent,#d6c29d)}
+#instrumentChoiceSection #deckEditCurrent:hover{background:rgba(160,140,100,.12)}
 #instrumentChoiceSection [hidden]{display:none!important}
-/* Keep the closing edge of section II distinct from the next section. */
-#instrumentChoiceSection:not(.is-collapsed){padding-bottom:18px}
-#instrumentChoiceSection .instrument-management{margin-bottom:5px}
-#instrumentChoiceSection .instrument-display .field select{font-size:14px;min-height:38px}
-#instrumentChoiceSection .instrument-display .choice{font-size:14px;line-height:1.5}
-#instrumentChoiceSection + #operations{border-top:1px solid var(--ui-border,#665d45);padding-top:12px}
