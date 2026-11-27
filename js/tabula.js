@@ -10,7 +10,7 @@ function loadSpreadLibrary(){
 function editCreatorProfile(){
  try{
   const p=currentCreator();
-  const name=prompt('制作者名（公開ファイルに記録されます。空欄でも可）',p.name);if(name===null)return;
+  const name=prompt('制作者ID：'+p.id+'\n制作者名（公開ファイルに記録されます。空欄でも可）',p.name);if(name===null)return;
   const website=prompt('Webサイト（任意・公開ファイルに記録されます）',p.website);if(website===null)return;
   creatorProfile=TabulaContentIdentity.save(localStorage,{...p,name:name.trim(),website:website.trim()});
   renderSpreadArchive();setStatus('制作者情報を保存しました。');
@@ -62,7 +62,7 @@ function syncSpreadShortcut(){
  if(stale)shortcut.replaceChildren(...options.map(option=>option.cloneNode(true)));
  if(shortcut.value!==settings.spread)shortcut.value=settings.spread;
 }
-function refreshCustomPresets(){Object.keys(presets).filter(k=>k.startsWith('custom_')).forEach(k=>delete presets[k]);spreadLibrary.forEach(v=>presets[v.id]=v.slots.map(p=>({...p})));const select=document.getElementById('spread');if(!select)return;select.querySelectorAll('option[data-custom="1"]').forEach(el=>el.remove());spreadLibrary.forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.name;o.dataset.custom='1';select.append(o)});syncSpreadShortcut()}
+function refreshCustomPresets(){Object.keys(presets).filter(k=>k.startsWith('custom_')).forEach(k=>delete presets[k]);spreadLibrary.forEach(v=>presets[v.id]=v.slots.map(p=>({...p})));const select=document.getElementById('spread');if(!select)return;select.querySelectorAll('option[data-custom="1"]').forEach(el=>el.remove());spreadLibrary.forEach(v=>{const o=document.createElement('option');o.value=v.id;const duplicate=spreadLibrary.some(q=>q.id!==v.id&&q.name===v.name);o.textContent=duplicate?v.name+' — '+(v.identity?.creator?.name||'制作者名なし')+' ['+(v.identity?.id||v.id).slice(-8)+']':v.name;o.dataset.custom='1';select.append(o)});syncSpreadShortcut()}
 function storeSpreadLibrary(){const next=TabulaSpreadStore.prepareLibrary(spreadLibrary,TabulaSpreadStore.read(localStorage,SPREAD_LIBRARY_KEY),currentCreator());TabulaSpreadStore.write(localStorage,SPREAD_LIBRARY_KEY,next);spreadLibrary=next;refreshCustomPresets();if($('spreadArchive')&&!$('spreadArchive').hidden)renderSpreadArchive()}
 let spreadWorkbench=null;let spreadSnap=true;
 function validStoredDeckPosition(p){return !!p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100}
@@ -180,25 +180,27 @@ function importSpreadBundles(documents){
   const next=spreadLibrary.map(v=>({...v,groups:[...(v.groups||[])],packSources:[...(v.packSources||[])]}));
   const indexed=new Map(next.filter(v=>v.identity).map(v=>[I.key(v.identity),v]));
   let added=0,duplicates=0,conflicts=0,linked=0;
+  const mergeSource=(v,p)=>{const key=p.creator.id+':'+p.id;if(!v.packSources.some(q=>q.creator.id+':'+q.id===key)){v.packSources.push(p);linked++}};
   const link=(v,p)=>{
    if(!p)return;
    const key=p.creator.id+':'+p.id;
-   if(!v.packSources.some(q=>q.creator.id+':'+q.id===key)){v.packSources.push(p);linked++}
+   mergeSource(v,p);
    // A local group is not the pack's identity: users can reorganize it freely.
    // Initial grouping is based on matching pack provenance, not just its title.
-   const group=next.find(q=>q!==v&&q.packSources?.some(x=>x.creator.id+':'+x.id===key))?.groups?.find(g=>g.name===p.name);
+   const group=next.find(q=>q!==v&&q.packSources?.some(x=>x.creator.id+':'+x.id===key)&&q.groups?.some(g=>g.name===p.name))?.groups?.find(g=>g.name===p.name);
    const match=group||{id:I.uuid(),name:p.name};
-   if(!v.groups.some(g=>g.name===p.name))v.groups.push(match);
+   if(!v.groups.some(g=>g.id===match.id||g.name===p.name))v.groups.push(match);
   };
   for(const {spread,pack} of items){
    const identity=spread.identity||I.newIdentity({id:I.uuid(),name:'',website:''});
    const key=I.key(identity),existing=indexed.get(key);
    if(existing){
-    if(existing.identity.revisionId!==identity.revisionId||JSON.stringify(TabulaSpreadStore.portableSpread(existing))!==JSON.stringify(TabulaSpreadStore.portableSpread({...spread,identity})))conflicts++;
-    else{duplicates++;link(existing,pack)}
+    if(existing.identity.revisionId!==identity.revisionId||existing.identity.revision!==identity.revision||!TabulaSpreadStore.sameContent(existing,spread))conflicts++;
+    else{duplicates++;for(const source of spread.packSources||[])mergeSource(existing,source);link(existing,pack)}
     continue;
    }
    const v={...spread,identity,id:newLocalSpreadId(),groups:[],packSources:[]};
+   for(const source of spread.packSources||[])mergeSource(v,source);
    link(v,pack);next.push(v);indexed.set(key,v);added++;
   }
   if(next.length>TabulaSpreadStore.MAX_LIBRARY)throw Error('登録上限（'+TabulaSpreadStore.MAX_LIBRARY+'件）を超えます。');
@@ -476,7 +478,7 @@ $('spreadRestoreLayout').onclick=()=>{if(spreadWorkbench){
  if(w.circle)w.circle.active=false;updateSpreadCircleUi();render();
 }};
 $('spreadCancel').onclick=()=>spreadEnd(true);
-$('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(spreadLibrary.some(v=>v.name===name&&v.id!==w.editingId)){alert('同名のスプレッドがあります。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];if(original.deal){try{TabulaSpreadDeal.normalize(original.deal,slots.length)}catch(e){alert('ディール設定の配置先が現在の枠数と一致しません。'+e.message);return}}spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした。');return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}if(spreadLibrary.length>=TabulaSpreadStore.MAX_LIBRARY){alert('登録上限に達しています。');return}const id=newLocalSpreadId();spreadLibrary.push({id,name,slots,cardSize:zoom,...(validStoredDeckPosition(settings.deckPosition)?{deckPosition:{...settings.deckPosition}}:{})});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした。');return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。')};
+$('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(name.length>100){alert('スプレッド名は100文字以内にしてください。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];if(original.deal){try{TabulaSpreadDeal.normalize(original.deal,slots.length)}catch(e){alert('ディール設定の配置先が現在の枠数と一致しません。'+e.message);return}}spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした。');return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}if(spreadLibrary.length>=TabulaSpreadStore.MAX_LIBRARY){alert('登録上限に達しています。');return}const id=newLocalSpreadId();spreadLibrary.push({id,name,slots,cardSize:zoom,...(validStoredDeckPosition(settings.deckPosition)?{deckPosition:{...settings.deckPosition}}:{})});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした。');return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。')};
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
 const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';/* One authoritative starting configuration for a new workspace and both reset paths.
    Mutable preference maps are recreated for every use, never shared by reference. */
@@ -3324,8 +3326,7 @@ function readExternalFile(file){
    const valid=validCreator&&(data.environmentLibrary===undefined||validEnvironmentLibrary(data.environmentLibrary))&&validTool&&validIntros&&(data.cardTextOverrides===undefined||validTextMap(data.cardTextOverrides))
    &&validBlueprintLibrary(blueprints)&&validBackupWorkspace(w,blueprints)
    &&Array.isArray(data.snapshots)&&data.snapshots.length<=1000&&data.snapshots.every(validateReading)
-   &&Array.isArray(data.spreadLibrary)&&data.spreadLibrary.length<=TabulaSpreadStore.MAX_LIBRARY
-   &&data.spreadLibrary.every(x=>TabulaSpreadStore.validSpread(x))
+   &&TabulaSpreadStore.validLibrary(data.spreadLibrary)
    &&Array.isArray(data.deckLibrary)&&data.deckLibrary.length<=50
    &&data.deckLibrary.every(d=>TabulaDeckStore.validate(d,cards))
    &&validBackupMultiWorkspace(extra,w.settings,blueprints);
