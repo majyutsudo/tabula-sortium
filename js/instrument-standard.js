@@ -8,12 +8,12 @@ globalThis.TabulaStandardInstrumentSets = Object.freeze([
         "name": "TABULA",
         "website": "https://tabula-sortium.pages.dev/"
       },
-      "revision": 4,
-      "revisionId": "71bdb4ad-945c-48aa-8a7d-44ec8b971006"
+      "revision": 5,
+      "revisionId": "71bdb4ad-945c-48aa-8a7d-44ec8b971007"
     },
     "type": "lot",
-    "name": "元三大師百籤（試読・第1–40番）",
-    "source": "東北大学附属図書館 狩野文庫『元三大師百籤』貞享元年版。ZenSpace掲載の漢詩翻刻・吉凶を採録（https://zenspace.victorlens.com/read/ja/ganzan-kano/）。第1–40番の試読資料。原本画像との全字照合は未実施。第58・59番は参照翻刻では別本『元三大師御鬮鈔』による補配。 第35・37番の判読保留字は□を維持。",
+    "name": "元三大師百籤（試読・第1–50番）",
+    "source": "東北大学附属図書館 狩野文庫『元三大師百籤』貞享元年版。ZenSpace掲載の漢詩翻刻・吉凶を採録（https://zenspace.victorlens.com/read/ja/ganzan-kano/）。第1–50番の試読資料。原本画像との全字照合は未実施。第58・59番は参照翻刻では別本『元三大師御鬮鈔』による補配。 第35・37・50番の判読保留字は□を維持。",
     "items": [
       {
         "id": "ganzan-1",
@@ -297,6 +297,77 @@ globalThis.TabulaStandardInstrumentSets = Object.freeze([
         "fortune": "末小吉",
         "body": "中正方成道\n姦邪恐惹愆\n壺中盛妙藥\n非久去煩煎",
         "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/40/"
+      },
+      {
+        "id": "ganzan-41",
+        "number": 41,
+        "fortune": "末吉",
+        "body": "有物不周旋\n須防損伴邊\n家鄉煙火裡\n祈福始安然",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/41/"
+      },
+      {
+        "id": "ganzan-42",
+        "number": 42,
+        "fortune": "吉",
+        "body": "桂華春將到\n雲天好進程\n貴人相遇處\n暗月再分明",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/42/"
+      },
+      {
+        "id": "ganzan-43",
+        "number": 43,
+        "fortune": "吉",
+        "body": "月桂將相滿\n追鹿映山溪\n貴人乘遠箭\n好事始相宜",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/43/"
+      },
+      {
+        "id": "ganzan-44",
+        "number": 44,
+        "fortune": "吉",
+        "body": "盤中黑白子\n一著要機先\n天龍降甘澤\n洗出舊根基",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/44/"
+      },
+      {
+        "id": "ganzan-45",
+        "number": 45,
+        "fortune": "吉",
+        "body": "有意興高顯\n祿馬引前程\n得遇雲中箭\n芝蘭滿路生",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/45/"
+      },
+      {
+        "id": "ganzan-46",
+        "number": 46,
+        "fortune": "凶",
+        "body": "雷發震天昏\n佳人獨掩門\n交加文書上\n無事也遭迍",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/46/"
+      },
+      {
+        "id": "ganzan-47",
+        "number": 47,
+        "fortune": "吉",
+        "body": "更望身前立\n何期在晚成\n若過重山去\n財祿自相迎",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/47/"
+      },
+      {
+        "id": "ganzan-48",
+        "number": 48,
+        "fortune": "小吉",
+        "body": "見祿隔前溪\n勞心休更迷\n一朝逢好渡\n鸞鳳入雲飛",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/48/"
+      },
+      {
+        "id": "ganzan-49",
+        "number": 49,
+        "fortune": "吉",
+        "body": "正好中秋月\n蟾蜍皎潔間\n暗雲知甚處\n故故兩相攀",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/49/"
+      },
+      {
+        "id": "ganzan-50",
+        "number": 50,
+        "fortune": "吉",
+        "body": "有達宜更變\n重山利□逢\n前途相偶合\n財祿保亨通",
+        "source": "https://zenspace.victorlens.com/read/ja/ganzan-kano/50/",
+        "note": "参照翻刻では第二句第四字の判読を保留。"
       }
     ]
   }
