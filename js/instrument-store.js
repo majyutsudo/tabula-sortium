@@ -21,5 +21,15 @@ function portable(set){return {format:FORMAT,version:1,set:normalize(set)}}
 function parse(v){if(v?.format!==FORMAT||v.version!==1)throw Error('占具セットJSONを選択してください。');return normalize(v.set)}
 function session(set){const def=normalize(set);return {set:def,remaining:def.items.map(x=>x.id),drawn:[]}}
 function take(state,count=1,random=Math.random){const q=D.draw(state.remaining,count,random);return {...state,remaining:q.remaining,drawn:[...state.drawn,...q.selected]}}
-root.TabulaInstrumentStore=Object.freeze({KEY,normalize,library,read,write,portable,parse,session,take});
+const LOT_KEY='tabula_lot_workspace_v1';
+function lotSnapshot(v){
+ if(!v||v.version!==1||typeof v.active!=='boolean'||typeof v.effects!=='boolean'||!Number.isInteger(v.count)||v.count<1||v.count>400)throw Error('籤の卓の設定が不正です。');
+ const state=v.state==null?null:{set:normalize(v.state.set),remaining:v.state.remaining,drawn:v.state.drawn};
+ if(state){const ids=new Set(state.set.items.map(x=>x.id));if(state.set.type!=='lot'||!Array.isArray(state.remaining)||!Array.isArray(state.drawn))throw Error('籤の抽出記録が不正です。');
+ const all=[...state.remaining,...state.drawn];if(all.length!==ids.size||new Set(all).size!==ids.size||all.some(id=>!ids.has(id)))throw Error('籤の個体記録が不正です。');}
+ const opened=v.opened;if(!Array.isArray(opened)||new Set(opened).size!==opened.length||opened.some(id=>!state?.drawn.includes(id)))throw Error('籤の開封記録が不正です。');
+ return {version:1,active:v.active,effects:v.effects,count:v.count,state,opened:opened.slice()};
+}
+function readLot(storage){const raw=storage.getItem(LOT_KEY);return raw?lotSnapshot(JSON.parse(raw)):null}
+root.TabulaInstrumentStore=Object.freeze({KEY,normalize,library,read,write,portable,parse,session,take,LOT_KEY,lotSnapshot,readLot});
 })(globalThis);

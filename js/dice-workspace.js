@@ -360,7 +360,7 @@
   const current=detail||window.TabulaTableTools?.context?.();
   if(!current)return;
   if(settingsDialog.open)settingsDialog.close();
-  if(current.id==='lot:draw'){switchToCard(null);picker.value='lot';window.TabulaLotWorkspace.activate();return;}
+  if(current.id==='lot:draw'){switchToCard(null);picker.value='lot';window.TabulaLotWorkspace.activate();if(toolbarToolName)toolbarToolName.textContent='籤';return;}
   window.TabulaLotWorkspace.deactivate();
   picker.value=current.id.startsWith('dice:')?'dice':'card';
   if(current.id.startsWith('dice:'))switchToDice(current.id.slice(5),current.dice);
@@ -392,6 +392,7 @@
  window.addEventListener('resize',()=>{
   if(document.body.classList.contains('tabula-dice-mode'))window.TabulaDiceTable?.resize();
  });
+ window.TabulaLotWorkspace.restoreActive();
  applyCurrentTable();
  if(window.TabulaTableTools)document.documentElement.setAttribute('data-table-tools-ready','');
 })();
