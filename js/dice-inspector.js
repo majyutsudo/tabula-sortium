@@ -96,7 +96,7 @@ export function hexagramDetail(number, role, lines, changing, context) {
 }
 
 export function faceDetail(mode, index, value, die, figure, primary, changed, lines) {
- const face=die.faces?.[value-1];
+ const face=globalThis.TabulaInstrumentData.dieFaceInfo(die,value);
  if(mode==='normal'){
   const label=die.userLabel?die.userLabel+' · D'+die.sides:'D'+die.sides;
   const node=detail(label,String(value),figure);
