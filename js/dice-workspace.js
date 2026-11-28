@@ -360,6 +360,8 @@
   const current=detail||window.TabulaTableTools?.context?.();
   if(!current)return;
   if(settingsDialog.open)settingsDialog.close();
+  if(current.id==='lot:draw'){switchToCard(null);picker.value='lot';window.TabulaLotWorkspace.activate();return;}
+  window.TabulaLotWorkspace.deactivate();
   picker.value=current.id.startsWith('dice:')?'dice':'card';
   if(current.id.startsWith('dice:'))switchToDice(current.id.slice(5),current.dice);
   else switchToCard(current.id.slice(5));
@@ -368,6 +370,8 @@
   const selected=picker.value;
   const bridge=window.TabulaTableTools;
   const previous=bridge?.context()?.id||'card:'+source.value;
+  if(selected==='lot'){if(!bridge?.switchTool('lot:draw'))picker.value=previous.startsWith('dice:')?'dice':'card';return;}
+  if(previous==='lot:draw'){if(!window.TabulaLotWorkspace.leave()) {picker.value='lot';return;}const underlying=window.TabulaLotWorkspace.previous();if(!bridge.switchTool(underlying)){picker.value='lot';return;}if(selected==='card'&&underlying.startsWith('card:'))return;}
   if(selected==='dice'){
    picker.value=previous.startsWith('dice:')?'dice':'card';
    openSetDialog();return;
@@ -380,7 +384,7 @@
  });
  window.addEventListener('tabula:tool-context',event=>applyCurrentTable(event.detail));
  source.addEventListener('change',()=>{
-  if(!document.body.classList.contains('tabula-dice-mode')){
+  if(!document.body.classList.contains('tabula-dice-mode')&&!document.body.classList.contains('tabula-lot-mode')){
    window.TabulaTableTools?.updateCard(source.value);
    picker.value='card';
   }

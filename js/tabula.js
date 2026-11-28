@@ -6302,7 +6302,8 @@ const DICE_TOOL_IDS=['dice:normal','dice:astro','dice:iching','dice:calendar'];
 const isDiceTool=id=>DICE_TOOL_IDS.includes(id);
 let mainToolState=(()=>{try{return JSON.parse(localStorage.getItem(TOOL_STORAGE_KEY))||{id:'card:'+settings.deckId,dice:null}}catch(e){return{id:'card:'+settings.deckId,dice:null}}})();
 const activeToolTable=()=>dualSession?.tables?.[dualSession.activeTable]||null;
-const activeToolId=()=>activeToolTable()?.toolId||(!dualSession&&isDiceTool(mainToolState.id)?mainToolState.id:'card:'+settings.deckId);
+let transientLotTool=false;
+const activeToolId=()=>activeToolTable()?.toolId||(transientLotTool?'lot:draw':null)||(!dualSession&&isDiceTool(mainToolState.id)?mainToolState.id:'card:'+settings.deckId);
 const activeDiceSnapshot=()=>activeToolTable()?.diceSnapshot||(!dualSession?mainToolState.dice:null);
 function storeMainTool(){try{localStorage.setItem(TOOL_STORAGE_KEY,JSON.stringify(mainToolState))}catch(e){setStatus('占具設定を保存できませんでした。')}}
 function notifyTool(){renderActiveClothFigure();window.dispatchEvent(new CustomEvent('tabula:tool-context',{detail:{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}}))}
@@ -6543,8 +6544,13 @@ window.TabulaTableTools={openDiceDetail,
  prepareDiceSound:prepareOpeningSound,playDiceImpact,
  context(){return{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}},
  saveDice(snapshot){if(!snapshot||!isDiceTool(activeToolId())||snapshot.mode!==activeToolId().slice(5))return;const t=activeToolTable();if(t){t.diceSnapshot=snapshot;dualSave()}else{mainToolState.dice=snapshot;storeMainTool()}},
- updateCard(id){if(isDiceTool(activeToolId()))return;const t=activeToolTable();if(t)t.toolId='card:'+id;else{mainToolState.id='card:'+id;storeMainTool()}},
+ updateCard(id){if(transientLotTool||isDiceTool(activeToolId()))return;const t=activeToolTable();if(t)t.toolId='card:'+id;else{mainToolState.id='card:'+id;storeMainTool()}},
  switchTool(target,{replaceDice=false,snapshot=null}={}){
+  if(target==='lot:draw'){
+   if(dualSession||dualBusy()||window.TabulaDiceTable?.busy?.()){setStatus('籤は現在、通常卓で使用できます。');return false}
+   transientLotTool=true;notifyTool();return true;
+  }
+  if(transientLotTool){transientLotTool=false;if(target===activeToolId()){notifyTool();return true;}}
   if(!(isDiceTool(target)||target.startsWith('card:')))return false;
   const previous=activeToolId();if(previous===target&&!replaceDice)return true;
   if(dualBusy())return false;
