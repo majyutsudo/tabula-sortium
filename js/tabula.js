@@ -3902,7 +3902,7 @@ function modal(html){$('modalBg').classList.remove('records-active','card-viewer
   setStatus(count+'分割カット：'+sequence.map(n=>String.fromCharCode(65+n)).join(' → ')+' の順に積み直しました。');workflowOptions?.onComplete?.(true);
  }
 }
-TabulaInstrumentWorkbench.mount({open:modal,close:closeModal,creator:currentCreator,download:downloadJSON,status:setStatus});
+TabulaInstrumentWorkbench.mount({open:modal,close:closeModal,creator:currentCreator,download:downloadJSON,status:setStatus,cardSets:()=>[...$('deckLibrarySelect').options].map(o=>o.text),manageCards:openRegisteredDeckManager,manageDice:()=>{closeModal();window.dispatchEvent(new CustomEvent('tabula:choose-dice-set',{detail:null}));}});
 function closeModal(){$('modalBg').classList.remove('open','records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');if(tableDetailFocus){const origin=tableDetailFocus;tableDetailFocus=null;if(origin.isConnected)origin.focus();else $('inspectCards')?.focus();}}function saveStandaloneWorkspace(config,persistedState){
  TabulaPhysicalIdentity.ensureSingle(persistedState);
  localStorage.setItem(KEY,JSON.stringify({schemaVersion:STORAGE_SCHEMA_VERSION,settings:config,state:persistedState,customIds,recipes,recipeId}));

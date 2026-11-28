@@ -2809,3 +2809,5 @@ aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);
 .instrument-lot-paper.lot-favorable{box-shadow:inset 0 0 0 4px #e7dcc0,inset 0 0 0 5px #b6a17b,0 0 20px #d8b96a66}.instrument-lot-paper.lot-unfavorable{background:#d4ccd0;color:#372c3c;border-color:#827087;box-shadow:inset 0 0 0 4px #d4ccd0,inset 0 0 0 5px #95879a,0 0 18px #78506b55}
 
 .instrument-lot-vertical .instrument-field-body{writing-mode:vertical-rl;text-orientation:upright;white-space:pre-wrap;margin:16px auto;line-height:1.9;max-width:100%;text-align:start}
+
+.instrument-home-section{border:1px solid #867554;border-radius:5px;padding:12px;display:grid;gap:8px;min-width:0}.instrument-home-section h3,.instrument-home-section p{margin:0;overflow-wrap:anywhere}.instrument-home-section button{width:100%;margin-top:4px}.instrument-management[hidden]{display:none!important}

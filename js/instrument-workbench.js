@@ -1,17 +1,26 @@
 /* First instrument-set workbench. This modal does not change the active tabletop. */
 (function(root){'use strict';
-function mount({open,close,creator,download,status}){
+function mount({open,close,creator,download,status,cardSets,manageCards,manageDice}){
  const S=root.TabulaInstrumentStore,D=root.TabulaInstrumentData,I=root.TabulaContentIdentity;
  const $=id=>document.getElementById(id);
  let selected=null,reading=null,revealed=new Set(),effects=true;
- const button=document.createElement('button');button.type='button';button.textContent='占具セット管理（試験版）';button.className='instrument-manager-open';$('instrumentPicker').append(button);
+ const button=document.createElement('button');button.type='button';button.textContent='占具の編集・管理';button.className='instrument-manager-open';$('instrumentPicker').append(button);
  const get=()=>S.read(localStorage);
  const standard=()=>root.TabulaStandardInstrumentSets.map(S.normalize);
  const allSets=()=>[...standard(),...get()];
  const isStandard=v=>standard().some(x=>I.key(x.identity)===I.key(v.identity));
+ function home(){
+  open('<h2>占具管理室</h2><p class="mini">INSTRUMENTARIUM · 占具の閲覧・作成・編集</p><div id="instHome" class="stack"></div>');
+  const host=$('instHome');
+  function category(title,rows,action,label){const section=document.createElement('section');section.className='instrument-home-section';const heading=document.createElement('h3');heading.textContent=title;section.append(heading);for(const row of rows){const p=document.createElement('p');p.textContent=row;section.append(p)}const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=action;section.append(b);host.append(section)}
+  category('CARDS — カード',cardSets(),manageCards,'デッキの編集・管理');
+  category('DICE — ダイス',['通常ダイス','アルケミーダイス','蓄光ダイス','暦占ダイス','アストロダイス','易占ダイス'],manageDice,'ダイスセットの設定');
+  category('LOTS / RUNES — 籤・ルーン',allSets().map(v=>v.name+'（'+v.items.length+'個）'),show,'占具セットの編集・抽出試験');
+ }
  function show(){
   try{
-   open('<h2>占具セット管理</h2><p class="mini">籤の抽出を試すための共通管理室です。現在の卓は変更しません。</p><label class="field">登録セット<select id="instSets"></select></label><div class="instrument-manager-actions"><button id="instNew">新規作成</button><button id="instEdit">編集</button><button id="instCopy">複製</button><button id="instDelete">削除</button><button id="instExport">書き出し</button><button id="instImport">読み込み</button></div><input id="instFile" type="file" accept=".json,application/json" hidden><div id="instReading" class="stack"></div>');
+   open('<h2>籤・ルーンのセット管理</h2><button type="button" id="instHomeBack">占具管理室へ戻る</button><p class="mini">籤の抽出を試すための共通管理室です。現在の卓は変更しません。</p><label class="field">登録セット<select id="instSets"></select></label><div class="instrument-manager-actions"><button id="instNew">新規作成</button><button id="instEdit">編集</button><button id="instCopy">複製</button><button id="instDelete">削除</button><button id="instExport">書き出し</button><button id="instImport">読み込み</button></div><input id="instFile" type="file" accept=".json,application/json" hidden><div id="instReading" class="stack"></div>');
+   $('instHomeBack').onclick=home;
    const rows=allSets(),select=$('instSets');for(const v of rows)select.add(new Option(v.name+'（'+v.items.length+'個）',I.key(v.identity)));
    if(!rows.some(v=>I.key(v.identity)===selected))selected=rows[0]?I.key(rows[0].identity):null;
    select.value=selected||'';select.onchange=()=>{selected=select.value;reading=null;paint()};
@@ -60,7 +69,9 @@ function mount({open,close,creator,download,status}){
   $('instSave').onclick=()=>{try{const c=creator(),old=original?.identity;if(old&&!copy&&old.creator.id!==c.id)throw Error('他の制作者のセットは複製して編集してください。');const identity=old&&!copy?I.revise(old,c):I.newIdentity(c,old),v=S.normalize({identity,name:$('instName').value,type:$('instType').value,source:$('instSource').value,items});selected=I.key(identity);S.write(localStorage,[...get().filter(x=>I.key(x.identity)!==selected),v]);reading=null;show();status('占具セットを保存しました。')}catch(e){alert(e.message)}};
   paint();
  }
- button.onclick=show;
+ button.onclick=home;
+ const old=$('deckEditCurrent');if(old){old.hidden=true;old.closest('.instrument-management')?.setAttribute('hidden','');}
+ return {open:home};
 }
 root.TabulaInstrumentWorkbench=Object.freeze({mount});
 })(globalThis);
