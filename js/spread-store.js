@@ -10,9 +10,10 @@ function validMetadata(v){try{if(v.identity!==undefined)identityModule().identit
 function validDeckPosition(p){return p&&typeof p==='object'&&!Array.isArray(p)&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=100&&p.y>=0&&p.y<=100}
 function copyDeckPosition(p){return {x:p.x,y:p.y}}
 function validDeal(plan,count){try{return !!root.TabulaSpreadDeal?.normalize(plan,count)}catch(e){return false}}
+function validFigure(v){if(!v||typeof v!=='object'||Array.isArray(v)||!root.TabulaClothFigures)return false;const n=root.TabulaClothFigures.normalize(v.clothFigure,v.clothFigureSize);return n.clothFigure===v.clothFigure&&n.clothFigureSize===v.clothFigureSize}
 function validSpread(v){
   return !!(v&&typeof v.id==='string'&&validMetadata(v)&&Array.isArray(v.slots)
-    &&v.slots.length<=MAX_SPREAD_SLOTS&&(v.deckPosition===undefined||validDeckPosition(v.deckPosition))&&(v.deal===undefined||validDeal(v.deal,v.slots.length))&&v.slots.every(q=>validSlotGeometry(q)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
+    &&(v.figure===undefined||validFigure(v.figure))&&v.slots.length<=MAX_SPREAD_SLOTS&&(v.deckPosition===undefined||validDeckPosition(v.deckPosition))&&(v.deal===undefined||validDeal(v.deal,v.slots.length))&&v.slots.every(q=>validSlotGeometry(q)&&(!q.frameRole||['card','pile','tableau','foundation','waste','discard'].includes(q.frameRole))));
 }
 function fromReading(reading,id,name){
  if(!reading||!Array.isArray(reading.placed))throw Error('占例の配置を読み取れません。');
@@ -68,6 +69,7 @@ function portableSpread(v){
  if(v.cardSize!==undefined&&(!Number.isFinite(v.cardSize)||v.cardSize<.8||v.cardSize>2.3))
   throw Error('カードサイズが不正です。');
  if(v.deckPosition!==undefined&&!validDeckPosition(v.deckPosition))throw Error('山札の位置が不正です。');
+ if(v.figure!==undefined){if(!validFigure(v.figure))throw Error('図柄の設定が不正です。');meta.figure={clothFigure:v.figure.clothFigure,clothFigureSize:v.figure.clothFigureSize}}
  return {name,slots,...meta,...(v.cardSize===undefined?{}:{cardSize:v.cardSize}),...(v.deckPosition===undefined?{}:{deckPosition:copyDeckPosition(v.deckPosition)})};
 }
 function exportPortable(v){
@@ -136,7 +138,7 @@ function newPack(name,creator,items){
 }
 function content(v){
  try{const {identity,packSources,...rest}=portableSpread(v);return JSON.stringify(rest)}
- catch(e){const fields=['name','slots','alternate','author','source','overview','method','notes','deal','cardSize','deckPosition'];return JSON.stringify(Object.fromEntries(fields.filter(k=>v[k]!==undefined).map(k=>[k,v[k]])))}
+ catch(e){const fields=['name','slots','alternate','author','source','overview','method','notes','deal','cardSize','deckPosition','figure'];return JSON.stringify(Object.fromEntries(fields.filter(k=>v[k]!==undefined).map(k=>[k,v[k]])))}
 }
 function sameContent(a,b){return content(a)===content(b)}
 function validLibrary(items){

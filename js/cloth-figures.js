@@ -115,6 +115,7 @@
     normalize,
     render,
     entries: () => figures.map(([id,label]) => ({id,label})),
+    artwork(id) { const row=figures.find(([key])=>key===id);return row&&row[2]?drawing(row[2],'#8b7956',.84,row[3]):''; },
     choose(id,percent) { onChange?.(id,percent ?? Number(size.value)); },
     bind(handler) { onChange = handler; },
   };

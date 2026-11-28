@@ -541,6 +541,7 @@ function spreadCapture(){
  });
  state.tablePiles=[];
  spreadWorkbench={previousCardSize,original:JSON.parse(JSON.stringify(state.placed)),originalIndices:state.placed.map((_,i)=>i),chosen:[],names,roles,title:'新しいスプレッド',savedSession,circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};
+ spreadWorkbench.figureDraft=TabulaClothFigures.normalize(settings.clothFigure,settings.clothFigureSize);$('spreadIncludeFigure').checked=false;
  $('spreadSave').textContent='スプレッドを登録';
  document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;
  spreadSnap=true;$('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');
@@ -562,6 +563,7 @@ function openStoredSpreadWorkbench(source){
  const original=JSON.parse(JSON.stringify(state.placed));
  spreadWorkbench={previousCardSize,original,originalIndices:state.placed.map((_,i)=>i),chosen:slots.map((_,i)=>i),names:Object.fromEntries(slots.map((v,i)=>[i,v.name||'位置'+(i+1)])),roles:Object.fromEntries(slots.map((v,i)=>[i,v.frameRole||'card'])),title:source.name,editingId:source.id,savedSession,details:slots.map(v=>v.detail||''),circle:{active:false,radiusPx:null,rotation:0,facing:($('spreadCircleFacing')?.value||'radial')}};
  document.body.classList.add('spread-workbench-active');$('spreadWorkbench').hidden=false;
+ spreadWorkbench.figureDraft=source.figure||TabulaClothFigures.normalize(settings.clothFigure,settings.clothFigureSize);$('spreadIncludeFigure').checked=!!source.figure;
  $('spreadSave').textContent='変更を保存';spreadSnap=true;
  $('spreadSnapToggle').textContent='グリッド吸着：ON';$('zone').classList.add('spread-grid');
  $('zone').style.setProperty('--workgrid',($('spreadGridSize').value||24)+'px');
@@ -669,7 +671,7 @@ $('spreadRestoreLayout').onclick=()=>{if(spreadWorkbench){
  if(w.circle)w.circle.active=false;updateSpreadCircleUi();render();
 }};
 $('spreadCancel').onclick=()=>spreadEnd(true);
-$('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(name.length>100){alert('スプレッド名は100文字以内にしてください。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];if(original.deal){try{TabulaSpreadDeal.normalize(original.deal,slots.length)}catch(e){alert('ディール設定の配置先が現在の枠数と一致しません。'+e.message);return}}spreadLibrary[idx]={...original,name,slots,cardSize:zoom};try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした：'+e.message);return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}if(spreadLibrary.length>=TabulaSpreadStore.MAX_LIBRARY){alert('登録上限に達しています。');return}const id=newLocalSpreadId();spreadLibrary.push({id,name,slots,cardSize:zoom,...(validStoredDeckPosition(settings.deckPosition)?{deckPosition:{...settings.deckPosition}}:{})});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした：'+e.message);return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。')};
+$('spreadSave').onclick=()=>{const w=spreadWorkbench;if(!w)return;if(w.chosen.length!==state.placed.length){alert('すべてのカードを番号順にタップしてください。');return}const name=w.title.trim();if(!name){alert('スプレッド名を入力してください。');return}if(name.length>100){alert('スプレッド名は100文字以内にしてください。');return}const slots=w.chosen.map((index,i)=>{const p=state.placed[index];return{x:p.x,y:p.y,angle:((Number(p.angle)||0)%360+360)%360,name:(w.names[index]||'位置'+(i+1)).trim(),frameRole:w.roles?.[index]||'card',detail:w.editingId?(w.details?.[index]||''):''}});if(w.editingId){const idx=spreadLibrary.findIndex(v=>v.id===w.editingId);if(idx<0){alert('編集対象が見つかりません。');return}const original=spreadLibrary[idx];if(original.deal){try{TabulaSpreadDeal.normalize(original.deal,slots.length)}catch(e){alert('ディール設定の配置先が現在の枠数と一致しません。'+e.message);return}}spreadLibrary[idx]={...original,name,slots,cardSize:zoom};if($('spreadIncludeFigure').checked)spreadLibrary[idx].figure={...w.figureDraft};else delete spreadLibrary[idx].figure;if(settings.spread===w.editingId)delete settings.spreadFigureOverride;try{storeSpreadLibrary()}catch(e){spreadLibrary[idx]=original;alert('変更を保存できませんでした：'+e.message);return}spreadEnd(true);if(settings.spread===w.editingId)applySpreadCardSize(w.editingId);sync();render();saveLocal();setStatus('スプレッド「'+name+'」の変更を保存しました。');return;}if(spreadLibrary.length>=TabulaSpreadStore.MAX_LIBRARY){alert('登録上限に達しています。');return}const id=newLocalSpreadId();spreadLibrary.push({id,name,slots,cardSize:zoom,...($('spreadIncludeFigure').checked?{figure:{...w.figureDraft}}:{}),...(validStoredDeckPosition(settings.deckPosition)?{deckPosition:{...settings.deckPosition}}:{})});try{storeSpreadLibrary()}catch(e){spreadLibrary.pop();alert('保存できませんでした：'+e.message);return}spreadEnd(true);setStatus('スプレッド「'+name+'」を登録しました。')};
 function editCurrentSpread(){const v=spreadLibrary.find(v=>v.id===settings.spread);if(!v){alert('登録済みスプレッドを選んでください。');return}openStoredSpreadWorkbench(v)}
 const {presets,colors}=TabulaCatalog;const STORAGE_SCHEMA_VERSION=TabulaStorage.schemaVersion;const KEY='tabula_sortium_v01';/* One authoritative starting configuration for a new workspace and both reset paths.
    Mutable preference maps are recreated for every use, never shared by reference. */
@@ -3609,7 +3611,7 @@ function currentReadingSnapshot(id,name){
  const selection=isIndependentTables()&&settings.pool==='custom'
   ?dualSession.instances.filter(card=>card.sourceDeck===dualSession.activePile).map(card=>card.id)
   :customIds;
- const obj=TabulaReadingHistory.createSnapshot({id,name,time:new Date().toISOString(),settings,state,slots:getSlots(),customIds:selection,recipeId,cardNames});
+ const obj=TabulaReadingHistory.createSnapshot({id,name,time:new Date().toISOString(),settings:{...settings,...cardFigureConfig()},state,slots:getSlots(),customIds:selection,recipeId,cardNames});
  if(dualSession){
  obj.multiTableReading=true;
  obj.tableName=dualSession.tables[dualSession.activeTable]?.name||dualSession.activeTable;
@@ -3687,6 +3689,8 @@ function snapshotTableSettings(v){
  const saved=v.settings||{};
  const spread=v.spread||saved.spread;
  return {spread:spread==='free'||Object.hasOwn(presets,spread)?spread:'free',
+  ...TabulaClothFigures.normalize(saved.clothFigure,saved.clothFigureSize),
+  spreadFigureOverride:{id:spread==='free'||Object.hasOwn(presets,spread)?spread:'free',figure:TabulaClothFigures.normalize(saved.clothFigure,saved.clothFigureSize)},
   color:Number.isInteger(saved.color)&&colors[saved.color]?saved.color:settings.color,
   altar:typeof saved.altar==='boolean'?saved.altar:settings.altar,
   candles:Array.isArray(saved.candles)?dualClone(saved.candles):dualClone(altarCandles())};
@@ -3698,7 +3702,7 @@ function restoreIndependentTableSnapshot(v){
  const target=candidate.tables[tableId];
  const cardSize=validCardSize(v.settings?.cardSize)?v.settings.cardSize:spreadCardSize(layout.spread);
  Object.assign(target,layout,{placed:stock.placed,removed:stock.removed,dealCheckpoint:stock.dealCheckpoint,
-  tablePiles:stock.tablePiles,selected:null,completionShown:false,cutStage:null,cardSize,savedSettings:{...settings}});
+  tablePiles:stock.tablePiles,selected:null,completionShown:false,cutStage:null,cardSize,savedSettings:{...settings,...layout}});
  candidate.piles[source]=stock.deck;
  try{TabulaMultiWorkspace.validate(candidate)}
  catch(e){alert('復元前の確認に失敗しました。卓は変更していません：'+e.message);return}
@@ -3758,6 +3762,7 @@ function registerSpreadFromReading(v){
  let item;
  try{
   item=TabulaSpreadStore.fromReading(v,newLocalSpreadId(),name);
+  if(confirm('占例の図柄設定もスプレッドに含めますか？'))item.figure=TabulaClothFigures.normalize(v.settings?.clothFigure,v.settings?.clothFigureSize);
  }catch(e){alert('スプレッドを登録できません：'+e.message);return}
  spreadLibrary.push(item);
  try{storeSpreadLibrary()}catch(e){
@@ -4567,7 +4572,7 @@ function changeActiveSpread(nextSpread){
  }else if(occupied&&!restoreDealWithoutPrompt())return false;
  // Do not discard cards if a future pile type cannot be recovered.
  if((state.tablePiles||[]).some(p=>p.cards.length)){setStatus('束にカードが残っています。展開法を変更できません。');return false}
- settings.spread=nextSpread;
+ settings.spread=nextSpread;delete settings.spreadFigureOverride;
  delete state.waiteFacing;delete state.spreadDealProgress;
  resetFramesForSpread(nextSpread);
  state.tablePiles=[];
@@ -6452,7 +6457,7 @@ function editCasting(source=null){
 function openCastingArchive(){
  if(!isDiceTool(activeToolId()))return;
  const mine=castingArchiveTab==='mine';
- modal('<h2>CASTINGS — 投擲法手帖</h2><div class="row"><button id="castingMine" aria-pressed="'+mine+'">MY CASTINGS</button><button id="castingLibraryTab" aria-pressed="'+(!mine)+'">LIBRARY</button></div><div class="row" id="castingArchiveTools"></div><div id="castingArchiveRows" class="stack"></div><button id="castingArchiveClose">閉じる</button>');
+ modal('<h2 class="casting-archive-heading">CASTINGS — 投擲法手帖</h2><div class="row casting-archive-tabs"><button id="castingMine" aria-pressed="'+mine+'">MY CASTINGS</button><button id="castingLibraryTab" aria-pressed="'+(!mine)+'">LIBRARY</button></div><div class="casting-archive-tools" id="castingArchiveTools"></div><div id="castingArchiveRows" class="stack"></div><button id="castingArchiveClose">閉じる</button>');
  $('castingMine').onclick=()=>{castingArchiveTab='mine';openCastingArchive()};$('castingLibraryTab').onclick=()=>{castingArchiveTab='library';openCastingArchive()};$('castingArchiveClose').onclick=closeModal;
  const root=$('castingArchiveRows'),tools=$('castingArchiveTools'),rows=castingLibrary(),packs=methodPacks();
  const update=(id,value)=>{try{writeCastings(castingLibrary().map(v=>v.id===id?{...v,myCasting:value}:v));openCastingArchive()}catch(e){alert(e.message)}};
@@ -6470,7 +6475,7 @@ function openCastingArchive(){
   archiveButton(actions,'書き出し',()=>downloadJSON({format:EXPORT_FORMAT,kind:'casting',version:1,casting:cleanCasting(item)},'TABULA_CASTING_'+fileNamePart(item.name)+'.json'));
   el.append(info,actions);return el;
  }
- if(mine){archiveButton(tools,'現在の卓から投擲法を登録',()=>editCasting());archiveButton(tools,'標準投擲法から登録',()=>castingGuide(null));archiveButton(tools,'パックで書き出し',openMethodPackEditor);for(const v of rows.filter(v=>v.myCasting))root.append(row(v))}
+ if(mine){archiveButton(tools,'卓から登録',()=>editCasting());archiveButton(tools,'標準から登録',()=>castingGuide(null));archiveButton(tools,'パックで書き出し',openMethodPackEditor);for(const v of rows.filter(v=>v.myCasting))root.append(row(v))}
  else{
   const imp=document.createElement('input');imp.type='file';imp.accept='.json,application/json';imp.hidden=true;tools.append(imp);
   archiveButton(tools,'占法を読み込む',()=>imp.click());imp.onchange=async()=>{try{const f=imp.files[0];if(!f)return;if(f.size>16*1024*1024)throw Error('ファイルが大きすぎます。');if(importMethodDocument(JSON.parse(await f.text())))openCastingArchive()}catch(e){alert(e.message)}};
@@ -6489,8 +6494,13 @@ function castingConfig(){
  const raw=settings.castingFigure;
  return TabulaClothFigures.normalize(raw?.clothFigure??'none',raw?.clothFigureSize??settings.clothFigureSize);
 }
+function cardFigureConfig(){
+ if(spreadWorkbench)return spreadWorkbench.figureDraft||settings;
+ const registered=spreadLibrary.find(v=>v.id===settings.spread)?.figure;
+ return settings.spreadFigureOverride?.id===settings.spread?settings.spreadFigureOverride.figure:registered||settings;
+}
 function renderActiveClothFigure(){
- const config=isDiceTool(activeToolId())?castingConfig():settings;
+ const config=isDiceTool(activeToolId())?castingConfig():cardFigureConfig();
  TabulaClothFigures.render(config.clothFigure,config.clothFigureSize);
  window.dispatchEvent(new Event('tabula:casting-change'));
 }
@@ -6503,6 +6513,7 @@ function selectCasting(id,percent){
 window.TabulaCasting={
  entries:()=>[...TabulaClothFigures.entries().map(({id,label})=>({id,label:CASTING_GUIDES[id]?.[0]||label})),...castingLibrary().filter(v=>v.myCasting!==false||v.id===settings.castingId).map(v=>({id:v.id,label:v.name}))],
  current:()=>castingConfig(),selection:castingSelection,
+ figure:()=>isDiceTool(activeToolId())?castingConfig():cardFigureConfig(),
  select:useCasting,guide:()=>castingGuide(),archive:openCastingArchive
 };
 window.TabulaTableTools={openDiceDetail,
@@ -6828,6 +6839,7 @@ function dualRestoreView(){
  spreadDealProgress:dualClone(t.spreadDealProgress||null),waiteFacing:t.waiteFacing||null,
  removed:dualClone(t.removed||[]),tablePiles:dualClone(t.tablePiles||[])};
  settings.spread=t.spread||'free';
+ settings.spreadFigureOverride=t.savedSettings?.spreadFigureOverride;
  settings.castingFigure=t.savedSettings?.castingFigure?dualClone(t.savedSettings.castingFigure):undefined;
  settings.castingId=t.savedSettings?.castingId;
  if(isIndependentTables()){
@@ -7276,7 +7288,10 @@ installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
 TabulaClothFigures.bind((id,percent)=>{
  if(isDiceTool(activeToolId())){selectCasting(id,percent);return;}
- Object.assign(settings,TabulaClothFigures.normalize(id,percent));
+ const figure=TabulaClothFigures.normalize(id,percent);
+ if(spreadWorkbench){spreadWorkbench.figureDraft=figure;$('spreadIncludeFigure').checked=true;renderActiveClothFigure();return;}
+ if(spreadLibrary.find(v=>v.id===settings.spread)?.figure)settings.spreadFigureOverride={id:settings.spread,figure};
+ else Object.assign(settings,figure);
  renderActiveClothFigure();
  saveLocal();
 });

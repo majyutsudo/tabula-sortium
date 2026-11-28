@@ -14,6 +14,12 @@ function placementHeading(text){
  return element('text',{x:105,y:29,'text-anchor':'middle','font-family':'Georgia, serif','font-size':9,fill:'#282828'},text);
 }
 
+function appendFigure(svg,config,x,y,size){
+ const id=config?.clothFigure;if(!id||id==='none'||!Number.isFinite(size)||size<=0)return;
+ const markup=globalThis.TabulaClothFigures?.artwork(id);if(!markup)return;
+ const node=new DOMParser().parseFromString(markup,'image/svg+xml').documentElement;
+ const fig=document.importNode(node,true);fig.setAttribute('x',x-size/2);fig.setAttribute('y',y-size/2);fig.setAttribute('width',size);fig.setAttribute('height',size);fig.setAttribute('data-cloth-figure',id);fig.setAttribute('pointer-events','none');svg.append(fig);
+}
 function diceInk(fill){
  const channels=fill.slice(1).match(/../g).map(hex=>{
   const value=parseInt(hex,16)/255;
@@ -39,10 +45,12 @@ function dicePrintable(){
  const poses=Array.isArray(saved.poses)?saved.poses:[];
  const shapeSize=Math.max(12,Math.min(20,120/Math.max(1,Math.ceil(Math.sqrt(count))))),half=shapeSize/2;
  const centerX=105,centerY=127;
+ const unit=Math.min(160/w,155/d),figure=globalThis.TabulaCasting?.figure();
+ appendFigure(svg,figure,centerX,centerY,Math.min(w,d)*unit*(figure?.clothFigureSize||76)/100);
  for(let i=0;i<count;i++){
   const conf=saved.settings?.[i]||{},pos=poses[i]?.p,valid=pos&&Number.isFinite(pos.x)&&Number.isFinite(pos.z);
-  const x=valid?Math.max(25,Math.min(185,centerX+(pos.x/w)*160)):centerX+(i-(count-1)/2)*Math.min(26,150/Math.max(1,count));
-  const y=valid?Math.max(55,Math.min(205,centerY+(pos.z/d)*155)):centerY;
+  const x=valid?Math.max(25,Math.min(185,centerX+pos.x*unit)):centerX+(i-(count-1)/2)*Math.min(26,150/Math.max(1,count));
+  const y=valid?Math.max(55,Math.min(205,centerY+pos.z*unit)):centerY;
   const fill=/^#[0-9a-f]{6}$/i.test(conf.color)?conf.color:'#c7b48d';
   const ink=diceInk(fill);
   const box=element('g',{transform:'translate('+x.toFixed(2)+' '+y.toFixed(2)+')'});
@@ -59,7 +67,7 @@ function dicePrintable(){
   }
  }
  const heading={normal:'DICE',astro:'ASTROLOGICAL DICE',iching:'I CHING DICE',calendar:'CALENDAR DICE'}[mode]||'DICE';
- svg.append(placementHeading(heading));
+ svg.append(placementHeading(globalThis.TabulaCasting?.selection()!=='none'?($('castingQuickSelect')?.selectedOptions[0]?.textContent||heading):heading));
  const line=mode==='calendar'?globalThis.TabulaStorage?.calendarResult(saved.results,saved.calendarYear)?.text:mode==='normal'?'合計 '+saved.results.reduce((a,b)=>a+b,0):
   mode==='iching'&&saved.hexagram?'本卦 第'+saved.hexagram.primary+'卦  →  之卦 第'+saved.hexagram.changed+'卦':'';
  if(line)svg.append(element('text',{x:105,y:252,'text-anchor':'middle','font-family':'sans-serif','font-size':5,fill:'#242424'},line));
@@ -91,6 +99,8 @@ function printable(){
  const sx=zw/zr.width,sy=zh/zr.height;
  const svg=element('svg',{xmlns:ns,viewBox:'0 0 210 297',width:'210mm',height:'297mm'});
  svg.append(element('rect',{width:210,height:297,fill:'#fff'}));
+ const figure=globalThis.TabulaCasting?.figure(),cloth=$('cloth'),cr=cloth?.getBoundingClientRect();
+ if(cr)appendFigure(svg,figure,toX(cr.left+cr.width/2),toY(cr.top+cr.height/2),Math.min(cloth.offsetWidth,cloth.offsetHeight)*scale*(figure?.clothFigureSize||76)/100);
  // Draw order matches the tabletop's card/label layering preference.
  const labelLayer=$('crossLabelLayer')?.value==='front'?'front':'behind';
  svg.setAttribute('data-label-layer',labelLayer);
@@ -284,6 +294,7 @@ function documentFromSvg(svg,transparent=false,dpi=300){
  const labels=[...svg.children].filter(el=>el.localName==='text');
  return {format:'tabula-placement-diagram',version:2,page:{width:210,height:297},transparent,dpi,labelLayer:svg.getAttribute('data-label-layer')==='behind'?'behind':'front',backgroundColor:normalizedBackgroundColor(svg.querySelector(':scope > rect')?.getAttribute('fill')||'#ffffff'),
   instrument:svg.getAttribute('data-instrument')==='dice'?'dice':'card',
+  figure:(()=>{const f=svg.querySelector(':scope > svg[data-cloth-figure]');return f?{id:f.getAttribute('data-cloth-figure'),x:Number(f.getAttribute('x')),y:Number(f.getAttribute('y')),size:Number(f.getAttribute('width'))}:null})(),
   cards:cards.map(el=>({attrs:attrsOf(el,cardAttrs),rect:attrsOf(el.querySelector('rect'),rectAttrs)})),
   labels:labels.map(el=>({attrs:attrsOf(el,labelAttrs),text:el.textContent}))};
 }
@@ -295,6 +306,7 @@ function svgFromDocument(doc){
  if(doc.instrument==='dice')svg.setAttribute('data-instrument','dice');
  const backgroundColor=normalizedBackgroundColor(doc.backgroundColor??'#ffffff');
  svg.append(element('rect',{width:210,height:297,fill:backgroundColor}));
+ if(doc.figure){const f=doc.figure;if(!globalThis.TabulaClothFigures.entries().some(v=>v.id===f.id)||![f.x,f.y,f.size].every(Number.isFinite)||f.size<=0||f.size>300||Math.abs(f.x)>300||Math.abs(f.y)>300)throw Error('図柄の位置情報が不正です。');appendFigure(svg,{clothFigure:f.id},f.x+f.size/2,f.y+f.size/2,f.size)}
  for(const data of doc.cards){
   const g=element('g');cleanAttrs(g,data.attrs,cardAttrs);
   const rect=element('rect');cleanAttrs(rect,data.rect,rectAttrs);

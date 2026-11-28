@@ -2783,3 +2783,10 @@ aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);
 #instrumentChoiceSection .instrument-deck-settings{display:grid;gap:8px;min-width:0;margin-top:4px}
 
 .spread-menu-setting-row{display:grid;grid-template-columns:minmax(0,1fr) 38px 38px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid #ffffff18}.spread-menu-setting-row label{display:flex;gap:8px;align-items:center;overflow-wrap:anywhere;font-size:14px;line-height:1.5}.spread-menu-setting-row input{flex:none;accent-color:#c3a46a}.spread-menu-setting-row button{min-height:36px;padding:4px;font-size:16px}
+
+/* Casting notebook: flexible actions at any viewport or text scale. */
+#castingArchiveTools,.casting-archive-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,135px),1fr));gap:8px;margin-block:10px;min-width:0}
+#castingArchiveTools>button,.casting-archive-tabs>button,#castingArchiveRows button{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal;line-height:1.4;height:auto;padding:8px 10px}
+#castingArchiveRows .archive-entry{flex-wrap:wrap;min-width:0}#castingArchiveRows .archive-info{flex:1 1 100%;overflow-wrap:anywhere}#castingArchiveRows .archive-actions{width:100%;padding-left:0;display:flex;flex-wrap:wrap;gap:6px}#castingArchiveRows .archive-actions button{flex:1 1 78px}
+.casting-archive-heading{overflow-wrap:anywhere;padding-right:28px}.casting-archive-tabs button[aria-pressed="true"]{border-color:#d7b879;background:#4a4938}
+@media(max-width:480px){#castingArchiveTools{grid-template-columns:repeat(2,minmax(0,1fr))}.casting-archive-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
