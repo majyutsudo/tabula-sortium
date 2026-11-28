@@ -128,7 +128,7 @@
  // Leave card-only functions in their usual positions, but prevent editing
  // the preserved card session while the user is working with dice.
  const cardOnlyControls=[
-  ...['spreadQuickSelect','spreadInfoButton','tableUndo','cardGalleryOpen','spreadNotebook','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle'].map(id=>document.getElementById(id)).filter(Boolean)
+  ...['spreadQuickSelect','spreadInfoButton','tableUndo','cardGalleryOpen','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle'].map(id=>document.getElementById(id)).filter(Boolean)
  ];
  const spreadSelect=document.getElementById('spreadQuickSelect'),spreadInfo=document.getElementById('spreadInfoButton');
  const spreadCaption=spreadSelect.parentElement.querySelector('span');
@@ -142,15 +142,16 @@
  spreadSelect.after(castingSelect);spreadInfo.after(castingInfo);
  for(const select of [castingSelect,sideSelect]){
   for(const row of window.TabulaCasting.entries())select.add(new Option(row.label,row.id));
-  select.onchange=()=>window.TabulaCasting.select(select.value);
+  select.onchange=()=>{window.TabulaCasting.select(select.value);syncCasting()};
  }
  castingInfo.onclick=sideInfo.onclick=()=>window.TabulaCasting.guide();
- function syncCasting(){const id=window.TabulaCasting.current().clothFigure;castingSelect.value=sideSelect.value=id;}
+ function syncCasting(){const rows=window.TabulaCasting.entries(),id=window.TabulaCasting.selection();for(const select of [castingSelect,sideSelect]){if(select.options.length!==rows.length||rows.some((v,i)=>select.options[i]?.value!==v.id||select.options[i]?.text!==v.label))select.replaceChildren(...rows.map(v=>new Option(v.label,v.id)));select.value=id;}}
  window.addEventListener('tabula:casting-change',syncCasting);
  function configureCasting(on){
   spreadSelect.hidden=spreadInfo.hidden=on;castingSelect.hidden=castingInfo.hidden=castingSide.hidden=!on;
   if(spreadCaption)spreadCaption.textContent=on?'投擲法':'展開法';
   spreadSelect.parentElement.title=on?'投擲法を選択':'展開法を選択';
+  const notebook=document.getElementById('spreadNotebook');notebook.title=on?'投擲法手帖':'手帖を開く';notebook.setAttribute('aria-label',notebook.title);
   if(on)syncCasting();
  }
  const cardOperationsToggle=document.querySelector("#operations .section-toggle");

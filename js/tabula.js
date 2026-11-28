@@ -409,7 +409,7 @@ async function readSpreadFiles(files){
  }catch(e){alert('ファイルを読み込めませんでした：'+e.message)}
 }
 function setNotebookButtonState(open){const b=$('spreadNotebook');b.setAttribute('aria-pressed',String(open));b.setAttribute('aria-expanded',String(open));b.setAttribute('aria-label',open?'手帖を閉じる':'手帖を開く');b.title=open?'手帖を閉じる':'手帖を開く';b.dataset.toolLabel=open?'手帖を閉じる':'手帖';}
-$('spreadNotebook').setAttribute('aria-controls','spreadArchive');setNotebookButtonState(false);$('spreadNotebook').onclick=()=>{$('spreadArchive').hidden?openSpreadArchive():closeSpreadArchive()};$('archiveClose').onclick=closeSpreadArchive;$('archiveCapture').onclick=()=>{spreadCapture()};$('archiveImport').onclick=()=>$('archiveImportFile').click();$('archiveImportFile').onchange=e=>{const files=[...(e.target.files||[])];e.target.value='';readSpreadFiles(files)};$('archiveTabMine').onclick=()=>{archiveTab='mine';renderSpreadArchive()};$('archiveTabLibrary').onclick=()=>{archiveTab='library';renderSpreadArchive()};$('archiveSearch').oninput=renderSpreadArchive;$('archiveExportPack').onclick=openNewArchivePack;$('archiveCreatorProfile').onclick=editCreatorProfile;
+$('spreadNotebook').setAttribute('aria-controls','spreadArchive');setNotebookButtonState(false);$('spreadNotebook').onclick=()=>{if(isDiceTool(activeToolId())){openCastingArchive();return}$('spreadArchive').hidden?openSpreadArchive():closeSpreadArchive()};$('archiveClose').onclick=closeSpreadArchive;$('archiveCapture').onclick=()=>{spreadCapture()};$('archiveImport').onclick=()=>$('archiveImportFile').click();$('archiveImportFile').onchange=e=>{const files=[...(e.target.files||[])];e.target.value='';readSpreadFiles(files)};$('archiveTabMine').onclick=()=>{archiveTab='mine';renderSpreadArchive()};$('archiveTabLibrary').onclick=()=>{archiveTab='library';renderSpreadArchive()};$('archiveSearch').oninput=renderSpreadArchive;$('archiveExportPack').onclick=openNewArchivePack;$('archiveCreatorProfile').onclick=editCreatorProfile;
 
 
 /* One encyclopedia entry per spread definition: no duplicate diagrams or libraries. */
@@ -3159,6 +3159,7 @@ function environmentSettings(source){
  }
  Object.assign(out,TabulaClothFigures.normalize(source.clothFigure,source.clothFigureSize));
  if(source.castingFigure)out.castingFigure=TabulaClothFigures.normalize(source.castingFigure.clothFigure,source.castingFigure.clothFigureSize);
+ if(TabulaContentIdentity.validId(source.castingId))out.castingId=source.castingId;
  if(validCardSize(source.cardSize))out.cardSize=source.cardSize;
  if(Number.isFinite(source.deckPosition?.x)&&Number.isFinite(source.deckPosition?.y)){
   out.deckPosition={x:source.deckPosition.x,y:source.deckPosition.y};
@@ -3707,6 +3708,7 @@ function restoreSnapshot(v){
   if(activeToolId()===target&&window.TabulaDiceTable?.busy?.()){setStatus('ダイスの投擲が終わってから復元してください。');return}
   if(!confirm('記録「'+v.name+'」をこの卓へ復元しますか？ 現在の配札・出目は置き換わります。'))return;
   if(activeToolId()!==target&&!window.TabulaTableTools?.switchTool(target))return;
+  settings.castingId=v.settings?.castingId;
   settings.castingFigure=TabulaClothFigures.normalize(v.settings?.castingFigure?.clothFigure??v.settings?.clothFigure,v.settings?.castingFigure?.clothFigureSize??v.settings?.clothFigureSize);
   saveLocal();
   window.TabulaTableTools?.saveDice(dualClone(v.dice));
@@ -3789,7 +3791,7 @@ function compareModal(){
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
 function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定を初期化しました。配札と記録は残ります。')}
-function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、作業環境、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(DUAL_SESSION_KEY);localStorage.removeItem(DUAL_RESTORE_ONCE_KEY);localStorage.removeItem(TOOL_STORAGE_KEY);localStorage.removeItem(ENVIRONMENT_LIBRARY_KEY);mainToolState={id:'card:builtin',dice:null};localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(SPREAD_MENU_KEY);localStorage.removeItem(TabulaSpreadStore.PACK_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();notifyTool();setStatus('全データを初期化しました。')}
+function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、作業環境、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(DUAL_SESSION_KEY);localStorage.removeItem(DUAL_RESTORE_ONCE_KEY);localStorage.removeItem(TOOL_STORAGE_KEY);localStorage.removeItem(ENVIRONMENT_LIBRARY_KEY);mainToolState={id:'card:builtin',dice:null};localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(SPREAD_MENU_KEY);localStorage.removeItem(CASTING_LIBRARY_KEY);localStorage.removeItem(TabulaSpreadStore.PACK_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();notifyTool();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false,workflowOptions=null){
  if(!workflowOptions&&spreadDealPreparing){setStatus('ディール手順の実行中はカット操作を変更できません。');return}
  if(!workflowOptions&&Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
@@ -6297,6 +6299,96 @@ function replaceIndependentTool(target,snapshot=null){
  TabulaMultiWorkspace.validate(candidate);dualSession=candidate;dualRestoreView();dualSave();
 }
 const CASTING_GUIDES=Object.freeze({"none":["自由投擲","出目や記号そのものに加え、投擲物の距離、集まり、孤立、方向などを読む。図柄は任意に設定できる。"],"circle":["円 — 内界と外界","円内を占問に内在する条件、円外を外部からの影響や未獲得の可能性として読む。円周にかかるものは境界・移行・交渉を表す。中心への近さを作用の直接性とすることもできる。"],"double-circle":["二重円 — 三つの領域","内円を核心、二円の間を周辺状況、外円の外を外部条件とする。時間的な近さや影響の強さとして読み替えてもよい。"],"quarters":["四分円","四元素、四方位、四季、または四つの局面を各区画に割り当てる。区画の対応は投擲前に定める。"],"twelve":["十二分円","十二宮、十二ハウス、十二か月などを各区画に割り当てる。起点と巡る方向をあらかじめ定める。"],"horizontal-line":["上下二分","上と下に理念と現実、顕在と潜在など二つの対照的な領域を割り当てる。線上は両者の接点として読む。"],"vertical-line":["左右二分","左と右に過去と未来、自己と他者、二つの選択肢などを割り当てる。線上は媒介や移行として読む。"],"square-quarters":["四分割の正方形","四つの条件や領域を定め、どこに投擲物が集中するか、どの領域が空白かを読む。"],"square-grid":["九分割の正方形","中央を問題の核心、周囲八区画を関連する条件とする。各区画の象意は占問に合わせて定める。"],"pentagram":["五芒星","五つの頂点を五つの条件や元素に対応させる。中心、頂点、線上、外部の関係を読む。"],"circle-pentagram":["円と五芒星","円を占問の範囲、五芒星をその内部の五つの作用の構造と見立てる。円内外と星への近さを併せて読む。"],"hexagram":["六芒星","二つの三角形を対照的な作用と見立てる。重なる中央を両者の交点、六つの頂点を個別の条件として読む。"],"heptagram-7-2":["七芒星 {7/2}","七つの頂点に七つの条件や古典的七惑星を割り当てる。星の線に沿う順序を関連性の読み方に用いてもよい。"],"heptagram-7-3":["七芒星 {7/3}","七つの頂点に七つの条件を割り当てる。頂点を結ぶ別の順序や交差点を、作用の結び付きとして読む。"],"circle-triangle":["円と外三角","円を占問の領域、外三角を外部から現れる作用や目標と見立てる。両者の間に落ちるものを媒介として読む。"]});
+
+const CASTING_LIBRARY_KEY='tabula_sortium_castings_v1';
+function cleanCastingTool(v){
+ if(!v||!['normal','astro','iching','calendar'].includes(v.mode)||!Array.isArray(v.settings)||v.settings.length<1||v.settings.length>8)throw Error('ダイス設定が不正です。');
+ const count=v.mode==='normal'?v.settings.length:v.mode==='calendar'?6:3;
+ if(v.settings.length!==count)throw Error('ダイスの個数が不正です。');
+ const settings=v.settings.map(d=>{
+  if(!d||![6,8,10,12,20].includes(d.sides)||!/^#[0-9a-f]{6}$/i.test(d.color))throw Error('ダイスの設定が不正です。');
+  return {sides:d.sides,color:d.color,surface:typeof d.surface==='string'?d.surface.slice(0,24):'standard',faceStyle:typeof d.faceStyle==='string'?d.faceStyle.slice(0,24):'ring-pips',glowColor:typeof d.glowColor==='string'?d.glowColor.slice(0,24):undefined,userLabel:typeof d.userLabel==='string'?d.userLabel.slice(0,36):'',...(d.enabled===false?{enabled:false}:{})};
+ });
+ return {schema:1,mode:v.mode,settings,resultMode:v.resultMode==='accumulate'?'accumulate':'latest',darkRoom:v.darkRoom===true,scheme:v.scheme==='redUpper'?'redUpper':'blackUpper',colors:Array.isArray(v.colors)&&v.colors.length===3&&v.colors.every(c=>/^#[0-9a-f]{6}$/i.test(c))?v.colors.slice():null,...(TabulaStorage.validCalendarYear(v.calendarYear)?{calendarYear:v.calendarYear}:{}),...(Number.isFinite(v.scale)&&v.scale>0?{scale:v.scale}:{}),...(Number.isFinite(v.force)?{force:Math.max(0,Math.min(100,v.force))}:{})};
+}
+function cleanCasting(v){
+ if(!v||!TabulaContentIdentity.validId(v.id)||typeof v.name!=='string'||!v.name.trim()||v.name.length>100)throw Error('投擲法の名称またはIDが不正です。');
+ const fig=TabulaClothFigures.normalize(v.clothFigure,v.clothFigureSize);
+ if(fig.clothFigure!==v.clothFigure||fig.clothFigureSize!==v.clothFigureSize)throw Error('図柄設定が不正です。');
+ const result={id:v.id,name:v.name.trim(),...fig,identity:TabulaContentIdentity.identity(v.identity)};
+ for(const [key,max] of [['overview',4000],['method',4000],['notes',4000],['author',120],['source',500]]){
+  if(v[key]!==undefined&&(typeof v[key]!=='string'||v[key].length>max))throw Error('解説情報が不正です。');
+  result[key]=v[key]||'';
+ }
+ if(v.tool)result.tool=cleanCastingTool(v.tool);
+ return result;
+}
+function castingLibrary(){try{const a=JSON.parse(localStorage.getItem(CASTING_LIBRARY_KEY)||'[]');return Array.isArray(a)?a.slice(0,500).flatMap(v=>{try{return [cleanCasting(v)]}catch{return []}}):[]}catch{return []}}
+function writeCastings(rows){if(rows.length>500)throw Error('登録上限は500件です。');localStorage.setItem(CASTING_LIBRARY_KEY,JSON.stringify(rows.map(cleanCasting)));window.dispatchEvent(new Event('tabula:casting-change'))}
+function activeCasting(){return castingLibrary().find(v=>v.id===settings.castingId)||null}
+function castingSelection(){return activeCasting()?.id||castingConfig().clothFigure}
+function castingToolNow(){const live=window.TabulaDiceTable?.snapshot?.()||activeDiceSnapshot();try{return cleanCastingTool(live)}catch{return null}}
+function useCasting(id){
+ const item=castingLibrary().find(v=>v.id===id);
+ if(!item)return selectCasting(id);
+ if(!isDiceTool(activeToolId())||window.TabulaDiceTable?.busy?.())return false;
+ if(item.tool){
+  const current=castingToolNow();
+  if(JSON.stringify(current)!==JSON.stringify(item.tool)&&!window.TabulaTableTools.switchTool('dice:'+item.tool.mode,{replaceDice:true,snapshot:dualClone(item.tool)}))return false;
+ }
+ settings.castingId=item.id;settings.castingFigure=TabulaClothFigures.normalize(item.clothFigure,item.clothFigureSize);
+ renderActiveClothFigure();saveLocal();return true;
+}
+function castingGuide(item=activeCasting()){
+ const id=castingConfig().clothFigure,guide=CASTING_GUIDES[id]||CASTING_GUIDES.none;
+ const para=v=>escapeHTML(v||'').replace(/\\n/g,'<br>');
+ const tool=item?.tool?'<p class="note">使用する占具：'+escapeHTML(({normal:'通常ダイス',astro:'アストロダイス',iching:'易占ダイス',calendar:'暦占ダイス'})[item.tool.mode])+' · '+item.tool.settings.length+'個（'+item.tool.settings.map(d=>'D'+d.sides).join('・')+'）</p>':'';
+ modal('<h2>'+escapeHTML(item?.name||guide[0])+'</h2>'+tool+(item?['overview','method','notes','author','source'].map((key,i)=>item[key]?'<h3>'+['概要','使用方法','解釈','著者','出典'][i]+'</h3><p>'+para(item[key])+'</p>':'').join(''):'<p>'+para(guide[1])+'</p><h3>位置を読む際の基本</h3><p>占問と領域の対応を投擲前に定めます。境界にかかるものは境界の作用として扱うか、中心点を基準に判定するかを先に決めておきます。</p><p class="note">TABULAによる汎用的な解釈例です。歴史的に定められた占法の再現ではありません。</p>')+'<div class="row"><button id="castingGuideClose">閉じる</button><button id="castingGuideCopy">この占法をもとに登録</button></div>');
+ $('castingGuideClose').onclick=closeModal;$('castingGuideCopy').onclick=()=>editCasting(item?{...item,id:null,identity:null,name:item.name+'（複製）'}:{...castingConfig(),name:guide[0]+'（独自）',overview:guide[1]});
+}
+function editCasting(source=null){
+ const prior=source?.id?castingLibrary().find(v=>v.id===source.id):null;
+ const base=source||{...castingConfig(),name:'',overview:'',method:'',notes:''};
+ const live=castingToolNow(),tool=base.tool||live;
+ modal('<h2>投擲法の'+(prior?'編集':'登録')+'</h2><label class="field">名称<input id="castingEditName" maxlength="100"></label><label class="field">図柄<select id="castingEditFigure"></select></label><label class="field">図柄の大きさ <output id="castingEditSizeValue"></output><input id="castingEditSize" type="range" min="35" max="92"></label><label class="choice"><input type="checkbox" id="castingEditTool">占具の設定を含める</label><p class="note" id="castingEditToolNote"></p><button id="castingEditUseLive" type="button">現在のダイス設定に置き換える</button>'+[['overview','概要'],['method','使用方法'],['notes','解釈'],['author','著者'],['source','出典']].map(([k,l])=>'<label class="field">'+l+'<textarea id="castingEdit_'+k+'" maxlength="'+(k==='author'?120:k==='source'?500:4000)+'" rows="'+(k==='author'||k==='source'?1:3)+'"></textarea></label>').join('')+'<div class="row"><button id="castingEditCancel">キャンセル</button><button id="castingEditSave" class="primary">保存</button></div>');
+ $('castingEditName').value=base.name||'';
+ for(const row of TabulaClothFigures.entries())$('castingEditFigure').add(new Option(row.label,row.id));
+ $('castingEditFigure').value=base.clothFigure||'none';$('castingEditSize').value=base.clothFigureSize||76;
+ const size=()=>{$('castingEditSizeValue').textContent=$('castingEditSize').value+'%'};size();$('castingEditSize').oninput=size;
+ let chosen=tool;
+ function paintTool(){$('castingEditTool').disabled=!chosen;$('castingEditToolNote').textContent=chosen?chosen.mode+' · '+chosen.settings.length+'個（'+chosen.settings.map(d=>'D'+d.sides).join('・')+'）':'ダイス設定を取得できません。';$('castingEditUseLive').disabled=!live}
+ $('castingEditTool').checked=!!base.tool;paintTool();$('castingEditUseLive').onclick=()=>{chosen=live;$('castingEditTool').checked=!!live;paintTool()};
+ for(const k of ['overview','method','notes','author','source'])$('castingEdit_'+k).value=base[k]||'';
+ $('castingEditCancel').onclick=openCastingArchive;
+ $('castingEditSave').onclick=()=>{try{
+  const I=TabulaContentIdentity,profile=currentCreator(),identity=prior?(prior.identity.creator.id===profile.id?I.revise(prior.identity,profile):I.newIdentity(profile,prior.identity)):I.newIdentity(profile);
+  const item=cleanCasting({id:prior?.id||I.uuid(),identity,name:$('castingEditName').value,clothFigure:$('castingEditFigure').value,clothFigureSize:Number($('castingEditSize').value),...Object.fromEntries(['overview','method','notes','author','source'].map(k=>[k,$('castingEdit_'+k).value])),...($('castingEditTool').checked&&chosen?{tool:chosen}:{})});
+  const rows=castingLibrary().filter(v=>v.id!==item.id);if(rows.some(v=>v.name===item.name))throw Error('同名の投擲法があります。');
+  writeCastings([...rows,item]);
+  if(settings.castingId===item.id){settings.castingFigure=TabulaClothFigures.normalize(item.clothFigure,item.clothFigureSize);renderActiveClothFigure();saveLocal()}
+  openCastingArchive();setStatus('投擲法「'+item.name+'」を保存しました。');
+ }catch(e){alert(e.message)}};
+}
+function openCastingArchive(){
+ if(!isDiceTool(activeToolId()))return;
+ modal('<h2>CASTINGS — 投擲法手帖</h2><div class="row"><button id="castingCapture" class="primary">現在の卓から投擲法を登録</button><button id="castingFromStandard">標準投擲法から登録</button></div><div id="castingArchiveRows" class="stack"></div><button id="castingArchiveClose">閉じる</button>');
+ $('castingCapture').onclick=()=>editCasting();$('castingFromStandard').onclick=()=>castingGuide(null);$('castingArchiveClose').onclick=closeModal;
+ const root=$('castingArchiveRows');
+ for(const item of castingLibrary()){
+  const row=document.createElement('article');row.className='archive-entry';
+  const info=document.createElement('div');info.className='archive-info';const name=document.createElement('strong');name.textContent=item.name;const desc=document.createElement('small');desc.textContent=(TabulaClothFigures.entries().find(v=>v.id===item.clothFigure)?.label||'なし')+' · '+item.clothFigureSize+'%'+(item.tool?' · '+item.tool.settings.length+'個':'');info.append(name,desc);
+  const actions=document.createElement('div');actions.className='archive-actions';
+  archiveButton(actions,'使う',()=>{if(useCasting(item.id))closeModal()});archiveButton(actions,'解説',()=>castingGuide(item));archiveButton(actions,'編集',()=>editCasting(item));archiveButton(actions,'複製',()=>editCasting({...item,id:null,identity:null,name:item.name+'（複製）'}));
+  archiveButton(actions,'書き出し',()=>downloadJSON({format:'tabula-sortium',kind:'casting',version:1,casting:item},'TABULA_CASTING_'+fileNamePart(item.name)+'.json'));
+  archiveButton(actions,'削除',()=>{if(!confirm('「'+item.name+'」を削除しますか？'))return;try{writeCastings(castingLibrary().filter(v=>v.id!==item.id));if(settings.castingId===item.id){delete settings.castingId;saveLocal();renderActiveClothFigure()}openCastingArchive()}catch(e){alert(e.message)}});
+  row.append(info,actions);root.append(row);
+ }
+ if(!root.children.length)root.textContent='まだ登録された投擲法はありません。';
+ const imp=document.createElement('input');imp.type='file';imp.accept='.json,application/json';imp.hidden=true;root.after(imp);
+ const btn=document.createElement('button');btn.textContent='投擲法を読み込む';imp.after(btn);btn.onclick=()=>imp.click();
+ imp.onchange=async()=>{try{const f=imp.files[0];if(!f)return;if(f.size>1000000)throw Error('ファイルが大きすぎます。');const data=JSON.parse(await f.text());if(data.format!=='tabula-sortium'||data.kind!=='casting'||data.version!==1)throw Error('投擲法ファイルではありません。');const item=cleanCasting(data.casting),rows=castingLibrary();if(rows.some(v=>v.id===item.id||TabulaContentIdentity.key(v.identity)===TabulaContentIdentity.key(item.identity)))throw Error('既に登録された作品です。');writeCastings([...rows,item]);openCastingArchive()}catch(e){alert(e.message)}};
+}
+
 function castingConfig(){
  const raw=settings.castingFigure;
  return TabulaClothFigures.normalize(raw?.clothFigure??'none',raw?.clothFigureSize??settings.clothFigureSize);
@@ -6308,18 +6400,14 @@ function renderActiveClothFigure(){
 }
 function selectCasting(id,percent){
  if(!isDiceTool(activeToolId()))return false;
+ if(activeCasting()&&(percent===undefined||id!==castingConfig().clothFigure))delete settings.castingId;
  settings.castingFigure=TabulaClothFigures.normalize(id,percent??castingConfig().clothFigureSize);
  renderActiveClothFigure();saveLocal();return true;
 }
 window.TabulaCasting={
- entries:()=>TabulaClothFigures.entries().map(({id,label})=>({id,label:CASTING_GUIDES[id]?.[0]||label})),
- current:()=>castingConfig(),
- select:selectCasting,
- guide(){
-  const id=castingConfig().clothFigure,guide=CASTING_GUIDES[id]||CASTING_GUIDES.none;
-  modal('<h2>'+escapeHTML(guide[0])+'</h2><p>'+escapeHTML(guide[1])+'</p><h3>位置を読む際の基本</h3><p>占問と領域の対応を投擲前に定めます。境界にかかるものは境界の作用として扱うか、中心点を基準に判定するかを先に決めておきます。図柄の大きさはアルター設定で調整できます。</p><p class="note">TABULAによる汎用的な解釈例です。歴史的に定められた占法の再現ではありません。位置の判定は手動で行います。</p><button type="button" id="castingGuideClose">閉じる</button>');
-  $('castingGuideClose').onclick=closeModal;
- }
+ entries:()=>[...TabulaClothFigures.entries().map(({id,label})=>({id,label:CASTING_GUIDES[id]?.[0]||label})),...castingLibrary().map(v=>({id:v.id,label:v.name}))],
+ current:()=>castingConfig(),selection:castingSelection,
+ select:useCasting,guide:()=>castingGuide(),archive:openCastingArchive
 };
 window.TabulaTableTools={openDiceDetail,
  prepareDiceSound:prepareOpeningSound,playDiceImpact,
@@ -6645,6 +6733,7 @@ function dualRestoreView(){
  removed:dualClone(t.removed||[]),tablePiles:dualClone(t.tablePiles||[])};
  settings.spread=t.spread||'free';
  settings.castingFigure=t.savedSettings?.castingFigure?dualClone(t.savedSettings.castingFigure):undefined;
+ settings.castingId=t.savedSettings?.castingId;
  if(isIndependentTables()){
   settings.deckId=t.deckId||'builtin';settings.pool=t.pool||'all';
   // Legacy additional tables may have no savedSettings. Re-resolve the
