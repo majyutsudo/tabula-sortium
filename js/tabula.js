@@ -5236,7 +5236,7 @@ function galleryShowLarge(index,origin){
  current.replaceWith(next);
  next.id='cardGalleryLarge';next.setAttribute('aria-label',name);
  if(next.tagName==='IMG')next.alt=name;
- textToggle.hidden=!!galleryBlueprint();textEdit.hidden=!!galleryBlueprint();
+ textToggle.hidden=false;textEdit.hidden=false;
  renderDetailText($('galleryCardText'),c);
  $('cardGalleryLabel').textContent=name+'  ·  '+(GALLERY.index+1)+' / '+all.length;
  $('cardGalleryLightbox').hidden=false;
