@@ -130,6 +130,29 @@
  const cardOnlyControls=[
   ...['spreadQuickSelect','spreadInfoButton','tableUndo','cardGalleryOpen','spreadNotebook','quickPositions','quickReturn','quickCollect','quickFaceDown','quickRevealAll','presetSnapToggle'].map(id=>document.getElementById(id)).filter(Boolean)
  ];
+ const spreadSelect=document.getElementById('spreadQuickSelect'),spreadInfo=document.getElementById('spreadInfoButton');
+ const spreadCaption=spreadSelect.parentElement.querySelector('span');
+ const castingSelect=document.createElement('select');castingSelect.id='castingQuickSelect';castingSelect.setAttribute('aria-label','投擲法を選択');castingSelect.hidden=true;
+ const castingInfo=document.createElement('button');castingInfo.type='button';castingInfo.id='castingInfoButton';castingInfo.textContent='ⓘ';castingInfo.title='投擲法の解説';castingInfo.setAttribute('aria-label','投擲法の解説');castingInfo.hidden=true;
+ const castingSide=document.createElement('div');castingSide.className='casting-side';castingSide.hidden=true;
+ const sideLabel=document.createElement('label');sideLabel.className='field';sideLabel.textContent='投擲法';
+ const sideSelect=document.createElement('select');sideSelect.setAttribute('aria-label','投擲法を選択');sideLabel.append(sideSelect);
+ const sideInfo=document.createElement('button');sideInfo.type='button';sideInfo.textContent='投擲法の解説';castingSide.append(sideLabel,sideInfo);
+ section.querySelector('.instrument-picker').after(castingSide);
+ spreadSelect.after(castingSelect);spreadInfo.after(castingInfo);
+ for(const select of [castingSelect,sideSelect]){
+  for(const row of window.TabulaCasting.entries())select.add(new Option(row.label,row.id));
+  select.onchange=()=>window.TabulaCasting.select(select.value);
+ }
+ castingInfo.onclick=sideInfo.onclick=()=>window.TabulaCasting.guide();
+ function syncCasting(){const id=window.TabulaCasting.current().clothFigure;castingSelect.value=sideSelect.value=id;}
+ window.addEventListener('tabula:casting-change',syncCasting);
+ function configureCasting(on){
+  spreadSelect.hidden=spreadInfo.hidden=on;castingSelect.hidden=castingInfo.hidden=castingSide.hidden=!on;
+  if(spreadCaption)spreadCaption.textContent=on?'投擲法':'展開法';
+  spreadSelect.parentElement.title=on?'投擲法を選択':'展開法を選択';
+  if(on)syncCasting();
+ }
  const cardOperationsToggle=document.querySelector("#operations .section-toggle");
  function setCardControlsInactive(inactive){
   if(cardOperationsToggle)cardOperationsToggle.disabled=inactive;
@@ -289,6 +312,7 @@
   if(wasDice){configureSizeControls(false);window.dispatchEvent(new Event('tabula:card-size'));}
   cardActions.hidden=false;diceActions.hidden=true;
   setCardControlsInactive(false);
+  configureCasting(false);
   changeSet.hidden=true;
   resultsButton.setAttribute('aria-pressed','false');
   cardResults.hidden=!cardResultsOpen;
@@ -308,6 +332,7 @@
   configureInspector(true);
   cardActions.hidden=true;diceActions.hidden=false;
   setCardControlsInactive(true);
+  configureCasting(true);
   syncActionStates();
   changeSet.hidden=false;
   const placementTools=document.getElementById('placementToolsContent');

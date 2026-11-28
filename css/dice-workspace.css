@@ -118,7 +118,10 @@ body.tabula-dice-mode .main>.table-shortcuts.dice-quick-actions{display:grid!imp
 }
 
 /* The left-hand menus retain their positions; only section II switches its settings. */
-body.tabula-dice-mode #instrumentChoiceSection>:not(h2):not(.instrument-picker){display:none!important}
+body.tabula-dice-mode #instrumentChoiceSection>:not(h2):not(.instrument-picker):not(.casting-side){display:none!important}
+#castingQuickSelect[hidden],#castingInfoButton[hidden],#spreadQuickSelect[hidden],#spreadInfoButton[hidden],.casting-side[hidden]{display:none!important}
+#castingInfoButton{flex:none;min-width:28px;padding:4px 6px}
+.casting-side{display:grid;gap:6px}
 
 /* v0.726 — keep card-only controls visible but unmistakably unavailable
    during dice use; normal colours and interactivity return in card mode. */

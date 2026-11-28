@@ -2515,7 +2515,7 @@ function hideFramesForDeal(){
  if(spreadFramePolicy().hideOnDeal&&settings.framesVisible!==false&&!spreadWorkbench)setFrameVisibility(false,false);
 }
 function render(){
- TabulaClothFigures.render(settings.clothFigure,settings.clothFigureSize);
+ renderActiveClothFigure();
  stopFreeSlide();
  syncFrameVisibility();syncPresetSnap();
  alignRegisteredSpreadPositions();
@@ -3158,6 +3158,7 @@ function environmentSettings(source){
   if(typeof value==='string'&&typeof item==='string'&&item.length<=(lengths[key]||300))out[key]=item;
  }
  Object.assign(out,TabulaClothFigures.normalize(source.clothFigure,source.clothFigureSize));
+ if(source.castingFigure)out.castingFigure=TabulaClothFigures.normalize(source.castingFigure.clothFigure,source.castingFigure.clothFigureSize);
  if(validCardSize(source.cardSize))out.cardSize=source.cardSize;
  if(Number.isFinite(source.deckPosition?.x)&&Number.isFinite(source.deckPosition?.y)){
   out.deckPosition={x:source.deckPosition.x,y:source.deckPosition.y};
@@ -3559,7 +3560,7 @@ function diceReadingSnapshot(id,name){
  const dice=live?.mode===mode?live:context?.dice;
  if(!dice?.results?.every(Number.isInteger)){setStatus('すべてのダイスを振ってから占例を保存してください。');return null}
  if(mode==='calendar'&&!TabulaStorage.calendarResult(dice.results,dice.calendarYear)?.valid){setStatus('暦にある日付が出てから占例を保存してください。');return null}
- const v={kind:'dice',id,name,time:new Date().toISOString(),settings:dualClone(settings),
+ const v={kind:'dice',id,name,time:new Date().toISOString(),settings:{...dualClone(settings),...castingConfig()},
   dice:dualClone(dice),tableName:dualSession?.tables?.[dualSession.activeTable]?.name||'メイン卓',
   placed:[],deck:[],removed:[],tablePiles:[],slots:[],spread:'free'};
  if(!TabulaStorage.validateReading(v)){setStatus('ダイスの占例を検証できませんでした。');return null}
@@ -3706,6 +3707,8 @@ function restoreSnapshot(v){
   if(activeToolId()===target&&window.TabulaDiceTable?.busy?.()){setStatus('ダイスの投擲が終わってから復元してください。');return}
   if(!confirm('記録「'+v.name+'」をこの卓へ復元しますか？ 現在の配札・出目は置き換わります。'))return;
   if(activeToolId()!==target&&!window.TabulaTableTools?.switchTool(target))return;
+  settings.castingFigure=TabulaClothFigures.normalize(v.settings?.castingFigure?.clothFigure??v.settings?.clothFigure,v.settings?.castingFigure?.clothFigureSize??v.settings?.clothFigureSize);
+  saveLocal();
   window.TabulaTableTools?.saveDice(dualClone(v.dice));
   notifyTool();closeModal();setStatus('「'+v.name+'」のダイス占例を復元しました。');
   window.scrollTo({top:0,behavior:'instant'});return;
@@ -6278,7 +6281,7 @@ const activeToolTable=()=>dualSession?.tables?.[dualSession.activeTable]||null;
 const activeToolId=()=>activeToolTable()?.toolId||(!dualSession&&isDiceTool(mainToolState.id)?mainToolState.id:'card:'+settings.deckId);
 const activeDiceSnapshot=()=>activeToolTable()?.diceSnapshot||(!dualSession?mainToolState.dice:null);
 function storeMainTool(){try{localStorage.setItem(TOOL_STORAGE_KEY,JSON.stringify(mainToolState))}catch(e){setStatus('占具設定を保存できませんでした。')}}
-function notifyTool(){window.dispatchEvent(new CustomEvent('tabula:tool-context',{detail:{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}}))}
+function notifyTool(){renderActiveClothFigure();window.dispatchEvent(new CustomEvent('tabula:tool-context',{detail:{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}}))}
 function replaceIndependentTool(target,snapshot=null){
  const candidate=dualClone(dualSession);
  const source=candidate.activeTable==='table1'?'A':'B',table=candidate.tables[candidate.activeTable];
@@ -6293,6 +6296,31 @@ function replaceIndependentTool(target,snapshot=null){
  if(deckId)table.savedSettings={...dualClone(table.savedSettings||settings),deckId,pool:'all'};
  TabulaMultiWorkspace.validate(candidate);dualSession=candidate;dualRestoreView();dualSave();
 }
+const CASTING_GUIDES=Object.freeze({"none":["自由投擲","出目や記号そのものに加え、投擲物の距離、集まり、孤立、方向などを読む。図柄は任意に設定できる。"],"circle":["円 — 内界と外界","円内を占問に内在する条件、円外を外部からの影響や未獲得の可能性として読む。円周にかかるものは境界・移行・交渉を表す。中心への近さを作用の直接性とすることもできる。"],"double-circle":["二重円 — 三つの領域","内円を核心、二円の間を周辺状況、外円の外を外部条件とする。時間的な近さや影響の強さとして読み替えてもよい。"],"quarters":["四分円","四元素、四方位、四季、または四つの局面を各区画に割り当てる。区画の対応は投擲前に定める。"],"twelve":["十二分円","十二宮、十二ハウス、十二か月などを各区画に割り当てる。起点と巡る方向をあらかじめ定める。"],"horizontal-line":["上下二分","上と下に理念と現実、顕在と潜在など二つの対照的な領域を割り当てる。線上は両者の接点として読む。"],"vertical-line":["左右二分","左と右に過去と未来、自己と他者、二つの選択肢などを割り当てる。線上は媒介や移行として読む。"],"square-quarters":["四分割の正方形","四つの条件や領域を定め、どこに投擲物が集中するか、どの領域が空白かを読む。"],"square-grid":["九分割の正方形","中央を問題の核心、周囲八区画を関連する条件とする。各区画の象意は占問に合わせて定める。"],"pentagram":["五芒星","五つの頂点を五つの条件や元素に対応させる。中心、頂点、線上、外部の関係を読む。"],"circle-pentagram":["円と五芒星","円を占問の範囲、五芒星をその内部の五つの作用の構造と見立てる。円内外と星への近さを併せて読む。"],"hexagram":["六芒星","二つの三角形を対照的な作用と見立てる。重なる中央を両者の交点、六つの頂点を個別の条件として読む。"],"heptagram-7-2":["七芒星 {7/2}","七つの頂点に七つの条件や古典的七惑星を割り当てる。星の線に沿う順序を関連性の読み方に用いてもよい。"],"heptagram-7-3":["七芒星 {7/3}","七つの頂点に七つの条件を割り当てる。頂点を結ぶ別の順序や交差点を、作用の結び付きとして読む。"],"circle-triangle":["円と外三角","円を占問の領域、外三角を外部から現れる作用や目標と見立てる。両者の間に落ちるものを媒介として読む。"]});
+function castingConfig(){
+ const raw=settings.castingFigure;
+ return TabulaClothFigures.normalize(raw?.clothFigure??'none',raw?.clothFigureSize??settings.clothFigureSize);
+}
+function renderActiveClothFigure(){
+ const config=isDiceTool(activeToolId())?castingConfig():settings;
+ TabulaClothFigures.render(config.clothFigure,config.clothFigureSize);
+ window.dispatchEvent(new Event('tabula:casting-change'));
+}
+function selectCasting(id,percent){
+ if(!isDiceTool(activeToolId()))return false;
+ settings.castingFigure=TabulaClothFigures.normalize(id,percent??castingConfig().clothFigureSize);
+ renderActiveClothFigure();saveLocal();return true;
+}
+window.TabulaCasting={
+ entries:()=>TabulaClothFigures.entries().map(({id,label})=>({id,label:CASTING_GUIDES[id]?.[0]||label})),
+ current:()=>castingConfig(),
+ select:selectCasting,
+ guide(){
+  const id=castingConfig().clothFigure,guide=CASTING_GUIDES[id]||CASTING_GUIDES.none;
+  modal('<h2>'+escapeHTML(guide[0])+'</h2><p>'+escapeHTML(guide[1])+'</p><h3>位置を読む際の基本</h3><p>占問と領域の対応を投擲前に定めます。境界にかかるものは境界の作用として扱うか、中心点を基準に判定するかを先に決めておきます。図柄の大きさはアルター設定で調整できます。</p><p class="note">TABULAによる汎用的な解釈例です。歴史的に定められた占法の再現ではありません。位置の判定は手動で行います。</p><button type="button" id="castingGuideClose">閉じる</button>');
+  $('castingGuideClose').onclick=closeModal;
+ }
+};
 window.TabulaTableTools={openDiceDetail,
  prepareDiceSound:prepareOpeningSound,playDiceImpact,
  context(){return{id:activeToolId(),tableId:dualSession?.activeTable||'main',dice:activeDiceSnapshot()}},
@@ -6616,6 +6644,7 @@ function dualRestoreView(){
  spreadDealProgress:dualClone(t.spreadDealProgress||null),waiteFacing:t.waiteFacing||null,
  removed:dualClone(t.removed||[]),tablePiles:dualClone(t.tablePiles||[])};
  settings.spread=t.spread||'free';
+ settings.castingFigure=t.savedSettings?.castingFigure?dualClone(t.savedSettings.castingFigure):undefined;
  if(isIndependentTables()){
   settings.deckId=t.deckId||'builtin';settings.pool=t.pool||'all';
   // Legacy additional tables may have no savedSettings. Re-resolve the
@@ -7061,8 +7090,9 @@ window.addEventListener('resize',positionDualDock);
 installPhysicalCardPicker();
 loadSnapshots();syncRecipes();applyVisuals();loadSpreadLibrary();installTableCamera();installDesktopTableViews();installTableToolLayout();
 TabulaClothFigures.bind((id,percent)=>{
+ if(isDiceTool(activeToolId())){selectCasting(id,percent);return;}
  Object.assign(settings,TabulaClothFigures.normalize(id,percent));
- TabulaClothFigures.render(settings.clothFigure,settings.clothFigureSize);
+ renderActiveClothFigure();
  saveLocal();
 });
 const initial=localStorage.getItem(KEY);

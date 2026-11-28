@@ -114,6 +114,8 @@
   window.TabulaClothFigures = {
     normalize,
     render,
+    entries: () => figures.map(([id,label]) => ({id,label})),
+    choose(id,percent) { onChange?.(id,percent ?? Number(size.value)); },
     bind(handler) { onChange = handler; },
   };
 })();
