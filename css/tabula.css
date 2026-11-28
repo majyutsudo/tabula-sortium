@@ -2792,7 +2792,7 @@ aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);
 @media(max-width:480px){#castingArchiveTools{grid-template-columns:repeat(2,minmax(0,1fr))}.casting-archive-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* Instrument workbench: separate controls from native selector and allow narrow screens. */
-.instrument-manager-open{display:block;width:100%;margin:8px 0 4px;white-space:normal}
+.instrument-manager-open{display:block;width:100%;margin:8px 0 0;white-space:normal}
 .instrument-manager-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:12px 0;align-items:stretch}
 .instrument-manager-actions>button,.instrument-manager-actions>input{min-width:0;width:100%;max-width:none!important;white-space:normal;margin:0}
 .instrument-lot-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px;margin-top:12px}
@@ -2807,3 +2807,5 @@ aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);
 .instrument-lot-sealed:hover{background:#d5c39e}
 
 .instrument-lot-paper.lot-favorable{box-shadow:inset 0 0 0 4px #e7dcc0,inset 0 0 0 5px #b6a17b,0 0 20px #d8b96a66}.instrument-lot-paper.lot-unfavorable{background:#d4ccd0;color:#372c3c;border-color:#827087;box-shadow:inset 0 0 0 4px #d4ccd0,inset 0 0 0 5px #95879a,0 0 18px #78506b55}
+
+.instrument-lot-vertical .instrument-field-body{writing-mode:vertical-rl;text-orientation:upright;white-space:pre-wrap;margin:16px auto;line-height:1.9;max-width:100%;text-align:start}

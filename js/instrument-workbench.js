@@ -4,7 +4,7 @@ function mount({open,close,creator,download,status}){
  const S=root.TabulaInstrumentStore,D=root.TabulaInstrumentData,I=root.TabulaContentIdentity;
  const $=id=>document.getElementById(id);
  let selected=null,reading=null,revealed=new Set(),effects=true;
- const button=document.createElement('button');button.type='button';button.textContent='占具セット管理（試験版）';button.className='instrument-manager-open';$('instrumentPicker').after(button);
+ const button=document.createElement('button');button.type='button';button.textContent='占具セット管理（試験版）';button.className='instrument-manager-open';$('instrumentPicker').append(button);
  const get=()=>S.read(localStorage);
  const standard=()=>root.TabulaStandardInstrumentSets.map(S.normalize);
  const allSets=()=>[...standard(),...get()];
@@ -37,9 +37,9 @@ function mount({open,close,creator,download,status}){
     const reset=document.createElement('button');reset.type='button';reset.textContent='すべて戻す';reset.onclick=()=>{reading=S.session(v);revealed=new Set();paint()};
     const revealAll=document.createElement('button');revealAll.type='button';revealAll.textContent='すべて開く';revealAll.disabled=reading.drawn.every(id=>revealed.has(id));revealAll.onclick=()=>{reading.drawn.forEach(id=>revealed.add(id));paint()};controls.append(count,draw,revealAll,reset);host.append(controls);const toggle=document.createElement('label');toggle.className='choice';const check=document.createElement('input');check.type='checkbox';check.checked=effects;check.onchange=()=>{effects=check.checked;paint()};toggle.append(check,document.createTextNode('吉凶に応じた色彩'));host.append(toggle);
     const results=document.createElement('div');results.className='instrument-lot-results';host.append(results);
-    for(const [i,id] of reading.drawn.entries()){const item=reading.set.items.find(x=>x.id===id),article=document.createElement('article');article.className='instrument-lot-paper';
+    for(const [i,id] of reading.drawn.entries()){const item=reading.set.items.find(x=>x.id===id),article=document.createElement('article');article.className='instrument-lot-paper'+(v.type==='lot'?' instrument-lot-vertical':'');
      if(!revealed.has(id)){const reveal=document.createElement('button');reveal.type='button';reveal.className='instrument-lot-sealed';reveal.textContent=(v.type==='lot'?'籤':'ルーン')+' '+(i+1)+' · 開く';reveal.onclick=()=>{revealed.add(id);paint()};article.append(reveal);article.classList.add('sealed')}
-     else {if(effects&&v.type==='lot'){const rank=String(item.fortune||'');if(['大吉','吉','小吉','半吉','末吉','末小吉'].includes(rank))article.classList.add('lot-favorable');else if(['凶','大凶','小凶','半凶','末凶'].includes(rank))article.classList.add('lot-unfavorable')}for(const f of D.fields){const value=item[f.id];if(value==null||value==='')continue;const p=document.createElement(f.id==='number'?'h3':'p');p.className='instrument-field-'+f.id;p.textContent=f.id==='number'?'第'+value+'番':f.id==='body'||f.id==='fortune'||f.id==='symbol'?String(value):f.label+'：'+value;article.append(p)}}results.append(article);
+     else {if(effects&&v.type==='lot'){const rank=String(item.fortune||'');if(['大吉','吉','小吉','半吉','末吉','末小吉'].includes(rank))article.classList.add('lot-favorable');else if(['凶','大凶','小凶','半凶','末凶'].includes(rank))article.classList.add('lot-unfavorable')}for(const f of D.fields){if(v.type==='lot'&&!['number','fortune','body'].includes(f.id))continue;if(['source','note'].includes(f.id))continue;const value=item[f.id];if(value==null||value==='')continue;const p=document.createElement(f.id==='number'?'h3':'p');p.className='instrument-field-'+f.id;p.textContent=f.id==='number'?'第'+value+'番':f.id==='body'||f.id==='fortune'||f.id==='symbol'?String(value):f.label+'：'+value;article.append(p)}}results.append(article);
     }
    }paint();
   }catch(e){alert(e.message)}

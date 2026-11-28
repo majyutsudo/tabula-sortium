@@ -56,7 +56,7 @@ body.tabula-dice-mode #instrumentChoiceSection.is-collapsed .instrument-picker{d
 .dice-workspace .dice-add,.dice-workspace .dice-remove,.dice-workspace .dice-config-toolbar button{background:#263c31;color:#eadebe;border:1px solid #8d866f;border-radius:5px;padding:7px}
 .dice-workspace #dice-preset{display:none}
 .dice-workspace #dice-failure[hidden]{display:none!important}
-.instrument-picker{padding:8px 0 12px;margin:0 0 12px;border-bottom:1px solid #867554}
+.instrument-picker{padding:0;margin:0;border-bottom:0}
 .instrument-picker select{width:100%;max-width:100%}
 @media(max-width:600px){.dice-workspace{padding:9px 8px 20px}.dice-workspace .roll-actions button{min-width:0;flex:1;padding:11px 5px}.dice-workspace .result-number{font-size:23px}.dice-workspace .force-control{gap:4px}}
 
