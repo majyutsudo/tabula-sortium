@@ -125,14 +125,14 @@ function spreadMenuEntries(includeActive=false){
  const rows=spreadLibrary.filter(v=>isMySpread(v)||(includeActive&&v.id===settings.spread));
  return [...builtinSpreadMenu,...rows.map(v=>({id:v.id,name:rows.some(q=>q.id!==v.id&&q.name===v.name)?v.name+' — '+(v.identity?.creator?.name||'制作者名なし')+' ['+(v.identity?.id||v.id).slice(-8)+']':v.name,custom:true}))];
 }
-function normalizeSpreadMenu(v){
- const clean=a=>Array.isArray(a)?[...new Set(a.filter(x=>typeof x==='string'&&x.length<=180&&x!=='free'&&x!=='__menu_settings'))].slice(0,600):[];
+function normalizeSpreadMenu(v,pinned='free'){
+ const clean=a=>Array.isArray(a)?[...new Set(a.filter(x=>typeof x==='string'&&x.length<=180&&x!==pinned&&x!=='__menu_settings'))].slice(0,600):[];
  return {order:clean(v?.order),hidden:clean(v?.hidden)};
 }
 function readSpreadMenu(){try{return normalizeSpreadMenu(JSON.parse(localStorage.getItem(SPREAD_MENU_KEY)||'{}'))}catch{return normalizeSpreadMenu(null)}}
-function orderedSpreadMenu(entries,prefs){
+function orderedSpreadMenu(entries,prefs,pinned='free'){
  const ranks=new Map(prefs.order.map((id,i)=>[id,i]));
- return entries.slice().sort((a,b)=>a.id==='free'?-1:b.id==='free'?1:(ranks.get(a.id)??1e6)-(ranks.get(b.id)??1e6));
+ return entries.slice().sort((a,b)=>a.id===pinned?-1:b.id===pinned?1:(ranks.get(a.id)??1e6)-(ranks.get(b.id)??1e6));
 }
 function syncCustomSpreadOptions(){
  const select=$('spread');if(!select)return;
@@ -143,14 +143,14 @@ function syncCustomSpreadOptions(){
  if(options.length===rows.length&&options.every((o,i)=>o.value===rows[i].id&&o.textContent===rows[i].name))return;
  select.replaceChildren(...rows.map(v=>{const o=new Option(v.name,v.id);if(v.custom)o.dataset.custom='1';return o}));
 }
-function openSpreadMenuSettings(){
- const prefs=readSpreadMenu();let rows=orderedSpreadMenu(spreadMenuEntries(),prefs).filter(v=>v.id!=='free').map(v=>({...v,on:!prefs.hidden.includes(v.id)}));
- modal('<h2>表示するスプレッドを設定</h2><p class="note">卓上とサイドメニューに共通の表示設定です。フリースプレッドは常に先頭に表示されます。非表示でも図鑑・手帖から使用できます。</p><div id="spreadMenuRows" class="stack" style="max-height:55vh;overflow:auto"></div><div class="row"><button type="button" id="spreadMenuReset">標準に戻す</button><button type="button" id="spreadMenuCancel">キャンセル</button><button type="button" class="primary" id="spreadMenuSave">保存</button></div>');
+function openMethodMenuSettings({entries,read,key,pinned,title,note,notify,status}){
+ const prefs=read();let rows=orderedSpreadMenu(entries(),prefs,pinned).filter(v=>v.id!==pinned).map(v=>({...v,on:!prefs.hidden.includes(v.id)}));
+ modal('<h2>'+title+'</h2><p class="note">'+note+'</p><div class="row" style="flex-wrap:wrap"><button type="button" id="spreadMenuAll">全表示</button><button type="button" id="spreadMenuReset">標準に戻す</button></div><div id="spreadMenuRows" class="stack" style="max-height:50vh;overflow:auto"></div><div class="row" style="flex-wrap:wrap"><button type="button" id="spreadMenuCancel">キャンセル</button><button type="button" class="primary" id="spreadMenuSave">保存</button></div>');
  const paint=()=>{
   const root=$('spreadMenuRows');root.replaceChildren();
   rows.forEach((v,i)=>{
    const row=document.createElement('div');row.className='spread-menu-setting-row';
-   const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=v.on;check.onchange=()=>{v.on=check.checked};label.append(check,document.createTextNode(v.name));row.append(label);
+   const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=v.on;check.onchange=()=>{v.on=check.checked};label.append(check,document.createTextNode(v.name+(v.custom?'（登録）':'')));row.append(label);
    for(const [delta,caption] of [[-1,'↑'],[1,'↓']]){
     const btn=document.createElement('button');btn.type='button';btn.textContent=caption;btn.setAttribute('aria-label',v.name+(delta<0?'を上へ':'を下へ'));btn.disabled=i+delta<0||i+delta>=rows.length;
     btn.onclick=()=>{[rows[i],rows[i+delta]]=[rows[i+delta],rows[i]];paint()};row.append(btn);
@@ -158,10 +158,14 @@ function openSpreadMenuSettings(){
    root.append(row);
   });
  };
- $('spreadMenuReset').onclick=()=>{rows=spreadMenuEntries().filter(v=>v.id!=='free').map(v=>({...v,on:true}));paint()};
+ $('spreadMenuAll').onclick=()=>{rows.forEach(v=>v.on=true);paint()};
+ $('spreadMenuReset').onclick=()=>{rows=entries().filter(v=>v.id!==pinned).map(v=>({...v,on:true}));paint()};
  $('spreadMenuCancel').onclick=closeModal;
- $('spreadMenuSave').onclick=()=>{try{localStorage.setItem(SPREAD_MENU_KEY,JSON.stringify({order:rows.map(v=>v.id),hidden:rows.filter(v=>!v.on).map(v=>v.id)}));syncSpreadShortcut();closeModal();setStatus('展開法の表示設定を保存しました。')}catch(e){alert('保存できませんでした：'+e.message)}};
+ $('spreadMenuSave').onclick=()=>{try{localStorage.setItem(key,JSON.stringify(normalizeSpreadMenu({order:rows.map(v=>v.id),hidden:rows.filter(v=>!v.on).map(v=>v.id)},pinned)));notify();closeModal();setStatus(status)}catch(e){alert('保存できませんでした：'+e.message)}};
  paint();
+}
+function openSpreadMenuSettings(){
+ openMethodMenuSettings({entries:spreadMenuEntries,read:readSpreadMenu,key:SPREAD_MENU_KEY,pinned:'free',title:'表示するスプレッドを設定',note:'卓上とサイドメニューに共通の表示設定です。フリースプレッドは常に先頭に表示されます。非表示でも図鑑・手帖から使用できます。',notify:syncSpreadShortcut,status:'展開法の表示設定を保存しました。'});
 }
 function refreshCustomPresets(){
  Object.keys(presets).filter(k=>k.startsWith('custom_')).forEach(k=>delete presets[k]);
@@ -3435,7 +3439,7 @@ function exportAllData(){
    format:EXPORT_FORMAT,version:3,kind:'backup',exportedAt:new Date().toISOString(),
    workspace:base,multiWorkspace,
    mainToolState,activeMultiWorkspace:!!dualSession,
-   snapshots,spreadLibrary,castingLibrary:castingLibrary(),methodPacks:methodPacks(),spreadMenu:readSpreadMenu(),creatorProfile:currentCreator(),spreadPacks:packLibrary(),deckLibrary,blueprintLibrary:TabulaDeckBlueprint.load(),
+   snapshots,spreadLibrary,castingLibrary:castingLibrary(),methodPacks:methodPacks(),spreadMenu:readSpreadMenu(),castingMenu:readCastingMenu(),creatorProfile:currentCreator(),spreadPacks:packLibrary(),deckLibrary,blueprintLibrary:TabulaDeckBlueprint.load(),
    cardTextOverrides:cardTexts,deckIntroOverrides,environmentLibrary:readEnvironmentLibrary()
   },'TABULA_BACKUP_'+new Date().toISOString().slice(0,10)+'.json');
   setStatus('全データのバックアップを書き出しました。');
@@ -3545,6 +3549,7 @@ function readExternalFile(file){
    if(data.environmentLibrary!==undefined)restored.set(ENVIRONMENT_LIBRARY_KEY,JSON.stringify(data.environmentLibrary));
     if(data.creatorProfile!==undefined)restored.set(TabulaContentIdentity.KEY,JSON.stringify(TabulaContentIdentity.profile(data.creatorProfile)));
    restored.set(SPREAD_MENU_KEY,JSON.stringify(normalizeSpreadMenu(data.spreadMenu)));
+   restored.set(CASTING_MENU_KEY,JSON.stringify(normalizeSpreadMenu(data.castingMenu,'none')));
    restored.set(TabulaSpreadStore.PACK_LIBRARY_KEY,JSON.stringify(TabulaSpreadStore.normalizePackLibrary(data.spreadPacks||[])));
    restored.set(CASTING_LIBRARY_KEY,JSON.stringify(normalizeCastings(data.castingLibrary||[])));
    restored.set(METHOD_PACK_KEY,JSON.stringify(normalizeMethodPacks(data.methodPacks||[])));
@@ -3803,7 +3808,7 @@ function compareModal(){
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>{let v=snapshots.find(x=>x.id===b.dataset.rename);if(!v)return;const name=prompt('記録の名前',v.name);if(name===null)return;v.name=name.trim()||v.name;storeSnapshots();compareModal()});
 }
 function resetSettingsAction(){if(!confirm('クロスや操作の設定を初期値に戻しますか？ 記録と登録したシャッフル手順は残ります。'))return;settings=createDefaultSettings({deckId:settings.deckId,pool:settings.pool,cardDesign:settings.cardDesign});resetFramesForSpread();recipeId='single';labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();render();saveLocal();setStatus('設定を初期化しました。配札と記録は残ります。')}
-function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、作業環境、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(DUAL_SESSION_KEY);localStorage.removeItem(DUAL_RESTORE_ONCE_KEY);localStorage.removeItem(TOOL_STORAGE_KEY);localStorage.removeItem(ENVIRONMENT_LIBRARY_KEY);mainToolState={id:'card:builtin',dice:null};localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(SPREAD_MENU_KEY);localStorage.removeItem(CASTING_LIBRARY_KEY);localStorage.removeItem(METHOD_PACK_KEY);localStorage.removeItem(TabulaSpreadStore.PACK_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();notifyTool();setStatus('全データを初期化しました。')}
+function resetEverythingAction(){if(dualSession){alert('全データの初期化は一組モードに戻してから実行してください。');return}if(!confirm('現在の卓、保存結果、作業環境、登録デッキ、登録したシャッフル手順・ディール手順をすべて削除します。続けますか？'))return;if(!confirm('この操作は取り消せません。本当にすべて初期化しますか？'))return;localStorage.removeItem(KEY);localStorage.removeItem(DUAL_SESSION_KEY);localStorage.removeItem(DUAL_RESTORE_ONCE_KEY);localStorage.removeItem(TOOL_STORAGE_KEY);localStorage.removeItem(ENVIRONMENT_LIBRARY_KEY);mainToolState={id:'card:builtin',dice:null};localStorage.removeItem(HISTORY_KEY);localStorage.removeItem(SPREAD_LIBRARY_KEY);localStorage.removeItem(SPREAD_MENU_KEY);localStorage.removeItem(CASTING_MENU_KEY);localStorage.removeItem(CASTING_LIBRARY_KEY);localStorage.removeItem(METHOD_PACK_KEY);localStorage.removeItem(TabulaSpreadStore.PACK_LIBRARY_KEY);localStorage.removeItem(TabulaDeckStore.KEY);localStorage.removeItem(TabulaDeckBlueprint.KEY);dealWorkbenchController?.resetSavedActions();deckLibrary=[];settings.deckId='builtin';spreadLibrary=[];refreshCustomPresets();snapshots=[];document.querySelectorAll('aside .section').forEach((_,i)=>localStorage.removeItem('tabula_sortium_section_'+i));recipes=[{id:'single',name:'単独シャッフル',steps:[{method:'overhand',reps:1,groups:1}]}];recipeId='single';settings=createDefaultSettings();resetFramesForSpread();customIds=cards.map(c=>c.id);state={deck:[],placed:[],cutStage:null,selected:null,completionShown:false,dealCheckpoint:null,removed:[],tablePiles:[]};labelMode='off';localStorage.setItem('tabula_label_mode','off');$('tableLabelMode').value='off';resetLabelCyclePreferences();setCardSize(spreadCardSize(settings.spread));sync();initialize();notifyTool();setStatus('全データを初期化しました。')}
 function modal(html){$('modalBg').classList.remove('records-active','card-viewer-active','tarot-deck-editor-active','playing-deck-editor-active');$('modalContent').innerHTML=html;$('modalBg').classList.add('open')}function cutModal(quick=false,workflowOptions=null){
  if(!workflowOptions&&spreadDealPreparing){setStatus('ディール手順の実行中はカット操作を変更できません。');return}
  if(!workflowOptions&&Number(settings.cutCount)===0){setStatus('カットは「なし」に設定されています。');return}
@@ -6312,6 +6317,7 @@ function replaceIndependentTool(target,snapshot=null){
 }
 const CASTING_GUIDES=Object.freeze({"none":["自由投擲","出目や記号そのものに加え、投擲物の距離、集まり、孤立、方向などを読む。図柄は任意に設定できる。"],"circle":["円 — 内界と外界","円内を占問に内在する条件、円外を外部からの影響や未獲得の可能性として読む。円周にかかるものは境界・移行・交渉を表す。中心への近さを作用の直接性とすることもできる。"],"double-circle":["二重円 — 三つの領域","内円を核心、二円の間を周辺状況、外円の外を外部条件とする。時間的な近さや影響の強さとして読み替えてもよい。"],"quarters":["四分円","四元素、四方位、四季、または四つの局面を各区画に割り当てる。区画の対応は投擲前に定める。"],"twelve":["十二分円","十二宮、十二ハウス、十二か月などを各区画に割り当てる。起点と巡る方向をあらかじめ定める。"],"horizontal-line":["上下二分","上と下に理念と現実、顕在と潜在など二つの対照的な領域を割り当てる。線上は両者の接点として読む。"],"vertical-line":["左右二分","左と右に過去と未来、自己と他者、二つの選択肢などを割り当てる。線上は媒介や移行として読む。"],"triangle-up":["三角形（上向き）","三つの頂点に過去・現在・未来など三つの条件や局面を割り当てる。内部は三者の相互作用、辺上は二つの領域の結び付き、外部は占問の枠外の条件として読む。上昇・能動・火の象意を与えることもできる。"],"triangle-down":["三角形（下向き）","三つの頂点に三つの条件や局面を割り当てる。内部は三者の相互作用、辺上は二つの領域の結び付き、外部は占問の枠外の条件として読む。受容・沈潜・水の象意を与えることもできる。"],"square":["正方形","四つの頂点に四元素・四方位など四つの条件を割り当てる。内部を形成された基盤や秩序、辺を境界、外部をその秩序の外にある条件と見立てて読む。"],"square-quarters":["四分割の正方形","四つの条件や領域を定め、どこに投擲物が集中するか、どの領域が空白かを読む。"],"square-grid":["九分割の正方形","中央を問題の核心、周囲八区画を関連する条件とする。各区画の象意は占問に合わせて定める。"],"pentagram":["五芒星","五つの頂点を五つの条件や元素に対応させる。中心、頂点、線上、外部の関係を読む。"],"circle-pentagram":["円と五芒星","円を占問の範囲、五芒星をその内部の五つの作用の構造と見立てる。円内外と星への近さを併せて読む。"],"hexagram":["六芒星","二つの三角形を対照的な作用と見立てる。重なる中央を両者の交点、六つの頂点を個別の条件として読む。"],"heptagram-7-2":["七芒星 {7/2}","七つの頂点に七つの条件や古典的七惑星を割り当てる。星の線に沿う順序を関連性の読み方に用いてもよい。"],"heptagram-7-3":["七芒星 {7/3}","七つの頂点に七つの条件を割り当てる。頂点を結ぶ別の順序や交差点を、作用の結び付きとして読む。"],"circle-triangle":["円と外三角","円を占問の領域、外三角を外部から現れる作用や目標と見立てる。両者の間に落ちるものを媒介として読む。"]});
 
+const CASTING_MENU_KEY='tabula_casting_menu_v1';
 const CASTING_LIBRARY_KEY='tabula_sortium_castings_v1',METHOD_PACK_KEY='tabula_sortium_method_packs_v1';
 let castingArchiveTab='mine';
 function cleanCastingTool(v){
@@ -6510,11 +6516,23 @@ function selectCasting(id,percent){
  settings.castingFigure=TabulaClothFigures.normalize(id,percent??castingConfig().clothFigureSize);
  renderActiveClothFigure();saveLocal();return true;
 }
+function readCastingMenu(){try{return normalizeSpreadMenu(JSON.parse(localStorage.getItem(CASTING_MENU_KEY)||'{}'),'none')}catch{return normalizeSpreadMenu(null,'none')}}
+function castingMenuEntries(includeActive=false){
+ const rows=castingLibrary().filter(v=>v.myCasting!==false||(includeActive&&v.id===settings.castingId));
+ return [...TabulaClothFigures.entries().map(({id,label})=>({id,name:CASTING_GUIDES[id]?.[0]||label})),...rows.map(v=>({id:v.id,name:rows.some(q=>q.id!==v.id&&q.name===v.name)?v.name+' — '+(v.identity.creator.name||'制作者名なし')+' ['+v.identity.id.slice(-8)+']':v.name,custom:true}))];
+}
+function castingMenuOptions(){
+ const prefs=readCastingMenu(),active=castingSelection(),eligible=new Set(castingMenuEntries().map(v=>v.id));
+ return [...orderedSpreadMenu(castingMenuEntries(true),prefs,'none').filter(v=>v.id==='none'||v.id===active||(eligible.has(v.id)&&!prefs.hidden.includes(v.id))).map(v=>({id:v.id,label:v.name})),{id:'__menu_settings',label:'表示する投擲法を設定…'}];
+}
+function openCastingMenuSettings(){
+ openMethodMenuSettings({entries:castingMenuEntries,read:readCastingMenu,key:CASTING_MENU_KEY,pinned:'none',title:'表示する投擲法を設定',note:'卓上とサイドメニューに共通の表示設定です。自由投擲は常に先頭に表示されます。非表示でも投擲法手帖やアルター設定から使用できます。',notify:()=>window.dispatchEvent(new Event('tabula:casting-change')),status:'投擲法の表示設定を保存しました。'});
+}
 window.TabulaCasting={
- entries:()=>[...TabulaClothFigures.entries().map(({id,label})=>({id,label:CASTING_GUIDES[id]?.[0]||label})),...castingLibrary().filter(v=>v.myCasting!==false||v.id===settings.castingId).map(v=>({id:v.id,label:v.name}))],
+ entries:castingMenuOptions,
  current:()=>castingConfig(),selection:castingSelection,
  figure:()=>isDiceTool(activeToolId())?castingConfig():cardFigureConfig(),
- select:useCasting,guide:()=>castingGuide(),archive:openCastingArchive
+ select:id=>{if(id==='__menu_settings'){openCastingMenuSettings();return false}return useCasting(id)},guide:()=>castingGuide(),archive:openCastingArchive
 };
 window.TabulaTableTools={openDiceDetail,
  prepareDiceSound:prepareOpeningSound,playDiceImpact,
