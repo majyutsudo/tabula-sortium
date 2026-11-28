@@ -2790,3 +2790,18 @@ aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);
 #castingArchiveRows .archive-entry{flex-wrap:wrap;min-width:0}#castingArchiveRows .archive-info{flex:1 1 100%;overflow-wrap:anywhere}#castingArchiveRows .archive-actions{width:100%;padding-left:0;display:flex;flex-wrap:wrap;gap:6px}#castingArchiveRows .archive-actions button{flex:1 1 78px}
 .casting-archive-heading{overflow-wrap:anywhere;padding-right:28px}.casting-archive-tabs button[aria-pressed="true"]{border-color:#d7b879;background:#4a4938}
 @media(max-width:480px){#castingArchiveTools{grid-template-columns:repeat(2,minmax(0,1fr))}.casting-archive-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Instrument workbench: separate controls from native selector and allow narrow screens. */
+.instrument-manager-open{display:block;width:100%;margin:8px 0 4px;white-space:normal}
+.instrument-manager-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:12px 0;align-items:stretch}
+.instrument-manager-actions>button,.instrument-manager-actions>input{min-width:0;width:100%;max-width:none!important;white-space:normal;margin:0}
+.instrument-lot-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px;margin-top:12px}
+.instrument-lot-paper{background:#e7dcc0;color:#443725;border:1px solid #aa9060;box-shadow:inset 0 0 0 4px #e7dcc0,inset 0 0 0 5px #b6a17b;padding:18px;min-width:0;text-align:center;border-radius:3px;overflow-wrap:anywhere}
+.instrument-lot-paper p{white-space:pre-wrap;margin:8px 0}
+.instrument-lot-paper h3{margin:0 0 8px;font-weight:normal}
+.instrument-lot-paper .instrument-field-fortune{font-size:1.5em;border-bottom:1px solid #b6a17b;padding-bottom:8px}
+.instrument-lot-paper .instrument-field-body{font-size:1.2em;line-height:1.9}
+.instrument-lot-paper .instrument-field-symbol{font-size:2.5em}
+.instrument-lot-paper.sealed{display:flex;align-items:center;justify-content:center;min-height:150px}
+.instrument-lot-sealed{width:100%;background:#c8b68e;color:#443725;border-color:#90794f}
+.instrument-lot-sealed:hover{background:#d5c39e}
