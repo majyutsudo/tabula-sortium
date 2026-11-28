@@ -2805,3 +2805,5 @@ aside .section #clothFigureName{margin-left:auto;color:var(--ui-accent,#dfc89e);
 .instrument-lot-paper.sealed{display:flex;align-items:center;justify-content:center;min-height:150px}
 .instrument-lot-sealed{width:100%;background:#c8b68e;color:#443725;border-color:#90794f}
 .instrument-lot-sealed:hover{background:#d5c39e}
+
+.instrument-lot-paper.lot-favorable{box-shadow:inset 0 0 0 4px #e7dcc0,inset 0 0 0 5px #b6a17b,0 0 20px #d8b96a66}.instrument-lot-paper.lot-unfavorable{background:#d4ccd0;color:#372c3c;border-color:#827087;box-shadow:inset 0 0 0 4px #d4ccd0,inset 0 0 0 5px #95879a,0 0 18px #78506b55}

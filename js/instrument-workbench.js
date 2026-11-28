@@ -3,39 +3,43 @@
 function mount({open,close,creator,download,status}){
  const S=root.TabulaInstrumentStore,D=root.TabulaInstrumentData,I=root.TabulaContentIdentity;
  const $=id=>document.getElementById(id);
- let selected=null,reading=null,revealed=new Set();
+ let selected=null,reading=null,revealed=new Set(),effects=true;
  const button=document.createElement('button');button.type='button';button.textContent='占具セット管理（試験版）';button.className='instrument-manager-open';$('instrumentPicker').after(button);
  const get=()=>S.read(localStorage);
+ const standard=()=>root.TabulaStandardInstrumentSets.map(S.normalize);
+ const allSets=()=>[...standard(),...get()];
+ const isStandard=v=>standard().some(x=>I.key(x.identity)===I.key(v.identity));
  function show(){
   try{
    open('<h2>占具セット管理</h2><p class="mini">籤の抽出を試すための共通管理室です。現在の卓は変更しません。</p><label class="field">登録セット<select id="instSets"></select></label><div class="instrument-manager-actions"><button id="instNew">新規作成</button><button id="instEdit">編集</button><button id="instCopy">複製</button><button id="instDelete">削除</button><button id="instExport">書き出し</button><button id="instImport">読み込み</button></div><input id="instFile" type="file" accept=".json,application/json" hidden><div id="instReading" class="stack"></div>');
-   const rows=get(),select=$('instSets');for(const v of rows)select.add(new Option(v.name+'（'+v.items.length+'個）',I.key(v.identity)));
+   const rows=allSets(),select=$('instSets');for(const v of rows)select.add(new Option(v.name+'（'+v.items.length+'個）',I.key(v.identity)));
    if(!rows.some(v=>I.key(v.identity)===selected))selected=rows[0]?I.key(rows[0].identity):null;
    select.value=selected||'';select.onchange=()=>{selected=select.value;reading=null;paint()};
-   const current=()=>get().find(v=>I.key(v.identity)===selected);
-   $('instNew').onclick=()=>edit(null);$('instEdit').onclick=()=>{const v=current();if(v)edit(v)};
+   const current=()=>allSets().find(v=>I.key(v.identity)===selected);
+   $('instNew').onclick=()=>edit(null);$('instEdit').onclick=()=>{const v=current();if(v&&!isStandard(v))edit(v)};
    $('instCopy').onclick=()=>{const v=current();if(v)edit({...v,name:v.name+'（複製）'},true)};
-   $('instDelete').onclick=()=>{const v=current();if(v&&confirm('「'+v.name+'」を削除しますか？')){S.write(localStorage,get().filter(x=>I.key(x.identity)!==selected));reading=null;show()}};
+   $('instDelete').onclick=()=>{const v=current();if(v&&!isStandard(v)&&confirm('「'+v.name+'」を削除しますか？')){S.write(localStorage,get().filter(x=>I.key(x.identity)!==selected));reading=null;show()}};
    $('instExport').onclick=()=>{const v=current();if(v)download(S.portable(v),'TABULA_instrument.json')};
    $('instImport').onclick=()=>$('instFile').click();
-   $('instFile').onchange=async()=>{try{const file=$('instFile').files[0];if(!file)return;const v=S.parse(JSON.parse(await file.text())),key=I.key(v.identity),all=get();if(all.some(x=>I.key(x.identity)===key))throw Error('同じ作品IDが登録済みです。');S.write(localStorage,[...all,v]);selected=key;reading=null;show()}catch(e){alert(e.message)}};
+   $('instFile').onchange=async()=>{try{const file=$('instFile').files[0];if(!file)return;const v=S.parse(JSON.parse(await file.text())),key=I.key(v.identity),all=get();if(allSets().some(x=>I.key(x.identity)===key))throw Error('同じ作品IDが登録済みです。');S.write(localStorage,[...all,v]);selected=key;reading=null;show()}catch(e){alert(e.message)}};
    function paint(){
     const host=$('instReading'),v=current();host.replaceChildren();
-    for(const id of ['instEdit','instCopy','instDelete','instExport'])$(id).disabled=!v;
+    for(const id of ['instEdit','instCopy','instDelete','instExport'])$(id).disabled=!v||(['instEdit','instDelete'].includes(id)&&isStandard(v));
     if(!v){host.textContent='新規作成またはJSON読み込みで占具を登録してください。';return}
     if(!['lot','rune'].includes(v.type)){host.textContent='この種類の卓上操作は今後対応します。';return}
     if(!reading||I.key(reading.set.identity)!==selected){reading=S.session(v);revealed=new Set()}
+    if(isStandard(v)){const provenance=document.createElement('p');provenance.className='mini';provenance.textContent=v.source;host.append(provenance)}
     const info=document.createElement('p');info.textContent='残り '+reading.remaining.length+' / '+v.items.length+(v.type==='lot'?' 本':' 個');host.append(info);
     const controls=document.createElement('div');controls.className='instrument-manager-actions';
     const count=document.createElement('input');count.type='number';count.min='1';count.max=String(Math.max(1,reading.remaining.length));count.value='1';count.setAttribute('aria-label','抽出数');count.style.maxWidth='5em';
     const draw=document.createElement('button');draw.type='button';draw.textContent='引く';draw.disabled=!reading.remaining.length;
     draw.onclick=()=>{try{reading=S.take(reading,Number(count.value));paint()}catch(e){alert(e.message)}};
     const reset=document.createElement('button');reset.type='button';reset.textContent='すべて戻す';reset.onclick=()=>{reading=S.session(v);revealed=new Set();paint()};
-    const revealAll=document.createElement('button');revealAll.type='button';revealAll.textContent='すべて開く';revealAll.disabled=reading.drawn.every(id=>revealed.has(id));revealAll.onclick=()=>{reading.drawn.forEach(id=>revealed.add(id));paint()};controls.append(count,draw,revealAll,reset);host.append(controls);
+    const revealAll=document.createElement('button');revealAll.type='button';revealAll.textContent='すべて開く';revealAll.disabled=reading.drawn.every(id=>revealed.has(id));revealAll.onclick=()=>{reading.drawn.forEach(id=>revealed.add(id));paint()};controls.append(count,draw,revealAll,reset);host.append(controls);const toggle=document.createElement('label');toggle.className='choice';const check=document.createElement('input');check.type='checkbox';check.checked=effects;check.onchange=()=>{effects=check.checked;paint()};toggle.append(check,document.createTextNode('吉凶に応じた色彩'));host.append(toggle);
     const results=document.createElement('div');results.className='instrument-lot-results';host.append(results);
     for(const [i,id] of reading.drawn.entries()){const item=reading.set.items.find(x=>x.id===id),article=document.createElement('article');article.className='instrument-lot-paper';
      if(!revealed.has(id)){const reveal=document.createElement('button');reveal.type='button';reveal.className='instrument-lot-sealed';reveal.textContent=(v.type==='lot'?'籤':'ルーン')+' '+(i+1)+' · 開く';reveal.onclick=()=>{revealed.add(id);paint()};article.append(reveal);article.classList.add('sealed')}
-     else for(const f of D.fields){const value=item[f.id];if(value==null||value==='')continue;const p=document.createElement(f.id==='number'?'h3':'p');p.className='instrument-field-'+f.id;p.textContent=f.id==='number'?'第'+value+'番':f.id==='body'||f.id==='fortune'||f.id==='symbol'?String(value):f.label+'：'+value;article.append(p)}results.append(article);
+     else {if(effects&&v.type==='lot'){const rank=String(item.fortune||'');if(['大吉','吉','小吉','半吉','末吉','末小吉'].includes(rank))article.classList.add('lot-favorable');else if(['凶','大凶','小凶','半凶','末凶'].includes(rank))article.classList.add('lot-unfavorable')}for(const f of D.fields){const value=item[f.id];if(value==null||value==='')continue;const p=document.createElement(f.id==='number'?'h3':'p');p.className='instrument-field-'+f.id;p.textContent=f.id==='number'?'第'+value+'番':f.id==='body'||f.id==='fortune'||f.id==='symbol'?String(value):f.label+'：'+value;article.append(p)}}results.append(article);
     }
    }paint();
   }catch(e){alert(e.message)}
