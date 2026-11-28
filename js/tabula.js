@@ -40,6 +40,7 @@ function removeLibrarySingle(v){
  removeLibraryItems(packs,items);
 }
 function removeLibraryPack(data){
+ const mixed=methodPacks().find(p=>TabulaSpreadStore.packKey(p.pack)===TabulaSpreadStore.packKey(data.pack));if(mixed){removeMethodPack(mixed);return}
  if(!confirm('「'+data.pack.name+'」をLIBRARYから削除しますか？ MY SPREADSに追加した作品や他のパックは残ります。'))return;
  const S=TabulaSpreadStore,key=S.packKey(data.pack),packs=packLibrary().filter(p=>S.packKey(p.pack)!==key),remaining=libraryPackKeys(packs),removed=libraryPackKeys([data]);
  const items=spreadLibrary.flatMap(v=>{
@@ -6390,6 +6391,19 @@ function importMethodDocument(data){
   spreadLibrary=prepared;refreshCustomPresets();castingArchiveTab='library';archiveTab='library';window.dispatchEvent(new Event('tabula:casting-change'));if(!$('spreadArchive').hidden)renderSpreadArchive();setStatus('占法をLIBRARYに読み込みました。');return true;
  }catch(e){alert('読み込めません：'+e.message);return false}
 }
+function removeMethodPack(pack){
+ if(!confirm('「'+pack.pack.name+'」をLIBRARYから削除しますか？ MYに追加した作品や他のパックにある作品は残ります。'))return;
+ try{
+  const S=TabulaSpreadStore,key=S.packKey(pack.pack),remaining=methodPacks().filter(p=>S.packKey(p.pack)!==key),sp=packLibrary().filter(p=>S.packKey(p.pack)!==key),keys=libraryPackKeys(sp),removed=new Set(pack.spreads.map(libraryWorkKey));
+  const next=spreadLibrary.flatMap(v=>removed.has(libraryWorkKey(v))&&!isMySpread(v)&&!v.librarySingle&&!keys.has(libraryWorkKey(v))?[]:[{...v,packSources:(v.packSources||[]).filter(p=>S.packKey(p)!==key)}]);
+  const castingKeys=new Set(pack.castings.map(castingKey)),remainingKeys=new Set(remaining.flatMap(p=>p.castings.map(castingKey)));
+  const castings=castingLibrary().filter(v=>!castingKeys.has(castingKey(v))||v.myCasting||v.librarySingle||remainingKeys.has(castingKey(v)));
+  if((spreadLibrary.some(v=>v.id===settings.spread)&&!next.some(v=>v.id===settings.spread))||(activeCasting()&&!castings.some(v=>v.id===settings.castingId))){alert('使用中の占法を含みます。別の占法に切り替えてから削除してください。');return}
+  const prepared=S.prepareLibrary(next,S.read(localStorage,SPREAD_LIBRARY_KEY),currentCreator());
+  writeRestoredStorage(new Map([[CASTING_LIBRARY_KEY,JSON.stringify(normalizeCastings(castings))],[METHOD_PACK_KEY,JSON.stringify(normalizeMethodPacks(remaining))],[SPREAD_LIBRARY_KEY,JSON.stringify(prepared)],[S.PACK_LIBRARY_KEY,JSON.stringify(S.normalizePackLibrary(sp))]]));
+  spreadLibrary=prepared;refreshCustomPresets();window.dispatchEvent(new Event('tabula:casting-change'));if(isDiceTool(activeToolId()))openCastingArchive();else renderSpreadArchive();
+ }catch(e){alert('削除できません：'+e.message)}
+}
 function activeCasting(){return castingLibrary().find(v=>v.id===settings.castingId)||null}
 function castingSelection(){return activeCasting()?.id||castingConfig().clothFigure}
 function castingToolNow(){const live=window.TabulaDiceTable?.snapshot?.()||activeDiceSnapshot();try{return cleanCastingTool(live)}catch{return null}}
@@ -6429,7 +6443,7 @@ function editCasting(source=null){
  $('castingEditSave').onclick=()=>{try{
   const I=TabulaContentIdentity,profile=currentCreator(),identity=prior?(prior.identity.creator.id===profile.id?I.revise(prior.identity,profile):I.newIdentity(profile,prior.identity)):I.newIdentity(profile,source?.derivedIdentity);
   const item=cleanCasting({id:prior?.id||I.uuid(),identity,name:$('castingEditName').value,clothFigure:$('castingEditFigure').value,clothFigureSize:Number($('castingEditSize').value),...Object.fromEntries(['overview','method','notes','author','source'].map(k=>[k,$('castingEdit_'+k).value])),...($('castingEditTool').checked&&chosen?{tool:chosen}:{})});
-  const rows=castingLibrary().filter(v=>v.id!==item.id);if(rows.some(v=>v.name===item.name))throw Error('同名の投擲法があります。');
+  const rows=castingLibrary().filter(v=>v.id!==item.id);if(rows.some(v=>v.myCasting&&v.name===item.name))throw Error('同名の投擲法があります。');
   writeCastings([...rows,item]);
   if(settings.castingId===item.id){settings.castingFigure=TabulaClothFigures.normalize(item.clothFigure,item.clothFigureSize);renderActiveClothFigure();saveLocal()}
   openCastingArchive();setStatus('投擲法「'+item.name+'」を保存しました。');
@@ -6460,9 +6474,9 @@ function openCastingArchive(){
  else{
   const imp=document.createElement('input');imp.type='file';imp.accept='.json,application/json';imp.hidden=true;tools.append(imp);
   archiveButton(tools,'占法を読み込む',()=>imp.click());imp.onchange=async()=>{try{const f=imp.files[0];if(!f)return;if(f.size>16*1024*1024)throw Error('ファイルが大きすぎます。');if(importMethodDocument(JSON.parse(await f.text())))openCastingArchive()}catch(e){alert(e.message)}};
-  for(const p of packs.filter(p=>p.castings.length)){
+  for(const p of packs){
    const folder=document.createElement('details');folder.className='archive-pack-folder';const summary=document.createElement('summary');summary.textContent=p.pack.name+'（投擲法 '+p.castings.length+'篇／スプレッド '+p.spreads.length+'篇）';folder.append(summary);
-   archiveButton(folder,'パックを書き出す',()=>downloadJSON(p,'TABULA_METHOD_PACK_'+fileNamePart(p.pack.name)+'.json'));
+   archiveButton(folder,'パックを書き出す',()=>downloadJSON(p,'TABULA_METHOD_PACK_'+fileNamePart(p.pack.name)+'.json'));archiveButton(folder,'削除',()=>removeMethodPack(p));
    for(const v of p.castings){const local=rows.find(q=>castingKey(q)===castingKey(v)&&castingContent(q)===castingContent(v));folder.append(row(v,local||null))}root.append(folder);
   }
   for(const v of rows.filter(v=>v.librarySingle||(!v.myCasting&&!packs.some(p=>p.castings.some(q=>castingKey(q)===castingKey(v))))))root.append(row(v));
